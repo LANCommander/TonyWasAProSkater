@@ -55,7 +55,7 @@ extern char rcossin_tbl[];
 
 void CPowerUp_DoPhysics(P *);
 void CPowerUp_CreateBit(P *);
-void FUN_800201c8(void);
+void FUN_800201c8(P *);
 G *__nw__4CBitUi(int);
 G *__5CGlowUiUi(G *, int, int);
 void CGlow_SetCentreRGB(G *, unsigned char, unsigned char, unsigned char);
@@ -77,7 +77,7 @@ void FUN_800206ac(P *p) {
 	V *s3;
 	int s0;
 
-	FUN_800201c8();
+	FUN_800201c8(p);
 
 	if (GNumberOfPlayers == 1) {
 		if (p->fl & 1)

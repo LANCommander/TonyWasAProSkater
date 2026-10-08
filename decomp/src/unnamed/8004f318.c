@@ -8,10 +8,10 @@ typedef struct T {
 
 T *TrickObList;
 
-unsigned int FUN_8006ef00(void);
+unsigned int FUN_8006ef00(char *);
 
-int FUN_8004f318(void) {
-	unsigned int c = FUN_8006ef00();
+int FUN_8004f318(char *o) {
+	unsigned int c = FUN_8006ef00(o);
 	T *p;
 
 	for (p = TrickObList; p; p = p->mpNext)

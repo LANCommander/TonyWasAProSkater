@@ -2,6 +2,6 @@
 #include "names.h"
 extern int UseCacheForBits;
 
-void CTape_CreateBit(void) {
+void CTape_CreateBit(void *this_) {
 	UseCacheForBits = 1;
 }

@@ -14,7 +14,7 @@ extern E Font_table[];
 int Current_font;
 unsigned char NewFont;
 
-int FUN_8001d340(void);
+int FUN_8001d340(unsigned char *);
 int GetCharIndex(int);
 
 int Mess_TextWidth(unsigned char *s0) {
@@ -22,7 +22,7 @@ int Mess_TextWidth(unsigned char *s0) {
 	unsigned char *s;
 
 	if (NewFont == 0)
-		return FUN_8001d340();
+		return FUN_8001d340(s0);
 
 	s = s0;
 	n = 0;

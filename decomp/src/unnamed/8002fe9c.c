@@ -50,7 +50,7 @@ typedef struct {
 
 extern E Stats[];
 
-void CBruce_Trick_Bail(void);
+void CBruce_Trick_Bail(B *);
 void CBruce_StateTransition(B *, int, int);
 void CBruce_Debug_RunAnim2(B *, int, int, int, int);
 void CBruce_ResetTrickBuffers(B *);
@@ -61,11 +61,11 @@ int Mips_CVecDotProd(void *, void *);
 int FUN_8008b5dc(int);
 int Redbook_Rnd(int);
 
-void CBruce_Bail(B *p, int a) {
+void CBruce_Bail(B *p, int a, int limit) {
 	p->f19c = a;
 	p->f724 = 0;
 	p->f218++;
-	CBruce_Trick_Bail();
+	CBruce_Trick_Bail(p);
 
 	p->f71c = 0;
 	p->f358 = 1;

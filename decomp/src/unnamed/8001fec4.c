@@ -2,6 +2,6 @@
 #include "names.h"
 extern int UseCacheForBits;
 
-void CPowerUp_CreateBit(void) {
+void CPowerUp_CreateBit(void *this_) {
 	UseCacheForBits = 1;
 }

@@ -15,7 +15,7 @@ int FUN_8005ea00(int);
 int FUN_80060274(int);
 int FUN_800604c8(int);
 int FUN_80060854(int);
-void FUN_8005e728(void);
+void FUN_8005e728(int);
 
 int FUN_8005e754(int a) {
 	S s;

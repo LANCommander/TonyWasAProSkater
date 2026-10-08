@@ -153,6 +153,15 @@ def decode(i):
         i.target = (i.addr + 4 + (i.simm << 2)) & 0xFFFFFFFF
 
 
+# Port fixes for single instructions, by address. The retail renderer strips the top byte off
+# pPoly (`sll 8; srl 8`) and writes primitives through the KUSEG pointer; on PC main RAM only
+# exists at 0x80000000 and pPoly/PolyBufferEnd stay KSEG0 (see the PC_PORT blocks in decomp/src).
+PATCHES = {
+    0x80086FA8: "v0 = (v0 >> 8) | 0x80000000u; /* PC: keep pPoly in KSEG0 */",
+    0x80089900: "v0 = (v0 >> 8) | 0x80000000u; /* PC: keep pPoly in KSEG0 */",
+}
+
+
 def R(n):
     return "0" if n == 0 else REG[n]
 
@@ -387,6 +396,7 @@ def emit_function(f, translated, native, out):
         return
     out.append("\tREGS_DECL")
     out.append("\tREGS_IN();")
+    out.append("\tu32 ra_in_ = ra; (void)ra_in_;")  # `jr` through a saved copy of ra returns
     addrs = sorted(f.insns)
     # targets needing a label: branch/jump targets and anything after a delay slot jumped into
     labels = set(f.labels) | {ent}
@@ -441,7 +451,7 @@ def emit_function(f, translated, native, out):
                         out.append("\t%s goto ret_;" % dsc)
                 else:
                     cases = " ".join("case 0x%08xu: goto L_%08x;" % (x, x) for x in addrs)
-                    out.append("\t{ u32 t_ = %s; %s switch (t_) { %s default: "
+                    out.append("\t{ u32 t_ = %s; %s if (t_ == ra_in_) goto ret_; switch (t_) { %s default: "
                                "rc_bad_jump(0x%08xu, t_); goto ret_; } }" % (R(i.rs), dsc, cases, a))
             # the delay slot: emitted inline above; give it its own copy if something jumps to it
             if ds:
@@ -472,7 +482,7 @@ def emit_function(f, translated, native, out):
             skip.add(a + 4)
             k += 1
             continue
-        s = op_c(i)
+        s = PATCHES.get(a) or op_c(i)
         if s:
             out.append("\t" + s)
         k += 1

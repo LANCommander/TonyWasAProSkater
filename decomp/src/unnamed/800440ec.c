@@ -48,7 +48,7 @@ typedef struct {
 	unsigned char b159;
 } B;
 
-void FUN_80043f70(void);
+void FUN_80043f70(B *);
 V __mi__FRC7CVectorT0(const V *, const V *);
 V __dv__FRC7CVectorRCi(const V *, const int *);
 V __mi__FRC8CSVectorT0(const S6 *, const S6 *);
@@ -64,7 +64,7 @@ void FUN_800440ec(B *p) {
 	S6 *s0;
 
 	if (p->fl & 2) {
-		FUN_80043f70();
+		FUN_80043f70(p);
 		p->vt->fnB((char *)p + p->vt->offB);
 
 		if (p->n < 2) {

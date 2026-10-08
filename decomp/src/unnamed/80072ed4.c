@@ -2,6 +2,6 @@
 #include "names.h"
 int CTape_mOkayToDisplayContinueButton;
 
-int CTape_DisplayContinueButton(void) {
+int CTape_DisplayContinueButton(void *this_) {
 	return CTape_mOkayToDisplayContinueButton != 0;
 }

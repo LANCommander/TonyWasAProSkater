@@ -17,7 +17,7 @@ extern int GGame;
 int FUN_8002f290(B *, int, int);
 void FUN_8006e19c(void *, int, int, int);
 
-void CBruce_Trick_Trick(B *p, int a1, int a2, int a3) {
+void CBruce_Trick_Trick(B *p, int a1, int a2, int a3, int a4) {
 	if (p->f760) {
 		if (GGame == 7)
 			p->f330 = 0;

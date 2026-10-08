@@ -20,18 +20,18 @@ typedef struct {
 
 extern S GVInfo1;
 
-char *FileIO_Open(void);
+char *FileIO_Open(const char *);
 char *Mem_NewX(char *a, int b, int c);
 void FileIO_Load(char *a);
 void FileIO_Sync(void);
 void Mem_Delete(char *a);
 
-short FUN_80014ba4(void) {
+short FUN_80014ba4(const char *name) {
 	H *h;
 	char *b;
 	int i;
 
-	b = Mem_NewX(FileIO_Open(), 1, 1);
+	b = Mem_NewX(FileIO_Open(name), 1, 1);
 
 	if (b) {
 		FileIO_Load(b);

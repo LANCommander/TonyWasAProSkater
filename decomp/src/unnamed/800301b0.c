@@ -31,7 +31,7 @@ void CBruce_CalculateDynamicLighting(B *, int, int);
 int M3dZone_LineToItemNotSCached(L *, int);
 void M3dColij_InitLineInfo(L *);
 
-void UberFrig(B *p, V a) {
+void UberFrig(B *p, V a, char *msg) {
 	L li;
 
 	if (p->f6dc == 0) {

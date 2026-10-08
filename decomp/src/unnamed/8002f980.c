@@ -33,7 +33,7 @@ extern V __mi__C7CVector(const V *);
 
 extern char s_WALL_RIDE[];
 
-void CBruce_StateTransition(B *o, int n) {
+void CBruce_StateTransition(B *o, int n, int line) {
 	V a, r, r2;
 
 	if (o->f734 == 4 && n == 1) {

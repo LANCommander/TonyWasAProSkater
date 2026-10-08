@@ -2,7 +2,7 @@
 #include "names.h"
 void CBruce_Bail(char *p, int a);
 
-void CBruce_HandleBailOnLanding(char *p) {
+void CBruce_HandleBailOnLanding(char *p, int n) {
 	int a0, v1, a1, a2;
 
 	if (*(int *)(p + 856))

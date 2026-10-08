@@ -20,13 +20,13 @@ extern char s_s_s[], s_options_bmp[], s_main_h_bmp[];
 
 int DAT_800d1d28;
 
-int FUN_8005ffac(void);
+int FUN_8005ffac(int);
 void FUN_8005c97c(int);
 void FUN_8005ca64(void);
 int FUN_8005ca3c(char *);
 void FUN_80061714(int);
 int FUN_8008b900(char *, char *, int, int);
-int FUN_8005e0e0(T *, int *, int, int, int *, int (*)(void), int, int, int);
+int FUN_8005e0e0(T *, int *, int, int, int *, int (*)(int), int, int, int);
 void FUN_8005f6bc(int);
 void FUN_8005fd50(int);
 void FUN_800601fc(int);

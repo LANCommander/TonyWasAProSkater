@@ -2,6 +2,6 @@
 #include "names.h"
 extern void Mess_TextHeight2(void *);
 
-void Trick_HoldTrick(void *p) {
+void Trick_HoldTrick(void *p, int n) {
 	Mess_TextHeight2(p);
 }
