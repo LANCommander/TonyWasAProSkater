@@ -32,5 +32,10 @@ void FUN_80048fec(void) {
 
 	FUN_8008c7d4(pDoubleBuffer->OT, FUN_80048c74());
 
+#ifdef PC_PORT
+	/* the PS1 drew through KUSEG (bit 31 clear); on PC main RAM is only at 0x80000000 */
+	pPoly = pDoubleBuffer->Prims | 0x80000000;
+#else
 	pPoly = pDoubleBuffer->Prims & 0x7fffffff;
+#endif
 }

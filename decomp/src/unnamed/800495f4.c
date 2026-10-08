@@ -2,10 +2,10 @@
 #include "names.h"
 int TotSlots;
 
-void Mem_Delete(void);
+void Mem_Delete(void *);
 
-void Pack_KillSlot(void) {
-	Mem_Delete();
+void Pack_KillSlot(void *p) {
+	Mem_Delete(p);
 
 	TotSlots = TotSlots - 1;
 }

@@ -27,5 +27,10 @@ void FUN_80024258(void) {
 	unsigned long Prims = pDoubleBuffer->Prims;
 	int Size = POLYBUFFERSIZE;
 
+#ifdef PC_PORT
+	/* the PS1 drew through KUSEG (bit 31 clear); on PC main RAM is only at 0x80000000 */
+	PolyBufferEnd = (Prims + Size - 256) | 0x80000000;
+#else
 	PolyBufferEnd = (Prims + Size - 256) & 0x7fffffff;
+#endif
 }
