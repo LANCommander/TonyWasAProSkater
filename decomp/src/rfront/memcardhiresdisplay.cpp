@@ -53,10 +53,10 @@ extern "C" {
 	extern S GameText;
 	extern char *GameText_180[];
 	extern char *VertMenuItem[];
-	extern char DAT_8009d11c[];
-	extern char DAT_8009d130[];
-	extern char DAT_8009d144[];
-	extern char DAT_800d2474[];
+	extern char s_loading_video_file[];
+	extern char s_loading_saved_game[];
+	extern char s_Video_loaded[];
+	extern char msg[];
 	extern int TTime;
 }
 
@@ -104,7 +104,7 @@ void Front_MemCardHiResDisplay() {
 				FUN_8006b26c();
 			}
 
-			load = DAT_8009d130;
+			load = s_loading_saved_game;
 			FUN_8008c468(0);
 
 			for (i = 0; i < 4; i++) {
@@ -194,8 +194,8 @@ void Front_MemCardHiResDisplay() {
 			if (!pVertMenu) {
 				pVertMenu = new VerticalMenu(100, 398, 15, VertMenuItem,
 				                                NumVertMenuItems < 6 ? NumVertMenuItems : 5, 0, 0, 0);
-				FUN_8008b900(DAT_800d2474, GameText.f128, GameText.f134);
-				Front_DirtyRectText(XMid, 380, DAT_800d2474);
+				FUN_8008b900(msg, GameText.f128, GameText.f134);
+				Front_DirtyRectText(XMid, 380, msg);
 			}
 
 			for (i = 0; i < 5; i++) {
@@ -211,13 +211,13 @@ void Front_MemCardHiResDisplay() {
 					int down = VertMenuTopIndex < NumVertMenuItems - 5;
 
 					if (up && down)
-						FUN_8008b900(DAT_800d2474, GameText.f128, GameText.f134);
+						FUN_8008b900(msg, GameText.f128, GameText.f134);
 					else
-						FUN_8008b900(DAT_800d2474, GameText.f128,
+						FUN_8008b900(msg, GameText.f128,
 						             up ? GameText.f12c : GameText.f130);
 				}
 
-				Front_DirtyRectText(XMid, 380, DAT_800d2474);
+				Front_DirtyRectText(XMid, 380, msg);
 			}
 
 			pVertMenu->draw();
@@ -228,7 +228,7 @@ void Front_MemCardHiResDisplay() {
 			break;
 		case 21:
 			FUN_80011214();
-			Front_DirtyRectText(XMid, 220, DAT_8009d11c);
+			Front_DirtyRectText(XMid, 220, s_loading_video_file);
 			RGBRed();
 			Front_DirtyRectText(XMid, 280, GameText.f1f8);
 			Front_DirtyRectText(XMid, 332, GameText.f1fc);
@@ -243,7 +243,7 @@ void Front_MemCardHiResDisplay() {
 			break;
 		case 23:
 			RGBRed();
-			Front_DirtyRectText(XMid, 220, DAT_8009d144);
+			Front_DirtyRectText(XMid, 220, s_Video_loaded);
 
 			if (MCResolution == 512)
 				Front_PrintCentredPrompt(GameText_180[0]);

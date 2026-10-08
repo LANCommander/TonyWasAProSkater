@@ -228,7 +228,7 @@ class CBruce : public CSuper {
 
 void *Mem_New(uint, int, int);
 
-int DAT_800d19a0;
+int NumMechs;
 CBody *MechList;
 
 CBruce::CBruce() : mPanel(this) {
@@ -313,10 +313,10 @@ CBruce::CBruce() : mPanel(this) {
 	mAngles.vz = z;
 	AttachTo(&MechList);
 
-	DAT_800d19a0++;
+	NumMechs++;
 	m52 &= ~2;
 
-	if (DAT_800d19a0 == 1)
+	if (NumMechs == 1)
 		mpColl = Pad;
 	else
 		mpColl = Pad_16c;

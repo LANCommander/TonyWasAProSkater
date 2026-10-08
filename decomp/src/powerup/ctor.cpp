@@ -55,8 +55,8 @@ class CPowerUp : public CBody {
 	virtual ~CPowerUp();
 };
 
-extern char DAT_8009f0c8[];
-extern char DAT_800d161c[];
+extern char s_skmedals[];
+extern char s_items_800d161c[];
 extern int GGame;
 extern CPowerUp *GPowS;
 extern CPowerUp *GPowK;
@@ -117,23 +117,23 @@ CPowerUp::CPowerUp(unsigned short a1, const V &a2_, const V &a3_, unsigned int a
 	ShadowOn__5CBody(this);
 
 	this->fd8 = 300;
-	InitItem__5CItemPc(this, DAT_800d161c);
+	InitItem__5CItemPc(this, s_items_800d161c);
 
 	switch (this->type) {
 		case 0x664:
-			InitItem__5CItemPc(this, DAT_8009f0c8);
+			InitItem__5CItemPc(this, s_skmedals);
 
 			this->b13d = 1;
 			this->model = Spool_GetModel__FUii(0x54636518, CurrentMedalsFileRegion);
 			break;
 		case 0x665:
-			InitItem__5CItemPc(this, DAT_8009f0c8);
+			InitItem__5CItemPc(this, s_skmedals);
 
 			this->b13d = 1;
 			this->model = Spool_GetModel__FUii(0xba6d0434, CurrentMedalsFileRegion);
 			break;
 		case 0x666:
-			InitItem__5CItemPc(this, DAT_8009f0c8);
+			InitItem__5CItemPc(this, s_skmedals);
 
 			this->b13d = 1;
 			this->model = Spool_GetModel__FUii(0x2364558e, CurrentMedalsFileRegion);

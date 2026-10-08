@@ -29,7 +29,7 @@ class PREManager {
 
 int CurrentPos;
 int FileOpen;
-PREManager *DAT_800d1b10;
+PREManager *SpoolerBlocksFileIO;
 int LoadFromPRE;
 char *ThePREFile;
 int ThePREFileSize;
@@ -39,10 +39,10 @@ int NumSectors;
 int Start;
 
 extern RECT DAT_800d1b20[];
-extern char DAT_800d1b28[];
+extern char s_d_800d1b28[];
 extern uchar Pad_50[];
 extern uchar Directory[];
-extern char DAT_800a12bc[];
+extern char s_fileio_cpp[];
 
 extern "C" {
 	void FUN_80047774(const char *, int, char *);
@@ -56,12 +56,12 @@ int FileIO_Open(const char *filename) {
 	int len;
 
 	CurrentPos = 0;
-	FUN_80047774(filename, 299, DAT_800a12bc);
+	FUN_80047774(filename, 299, s_fileio_cpp);
 
 	LoadFromPRE = 0;
 
-	if (DAT_800d1b10) {
-		ThePREFile = DAT_800d1b10->getFile((char *)filename, &ThePREFileSize);
+	if (SpoolerBlocksFileIO) {
+		ThePREFile = SpoolerBlocksFileIO->getFile((char *)filename, &ThePREFileSize);
 
 		if (ThePREFile) {
 			LoadFromPRE = 1;
@@ -70,7 +70,7 @@ int FileIO_Open(const char *filename) {
 		}
 	}
 
-	FUN_80047774(filename, 323, DAT_800a12bc);
+	FUN_80047774(filename, 323, s_fileio_cpp);
 
 	header = (char *)Directory;
 	Opening = filename;
@@ -139,8 +139,8 @@ int FileIO_Open(const char *filename) {
 	FileOpen = 1;
 
 	if (Pad_50[0])
-		FUN_8008c190(DAT_800d1b28);
+		FUN_8008c190(s_d_800d1b28);
 
-	FUN_80047774(filename, 495, DAT_800a12bc);
+	FUN_80047774(filename, 495, s_fileio_cpp);
 	return FileSize;
 }

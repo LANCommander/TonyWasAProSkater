@@ -9,7 +9,7 @@ typedef struct {
 } S;
 
 extern S PSXRegion[];
-extern int *DAT_800c09a8[];
+extern int *Memories[];
 
 int *Mem_NewX(int, int, int);
 
@@ -18,7 +18,7 @@ void FUN_8006ed2c(int i) {
 	int *d = Mem_NewX(30000, 1, 1);
 	int j = 0;
 
-	DAT_800c09a8[i] = d;
+	Memories[i] = d;
 	goto test;
 body:
 	*d++ = *s++;

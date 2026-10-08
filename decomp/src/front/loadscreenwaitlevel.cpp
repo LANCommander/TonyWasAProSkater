@@ -55,7 +55,7 @@ extern PadBuffer DAT_800bf104;
 extern int DAT_800bf0d4[]; /* picture x by screen */
 extern int DAT_800bf0e0[]; /* picture y by screen */
 extern int DAT_800d1d80;
-extern uint DAT_800d1a1c; /* GameFade */
+extern uint GameFade; /* GameFade */
 extern int DAT_800d1cb8;  /* START+SELECT quit */
 
 int DAT_800d1ce8;
@@ -122,7 +122,7 @@ extern "C" void FUN_8005d73c(void) {
 			SFX_PlayX(6, 8192, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
-			DAT_800d1a1c = 64;
+			GameFade = 64;
 			DAT_800d1d80 = 1;
 			break;
 		}

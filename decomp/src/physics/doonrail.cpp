@@ -68,7 +68,7 @@ extern SSkater DAT_800a44fc[];
 int Cheat_StatsOverride;
 
 extern int Cheat_Fire;
-extern int DAT_800d1704;
+extern int Cheat_L2KillsBaddies;
 extern int TimeScale;
 extern int TimeScaleSquared;
 extern int BitCount;
@@ -531,7 +531,7 @@ NoSparks:
 	mBalance += mBalance / (GetStat(3) * 3 + 28) * (mRailTime + 60) / 80;
 	mBalance += mBalanceVel * (mRailTime + 60) / 80;
 
-	if (DAT_800d1704)
+	if (Cheat_L2KillsBaddies)
 		mBalance = 0;
 
 	if (!mpColl->x80 && m894 >= -40 && !mpColl->x90 && m894 <= 40)

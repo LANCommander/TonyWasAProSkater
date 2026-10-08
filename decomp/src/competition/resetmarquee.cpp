@@ -43,7 +43,7 @@ extern Comp theCompetition;
 extern int Vblanks, SelectedSkater;
 extern const int GLevel;
 extern Msg Levels[];
-extern char DAT_800a3240[];
+extern char s_s_s_HEAT_d[];
 
 short HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
 
@@ -159,7 +159,7 @@ void Competition_ResetMarquee() {
 
 	c->f124 = 0;
 	c->ptr = 0;
-	FUN_8008b900(c->buf, DAT_800a3240, Levels[GLevel].a, Levels[GLevel].b,
+	FUN_8008b900(c->buf, s_s_s_HEAT_d, Levels[GLevel].a, Levels[GLevel].b,
 	             c->flag + 1);
 
 	c->ptr = c->buf;

@@ -17,7 +17,7 @@ typedef struct {
 extern unsigned char Pad[];
 extern G GPreferences;
 extern Z GameText;
-extern char DAT_800d1d40[];
+extern char s_s_s[];
 
 void FUN_800648c0(int, int, int);
 int VerticalMenu_getSelected(int);
@@ -50,7 +50,7 @@ int FUN_8005ffac(int a) {
 
 			s1 = s3 != 0;
 			GPreferences.f184 = s1;
-			FUN_8008b900(buf, DAT_800d1d40, GameText.f8,
+			FUN_8008b900(buf, s_s_s, GameText.f8,
 			             s1 ? GameText.f0 : GameText.f4);
 			VerticalMenu_setString(a, 3, buf);
 		}
@@ -62,7 +62,7 @@ int FUN_8005ffac(int a) {
 				SFX_PlayX(144, 0x2000, 0);
 
 			GPreferences.f188 = s1;
-			FUN_8008b900(buf, DAT_800d1d40, GameText.fc,
+			FUN_8008b900(buf, s_s_s, GameText.fc,
 			             s1 ? GameText.f0 : GameText.f4);
 			VerticalMenu_setString(a, 4, buf);
 		}

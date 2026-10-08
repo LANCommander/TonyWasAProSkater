@@ -10,24 +10,24 @@ struct O {
 	struct VT *vt;
 };
 
-struct O *DAT_800d21d0;
-struct O *DAT_800d21d4;
+struct O *Tri1;
+struct O *Tri2;
 struct O *pVertMenu;
 
 void FUN_80011150(void) {
-	struct O *o = DAT_800d21d0;
+	struct O *o = Tri1;
 
 	if (o)
 		o->vt->fn((char *)o + o->vt->off, 3);
 
-	o = DAT_800d21d4;
+	o = Tri2;
 
 	if (o)
 		o->vt->fn((char *)o + o->vt->off, 3);
 
 	o = pVertMenu;
-	DAT_800d21d4 = 0;
-	DAT_800d21d0 = 0;
+	Tri2 = 0;
+	Tri1 = 0;
 
 	if (o)
 		o->vt->fn((char *)o + o->vt->off, 3);

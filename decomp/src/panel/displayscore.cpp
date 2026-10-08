@@ -41,7 +41,7 @@ extern int GVInfo1[];
 extern int Cheat_Fire;
 extern int GGame;
 extern int DAT_800d1798;
-extern int DAT_800d1790;
+extern int GStartTime;
 extern int OT_entry;
 extern Sprite *pScoreSprite;
 extern Sprite *pBarSprite;
@@ -49,8 +49,8 @@ extern CBruce *GSkater;
 extern int GLevel;
 extern volatile unsigned Xblanks;
 extern int GHorseLetters[2];
-extern char DAT_800d1e80[];
-extern char DAT_800d1e88[];
+extern char s_Yowza[];
+extern char s_ld_800d1e88[];
 extern SLevelInfo Levels[];
 
 void Horse_DisplayWords(int *);
@@ -166,7 +166,7 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 		char score[15];
 
 		if (pBruce->Score > 999999) {
-			FUN_8008b900(score, DAT_800d1e80, pBruce->Score);
+			FUN_8008b900(score, s_Yowza, pBruce->Score);
 			Mess_SetRGB((Xblanks % 20) * 12, 100, 100, 0);
 		} else {
 			Mess_SetRGB(128, 128, 128, 0);
@@ -179,7 +179,7 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 					GraffitiColor(pBruce);
 				}
 
-				FUN_8008b900(score, DAT_800d1e88, Value);
+				FUN_8008b900(score, s_ld_800d1e88, Value);
 			}
 		}
 
@@ -188,5 +188,5 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 		Mess_DrawPanelText(xpos + 125, ypos - 4, score, 0, 0, 256);
 	}
 
-	FUN_8001f138(DAT_800d1790);
+	FUN_8001f138(GStartTime);
 }

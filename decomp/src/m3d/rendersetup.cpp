@@ -72,7 +72,7 @@ extern SScreen *pDoubleBuffer;
 extern DR_AREA *pPoly;
 extern int EnvRegions;
 extern int EnvRegions_4;
-extern uchar DAT_800d1a14;
+extern uchar CurrentObjFileRegion;
 extern int CurrentWaterLevel;
 
 int XblanksNow, XblanksThen, FrameNo;
@@ -202,8 +202,8 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot) {
 	RefMapU0V0 = pTex->f0 | (pTex->f1 << 8);
 	M3d_PreprocessPulsingColours(EnvRegions);
 	M3d_PreprocessPulsingColours(EnvRegions_4);
-	M3d_PreprocessPulsingColours(DAT_800d1a14);
-	M3d_PreprocessWibblyTextures(DAT_800d1a14);
+	M3d_PreprocessPulsingColours(CurrentObjFileRegion);
+	M3d_PreprocessWibblyTextures(CurrentObjFileRegion);
 
 	WaterNormal.vx = -pCurrentCamera->Transform.m[1][0];
 	WaterNormal.vy = -pCurrentCamera->Transform.m[1][1];

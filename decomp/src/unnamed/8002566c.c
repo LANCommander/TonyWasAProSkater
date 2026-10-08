@@ -20,11 +20,11 @@ extern struct GA GCareer;
 extern short ApocalypseViewport_c[], LeftViewport_c[], RightViewport_c[], TopViewport_c[], BottomViewport_c[],
     TopLeftViewport_c[], BottomRightViewport_c[], TopLeftBigViewport_c[], BottomRightBigViewport_c[];
 extern int SelectedSkater;
-extern char DAT_800d1ff0;
+extern char InShell;
 extern int DAT_800d1f14, DAT_800d1f18;
 
 int SelectedSkater2, EndCode, TTime, EveryOther, XFrames, GNumberOfPlayers,
-    GState, DAT_800d1790, DAT_800d1794, DAT_800d1798, GClear1, GClear2,
+    GState, GStartTime, GSkaterRegion, DAT_800d1798, GClear1, GClear2,
     XFramesShifted, DAT_800d183c, DAT_800d1840, LastXblanks;
 
 extern volatile int Vblanks, Xblanks;
@@ -95,7 +95,7 @@ void FUN_8002566c(void) {
 	XFrames = 0;
 	TTime = 0;
 	EveryOther = 0;
-	DAT_800d1ff0 = 0;
+	InShell = 0;
 	LastXblanks = Xblanks;
 	Pad_ClearAll();
 
@@ -107,7 +107,7 @@ void FUN_8002566c(void) {
 	Redbook_InitialRand(0x12a6cc58);
 	FUN_8007ef30();
 
-	DAT_800d1794 = Mess_LoadFont__FPciii("time.fnt", -1, -1, 0);
+	GSkaterRegion = Mess_LoadFont__FPciii("time.fnt", -1, -1, 0);
 	DAT_800d1798 = Mess_LoadFont__FPciii("score.fnt", -1, -1, 0);
-	DAT_800d1790 = Mess_LoadFont__FPciii("ingame1.fnt", 2, 2, -1);
+	GStartTime = Mess_LoadFont__FPciii("ingame1.fnt", 2, 2, -1);
 }

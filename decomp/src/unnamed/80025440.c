@@ -3,10 +3,10 @@
 extern int GamePaused;
 extern int Xblanks;
 extern int DAT_800a7214[];
-extern char DAT_800d2580[], DAT_800d1754[];
+extern char DAT_800d2580[], s_d_FPS[];
 
-int DAT_800d1750, LastXblanks, DAT_800d1720, TimeScale, XFramesShifted, XFrames,
-    TimeScaleSquared, DAT_800d1718, DAT_800d2230, GameFrozen;
+int DAT_800d1750, LastXblanks, Cheat_SlowMo, TimeScale, XFramesShifted, XFrames,
+    TimeScaleSquared, Cheat_FPS, DAT_800d2230, GameFrozen;
 
 int FUN_8008b900(char *, char *, int);
 void Font_String(unsigned short, unsigned short, char *, unsigned char,
@@ -42,7 +42,7 @@ int FUN_80025440(void) {
 	if (GamePaused == 0) {
 		TimeScale = (a1 << 8) / 6;
 
-		if (DAT_800d1720)
+		if (Cheat_SlowMo)
 			TimeScale = TimeScale / 4;
 
 		XFramesShifted = XFramesShifted + TimeScale * 2;
@@ -50,9 +50,9 @@ int FUN_80025440(void) {
 		TimeScaleSquared = (TimeScale * TimeScale) >> 8;
 	}
 
-	if (DAT_800d1718) {
+	if (Cheat_FPS) {
 		DAT_800d2230 = (DAT_800d2230 + 10) & 127;
-		FUN_8008b900(DAT_800d2580, DAT_800d1754, s1);
+		FUN_8008b900(DAT_800d2580, s_d_FPS, s1);
 
 		if (GameFrozen == 0) {
 			if (s1 >= 25)

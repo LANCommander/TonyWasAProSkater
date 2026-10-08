@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","DAT_800a208c":"0x800a208c","DAT_800a20a0":"0x800a20a0","FileIO_Open__FPCc":"0x8004c8a4","Mem_NewX__FUiii":"0x8004d068","FileIO_Load__FPv":"0x8004cb10","FileIO_Sync__Fv":"0x8004cdd0","FUN_8008c190":"0x8008c190","Load8BitBMP2__FPcPPcPiT2PUs":"0x800613cc"}
+{"gp":"0x800d1080","s_File_s_not_found":"0x800a208c","s_Not_enough_memory_to_load_s":"0x800a20a0","FileIO_Open__FPCc":"0x8004c8a4","Mem_NewX__FUiii":"0x8004d068","FileIO_Load__FPv":"0x8004cb10","FileIO_Sync__Fv":"0x8004cdd0","FUN_8008c190":"0x8008c190","Load8BitBMP2__FPcPPcPiT2PUs":"0x800613cc"}

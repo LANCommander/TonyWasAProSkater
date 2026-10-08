@@ -25,9 +25,9 @@ extern SDB *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 
-volatile ushort DAT_800d220a;
-volatile ushort DAT_800d220e;
-volatile ushort DAT_800d2212;
+volatile ushort CurrentR_2;
+volatile ushort CurrentG_2;
+volatile ushort CurrentB_2;
 
 void Flash_Display() {
 	if (FlashCountdown || Fading) {
@@ -40,7 +40,7 @@ void Flash_Display() {
 			pPoly = newppoly;
 			setPolyF4(aPoly);
 			setSemiTrans(aPoly, 1);
-			setRGB0(aPoly, DAT_800d220a, DAT_800d220e, DAT_800d2212);
+			setRGB0(aPoly, CurrentR_2, CurrentG_2, CurrentB_2);
 
 			aPoly->x0 = 0;
 			aPoly->x1 = 512;

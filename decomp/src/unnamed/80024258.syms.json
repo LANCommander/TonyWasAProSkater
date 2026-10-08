@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","DAT_800a5398":"0x800a5398","DAT_800d1a48":"0x800d1a48","DAT_800d1e28":"0x800d1e28","GNumberOfPlayers":"0x800d1780","DAT_800d177c":"0x800d177c"}
+{"gp":"0x800d1080","Levels":"0x800a5398","pDoubleBuffer":"0x800d1a48","GLevel":"0x800d1e28","GNumberOfPlayers":"0x800d1780","PolyBufferEnd":"0x800d177c"}

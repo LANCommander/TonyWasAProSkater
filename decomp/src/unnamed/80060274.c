@@ -16,7 +16,7 @@ typedef struct {
 extern T DAT_800a1df8;
 extern Q GameText;
 extern D GPreferences;
-extern char DAT_800d1d40[], DAT_800a1d2c[], DAT_800a1bd4[];
+extern char s_s_s[], s_options_bmp[], s_main_h_bmp[];
 
 int DAT_800d1d28;
 
@@ -41,7 +41,7 @@ int FUN_80060274(int a) {
 
 	FUN_8005c97c(11);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(DAT_800a1d2c));
+	FUN_80061714(FUN_8005ca3c(s_options_bmp));
 
 	for (;;) {
 		t = DAT_800a1df8;
@@ -52,11 +52,11 @@ int FUN_80060274(int a) {
 		k[4] = 0;
 		k[5] = 0;
 		k[6] = 0;
-		FUN_8008b900(A, DAT_800d1d40, GameText.f8,
+		FUN_8008b900(A, s_s_s, GameText.f8,
 		             GPreferences.f184 ? GameText.f0 : GameText.f4);
 
 		t.w[3] = (int)A;
-		FUN_8008b900(B, DAT_800d1d40, GameText.fc,
+		FUN_8008b900(B, s_s_s, GameText.fc,
 		             GPreferences.f188 ? GameText.f0 : GameText.f4);
 
 		t.w[4] = (int)B;
@@ -65,7 +65,7 @@ int FUN_80060274(int a) {
 		if (v == -1 || v == 87) {
 			FUN_8005c97c(0);
 			FUN_8005ca64();
-			FUN_80061714(FUN_8005ca3c(DAT_800a1bd4));
+			FUN_80061714(FUN_8005ca3c(s_main_h_bmp));
 
 			v = -1;
 		} else {

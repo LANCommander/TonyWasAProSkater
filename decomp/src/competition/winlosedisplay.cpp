@@ -82,14 +82,14 @@ extern SCareer GCareer;
 extern SGame *GSkater;
 extern int GLevel;
 extern char *GameText_180[];
-extern char DAT_800a3328[];
-extern char DAT_800a333c[];
-extern char DAT_800a3350[];
-extern char DAT_800a3364[];
-extern char DAT_800a3370[];
-extern char DAT_800a3380[];
-extern char DAT_800a3390[];
-extern char DAT_800d1fcc[];
+extern char s_You_win_the_Gold[];
+extern char s_You_win_the_Silver[];
+extern char s_You_win_the_Bronze[];
+extern char s_You_lose[];
+extern char s_s_1st_place[];
+extern char s_s_2nd_place[];
+extern char s_s_3rd_place[];
+extern char s_dth[];
 
 ushort FIRST_PLACE;
 ushort SECOND_PLACE;
@@ -211,7 +211,7 @@ void Competition_WinLoseDisplay() {
 
 	switch (our_placing) {
 		case 0:
-			Mess_DrawText__FiiPCciUiib(256, 40, DAT_800a3328, 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(256, 40, s_You_win_the_Gold, 0, 0, 256, 0);
 
 			if (!c->pMedal) {
 				Career_GiveMedal__Fi10EMedalType(GLevel, 5);
@@ -228,7 +228,7 @@ void Competition_WinLoseDisplay() {
 
 			break;
 		case 1:
-			Mess_DrawText__FiiPCciUiib(256, 40, DAT_800a333c, 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(256, 40, s_You_win_the_Silver, 0, 0, 256, 0);
 
 			if (!c->pMedal) {
 				Career_GiveMedal__Fi10EMedalType(GLevel, 6);
@@ -244,7 +244,7 @@ void Competition_WinLoseDisplay() {
 
 			break;
 		case 2:
-			Mess_DrawText__FiiPCciUiib(256, 40, DAT_800a3350, 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(256, 40, s_You_win_the_Bronze, 0, 0, 256, 0);
 
 			if (!c->pMedal) {
 				Career_GiveMedal__Fi10EMedalType(GLevel, 7);
@@ -270,7 +270,7 @@ void Competition_WinLoseDisplay() {
 				c->SoundDone = 1;
 			}
 
-			Mess_DrawText__FiiPCciUiib(256, 40, DAT_800a3364, 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(256, 40, s_You_lose, 0, 0, 256, 0);
 
 			{
 				int i;
@@ -289,14 +289,14 @@ void Competition_WinLoseDisplay() {
 
 			Mess_SetRGB(182, 132, 36, 0);
 			Mess_SetScale(160);
-			FUN_8008b900(buf, DAT_800a3370, Stats[c->SkaterId[first]].pName);
+			FUN_8008b900(buf, s_s_1st_place, Stats[c->SkaterId[first]].pName);
 			Mess_DrawText__FiiPCciUiib(256, 60, buf, 0, 0, 256, 0);
-			FUN_8008b900(buf, DAT_800a3380, Stats[c->SkaterId[second]].pName);
+			FUN_8008b900(buf, s_s_2nd_place, Stats[c->SkaterId[second]].pName);
 			Mess_DrawText__FiiPCciUiib(256, 70, buf, 0, 0, 256, 0);
-			FUN_8008b900(buf, DAT_800a3390, Stats[c->SkaterId[third]].pName);
+			FUN_8008b900(buf, s_s_3rd_place, Stats[c->SkaterId[third]].pName);
 			Mess_DrawText__FiiPCciUiib(256, 80, buf, 0, 0, 256, 0);
 			Mess_SetRGB(122, 122, 122, 0);
-			FUN_8008b900(buf, DAT_800d1fcc, our_placing + 1);
+			FUN_8008b900(buf, s_dth, our_placing + 1);
 			Mess_SetScale(384);
 			Mess_DrawText__FiiPCciUiib(256, 120, Stats[c->SkaterId[c->Player]].pName, 0, 0, 256, 0);
 			Mess_DrawText__FiiPCciUiib(256, 150, buf, 0, 0, 256, 0);

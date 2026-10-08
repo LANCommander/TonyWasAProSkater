@@ -21,7 +21,7 @@
    The whole dispatcher is a goto loop (`restart:` ... `goto restart`), not for(;;): with no loop
    notes the pseudos' refs aren't loop-weighted, so local-alloc gives the ++GAutoLevel == 9
    counter v0 ahead of the short-lived constant 9 (as retail). The Competition_Init test is the `&&`
-   form `!DAT_800d1de8 && Levels[choice].isCompetition == 1`, which expands as (base+12)+idx and
+   form `!GVideoReplay && Levels[choice].isCompetition == 1`, which expands as (base+12)+idx and
    gives retail's base-first `addu base,base,idx`. */
 enum EPackInitType { PACK_0, PACK_1 };
 
@@ -59,12 +59,12 @@ void Init_Restart(EPackInitType, int);
 void Competition_Init();
 
 extern "C" {
-	extern SVideoRestart DAT_800a42f4;    /* GVideoRestart */
-	extern SLevel DAT_800a5398[];         /* Levels */
+	extern SVideoRestart GVideoRestart;    /* GVideoRestart */
+	extern SLevel Levels[];         /* Levels */
 	extern unsigned char DAT_800a7068[];  /* last 1P skater */
 	extern SDoubleBuffer DoubleBuffer[2]; /* DB */
-	extern SName DAT_800bf0c4;            /* DemoName */
-	extern int DAT_800d13d8;              /* GRollCredits */
+	extern SName DemoName;            /* DemoName */
+	extern int GRollCredits;              /* GRollCredits */
 	extern int DAT_800d16a4;              /* GGame */
 	extern int GAutoTest;              /* autotest */
 	extern int GAutoPlayer1;
@@ -72,20 +72,20 @@ extern "C" {
 	extern int GAutoLevel;
 	extern int GAutoGame;
 	extern int SelectedSkater2; /* 2nd player's skater */
-	extern int DAT_800d1780; /* GNumberOfPlayers */
+	extern int GNumberOfPlayers; /* GNumberOfPlayers */
 	extern int DAT_800d1d80;
 	extern int DAT_800d1dc0;
-	extern int DAT_800d1de8;    /* GVideoReplay */
-	extern int DAT_800d1e28;    /* GLevel */
-	extern SName DAT_800a192c;  /* "demoA.rec" */
-	extern char DAT_800a1938[]; /* DAT_800a1938 */
-	extern char DAT_800a1944[]; /* DAT_800a1944 */
-	extern char DAT_800a1950[]; /* DAT_800a1950 */
-	extern char DAT_800a195c[]; /* DAT_800a195c */
+	extern int GVideoReplay;    /* GVideoReplay */
+	extern int GLevel;    /* GLevel */
+	extern SName s_demoA_rec;  /* "demoA.rec" */
+	extern char s_mainf_fnt_800a1938[]; /* s_mainf_fnt_800a1938 */
+	extern char s_Start_1_fnt[]; /* s_Start_1_fnt */
+	extern char s_stats2_fnt_800a1950[]; /* s_stats2_fnt_800a1950 */
+	extern char s_shell_vab[]; /* s_shell_vab */
 
 	int StartScreen; /* screen to return to */
 	short DAT_800d1ca0;
-	int DAT_800d1cb0; /* DemoTimer */
+	int DemoTimer; /* DemoTimer */
 	int DAT_800d1cb4;
 	int DAT_800d1cb8; /* soft reset */
 
@@ -150,7 +150,7 @@ restart:
 		FUN_8005c678();
 	}
 
-	DAT_800bf0c4 = DAT_800a192c;
+	DemoName = s_demoA_rec;
 	DAT_800d1cb4 = 1;
 	Front_ClearGVideoRestartData();
 	Career_Init__Fv();
@@ -159,8 +159,8 @@ top:
 	FUN_8005c8ac();
 
 	DAT_800d1dc0 = 1;
-	DAT_800d1780 = 1;
-	DAT_800d1cb0 = 1600;
+	GNumberOfPlayers = 1;
+	DemoTimer = 1600;
 	FUN_800642d4(2);
 
 	DAT_800d1ca0 = 0;
@@ -172,12 +172,12 @@ top:
 		SelectedSkater2 = GAutoPlayer2;
 
 		if (!GAutoGame) {
-			DAT_800d1780 = 1;
+			GNumberOfPlayers = 1;
 			DAT_800d16a4 = 1;
 			players = 1;
 		} else {
 			players = 2;
-			DAT_800d1780 = 2;
+			GNumberOfPlayers = 2;
 			DAT_800d16a4 = 8;
 		}
 
@@ -199,7 +199,7 @@ top:
 
 	if (StartScreen) {
 		FUN_8005c734(157);
-		Mess_LoadFont(DAT_800a1938, -1, -1, -1);
+		Mess_LoadFont(s_mainf_fnt_800a1938, -1, -1, -1);
 		Mess_SetRGB(128, 128, 128, 0);
 		Mess_SetFontScale(256);
 		Mess_SetTextJustify__FUc(1);
@@ -250,17 +250,17 @@ top:
 
 				goto level;
 			case 3:
-				DAT_800a42f4.NumSkaters = 0;
+				GVideoRestart.NumSkaters = 0;
 				menu = 96;
 				FUN_8005c8dc(0);
 				goto mainmenu;
 			case 4:
-				DAT_800a42f4.NumSkaters = 0;
+				GVideoRestart.NumSkaters = 0;
 				menu = 0;
 				FUN_8005c8dc(0);
 				goto mainmenu;
 			case 5:
-				DAT_800a42f4.NumSkaters = 0;
+				GVideoRestart.NumSkaters = 0;
 				menu = 0;
 				FUN_8005c8dc(0);
 				goto mainmenu;
@@ -268,8 +268,8 @@ top:
 				if (players == 1)
 					FUN_800642d4(1);
 
-				choice = DAT_800d1e28;
-				Mess_SetCurrentFont(DAT_800a1938);
+				choice = GLevel;
+				Mess_SetCurrentFont(s_mainf_fnt_800a1938);
 				Mess_UnloadFont();
 				FUN_8005cae8();
 				goto launch;
@@ -284,10 +284,10 @@ title:
 	if (DAT_800d1cb8)
 		goto reset;
 
-	Mess_SetCurrentFont(DAT_800a1944);
+	Mess_SetCurrentFont(s_Start_1_fnt);
 	Mess_UnloadFont();
 
-	if (!DAT_800d1cb0)
+	if (!DemoTimer)
 		goto demo;
 
 	menu = 0;
@@ -300,7 +300,7 @@ mainmenu:
 	if (DAT_800d1cb8)
 		goto reset;
 
-	if (!DAT_800d1cb0)
+	if (!DemoTimer)
 		goto demo;
 
 	Options_SetPreferences__Fv();
@@ -356,19 +356,19 @@ mainmenu:
 			goto skater2;
 		case 1553:
 			mode = 2;
-			choice = DAT_800a42f4.Level;
-			skater = DAT_800a42f4.Skater;
+			choice = GVideoRestart.Level;
+			skater = GVideoRestart.Skater;
 			StartScreen = 3;
-			DAT_800d16a4 = DAT_800a42f4.GGame;
+			DAT_800d16a4 = GVideoRestart.GGame;
 			goto replay;
 		case 1554:
 			players = 2;
 			mode = 2;
-			choice = DAT_800a42f4.Level;
-			skater = DAT_800a42f4.Skater2;
+			choice = GVideoRestart.Level;
+			skater = GVideoRestart.Skater2;
 			StartScreen = 3;
-			DAT_800d16a4 = DAT_800a42f4.GGame;
-			SelectedSkater2 = DAT_800a42f4.Skater;
+			DAT_800d16a4 = GVideoRestart.GGame;
+			SelectedSkater2 = GVideoRestart.Skater;
 		replay:
 			FUN_8005ca10();
 			FUN_8005cae8();
@@ -392,7 +392,7 @@ mainmenu:
 skater1:
 	FUN_800642d4(1);
 
-	DAT_800d1780 = 1;
+	GNumberOfPlayers = 1;
 	skater = FUN_80059794();
 
 	if (DAT_800d1cb8)
@@ -412,9 +412,9 @@ skater2:
 	if (DAT_800d1cb8)
 		goto reset;
 
-	Mess_SetCurrentFont(DAT_800a1950);
+	Mess_SetCurrentFont(s_stats2_fnt_800a1950);
 	Mess_UnloadFont();
-	Mess_SetCurrentFont(DAT_800a1938);
+	Mess_SetCurrentFont(s_mainf_fnt_800a1938);
 
 	if (skater == -1)
 		goto mainmenu;
@@ -452,7 +452,7 @@ level:
 			goto board2;
 	}
 
-	Mess_SetCurrentFont(DAT_800a1938);
+	Mess_SetCurrentFont(s_mainf_fnt_800a1938);
 	Mess_UnloadFont();
 	FUN_8005cae8();
 launch:
@@ -460,10 +460,10 @@ launch:
 	FUN_8005ca10();
 	FUN_8005d35c(choice, mode, skater);
 
-	DAT_800d1780 = players;
+	GNumberOfPlayers = players;
 	DAT_800d1dc0 = 0;
 
-	if (!DAT_800d1de8 && DAT_800a5398[choice].isCompetition == 1)
+	if (!GVideoReplay && Levels[choice].isCompetition == 1)
 		Competition_Init();
 
 	FUN_8005c85c();
@@ -471,11 +471,11 @@ launch:
 	Init_Restart(PACK_0, 16);
 	FUN_800491e8();
 
-	DAT_800d1780 = 1;
+	GNumberOfPlayers = 1;
 	Init_Restart(PACK_1, 16);
 	FUN_8006b01c(0);
 	FUN_800161d8();
-	FUN_8004b09c(DAT_800a195c);
+	FUN_8004b09c(s_shell_vab);
 	FUN_800171f0();
 
 	if (DAT_800d1cb8) {
@@ -483,25 +483,25 @@ launch:
 		goto restart;
 	}
 
-	if (!DAT_800d13d8)
+	if (!GRollCredits)
 		goto top;
 
-	DAT_800d13d8 = 0;
+	GRollCredits = 0;
 	choice = 101;
 	goto credits;
 
 demo:
 	do {
-		FUN_80014ba4(&DAT_800bf0c4);
+		FUN_80014ba4(&DemoName);
 	} while (0);
 
 	mode = 2;
 	menu = 16;
-	players = DAT_800a42f4.NumSkaters;
-	skater = DAT_800a42f4.Skater;
-	choice = DAT_800a42f4.Level;
-	SelectedSkater2 = DAT_800a42f4.Skater2;
-	DAT_800d16a4 = DAT_800a42f4.GGame;
+	players = GVideoRestart.NumSkaters;
+	skater = GVideoRestart.Skater;
+	choice = GVideoRestart.Level;
+	SelectedSkater2 = GVideoRestart.Skater2;
+	DAT_800d16a4 = GVideoRestart.GGame;
 	FUN_8005cae8();
 
 	StartScreen = 4;

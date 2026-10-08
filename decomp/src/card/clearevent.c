@@ -1,12 +1,12 @@
 /* _clear_event__Fv (0x80014f8c) */
 #include "names.h"
-int DAT_800d139c, DAT_800d13a0, DAT_800d13a4, DAT_800d13a8;
+int ev0, ev1, ev2, ev3;
 
 int FUN_8008eb08(int);
 
 void _clear_event(void) {
-	FUN_8008eb08(DAT_800d139c);
-	FUN_8008eb08(DAT_800d13a0);
-	FUN_8008eb08(DAT_800d13a4);
-	FUN_8008eb08(DAT_800d13a8);
+	FUN_8008eb08(ev0);
+	FUN_8008eb08(ev1);
+	FUN_8008eb08(ev2);
+	FUN_8008eb08(ev3);
 }

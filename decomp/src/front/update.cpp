@@ -194,89 +194,89 @@ class FallingTextEffect {
 	int handleComplete();
 };
 
-extern SControl DAT_800c0a48[2];         /* Pad */
-extern SVideoInfo DAT_800bf318;          /* GVInfo1 */
-extern SVideoInfo DAT_800bf3d8;          /* GVInfo2 */
-extern SLevelInfo DAT_800a5398[];        /* Levels */
-extern SCareer DAT_800a6844;             /* GCareer */
-extern SPreferences DAT_800a4118;        /* GPreferences */
-extern char *DAT_800a5d5c[];             /* GameText */
-extern char DAT_800a5d2c[];              /* soundBuf */
-extern char DAT_800a5d44[];              /* musicBuf */
-extern char *DAT_800a8788[];             /* CheatRestarts */
-extern char *DAT_800a87d8[];             /* HorseRestarts */
-extern CTape *DAT_800a5b14[];            /* GTape */
+extern SControl Pad[2];         /* Pad */
+extern SVideoInfo GVInfo1;          /* GVInfo1 */
+extern SVideoInfo GVInfo2;          /* GVInfo2 */
+extern SLevelInfo Levels[];        /* Levels */
+extern SCareer GCareer;             /* GCareer */
+extern SPreferences GPreferences;        /* GPreferences */
+extern char *GameText[];             /* GameText */
+extern char soundBuf[];              /* soundBuf */
+extern char musicBuf[];              /* musicBuf */
+extern char *CheatRestarts[];             /* CheatRestarts */
+extern char *HorseRestarts[];             /* HorseRestarts */
+extern CTape *GTape[];            /* GTape */
 extern FallingTextEffect DAT_800a5b28[]; /* GHorseFallingText */
-extern char DAT_800d14e0[];
-extern CBruce *DAT_800d19a4;       /* MechList */
-extern CBruce *DAT_800d17c8;       /* GSkater[0] */
+extern char s_de[];
+extern CBruce *MechList;       /* MechList */
+extern CBruce *GSkater;       /* GSkater[0] */
 extern CBruce *DAT_800d17cc;       /* GSkater[1] */
-extern volatile uint DAT_800d1a20; /* Vblanks */
-extern volatile int DAT_800d1a24;  /* Xblanks */
-extern int DAT_800d16e0;           /* EndCode */
-extern int DAT_800d16fc;           /* GameFrozen */
-extern int DAT_800d1780;           /* GNumberOfPlayers */
-extern int DAT_800d1cb0;           /* DemoTimer */
+extern volatile uint Vblanks; /* Vblanks */
+extern volatile int Xblanks;  /* Xblanks */
+extern int EndCode;           /* EndCode */
+extern int GameFrozen;           /* GameFrozen */
+extern int GNumberOfPlayers;           /* GNumberOfPlayers */
+extern int DemoTimer;           /* DemoTimer */
 extern int XFrames;
-extern int DAT_800d1e28; /* GLevel */
-extern int DAT_800d16a4; /* GGame */
-extern int DAT_800d1710; /* Cheat_RestartSkip */
-extern int DAT_800d1fec; /* CheatCheck */
-extern int DAT_800d1784; /* GState */
-extern int DAT_800d1788; /* GSpin */
-extern int DAT_800d17c0; /* GHorseClearInput2 */
-extern int DAT_800d19d8; /* NumCheatRestarts */
-extern int DAT_800d10f8; /* GLoadedCareerIsSaved */
+extern int GLevel; /* GLevel */
+extern int GGame; /* GGame */
+extern int Cheat_RestartSkip; /* Cheat_RestartSkip */
+extern int CheatCheck; /* CheatCheck */
+extern int GState; /* GState */
+extern int GSpin; /* GSpin */
+extern int GHorseClearInput2; /* GHorseClearInput2 */
+extern int NumCheatRestarts; /* NumCheatRestarts */
+extern int GLoadedCareerIsSaved; /* GLoadedCareerIsSaved */
 extern int StartScreen;
-extern int DAT_800d1de8; /* GVideoReplay */
+extern int GVideoReplay; /* GVideoReplay */
 extern int SizeUp;
-extern int DAT_800d17b8; /* GHorseCursorPos */
-extern int DAT_800d17bc; /* GHorseWaitTime */
-extern int DAT_800d17a0; /* GHorseMode */
-extern int DAT_800d17ac; /* GHorseRestart */
-extern int DAT_800d17a4; /* GHorseScore */
-extern int DAT_800d17b0; /* GHorseLetters[0] */
+extern int GHorseCursorPos; /* GHorseCursorPos */
+extern int GHorseWaitTime; /* GHorseWaitTime */
+extern int GHorseMode; /* GHorseMode */
+extern int GHorseRestart; /* GHorseRestart */
+extern int GHorseScore; /* GHorseScore */
+extern int GHorseLetters; /* GHorseLetters[0] */
 extern int GHorseLetters_4; /* GHorseLetters[1] */
-extern int DAT_800d179c; /* GHorsePlayer */
-extern int DAT_800d16cc; /* GHorseWordChosen */
-extern int DAT_800d17a8; /* GHorseDoneStart */
-extern int DAT_800d17e8; /* GClear1 */
-extern int DAT_800d17ec; /* GClear2 */
+extern int GHorsePlayer; /* GHorsePlayer */
+extern int GHorseWordChosen; /* GHorseWordChosen */
+extern int GHorseDoneStart; /* GHorseDoneStart */
+extern int GClear1; /* GClear1 */
+extern int GClear2; /* GClear2 */
 
-EPausedStatus DAT_800d13e8; /* Status */
-int DAT_800d13e4;           /* GSoftResetEnabled */
+EPausedStatus Status; /* Status */
+int GSoftResetEnabled;           /* GSoftResetEnabled */
 int DAT_800d14d8;           /* StartSelectPressed */
 uint DAT_800d14dc;          /* VblanksWhenStartSelectFirstPressed */
-int DAT_800d140c;           /* GamePaused */
-int DAT_800d1410;           /* WobbleAmplitude */
-int DAT_800d1414;           /* WobbleT */
-CMenu *DAT_800d1428;        /* pYesNoMenu */
-CMenu *DAT_800d142c;        /* pESMenu */
-CMenu *DAT_800d1430;        /* pVSMenu */
-CMenu *DAT_800d1434;        /* pVS2Menu */
-CMenu *DAT_800d1438;        /* pVS3Menu */
-CMenu *DAT_800d143c;        /* pEHMenu */
-CMenu *DAT_800d1440;        /* pSoundMenu */
-CMenu *DAT_800d1474;        /* pPausedMenu */
-CMenu *DAT_800d1478;        /* pRestartsMenu */
-int DAT_800d151c;           /* GStart1 */
-int DAT_800d1520;           /* GStart2 */
-int DAT_800d1514;           /* Front_OnTime */
-int DAT_800d13d8;           /* GRollCredits */
-int DAT_800d13dc;           /* GHighScoreLineIndex */
-int DAT_800d13e0;           /* GHighScoreInitialCursorPos */
-int DAT_800d13c4;           /* GHorseContinue */
-int DAT_800d14f4;           /* GHorseSounded */
-int DAT_800d14fc;           /* NextHorseMode */
-int DAT_800d1500;           /* NextHorsePlayer */
-int DAT_800d1504;           /* NextHorseScore */
-int DAT_800d1508;           /* NextHorseRestart */
-int DAT_800d150c;           /* NextHorseLetters[0] */
+int GamePaused;           /* GamePaused */
+int WobbleAmplitude;           /* WobbleAmplitude */
+int WobbleT;           /* WobbleT */
+CMenu *pYesNoMenu;        /* pYesNoMenu */
+CMenu *pESMenu;        /* pESMenu */
+CMenu *pVSMenu;        /* pVSMenu */
+CMenu *pVS2Menu;        /* pVS2Menu */
+CMenu *pVS3Menu;        /* pVS3Menu */
+CMenu *pEHMenu;        /* pEHMenu */
+CMenu *pSoundMenu;        /* pSoundMenu */
+CMenu *pPausedMenu;        /* pPausedMenu */
+CMenu *pRestartsMenu;        /* pRestartsMenu */
+int GStart1;           /* GStart1 */
+int GStart2;           /* GStart2 */
+int Front_OnTime;           /* Front_OnTime */
+int GRollCredits;           /* GRollCredits */
+int GHighScoreLineIndex;           /* GHighScoreLineIndex */
+int GHighScoreInitialCursorPos;           /* GHighScoreInitialCursorPos */
+int GHorseContinue;           /* GHorseContinue */
+int GHorseSounded;           /* GHorseSounded */
+int NextHorseMode;           /* NextHorseMode */
+int NextHorsePlayer;           /* NextHorsePlayer */
+int NextHorseScore;           /* NextHorseScore */
+int NextHorseRestart;           /* NextHorseRestart */
+int NextHorseLetters;           /* NextHorseLetters[0] */
 int NextHorseLetters_4;           /* NextHorseLetters[1] */
-int DAT_800d13cc;           /* SFXLEVEL */
+int SFXLEVEL;           /* SFXLEVEL */
 int XALEVEL;
-int DAT_800d21fc; /* soundVol */
-int DAT_800d2200; /* musicVol */
+int soundVol; /* soundVol */
+int musicVol; /* musicVol */
 
 void Front_GetButtons(int &, int &, int &, int &);
 int Card_CheckStatus(int, int);
@@ -335,23 +335,23 @@ void Front_Update() {
 	int AnyButton;
 	int Start;
 
-	if ((!DAT_800c0a48[0].LeftOne.Pressed || DAT_800d13e8 != STATUS_PAUSEDMENU) &&
-	    DAT_800d13e8 != STATUS_MEMCARDMENUS)
+	if ((!Pad[0].LeftOne.Pressed || Status != STATUS_PAUSEDMENU) &&
+	    Status != STATUS_MEMCARDMENUS)
 		Front_GetButtons(Activated, GoBack, AnyButton, Start);
 
-	if (DAT_800d13e8)
+	if (Status)
 		Card_CheckStatus(0, 0);
 
-	if ((DAT_800d13e4 && DAT_800c0a48[0].Select.Pressed && DAT_800c0a48[0].Start.Pressed) ||
-	    (DAT_800c0a48[1].Select.Pressed && DAT_800c0a48[1].Start.Pressed)) {
+	if ((GSoftResetEnabled && Pad[0].Select.Pressed && Pad[0].Start.Pressed) ||
+	    (Pad[1].Select.Pressed && Pad[1].Start.Pressed)) {
 		if (!DAT_800d14d8) {
 			DAT_800d14d8 = 1;
-			DAT_800d14dc = DAT_800d1a20;
+			DAT_800d14dc = Vblanks;
 		}
 
-		if (DAT_800d1a20 - DAT_800d14dc > 120) {
+		if (Vblanks - DAT_800d14dc > 120) {
 			DAT_800d14d8 = 0;
-			DAT_800d16e0 = 8;
+			EndCode = 8;
 			SwitchOffPauseMode = 1;
 			Horse_Reset();
 		}
@@ -359,21 +359,21 @@ void Front_Update() {
 		DAT_800d14d8 = 0;
 	}
 
-	DAT_800d13e4 = 1;
+	GSoftResetEnabled = 1;
 
-	switch (DAT_800d13e8) {
+	switch (Status) {
 		case STATUS_MEMCARDMENUS:
-			DAT_800d13e8 = Front_MemCardUpdate();
+			Status = Front_MemCardUpdate();
 			break;
 
 		case STATUS_NORMAL: {
-			CBruce *pSkater = DAT_800d19a4;
+			CBruce *pSkater = MechList;
 			CBruce *pSkater2 = pSkater->mpNext;
-			SVideoInfo *VInfo = &DAT_800bf318;
+			SVideoInfo *VInfo = &GVInfo1;
 
 			if (VInfo->VideoMode == VIDEO_PLAYBACK && Activated) {
 				VInfo->PlaybackFrozen = 0;
-				DAT_800d16fc = 0;
+				GameFrozen = 0;
 				Video_Stop(pSkater);
 
 				if (pSkater2)
@@ -384,151 +384,151 @@ void Front_Update() {
 			}
 		}
 
-			if ((Start || !DAT_800c0a48[0].Type || (DAT_800d1780 == 2 && !DAT_800c0a48[1].Type)) &&
-			    DAT_800d1cb0) {
-				DAT_800d140c = 1;
-				DAT_800d17c8->m310 = XFrames;
+			if ((Start || !Pad[0].Type || (GNumberOfPlayers == 2 && !Pad[1].Type)) &&
+			    DemoTimer) {
+				GamePaused = 1;
+				GSkater->m310 = XFrames;
 
 				if (DAT_800d17cc)
 					DAT_800d17cc->m310 = XFrames;
 
-				DAT_800d17c8->m314 = XFrames;
+				GSkater->m314 = XFrames;
 
 				if (DAT_800d17cc)
 					DAT_800d17cc->m314 = XFrames;
 
 				Mess_DeleteAll();
-				Pad_ClearTriggers(&DAT_800c0a48[0]);
-				Pad_ClearTriggers(&DAT_800c0a48[1]);
+				Pad_ClearTriggers(&Pad[0]);
+				Pad_ClearTriggers(&Pad[1]);
 
-				DAT_800d1410 = 0;
+				WobbleAmplitude = 0;
 				SFX_Pause();
 				SFX_PlayX(2, 4096, 0);
 				Pad_ActuatorOff(0, 0);
 				Pad_ActuatorOff(0, 1);
 
-				DAT_800d1474 = new CMenu(256, 0, 0, 335, 256, 22);
-				DAT_800d1474->AddEntry(DAT_800a5d5c[96]);
-				DAT_800d1474->AddEntry(
-				    (DAT_800a5398[DAT_800d1e28].mNoHighScores && DAT_800d16a4 == 1)
-				        ? DAT_800a5d5c[30]
-						: DAT_800a5d5c[29]);
-				DAT_800d1474->AddEntry(DAT_800a5d5c[105]);
+				pPausedMenu = new CMenu(256, 0, 0, 335, 256, 22);
+				pPausedMenu->AddEntry(GameText[96]);
+				pPausedMenu->AddEntry(
+				    (Levels[GLevel].mNoHighScores && GGame == 1)
+				        ? GameText[30]
+						: GameText[29]);
+				pPausedMenu->AddEntry(GameText[105]);
 
-				if (!DAT_800d1710)
+				if (!Cheat_RestartSkip)
 					do {
-						DAT_800d1474->EntryOff(DAT_800a5d5c[105]);
+						pPausedMenu->EntryOff(GameText[105]);
 					} while (0);
 
-				DAT_800d1474->AddEntry(DAT_800a5d5c[83]);
+				pPausedMenu->AddEntry(GameText[83]);
 
-				if (DAT_800d16a4 == 7)
-					DAT_800d1474->AddEntry(DAT_800a5d5c[1]);
+				if (GGame == 7)
+					pPausedMenu->AddEntry(GameText[1]);
 				else
-					DAT_800d1474->AddEntry(DAT_800a5d5c[2]);
+					pPausedMenu->AddEntry(GameText[2]);
 
-				DAT_800d1474->CentreY();
+				pPausedMenu->CentreY();
 
-				DAT_800d1474->mY += 13;
+				pPausedMenu->mY += 13;
 
-				if (DAT_800c0a48[0].Type && (DAT_800d1780 == 1 || DAT_800c0a48[1].Type)) {
-					DAT_800d13e8 = STATUS_PAUSEDMENU;
+				if (Pad[0].Type && (GNumberOfPlayers == 1 || Pad[1].Type)) {
+					Status = STATUS_PAUSEDMENU;
 
-					if (DAT_800d151c && DAT_800d1520) {
-						DAT_800d17e8 = 0;
-						DAT_800d17ec = 0;
-					} else if (DAT_800d16a4 != 7) {
-						DAT_800d17e8 = DAT_800d1520;
-						DAT_800d17ec = DAT_800d151c;
+					if (GStart1 && GStart2) {
+						GClear1 = 0;
+						GClear2 = 0;
+					} else if (GGame != 7) {
+						GClear1 = GStart2;
+						GClear2 = GStart1;
 					}
 				} else {
-					DAT_800d13e8 = STATUS_PADUNPLUGGED;
+					Status = STATUS_PADUNPLUGGED;
 				}
 			}
 
 			break;
 
 		case STATUS_PAUSEDMENU:
-			if (!DAT_800d140c)
+			if (!GamePaused)
 				SwitchOffPauseMode = 1;
 
-			if (!DAT_800c0a48[0].Type || (DAT_800d1780 == 2 && !DAT_800c0a48[1].Type))
-				DAT_800d13e8 = STATUS_PADUNPLUGGED;
+			if (!Pad[0].Type || (GNumberOfPlayers == 2 && !Pad[1].Type))
+				Status = STATUS_PADUNPLUGGED;
 
-			if (DAT_800c0a48[0].LeftOne.Pressed) {
+			if (Pad[0].LeftOne.Pressed) {
 				if (Shell_DoCheatProcessing()) {
-					DAT_800d1410 = 32;
-					DAT_800d1414 = 0;
+					WobbleAmplitude = 32;
+					WobbleT = 0;
 				}
 
-				Pad_ClearTriggers(&DAT_800c0a48[0]);
-				Pad_ClearTriggers(&DAT_800c0a48[1]);
+				Pad_ClearTriggers(&Pad[0]);
+				Pad_ClearTriggers(&Pad[1]);
 				break;
 			}
 
-			DAT_800d1fec = 0;
+			CheatCheck = 0;
 
-			if (DAT_800d1710)
+			if (Cheat_RestartSkip)
 				do {
-					DAT_800d1474->EntryOn(DAT_800a5d5c[105]);
+					pPausedMenu->EntryOn(GameText[105]);
 				} while (0);
 			else
 				do {
-					DAT_800d1474->EntryOff(DAT_800a5d5c[105]);
+					pPausedMenu->EntryOff(GameText[105]);
 				} while (0);
 
-			DAT_800d1474->Update();
+			pPausedMenu->Update();
 
 			if (Activated) {
-				if (DAT_800d1474->ChoiceIs(DAT_800a5d5c[2])) {
+				if (pPausedMenu->ChoiceIs(GameText[2])) {
 					SoundEffect = 5;
 					Game_Over();
 
 					SwitchOffPauseMode = 1;
-					DAT_800d1784 = 1;
-					DAT_800d1788 = 1;
+					GState = 1;
+					GSpin = 1;
 				}
 
-				if (DAT_800d1474->ChoiceIs(DAT_800a5d5c[96])) {
+				if (pPausedMenu->ChoiceIs(GameText[96])) {
 					SoundEffect = 5;
 					SwitchOffPauseMode = 1;
 				}
 
-				if (DAT_800d1474->ChoiceIs(
-				        (DAT_800a5398[DAT_800d1e28].mNoHighScores && DAT_800d16a4 == 1)
-				            ? DAT_800a5d5c[30]
-							: DAT_800a5d5c[29])) {
+				if (pPausedMenu->ChoiceIs(
+				        (Levels[GLevel].mNoHighScores && GGame == 1)
+				            ? GameText[30]
+							: GameText[29])) {
 					SwitchOffPauseMode = 1;
 					Horse_Reset();
 
-					DAT_800d16e0 = 7;
+					EndCode = 7;
 					Competition_Init();
 				}
 
-				if (DAT_800d1474->ChoiceIs(DAT_800a5d5c[105])) {
+				if (pPausedMenu->ChoiceIs(GameText[105])) {
 					SoundEffect = 5;
-					DAT_800d13e8 = STATUS_SKIPTORESTART;
+					Status = STATUS_SKIPTORESTART;
 				}
 
-				if (DAT_800d1474->ChoiceIs(DAT_800a5d5c[98])) {
+				if (pPausedMenu->ChoiceIs(GameText[98])) {
 					SoundEffect = 5;
-					DAT_800d1428->SetLine(DAT_800d1428->FindEntry(DAT_800a5d5c[110]));
+					pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText[110]));
 
-					DAT_800d13e8 = STATUS_REALLYQUIT;
+					Status = STATUS_REALLYQUIT;
 				}
 
-				if (DAT_800d1474->ChoiceIs(DAT_800a5d5c[83])) {
+				if (pPausedMenu->ChoiceIs(GameText[83])) {
 					SoundEffect = 5;
-					DAT_800d13e8 = STATUS_SETSOUNDLEVELS;
+					Status = STATUS_SETSOUNDLEVELS;
 					FUN_8008f19c(0, 0, -1);
 					FUN_8008f0ec(480);
 				}
 
-				if (DAT_800d1474->ChoiceIs(DAT_800a5d5c[1])) {
+				if (pPausedMenu->ChoiceIs(GameText[1])) {
 					SoundEffect = 5;
-					DAT_800d1514 = 0;
-					DAT_800d17c0 = 0;
-					DAT_800d13e8 = STATUS_ENDINGSCREEN;
+					Front_OnTime = 0;
+					GHorseClearInput2 = 0;
+					Status = STATUS_ENDINGSCREEN;
 				}
 			}
 
@@ -541,58 +541,58 @@ void Front_Update() {
 			break;
 
 		case STATUS_SKIPTORESTART:
-			if (!DAT_800d1478) {
+			if (!pRestartsMenu) {
 				int i;
 
-				DAT_800d1478 = new CMenu(256, 0, 0, 335, 256, 22);
-				DAT_800d1478->mLineSep = 18;
+				pRestartsMenu = new CMenu(256, 0, 0, 335, 256, 22);
+				pRestartsMenu->mLineSep = 18;
 
-				for (i = 0; i < DAT_800d19d8; i++) {
+				for (i = 0; i < NumCheatRestarts; i++) {
 					char head[4];
 
-					head[0] = DAT_800a8788[i][0];
-					head[1] = DAT_800a8788[i][1];
-					head[2] = DAT_800a8788[i][2];
+					head[0] = CheatRestarts[i][0];
+					head[1] = CheatRestarts[i][1];
+					head[2] = CheatRestarts[i][2];
 					head[3] = 0;
 
-					if (!Utils_CompareStrings(head, DAT_800d14e0, -1))
-						DAT_800d1478->AddEntry(DAT_800a8788[i]);
+					if (!Utils_CompareStrings(head, s_de, -1))
+						pRestartsMenu->AddEntry(CheatRestarts[i]);
 				}
 
-				DAT_800d1478->CentreY();
+				pRestartsMenu->CentreY();
 			}
 
-			DAT_800d1478->Update();
+			pRestartsMenu->Update();
 
 			if (Activated) {
-				Trig_SetRestart(DAT_800d1478->mEntry[DAT_800d1478->mLine].pString);
-				delete DAT_800d1478;
+				Trig_SetRestart(pRestartsMenu->mEntry[pRestartsMenu->mLine].pString);
+				delete pRestartsMenu;
 				SwitchOffPauseMode = 1;
-				DAT_800d1478 = 0;
-				DAT_800d16e0 = 7;
+				pRestartsMenu = 0;
+				EndCode = 7;
 				SFX_PlayX(5, 8192, 0);
 			}
 
 			if (GoBack) {
-				delete DAT_800d1478;
-				DAT_800d1478 = 0;
-				DAT_800d13e8 = STATUS_PAUSEDMENU;
+				delete pRestartsMenu;
+				pRestartsMenu = 0;
+				Status = STATUS_PAUSEDMENU;
 				SFX_PlayX(2, 8192, 0);
 			}
 
 			break;
 
 		case STATUS_REALLYQUIT:
-			DAT_800d1428->Update();
+			pYesNoMenu->Update();
 
 			if (Activated) {
-				if (DAT_800d1428->ChoiceIs(DAT_800a5d5c[109])) {
-					DAT_800d16e0 = 8;
+				if (pYesNoMenu->ChoiceIs(GameText[109])) {
+					EndCode = 8;
 					SwitchOffPauseMode = 1;
 					Horse_Reset();
 					SFX_PlayX(5, 8192, 0);
 				} else {
-					DAT_800d13e8 = STATUS_PAUSEDMENU;
+					Status = STATUS_PAUSEDMENU;
 					SFX_PlayX(2, 8192, 0);
 				}
 			}
@@ -600,29 +600,29 @@ void Front_Update() {
 			if (GoBack) {
 				SFX_PlayX(2, 8192, 0);
 
-				DAT_800d13e8 = STATUS_PAUSEDMENU;
+				Status = STATUS_PAUSEDMENU;
 			}
 
 			break;
 
 		case STATUS_PADUNPLUGGED:
-			if (DAT_800c0a48[0].Type && (DAT_800d1780 == 1 || DAT_800c0a48[1].Type))
-				DAT_800d13e8 = STATUS_PAUSEDMENU;
+			if (Pad[0].Type && (GNumberOfPlayers == 1 || Pad[1].Type))
+				Status = STATUS_PAUSEDMENU;
 
 			break;
 
 		case STATUS_QUITSAVE:
-			DAT_800d1428->Update();
+			pYesNoMenu->Update();
 
 			if (Activated) {
-				if (DAT_800d1428->ChoiceIs(DAT_800a5d5c[109])) {
+				if (pYesNoMenu->ChoiceIs(GameText[109])) {
 					SFX_PlayX(5, 8192, 0);
 					Front_SetSaveAction(SAVE_GAME);
 					Front_InitMemCardMenus(512, SVSTATUS_CHECKINGCARDPAUSE, STATUS_ENDINGSCREEN);
 
-					DAT_800d13e8 = STATUS_MEMCARDMENUS;
+					Status = STATUS_MEMCARDMENUS;
 				} else {
-					DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
+					Status = STATUS_ENDLEVELFADESCREEN;
 					SFX_PlayX(2, 8192, 0);
 				}
 			}
@@ -630,26 +630,26 @@ void Front_Update() {
 			if (GoBack) {
 				SFX_PlayX(2, 8192, 0);
 
-				DAT_800d13e8 = STATUS_ENDINGSCREEN;
+				Status = STATUS_ENDINGSCREEN;
 			}
 
 			break;
 
 		case STATUS_REALLYMAINMENU:
-			DAT_800d1428->Update();
+			pYesNoMenu->Update();
 
 			if (Activated) {
-				if (DAT_800d1428->ChoiceIs(DAT_800a5d5c[109])) {
-					DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
+				if (pYesNoMenu->ChoiceIs(GameText[109])) {
+					Status = STATUS_ENDLEVELFADESCREEN;
 					SFX_PlayX(5, 8192, 0);
 				} else {
 					SFX_PlayX(2, 8192, 0);
 
 					if (InCompetition() & !Competition_IsOver()) {
-						DAT_800d13e8 = STATUS_ENDHEATMENU;
-						DAT_800d143c->SetLine(DAT_800d143c->FindEntry(DAT_800a5d5c[49]));
+						Status = STATUS_ENDHEATMENU;
+						pEHMenu->SetLine(pEHMenu->FindEntry(GameText[49]));
 					} else {
-						DAT_800d13e8 = STATUS_ENDINGSCREEN;
+						Status = STATUS_ENDINGSCREEN;
 					}
 				}
 			}
@@ -658,135 +658,135 @@ void Front_Update() {
 				SFX_PlayX(2, 8192, 0);
 
 				if (InCompetition() & !Competition_IsOver()) {
-					DAT_800d13e8 = STATUS_ENDHEATMENU;
-					DAT_800d143c->SetLine(DAT_800d143c->FindEntry(DAT_800a5d5c[49]));
+					Status = STATUS_ENDHEATMENU;
+					pEHMenu->SetLine(pEHMenu->FindEntry(GameText[49]));
 				} else {
-					DAT_800d13e8 = STATUS_ENDINGSCREEN;
+					Status = STATUS_ENDINGSCREEN;
 				}
 			}
 
 			break;
 
 		case STATUS_ENDINGSCREEN:
-			if (DAT_800d13d8) {
-				DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
-			} else if (DAT_800d1514 > 10) {
-				DAT_800d142c->Update();
+			if (GRollCredits) {
+				Status = STATUS_ENDLEVELFADESCREEN;
+			} else if (Front_OnTime > 10) {
+				pESMenu->Update();
 
 				if (Activated) {
 					SFX_PlayX(5, 8192, 0);
 					Flash_Fade(16, 1);
 
-					if (DAT_800d142c->ChoiceIs(DAT_800a5d5c[98])) {
-						if (!DAT_800a5398[DAT_800d1e28].mNoHighScores &&
-						    DAT_800d142c->IsEntryOn(DAT_800a5d5c[28]) && !DAT_800d10f8) {
-							DAT_800d13e8 = STATUS_QUITSAVE;
-							DAT_800d1428->SetLine(DAT_800d1428->FindEntry(DAT_800a5d5c[109]));
+					if (pESMenu->ChoiceIs(GameText[98])) {
+						if (!Levels[GLevel].mNoHighScores &&
+						    pESMenu->IsEntryOn(GameText[28]) && !GLoadedCareerIsSaved) {
+							Status = STATUS_QUITSAVE;
+							pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText[109]));
 						} else {
-							DAT_800d13e8 = STATUS_REALLYMAINMENU;
+							Status = STATUS_REALLYMAINMENU;
 						}
-					} else if (DAT_800d142c->ChoiceIs(
-					               (DAT_800a5398[DAT_800d1e28].mNoHighScores && DAT_800d16a4 == 1)
-					                   ? DAT_800a5d5c[30]
-									   : DAT_800a5d5c[29])) {
-						DAT_800d16e0 = 7;
+					} else if (pESMenu->ChoiceIs(
+					               (Levels[GLevel].mNoHighScores && GGame == 1)
+					                   ? GameText[30]
+									   : GameText[29])) {
+						EndCode = 7;
 						SwitchOffPauseMode = 1;
 						Competition_Init();
 						Horse_Reset();
-					} else if (DAT_800d142c->ChoiceIs(DAT_800a5d5c[33])) {
-						DAT_800d13e8 = STATUS_VIDEOSCREEN;
-					} else if (DAT_800d142c->ChoiceIs(DAT_800a5d5c[28]) ||
-					           DAT_800d142c->ChoiceIs(DAT_800a5d5c[89])) {
-						DAT_800d1428->SetLine(DAT_800d1428->FindEntry(DAT_800a5d5c[109]));
+					} else if (pESMenu->ChoiceIs(GameText[33])) {
+						Status = STATUS_VIDEOSCREEN;
+					} else if (pESMenu->ChoiceIs(GameText[28]) ||
+					           pESMenu->ChoiceIs(GameText[89])) {
+						pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText[109]));
 
-						DAT_800d13e8 = STATUS_SAVEGAME;
-					} else if (DAT_800d142c->ChoiceIs(DAT_800a5d5c[31])) {
+						Status = STATUS_SAVEGAME;
+					} else if (pESMenu->ChoiceIs(GameText[31])) {
 						StartScreen = 1;
-						DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
-					} else if (DAT_800d142c->ChoiceIs(DAT_800a5d5c[32])) {
+						Status = STATUS_ENDLEVELFADESCREEN;
+					} else if (pESMenu->ChoiceIs(GameText[32])) {
 						StartScreen = 2;
-						DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
-					} else if (DAT_800d142c->ChoiceIs(DAT_800a5d5c[0])) {
+						Status = STATUS_ENDLEVELFADESCREEN;
+					} else if (pESMenu->ChoiceIs(GameText[0])) {
 						StartScreen = 6;
-						DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
+						Status = STATUS_ENDLEVELFADESCREEN;
 					}
 				}
 			} else {
-				DAT_800d1514++;
+				Front_OnTime++;
 			}
 
 			break;
 
 		case STATUS_VIDEOSCREEN:
-			if (DAT_800d1514 > 10) {
+			if (Front_OnTime > 10) {
 				Front_SetSaveAction(SAVE_VIDEO);
-				DAT_800d1430->Update();
+				pVSMenu->Update();
 
 				if (Activated) {
-					DAT_800d1de8 = 0;
+					GVideoReplay = 0;
 					SFX_PlayX(5, 8192, 0);
 					Flash_Fade(32, 1);
 
-					if (DAT_800d1430->ChoiceIs(DAT_800a5d5c[27])) {
+					if (pVSMenu->ChoiceIs(GameText[27])) {
 						Video_Cleanup();
 
-						DAT_800d13e8 = STATUS_ENDINGSCREEN;
-					} else if (DAT_800d1430->ChoiceIs(DAT_800a5d5c[23])) {
-						DAT_800d1de8 = -1;
-						DAT_800d16e0 = 7;
+						Status = STATUS_ENDINGSCREEN;
+					} else if (pVSMenu->ChoiceIs(GameText[23])) {
+						GVideoReplay = -1;
+						EndCode = 7;
 						SwitchOffPauseMode = 1;
 						Video_SortAndMerge();
-					} else if (DAT_800d1430->ChoiceIs(DAT_800a5d5c[24])) {
-						DAT_800d1de8 = 1;
-						DAT_800d16e0 = 7;
+					} else if (pVSMenu->ChoiceIs(GameText[24])) {
+						GVideoReplay = 1;
+						EndCode = 7;
 						SwitchOffPauseMode = 1;
 						Video_SortAndMerge();
-					} else if (DAT_800d1430->ChoiceIs(DAT_800a5d5c[25])) {
+					} else if (pVSMenu->ChoiceIs(GameText[25])) {
 						Front_InitMemCardMenus(512, SVSTATUS_CHECKINGCARDPAUSE, STATUS_VIDEOSCREEN);
 
-						DAT_800d13e8 = STATUS_MEMCARDMENUS;
+						Status = STATUS_MEMCARDMENUS;
 					}
 				}
 
 				if (GoBack) {
 					SFX_PlayX(2, 8192, 0);
 
-					DAT_800d13e8 = STATUS_ENDINGSCREEN;
+					Status = STATUS_ENDINGSCREEN;
 				}
 			} else {
-				DAT_800d1514++;
+				Front_OnTime++;
 			}
 
 			break;
 
 		case STATUS_VIDEOSCREEN2:
-			if (!DAT_800d1cb0) {
+			if (!DemoTimer) {
 				Video_Cleanup();
 
-				DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
+				Status = STATUS_ENDLEVELFADESCREEN;
 			}
 
-			if (DAT_800d1514 > 10) {
+			if (Front_OnTime > 10) {
 				Front_SetSaveAction(SAVE_VIDEO);
-				DAT_800d1434->Update();
+				pVS2Menu->Update();
 
 				if (Activated) {
-					DAT_800d1de8 = 0;
+					GVideoReplay = 0;
 					SFX_PlayX(5, 8192, 0);
 					Flash_Fade(32, 1);
 
-					if (DAT_800d1434->ChoiceIs(DAT_800a5d5c[27])) {
+					if (pVS2Menu->ChoiceIs(GameText[27])) {
 						Video_Cleanup();
 
-						DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
-					} else if (DAT_800d1434->ChoiceIs(DAT_800a5d5c[23])) {
-						DAT_800d1de8 = -1;
-						DAT_800d16e0 = 7;
+						Status = STATUS_ENDLEVELFADESCREEN;
+					} else if (pVS2Menu->ChoiceIs(GameText[23])) {
+						GVideoReplay = -1;
+						EndCode = 7;
 						SwitchOffPauseMode = 1;
 						Video_SortAndMerge();
-					} else if (DAT_800d1434->ChoiceIs(DAT_800a5d5c[24])) {
-						DAT_800d1de8 = 1;
-						DAT_800d16e0 = 7;
+					} else if (pVS2Menu->ChoiceIs(GameText[24])) {
+						GVideoReplay = 1;
+						EndCode = 7;
 						SwitchOffPauseMode = 1;
 						Video_SortAndMerge();
 					}
@@ -796,61 +796,61 @@ void Front_Update() {
 					SFX_PlayX(2, 8192, 0);
 					Video_Cleanup();
 
-					DAT_800d13e8 = STATUS_ENDLEVELFADESCREEN;
+					Status = STATUS_ENDLEVELFADESCREEN;
 				}
 			} else {
-				DAT_800d1514++;
+				Front_OnTime++;
 			}
 
 			break;
 
 		case STATUS_ENDHEATVIDEOMENU:
-			if (DAT_800d1514 > 10) {
+			if (Front_OnTime > 10) {
 				Front_SetSaveAction(SAVE_VIDEO);
-				DAT_800d1438->Update();
+				pVS3Menu->Update();
 
 				if (Activated) {
-					DAT_800d1de8 = 0;
+					GVideoReplay = 0;
 					SFX_PlayX(5, 8192, 0);
 					Flash_Fade(32, 1);
 
-					if (DAT_800d1438->ChoiceIs(DAT_800a5d5c[73])) {
+					if (pVS3Menu->ChoiceIs(GameText[73])) {
 						Video_Cleanup();
 
-						DAT_800d13e8 = STATUS_ENDHEATMENU;
-						DAT_800d143c->SetLine(DAT_800d143c->FindEntry(DAT_800a5d5c[49]));
-					} else if (DAT_800d1438->ChoiceIs(DAT_800a5d5c[23])) {
-						DAT_800d1de8 = -1;
-						DAT_800d16e0 = 7;
+						Status = STATUS_ENDHEATMENU;
+						pEHMenu->SetLine(pEHMenu->FindEntry(GameText[49]));
+					} else if (pVS3Menu->ChoiceIs(GameText[23])) {
+						GVideoReplay = -1;
+						EndCode = 7;
 						SwitchOffPauseMode = 1;
 						Video_SortAndMerge();
-					} else if (DAT_800d1438->ChoiceIs(DAT_800a5d5c[24])) {
-						DAT_800d1de8 = 1;
-						DAT_800d16e0 = 7;
+					} else if (pVS3Menu->ChoiceIs(GameText[24])) {
+						GVideoReplay = 1;
+						EndCode = 7;
 						SwitchOffPauseMode = 1;
 						Video_SortAndMerge();
-					} else if (DAT_800d1438->ChoiceIs(DAT_800a5d5c[25])) {
+					} else if (pVS3Menu->ChoiceIs(GameText[25])) {
 						Front_InitMemCardMenus(512, SVSTATUS_CHECKINGCARDPAUSE,
 						                       STATUS_ENDHEATVIDEOMENU);
 
-						DAT_800d13e8 = STATUS_MEMCARDMENUS;
+						Status = STATUS_MEMCARDMENUS;
 					}
 				}
 
 				if (GoBack) {
 					SFX_PlayX(2, 8192, 0);
 
-					DAT_800d13e8 = STATUS_ENDHEATMENU;
-					DAT_800d143c->SetLine(DAT_800d143c->FindEntry(DAT_800a5d5c[49]));
+					Status = STATUS_ENDHEATMENU;
+					pEHMenu->SetLine(pEHMenu->FindEntry(GameText[49]));
 				}
 			} else {
-				DAT_800d1514++;
+				Front_OnTime++;
 			}
 
 			break;
 
 		case STATUS_GOTTAPE:
-			if (DAT_800d1514 > 10) {
+			if (Front_OnTime > 10) {
 				if (Activated && CTape::DisplayContinueButton()) {
 					SFX_PlayX(5, 8192, 0);
 
@@ -858,16 +858,16 @@ void Front_Update() {
 						int i;
 
 						for (i = 0; i < 5; i++) {
-							delete DAT_800a5b14[i];
-							DAT_800a5b14[i] = 0;
+							delete GTape[i];
+							GTape[i] = 0;
 						}
 					}
 
-					DAT_800d13e8 = STATUS_TAPESAVE;
-					DAT_800d1428->SetLine(DAT_800d1428->FindEntry(DAT_800a5d5c[109]));
+					Status = STATUS_TAPESAVE;
+					pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText[109]));
 				}
 			} else {
-				DAT_800d1514++;
+				Front_OnTime++;
 			}
 
 			break;
@@ -877,12 +877,12 @@ void Front_Update() {
 			char lastAlpha;
 			char firstAlpha;
 
-			DAT_800d17c0 = 0;
+			GHorseClearInput2 = 0;
 			UpDown = GetUpDown();
 			lastAlpha = 'Z';
 			firstAlpha = 'A';
 
-			if (DAT_800d17b8 >= DAT_800a6844.HorseLen - 1 && DAT_800a6844.HorseLen >= 4) {
+			if (GHorseCursorPos >= GCareer.HorseLen - 1 && GCareer.HorseLen >= 4) {
 				lastAlpha = ' ';
 				firstAlpha = ' ';
 			}
@@ -891,14 +891,14 @@ void Front_Update() {
 				SizeUp = 16;
 				SFX_PlayX(17, 8192, 0);
 
-				if (DAT_800a6844.HorseWord[DAT_800d17b8] == ' ' ||
-				    DAT_800a6844.HorseWord[DAT_800d17b8] == 0) {
-					DAT_800a6844.HorseWord[DAT_800d17b8] = 'A';
+				if (GCareer.HorseWord[GHorseCursorPos] == ' ' ||
+				    GCareer.HorseWord[GHorseCursorPos] == 0) {
+					GCareer.HorseWord[GHorseCursorPos] = 'A';
 				} else {
-					DAT_800a6844.HorseWord[DAT_800d17b8]++;
+					GCareer.HorseWord[GHorseCursorPos]++;
 
-					if ((uchar)DAT_800a6844.HorseWord[DAT_800d17b8] > 'Z')
-						DAT_800a6844.HorseWord[DAT_800d17b8] = firstAlpha;
+					if ((uchar)GCareer.HorseWord[GHorseCursorPos] > 'Z')
+						GCareer.HorseWord[GHorseCursorPos] = firstAlpha;
 				}
 			}
 
@@ -906,58 +906,58 @@ void Front_Update() {
 				SizeUp = 16;
 				SFX_PlayX(17, 8192, 0);
 
-				if (DAT_800a6844.HorseWord[DAT_800d17b8] == ' ' ||
-				    DAT_800a6844.HorseWord[DAT_800d17b8] == 0) {
-					DAT_800a6844.HorseWord[DAT_800d17b8] = 'Z';
+				if (GCareer.HorseWord[GHorseCursorPos] == ' ' ||
+				    GCareer.HorseWord[GHorseCursorPos] == 0) {
+					GCareer.HorseWord[GHorseCursorPos] = 'Z';
 				} else {
-					DAT_800a6844.HorseWord[DAT_800d17b8]--;
+					GCareer.HorseWord[GHorseCursorPos]--;
 
-					if ((uchar)DAT_800a6844.HorseWord[DAT_800d17b8] < 'A')
-						DAT_800a6844.HorseWord[DAT_800d17b8] = lastAlpha;
+					if ((uchar)GCareer.HorseWord[GHorseCursorPos] < 'A')
+						GCareer.HorseWord[GHorseCursorPos] = lastAlpha;
 				}
 			}
 
-			DAT_800a6844.HorseLen = 10;
+			GCareer.HorseLen = 10;
 
 			{
 				int i;
 
 				for (i = 0; i < 10; i++) {
-					if (DAT_800a6844.HorseWord[i] == ' ' || DAT_800a6844.HorseWord[i] == 0) {
-						DAT_800a6844.HorseLen = i;
+					if (GCareer.HorseWord[i] == ' ' || GCareer.HorseWord[i] == 0) {
+						GCareer.HorseLen = i;
 						break;
 					}
 				}
 			}
 
-			if (DAT_800c0a48[0].Left.Triggered || DAT_800c0a48[1].Left.Triggered) {
+			if (Pad[0].Left.Triggered || Pad[1].Left.Triggered) {
 				SizeUp = 16;
 				SFX_PlayX(5, 8192, 0);
 
-				DAT_800c0a48[0].Left.Triggered = 0;
-				DAT_800c0a48[1].Left.Triggered = 0;
-				DAT_800d17b8--;
+				Pad[0].Left.Triggered = 0;
+				Pad[1].Left.Triggered = 0;
+				GHorseCursorPos--;
 
-				if (DAT_800d17b8 < 0)
-					DAT_800d17b8 = DAT_800a6844.HorseLen;
+				if (GHorseCursorPos < 0)
+					GHorseCursorPos = GCareer.HorseLen;
 
-				if (DAT_800d17b8 >= 10)
-					DAT_800d17b8 = 9;
+				if (GHorseCursorPos >= 10)
+					GHorseCursorPos = 9;
 			}
 
-			if (DAT_800c0a48[0].Right.Triggered || DAT_800c0a48[1].Right.Triggered) {
+			if (Pad[0].Right.Triggered || Pad[1].Right.Triggered) {
 				SizeUp = 16;
 				SFX_PlayX(5, 8192, 0);
 
-				DAT_800c0a48[0].Right.Triggered = 0;
-				DAT_800c0a48[1].Right.Triggered = 0;
-				DAT_800d17b8++;
+				Pad[0].Right.Triggered = 0;
+				Pad[1].Right.Triggered = 0;
+				GHorseCursorPos++;
 
-				if (DAT_800d17b8 > DAT_800a6844.HorseLen)
-					DAT_800d17b8 = 0;
+				if (GHorseCursorPos > GCareer.HorseLen)
+					GHorseCursorPos = 0;
 
-				if (DAT_800d17b8 >= 10)
-					DAT_800d17b8 = 0;
+				if (GHorseCursorPos >= 10)
+					GHorseCursorPos = 0;
 			}
 
 			if (Activated) {
@@ -965,25 +965,25 @@ void Front_Update() {
 					int i;
 
 					for (i = 0; i < 10; i++) {
-						if (DAT_800a6844.HorseWord[i] == ' ') {
-							DAT_800a6844.HorseWord[i] = 0;
+						if (GCareer.HorseWord[i] == ' ') {
+							GCareer.HorseWord[i] = 0;
 							break;
 						}
 					}
 				}
 
-				FUN_8008b900(DAT_800a4118.HorseWord, DAT_800a6844.HorseWord);
+				FUN_8008b900(GPreferences.HorseWord, GCareer.HorseWord);
 
-				DAT_800d16cc = 1;
-				DAT_800d17a8 = 0;
-				DAT_800a4118.HorseLen = DAT_800a6844.HorseLen;
+				GHorseWordChosen = 1;
+				GHorseDoneStart = 0;
+				GPreferences.HorseLen = GCareer.HorseLen;
 				SFX_PlayX(5, 8192, 0);
 			}
 		} break;
 
 		case STATUS_STARTHORSE:
-			DAT_800d17c0 = 1;
-			DAT_800d17c8->m310 = XFrames;
+			GHorseClearInput2 = 1;
+			GSkater->m310 = XFrames;
 
 			if (Activated)
 				SwitchOffPauseMode = 1;
@@ -991,53 +991,53 @@ void Front_Update() {
 			break;
 
 		case STATUS_TAPESAVE:
-			DAT_800d1428->Update();
+			pYesNoMenu->Update();
 
 			if (Activated) {
 				SFX_PlayX(5, 8192, 0);
 				Flash_Fade(32, 1);
 
-				if (DAT_800d1428->ChoiceIs(DAT_800a5d5c[109])) {
+				if (pYesNoMenu->ChoiceIs(GameText[109])) {
 					Front_SetSaveAction(SAVE_GAME);
 					Front_InitMemCardMenus(512, SVSTATUS_CHECKINGCARDPAUSE, STATUS_STATS);
 
-					DAT_800d13e8 = STATUS_MEMCARDMENUS;
+					Status = STATUS_MEMCARDMENUS;
 				} else {
-					DAT_800d13e8 = STATUS_STATS;
+					Status = STATUS_STATS;
 				}
 			}
 
 			if (GoBack) {
 				SFX_PlayX(2, 8192, 0);
 
-				DAT_800d13e8 = STATUS_GOTTAPE;
+				Status = STATUS_GOTTAPE;
 			}
 
 			break;
 
 		case STATUS_HIGHSCORE:
-			if (DAT_800d1514 > 10) {
-				if (DAT_800d13dc != -1) {
+			if (Front_OnTime > 10) {
+				if (GHighScoreLineIndex != -1) {
 					int UpDown = GetUpDown();
 
 					if (UpDown == -1) {
 						SizeUp = 16;
 						SFX_PlayX(17, 8192, 0);
 
-						if (DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-						            .Name[DAT_800d13e0] == ' ' ||
-						    DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-						            .Name[DAT_800d13e0] == 0) {
-							DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc].Name[DAT_800d13e0] =
+						if (GCareer.HighScores[GLevel][GHighScoreLineIndex]
+						            .Name[GHighScoreInitialCursorPos] == ' ' ||
+						    GCareer.HighScores[GLevel][GHighScoreLineIndex]
+						            .Name[GHighScoreInitialCursorPos] == 0) {
+							GCareer.HighScores[GLevel][GHighScoreLineIndex].Name[GHighScoreInitialCursorPos] =
 							    'A';
 						} else {
-							DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-							    .Name[DAT_800d13e0]++;
+							GCareer.HighScores[GLevel][GHighScoreLineIndex]
+							    .Name[GHighScoreInitialCursorPos]++;
 
-							if ((uchar)DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-							        .Name[DAT_800d13e0] > 'Z')
-								DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-								    .Name[DAT_800d13e0] = ' ';
+							if ((uchar)GCareer.HighScores[GLevel][GHighScoreLineIndex]
+							        .Name[GHighScoreInitialCursorPos] > 'Z')
+								GCareer.HighScores[GLevel][GHighScoreLineIndex]
+								    .Name[GHighScoreInitialCursorPos] = ' ';
 						}
 					}
 
@@ -1045,156 +1045,156 @@ void Front_Update() {
 						SizeUp = 16;
 						SFX_PlayX(17, 8192, 0);
 
-						if (DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-						            .Name[DAT_800d13e0] == ' ' ||
-						    DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-						            .Name[DAT_800d13e0] == 0) {
-							DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc].Name[DAT_800d13e0] =
+						if (GCareer.HighScores[GLevel][GHighScoreLineIndex]
+						            .Name[GHighScoreInitialCursorPos] == ' ' ||
+						    GCareer.HighScores[GLevel][GHighScoreLineIndex]
+						            .Name[GHighScoreInitialCursorPos] == 0) {
+							GCareer.HighScores[GLevel][GHighScoreLineIndex].Name[GHighScoreInitialCursorPos] =
 							    'Z';
 						} else {
-							DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-							    .Name[DAT_800d13e0]--;
+							GCareer.HighScores[GLevel][GHighScoreLineIndex]
+							    .Name[GHighScoreInitialCursorPos]--;
 
-							if ((uchar)DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-							        .Name[DAT_800d13e0] < 'A')
-								DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc]
-								    .Name[DAT_800d13e0] = ' ';
+							if ((uchar)GCareer.HighScores[GLevel][GHighScoreLineIndex]
+							        .Name[GHighScoreInitialCursorPos] < 'A')
+								GCareer.HighScores[GLevel][GHighScoreLineIndex]
+								    .Name[GHighScoreInitialCursorPos] = ' ';
 						}
 					}
 
-					if (DAT_800c0a48[0].Left.Triggered || DAT_800c0a48[1].Left.Triggered) {
+					if (Pad[0].Left.Triggered || Pad[1].Left.Triggered) {
 						SizeUp = 16;
 						SFX_PlayX(5, 8192, 0);
 
-						DAT_800c0a48[0].Left.Triggered = 0;
-						DAT_800c0a48[1].Left.Triggered = 0;
-						DAT_800d13e0--;
+						Pad[0].Left.Triggered = 0;
+						Pad[1].Left.Triggered = 0;
+						GHighScoreInitialCursorPos--;
 
-						if (DAT_800d13e0 < 0)
-							DAT_800d13e0 = 2;
+						if (GHighScoreInitialCursorPos < 0)
+							GHighScoreInitialCursorPos = 2;
 					}
 
-					if (DAT_800c0a48[0].Right.Triggered || DAT_800c0a48[1].Right.Triggered) {
+					if (Pad[0].Right.Triggered || Pad[1].Right.Triggered) {
 						SizeUp = 16;
 						SFX_PlayX(5, 8192, 0);
 
-						DAT_800c0a48[0].Right.Triggered = 0;
-						DAT_800c0a48[1].Right.Triggered = 0;
-						DAT_800d13e0++;
+						Pad[0].Right.Triggered = 0;
+						Pad[1].Right.Triggered = 0;
+						GHighScoreInitialCursorPos++;
 
-						if (DAT_800d13e0 >= 3)
-							DAT_800d13e0 = 0;
+						if (GHighScoreInitialCursorPos >= 3)
+							GHighScoreInitialCursorPos = 0;
 					}
 				}
 
 				if (Activated) {
 					SFX_PlayX(18, 8192, 0);
-					FUN_8008b900(DAT_800a6844.PlayerName,
-					             DAT_800a6844.HighScores[DAT_800d1e28][DAT_800d13dc].Name);
+					FUN_8008b900(GCareer.PlayerName,
+					             GCareer.HighScores[GLevel][GHighScoreLineIndex].Name);
 
-					DAT_800d13dc = -1;
-					DAT_800d13e8 = STATUS_ENDINGSCREEN;
+					GHighScoreLineIndex = -1;
+					Status = STATUS_ENDINGSCREEN;
 				}
 			}
 
 			break;
 
 		case STATUS_STATS:
-			if (DAT_800d1514 > 10) {
-				if (DAT_800d16a4 == 7) {
-					DAT_800d17c0 = 0;
+			if (Front_OnTime > 10) {
+				if (GGame == 7) {
+					GHorseClearInput2 = 0;
 
-					if (--DAT_800d17bc <= 0 && DAT_800d14fc != 2)
+					if (--GHorseWaitTime <= 0 && NextHorseMode != 2)
 						Activated = 1;
 
-					if (DAT_800d14fc == 2 && DAT_800d13c4 && !DAT_800a5b28[0].handleComplete()) {
-						DAT_800d1514 = 0;
-						DAT_800d13e8 = STATUS_ENDINGSCREEN;
+					if (NextHorseMode == 2 && GHorseContinue && !DAT_800a5b28[0].handleComplete()) {
+						Front_OnTime = 0;
+						Status = STATUS_ENDINGSCREEN;
 					}
 				}
 
 				if (Activated) {
 					SFX_PlayX(5, 8192, 0);
 
-					DAT_800d14f4 = 0;
+					GHorseSounded = 0;
 
-					if (DAT_800d16a4 == 7) {
-						if (DAT_800d14fc == 2) {
-							DAT_800d13c4 = 1;
-							DAT_800d17ac = 0;
-							Trig_SetRestart(DAT_800a87d8[0]);
+					if (GGame == 7) {
+						if (NextHorseMode == 2) {
+							GHorseContinue = 1;
+							GHorseRestart = 0;
+							Trig_SetRestart(HorseRestarts[0]);
 						} else {
-							DAT_800d17ac = DAT_800d1508;
-							DAT_800d17a4 = DAT_800d1504;
-							DAT_800d17a0 = DAT_800d14fc;
-							DAT_800d179c = DAT_800d1500;
-							DAT_800d17b0 = DAT_800d150c;
+							GHorseRestart = NextHorseRestart;
+							GHorseScore = NextHorseScore;
+							GHorseMode = NextHorseMode;
+							GHorsePlayer = NextHorsePlayer;
+							GHorseLetters = NextHorseLetters;
 							GHorseLetters_4 = NextHorseLetters_4;
 							SwitchOffPauseMode = 1;
-							Trig_SetRestart(DAT_800a87d8[DAT_800d17ac]);
+							Trig_SetRestart(HorseRestarts[GHorseRestart]);
 
-							DAT_800d16e0 = 7;
+							EndCode = 7;
 						}
-					} else if (DAT_800d13dc != -1) {
-						DAT_800d13e8 = STATUS_HIGHSCORE;
+					} else if (GHighScoreLineIndex != -1) {
+						Status = STATUS_HIGHSCORE;
 						InitStatsSwisch();
 					} else {
-						DAT_800d13e8 = STATUS_ENDINGSCREEN;
+						Status = STATUS_ENDINGSCREEN;
 					}
 				}
 			} else {
-				DAT_800d1514++;
+				Front_OnTime++;
 			}
 
 			break;
 
 		case STATUS_ENDHEATMENU:
-			if (DAT_800d1514 > 10) {
-				DAT_800d143c->Update();
+			if (Front_OnTime > 10) {
+				pEHMenu->Update();
 
 				if (Activated) {
 					SFX_PlayX(5, 8192, 0);
 					Flash_Fade(32, 1);
 
-					if (DAT_800d143c->ChoiceIs(DAT_800a5d5c[98])) {
-						DAT_800d13e8 = STATUS_REALLYMAINMENU;
-					} else if (DAT_800d143c->ChoiceIs(DAT_800a5d5c[49])) {
+					if (pEHMenu->ChoiceIs(GameText[98])) {
+						Status = STATUS_REALLYMAINMENU;
+					} else if (pEHMenu->ChoiceIs(GameText[49])) {
 						SwitchOffPauseMode = 1;
-						DAT_800d16e0 = 7;
-					} else if (DAT_800d143c->ChoiceIs(DAT_800a5d5c[50])) {
-						DAT_800d13e8 = STATUS_ENDHEATWINLOSE;
-					} else if (DAT_800d143c->ChoiceIs(DAT_800a5d5c[33])) {
-						DAT_800d13e8 = STATUS_ENDHEATVIDEOMENU;
+						EndCode = 7;
+					} else if (pEHMenu->ChoiceIs(GameText[50])) {
+						Status = STATUS_ENDHEATWINLOSE;
+					} else if (pEHMenu->ChoiceIs(GameText[33])) {
+						Status = STATUS_ENDHEATVIDEOMENU;
 					}
 				}
 			} else {
-				DAT_800d1514++;
+				Front_OnTime++;
 			}
 
 			break;
 
 		case STATUS_ENDGAME:
-			Competition_EndGameLogic(DAT_800d13e8, Activated);
+			Competition_EndGameLogic(Status, Activated);
 			break;
 
 		case STATUS_ENDHEATWINLOSE:
-			Competition_WinLoseLogic(DAT_800d13e8, Activated);
+			Competition_WinLoseLogic(Status, Activated);
 			break;
 
 		case STATUS_MEDALSAVE:
-			DAT_800d1428->Update();
+			pYesNoMenu->Update();
 
 			if (Activated) {
 				SFX_PlayX(5, 8192, 0);
 				Flash_Fade(32, 1);
 
-				if (DAT_800d1428->ChoiceIs(DAT_800a5d5c[109])) {
+				if (pYesNoMenu->ChoiceIs(GameText[109])) {
 					Front_SetSaveAction(SAVE_GAME);
 					Front_InitMemCardMenus(512, SVSTATUS_CHECKINGCARDPAUSE, STATUS_ENDINGSCREEN);
 
-					DAT_800d13e8 = STATUS_MEMCARDMENUS;
+					Status = STATUS_MEMCARDMENUS;
 				} else {
-					DAT_800d13e8 = STATUS_ENDINGSCREEN;
+					Status = STATUS_ENDINGSCREEN;
 				}
 			}
 
@@ -1205,15 +1205,15 @@ void Front_Update() {
 
 			if (Activated) {
 				if (Competition_LadderFullyDisplayed()) {
-					Video_Stop(DAT_800d19a4);
+					Video_Stop(MechList);
 
-					DAT_800d140c = 1;
+					GamePaused = 1;
 
 					if (Competition_NewHeat()) {
-						DAT_800d13e8 = STATUS_ENDHEATMENU;
-						DAT_800d143c->SetLine(DAT_800d143c->FindEntry(DAT_800a5d5c[49]));
+						Status = STATUS_ENDHEATMENU;
+						pEHMenu->SetLine(pEHMenu->FindEntry(GameText[49]));
 					} else {
-						DAT_800d13e8 = STATUS_ENDHEATWINLOSE;
+						Status = STATUS_ENDHEATWINLOSE;
 					}
 				} else {
 					FUN_80076494();
@@ -1226,42 +1226,42 @@ void Front_Update() {
 		case STATUS_ENDHEATREPLAY:
 			Competition_JudgeLogic();
 
-			if (DAT_800d1514 > 10) {
+			if (Front_OnTime > 10) {
 				if (Activated) {
 					if (Competition_JudgeFullyDisplayed()) {
 						SFX_PlayX(5, 8192, 0);
 
-						DAT_800d13e8 = STATUS_ENDHEATLADDER;
-						DAT_800d1de8 = -1;
+						Status = STATUS_ENDHEATLADDER;
+						GVideoReplay = -1;
 						RestartCompFrig();
-						delete DAT_800d1474;
-						DAT_800d1474 = 0;
+						delete pPausedMenu;
+						pPausedMenu = 0;
 
-						if (DAT_800d16e0 != 8 && DAT_800d16e0 != 4 && DAT_800d16e0 != 3)
+						if (EndCode != 8 && EndCode != 4 && EndCode != 3)
 							SFX_Unpause();
 
 						Video_SortAndMerge();
 
-						if (DAT_800bf318.NumFrames > 90) {
-							CBruce *pSkater = DAT_800d19a4;
+						if (GVInfo1.NumFrames > 90) {
+							CBruce *pSkater = MechList;
 							CBruce *pSkater2 = pSkater->mpNext;
 
-							DAT_800d140c = 0;
-							DAT_800d1de8 = 0;
-							DAT_800bf318.ReplayHighlight = 0;
-							DAT_800bf3d8.ReplayHighlight = 0;
+							GamePaused = 0;
+							GVideoReplay = 0;
+							GVInfo1.ReplayHighlight = 0;
+							GVInfo2.ReplayHighlight = 0;
 							Video_Start(pSkater, VIDEO_PLAYBACK, 1, 0x7fffffff);
 
 							if (pSkater2)
 								Video_Start(pSkater2, VIDEO_PLAYBACK, 1, 0x7fffffff);
 
-							DAT_800d1784 = 0;
+							GState = 0;
 							Flash_Reset();
 
-							DAT_800d19a4->m330 = DAT_800d1a24 + 216030;
+							MechList->m330 = Xblanks + 216030;
 
-							if (DAT_800d19a4->mpNext)
-								DAT_800d19a4->mpNext->m330 = DAT_800d1a24 + 216030;
+							if (MechList->mpNext)
+								MechList->mpNext->m330 = Xblanks + 216030;
 						}
 					} else {
 						FUN_80076484();
@@ -1269,37 +1269,37 @@ void Front_Update() {
 					}
 				}
 			} else {
-				DAT_800d1514++;
+				Front_OnTime++;
 			}
 
 			break;
 
 		case STATUS_ENDHEAT:
-			DAT_800d13e8 = STATUS_ENDHEATREPLAY;
-			DAT_800d1514++;
+			Status = STATUS_ENDHEATREPLAY;
+			Front_OnTime++;
 			break;
 
 		case STATUS_SAVEGAME:
-			DAT_800d1428->Update();
+			pYesNoMenu->Update();
 
 			if (Activated) {
 				SFX_PlayX(5, 8192, 0);
 				Flash_Fade(32, 1);
 
-				if (DAT_800d1428->ChoiceIs(DAT_800a5d5c[109])) {
+				if (pYesNoMenu->ChoiceIs(GameText[109])) {
 					Front_SetSaveAction(SAVE_GAME);
 					Front_InitMemCardMenus(512, SVSTATUS_CHECKINGCARDPAUSE, STATUS_ENDINGSCREEN);
 
-					DAT_800d13e8 = STATUS_MEMCARDMENUS;
+					Status = STATUS_MEMCARDMENUS;
 				} else {
-					DAT_800d13e8 = STATUS_ENDINGSCREEN;
+					Status = STATUS_ENDINGSCREEN;
 				}
 			}
 
 			if (GoBack) {
 				SFX_PlayX(2, 8192, 0);
 
-				DAT_800d13e8 = STATUS_ENDINGSCREEN;
+				Status = STATUS_ENDINGSCREEN;
 			}
 
 			break;
@@ -1308,7 +1308,7 @@ void Front_Update() {
 			Flash_Update();
 
 			if (Flash_FadeFinished()) {
-				DAT_800d16e0 = 8;
+				EndCode = 8;
 				SwitchOffPauseMode = 1;
 				Horse_Reset();
 			}
@@ -1320,10 +1320,10 @@ void Front_Update() {
 			Flash_Update();
 
 			if (Flash_FadeFinished()) {
-				if (DAT_800d13e8 == STATUS_DOSAVEFADESCREEN)
-					DAT_800d16e0 = 4;
+				if (Status == STATUS_DOSAVEFADESCREEN)
+					EndCode = 4;
 				else
-					DAT_800d16e0 = 3;
+					EndCode = 3;
 
 				SwitchOffPauseMode = 1;
 			}
@@ -1331,69 +1331,69 @@ void Front_Update() {
 			break;
 
 		case STATUS_SETSOUNDLEVELS:
-			DAT_800d1440->Update();
+			pSoundMenu->Update();
 
 			XALEVEL =
-			    (DAT_800d1440->ChoiceIs(DAT_800a5d44) || DAT_800d1440->ChoiceIs(DAT_800a5d5c[86]))
-			        ? DAT_800a4118.MusicVol * 0x555
+			    (pSoundMenu->ChoiceIs(musicBuf) || pSoundMenu->ChoiceIs(GameText[86]))
+			        ? GPreferences.MusicVol * 0x555
 			        : 0;
 
-			if (DAT_800c0a48[0].Left.Triggered || DAT_800c0a48[1].Left.Triggered) {
-				DAT_800c0a48[0].Left.Triggered = 0;
-				DAT_800c0a48[1].Left.Triggered = 0;
+			if (Pad[0].Left.Triggered || Pad[1].Left.Triggered) {
+				Pad[0].Left.Triggered = 0;
+				Pad[1].Left.Triggered = 0;
 
-				if (DAT_800d1440->ChoiceIs(DAT_800a5d2c)) {
-					if (DAT_800d21fc > 0)
-						DAT_800d21fc--;
+				if (pSoundMenu->ChoiceIs(soundBuf)) {
+					if (soundVol > 0)
+						soundVol--;
 
-					DAT_800a4118.SfxVol = DAT_800a6844.SfxVol = DAT_800d21fc * 6 / 5;
-					FUN_8008b900(DAT_800a5d2c, DAT_800a5d5c[84], DAT_800d21fc);
+					GPreferences.SfxVol = GCareer.SfxVol = soundVol * 6 / 5;
+					FUN_8008b900(soundBuf, GameText[84], soundVol);
 
-					DAT_800d13cc = DAT_800a6844.SfxVol * 0x555;
+					SFXLEVEL = GCareer.SfxVol * 0x555;
 					SFX_PlayX(5, 8192, 0);
-				} else if (DAT_800d1440->ChoiceIs(DAT_800a5d44)) {
-					if (DAT_800d2200 > 0)
-						DAT_800d2200--;
+				} else if (pSoundMenu->ChoiceIs(musicBuf)) {
+					if (musicVol > 0)
+						musicVol--;
 
-					DAT_800a4118.MusicVol = DAT_800a6844.MusicVol = DAT_800d2200 * 6 / 5;
-					FUN_8008b900(DAT_800a5d44, DAT_800a5d5c[85], DAT_800d2200);
+					GPreferences.MusicVol = GCareer.MusicVol = musicVol * 6 / 5;
+					FUN_8008b900(musicBuf, GameText[85], musicVol);
 				}
 			}
 
-			if (DAT_800c0a48[0].Right.Triggered || DAT_800c0a48[1].Right.Triggered) {
-				DAT_800c0a48[0].Right.Triggered = 0;
-				DAT_800c0a48[1].Right.Triggered = 0;
+			if (Pad[0].Right.Triggered || Pad[1].Right.Triggered) {
+				Pad[0].Right.Triggered = 0;
+				Pad[1].Right.Triggered = 0;
 
-				if (DAT_800d1440->ChoiceIs(DAT_800a5d2c)) {
-					if (DAT_800d21fc < 10)
-						DAT_800d21fc++;
+				if (pSoundMenu->ChoiceIs(soundBuf)) {
+					if (soundVol < 10)
+						soundVol++;
 
-					DAT_800a4118.SfxVol = DAT_800a6844.SfxVol = DAT_800d21fc * 6 / 5;
-					FUN_8008b900(DAT_800a5d2c, DAT_800a5d5c[84], DAT_800d21fc);
+					GPreferences.SfxVol = GCareer.SfxVol = soundVol * 6 / 5;
+					FUN_8008b900(soundBuf, GameText[84], soundVol);
 
-					DAT_800d13cc = DAT_800a6844.SfxVol * 0x555;
+					SFXLEVEL = GCareer.SfxVol * 0x555;
 					SFX_PlayX(5, 8192, 0);
-				} else if (DAT_800d1440->ChoiceIs(DAT_800a5d44)) {
-					if (DAT_800d2200 < 10)
-						DAT_800d2200++;
+				} else if (pSoundMenu->ChoiceIs(musicBuf)) {
+					if (musicVol < 10)
+						musicVol++;
 
-					DAT_800a4118.MusicVol = DAT_800a6844.MusicVol = DAT_800d2200 * 6 / 5;
-					FUN_8008b900(DAT_800a5d44, DAT_800a5d5c[85], DAT_800d2200);
+					GPreferences.MusicVol = GCareer.MusicVol = musicVol * 6 / 5;
+					FUN_8008b900(musicBuf, GameText[85], musicVol);
 				}
 			}
 
 			if (Activated) {
-				if (DAT_800d1440->ChoiceIs(DAT_800a5d5c[86]))
+				if (pSoundMenu->ChoiceIs(GameText[86]))
 					FUN_80023528();
-				else if (DAT_800d1440->ChoiceIs(DAT_800a5d5c[87]))
+				else if (pSoundMenu->ChoiceIs(GameText[87]))
 					GoBack = 1;
 			}
 
 			if (GoBack) {
 				SFX_PlayX(2, 8192, 0);
 
-				DAT_800d13e8 = STATUS_PAUSEDMENU;
-				XALEVEL = DAT_800a6844.MusicVol * 0x555;
+				Status = STATUS_PAUSEDMENU;
+				XALEVEL = GCareer.MusicVol * 0x555;
 				FUN_8008f19c(1, 0, -1);
 				FUN_8008f4d4(9, 0, 0);
 			}
@@ -1402,14 +1402,14 @@ void Front_Update() {
 	}
 
 	if (SwitchOffPauseMode) {
-		DAT_800d140c = 0;
-		DAT_800d17e8 = 0;
-		DAT_800d17ec = 0;
-		DAT_800d13e8 = STATUS_NORMAL;
-		delete DAT_800d1474;
-		DAT_800d1474 = 0;
+		GamePaused = 0;
+		GClear1 = 0;
+		GClear2 = 0;
+		Status = STATUS_NORMAL;
+		delete pPausedMenu;
+		pPausedMenu = 0;
 
-		if (DAT_800d16e0 != 8 && DAT_800d16e0 != 4 && DAT_800d16e0 != 3)
+		if (EndCode != 8 && EndCode != 4 && EndCode != 3)
 			SFX_Unpause();
 	}
 }

@@ -34,7 +34,7 @@ extern "C" {
 	int GameFrozen;
 	int GGame;
 	int GState;
-	int DAT_800d1788;
+	int GSpin;
 	int GSpinSpeed;
 	int GHorsePlayer;
 	CSkater *GSkater;
@@ -104,7 +104,7 @@ void Game_Logic(void) {
 			Bit_RemoveDeadBits__Fv();
 
 			if (GGame != 7)
-				if (GState == 1 && DAT_800d1788 < 40 && !GSkater->Dead &&
+				if (GState == 1 && GSpin < 40 && !GSkater->Dead &&
 				    (!DAT_800d17cc || !DAT_800d17cc->Dead)) {
 					GSkater->pCareer->Money += GSpinSpeed;
 

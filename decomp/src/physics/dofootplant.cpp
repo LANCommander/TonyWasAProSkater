@@ -25,7 +25,7 @@ extern SSkater DAT_800a44fc[];
 int Cheat_StatsOverride; /* stats cheat override */
 
 extern int Cheat_Fire;
-extern char DAT_8009fe38[];
+extern char s_FOOTPLANT[];
 
 class CBruce {
   public:
@@ -54,7 +54,7 @@ class CBruce {
 	                    mpStatBonus[n])
 
 void CBruce::DoFootPlantPhysics() {
-	Trick_Trick(65, DAT_8009fe38, 100, 0);
+	Trick_Trick(65, s_FOOTPLANT, 100, 0);
 
 	m748 = 15 - (GetStat(0) + GetStat(2)) / 2;
 	StateTransition(1, 5587);

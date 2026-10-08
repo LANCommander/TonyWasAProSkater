@@ -1,7 +1,7 @@
 /* FUN_8005ca88 (0x8005ca88) */
-extern char *DAT_800d1b10;
-extern char DAT_800a1a98[];
-extern char DAT_800a1ab0[];
+extern char *SpoolerBlocksFileIO;
+extern char s_PREMgr_already_loaded[];
+extern char s_Sprites_pre[];
 
 void FUN_8008c190(char *a);
 char *__nw__6CClassUi(unsigned n);
@@ -11,14 +11,14 @@ void FUN_80066214(char *p, char *a);
 void FUN_8005ca88(void) {
 	char *p;
 
-	if (DAT_800d1b10)
-		FUN_8008c190(DAT_800a1a98);
+	if (SpoolerBlocksFileIO)
+		FUN_8008c190(s_PREMgr_already_loaded);
 
 	p = __nw__6CClassUi(324);
 
 	if (p)
 		p = FUN_8006613c(p);
 
-	DAT_800d1b10 = p;
-	FUN_80066214(p, DAT_800a1ab0);
+	SpoolerBlocksFileIO = p;
+	FUN_80066214(p, s_Sprites_pre);
 }

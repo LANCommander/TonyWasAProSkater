@@ -5,7 +5,7 @@ typedef struct TSPack {
 	struct TSPack *next;
 } TSPack;
 
-TSPack *DAT_800d1a64;
+TSPack *Pack_pFull;
 
 TSPack *Pack_NewFree(int, int, int, int);
 int Pack_Merge(TSPack *);
@@ -14,7 +14,7 @@ void Pack_Zap(int x, int y, int w, int h) {
 	TSPack *p;
 	int d;
 restart:
-	for (p = DAT_800d1a64; p; p = p->next) {
+	for (p = Pack_pFull; p; p = p->next) {
 		if (p->w + (p->x - 1) < x)
 			continue;
 

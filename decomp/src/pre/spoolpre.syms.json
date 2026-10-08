@@ -1,1 +1,1 @@
-{"gp": "0x800d1080", "DAT_800a20e8": "0x800a20e8", "DAT_800a2104": "0x800a2104", "Mem_NewTop__FUi": "0x8004d3a4", "FileIO_Load__FPv": "0x8004cb10", "FUN_8008c190": "0x8008c190", "FileIO_Open__FPCc": "0x8004c8a4"}
+{"gp":"0x800d1080","s_Out_of_PREManager_slots":"0x800a20e8","s_Memory_error_loading_s":"0x800a2104","Mem_NewTop__FUi":"0x8004d3a4","FileIO_Load__FPv":"0x8004cb10","FUN_8008c190":"0x8008c190","FileIO_Open__FPCc":"0x8004c8a4"}

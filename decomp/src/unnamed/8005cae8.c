@@ -10,17 +10,17 @@ struct O {
 	struct VT *vt;
 };
 
-extern struct O *DAT_800d1b10;
-extern char DAT_800a1abc[];
+extern struct O *SpoolerBlocksFileIO;
+extern char s_No_PREMgr_to_delete[];
 
 void FUN_8008c190(char *a);
 
 void FUN_8005cae8(void) {
-	if (DAT_800d1b10)
-		FUN_8008c190(DAT_800a1abc);
+	if (SpoolerBlocksFileIO)
+		FUN_8008c190(s_No_PREMgr_to_delete);
 
-	if (DAT_800d1b10)
-		DAT_800d1b10->vt->fn((char *)DAT_800d1b10 + DAT_800d1b10->vt->off, 3);
+	if (SpoolerBlocksFileIO)
+		SpoolerBlocksFileIO->vt->fn((char *)SpoolerBlocksFileIO + SpoolerBlocksFileIO->vt->off, 3);
 
-	DAT_800d1b10 = 0;
+	SpoolerBlocksFileIO = 0;
 }

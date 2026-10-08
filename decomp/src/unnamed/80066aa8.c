@@ -5,7 +5,7 @@ typedef struct {
 } S;
 
 extern int Pack_pFree;
-extern int DAT_800d1a64;
+extern int Pack_pFull;
 
 S *DAT_800d2398[2];
 int DAT_800d23a0[2];
@@ -31,5 +31,5 @@ void FUN_80066aa8(void) {
 	}
 
 	DAT_800d23a8 = Pack_pFree;
-	DAT_800d23ac = DAT_800d1a64;
+	DAT_800d23ac = Pack_pFull;
 }

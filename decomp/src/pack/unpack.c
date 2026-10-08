@@ -5,7 +5,7 @@ typedef struct TSPack {
 	struct TSPack *next;
 } TSPack;
 
-TSPack *DAT_800d1a64;
+TSPack *Pack_pFull;
 
 void Pack_Remove(TSPack **, TSPack *);
 TSPack *Pack_NewFree(int, int, int, int);
@@ -14,11 +14,11 @@ int Pack_Merge(TSPack *);
 void Pack_Unpack(short x, short y) {
 	TSPack *p;
 
-	for (p = DAT_800d1a64; p; p = p->next) {
+	for (p = Pack_pFull; p; p = p->next) {
 		if (p->x == x && p->y == y) {
 			int w = p->w, h = p->h;
 
-			Pack_Remove(&DAT_800d1a64, p);
+			Pack_Remove(&Pack_pFull, p);
 			Pack_Merge(Pack_NewFree(x, y, w, h));
 			return;
 		}

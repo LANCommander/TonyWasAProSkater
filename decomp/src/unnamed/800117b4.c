@@ -5,8 +5,8 @@ int GSaveAction;
 
 extern char Pad[];
 extern char SaveGameName[];
-extern char DAT_800a42e8[];
-extern char DAT_800a42dc[];
+extern char s_800a42e8[];
+extern char s_800a42dc[];
 
 void FUN_8008e904(char *a, char *b);
 
@@ -19,7 +19,7 @@ void FUN_800117b4(void) {
 	Pad[541] = 0;
 
 	if (GSaveAction == 0)
-		FUN_8008e904(SaveGameName, DAT_800a42e8);
+		FUN_8008e904(SaveGameName, s_800a42e8);
 	else
-		FUN_8008e904(SaveGameName, DAT_800a42dc);
+		FUN_8008e904(SaveGameName, s_800a42dc);
 }

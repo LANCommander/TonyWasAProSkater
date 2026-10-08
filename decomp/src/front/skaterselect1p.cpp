@@ -161,14 +161,14 @@ extern int DAT_800d37b4[];
 extern int DAT_800d37e4[];
 extern int DAT_800d1cb8;
 extern int GGame;
-extern int DAT_800d1724;
+extern int Cheat_BigHead;
 extern int Loading;
 extern int GHeadPart;
 extern int GHeadUp;
 extern char *MechList;
 extern char *pDoubleBuffer;
 extern char MikeCamera[];
-extern PREManager *DAT_800d1b10;
+extern PREManager *SpoolerBlocksFileIO;
 
 static int DAT_800d232c;
 static int DAT_800d2330;
@@ -464,7 +464,7 @@ extern "C" int FUN_80059794() {
 					if (*DAT_800a44fc[DAT_800d1c40].pModel) {
 						FUN_8006ed2c(DAT_800d37b4[DAT_800d1c40]);
 
-						if (DAT_800d1724) {
+						if (Cheat_BigHead) {
 							GHeadPart = DAT_800a44fc[DAT_800d1c40].m13;
 							GHeadUp = DAT_800a44fc[DAT_800d1c40].m14;
 						}
@@ -626,7 +626,7 @@ extern "C" int FUN_80059794() {
 					if (*DAT_800a44fc[DAT_800d1c40].pModel) {
 						FUN_8006ed2c(DAT_800d37b4[DAT_800d1c40]);
 
-						if (DAT_800d1724) {
+						if (Cheat_BigHead) {
 							GHeadUp = DAT_800a44fc[DAT_800d1c40].m14;
 							GHeadPart = DAT_800a44fc[DAT_800d1c40].m13;
 						}
@@ -971,7 +971,7 @@ done:
 	delete bioRect1;
 	delete bioRect2;
 
-	DAT_800d1b10->unloadPRE("Player1.pre");
+	SpoolerBlocksFileIO->unloadPRE("Player1.pre");
 	Pack_DefragmentFully();
 	Mess_SetCurrentFont("tapes1.fnt");
 	Mess_UnloadFont();

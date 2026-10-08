@@ -20,7 +20,7 @@ extern int DAT_800d1cb8;
 
 int DAT_800d2358, DAT_800d235c, DAT_800d1d28;
 
-extern char DAT_800a1c04[];
+extern char s_CAREER_MODE[];
 
 extern int FUN_8005eb78();
 void FUN_800242cc(void);
@@ -89,7 +89,7 @@ int FUN_8005e0e0(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int 
 	while (s3 == 0) {
 		FUN_8005c780();
 
-		if (FUN_8008f6fc(*a0, DAT_800a1c04) == 0) {
+		if (FUN_8008f6fc(*a0, s_CAREER_MODE) == 0) {
 			if (DemoTimer)
 				DemoTimer--;
 			else

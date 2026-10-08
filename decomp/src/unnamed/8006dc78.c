@@ -11,7 +11,7 @@ typedef struct P {
 	char b[1];
 } P;
 
-extern int DAT_800d1700;
+extern int Cheat_PanelOn;
 extern int GamePaused;
 extern int ViewportMode;
 extern P *MechList;
@@ -34,7 +34,7 @@ void FUN_8006dc78(void) {
 	P *s2;
 	char *s3;
 
-	if (DAT_800d1700) {
+	if (Cheat_PanelOn) {
 		s2 = MechList;
 		Panel_ReplayInstructions();
 

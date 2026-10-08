@@ -39,7 +39,7 @@ extern "C" {
 	void SetTint__7CFT4BitUcUcUc(CMotionBlur *, int, int, int);
 	void Die__4CBit(void *);
 
-	extern char DAT_800d1860[];
+	extern char s_Smoke[];
 }
 
 struct CSmokeGenerator {
@@ -69,7 +69,7 @@ void CSmokeGenerator::Move() {
 
 		if (foo)
 			foo =
-			    __11CMotionBlurRC7CVectorR7CVectorPciii(foo, mPos, &upvel, DAT_800d1860, mBlurLife + Rnd(mBlurLifeRnd), 0, 10);
+			    __11CMotionBlurRC7CVectorR7CVectorPciii(foo, mPos, &upvel, s_Smoke, mBlurLife + Rnd(mBlurLifeRnd), 0, 10);
 
 		foo->SetM40(100);
 		foo->SetM60(Rnd(4096));

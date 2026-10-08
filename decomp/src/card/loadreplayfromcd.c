@@ -1,7 +1,7 @@
 /* Card_LoadReplayFromCD__FPUlT0Pc (0x80014c74) */
 #include "names.h"
-extern char DAT_8009e0b0[];
-extern char DAT_8009e0e4[];
+extern char s_Checksum_error_for_1P_in_Card_Lo[];
+extern char s_Checksum_error_for_2P_in_Card_Lo[];
 
 char *FileIO_Open(char *);
 char *Mem_NewX(char *, int, int);
@@ -31,13 +31,13 @@ int Card_LoadReplayFromCD(char *a, char *b, char *name) {
 	c = *(short *)(a + 566);
 
 	if (c != CalcChecksum(a + 640, 23936))
-		FUN_8008c190(DAT_8009e0b0);
+		FUN_8008c190(s_Checksum_error_for_1P_in_Card_Lo);
 
 	if (b) {
 		c = *(short *)(b + 566);
 
 		if (c != CalcChecksum(b + 640, 23936))
-			FUN_8008c190(DAT_8009e0e4);
+			FUN_8008c190(s_Checksum_error_for_2P_in_Card_Lo);
 	}
 
 	return 0;

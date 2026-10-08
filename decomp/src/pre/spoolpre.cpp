@@ -13,8 +13,8 @@ class PREManager : public CClass {
 	void spoolPRE(char *pre_name);
 };
 
-extern char DAT_800a20e8[];
-extern char DAT_800a2104[];
+extern char s_Out_of_PREManager_slots[];
+extern char s_Memory_error_loading_s[];
 
 int FileIO_Open(const char *);
 
@@ -32,14 +32,14 @@ void PREManager::spoolPRE(char *pre_name) {
 			break;
 
 	if (slot == 16) {
-		FUN_8008c190(DAT_800a20e8);
+		FUN_8008c190(s_Out_of_PREManager_slots);
 		return;
 	}
 
 	if ((mPre[slot] = Mem_NewTop__FUi(FileIO_Open(pre_name))))
 		FileIO_Load__FPv(mPre[slot]);
 	else
-		FUN_8008c190(DAT_800a2104, pre_name);
+		FUN_8008c190(s_Memory_error_loading_s, pre_name);
 
 	{
 		char *d = (char *)(slot * 16 + (int)this);

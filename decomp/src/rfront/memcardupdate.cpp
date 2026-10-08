@@ -98,7 +98,7 @@ class VerticalMenu {
 
 extern "C" {
 	extern int TTime;
-	extern int DAT_800d1380;
+	extern int CardStatus;
 	extern CMenu *pYesNoMenu;
 	extern int GNumberOfPlayers;
 	extern int GSoftResetEnabled;
@@ -108,8 +108,8 @@ extern "C" {
 	extern SVideoSettings GVideoRestart;
 	extern SReplay GCareer;
 	extern unsigned char SaveGameName[];
-	extern char DAT_800a42dc[];
-	extern char DAT_800a42e8[];
+	extern char s_800a42dc[];
+	extern char s_800a42e8[];
 	extern char StoredCareerName[];
 	extern char ASCIIName[][11];
 	extern char *VertMenuItem[];
@@ -118,9 +118,9 @@ extern "C" {
 	extern char SLOT_DIR[][40];
 	extern SFrontStrings GameText;
 
-	extern char DAT_8009d154[] __attribute__((aligned(4)));
+	extern char s_demoX_rec[] __attribute__((aligned(4)));
 
-	extern char DAT_8009d160[];
+	extern char s_Saving_Replay_s[];
 
 	void *memcpy(void *, const void *, unsigned int);
 	void FUN_800117b4(void);
@@ -140,7 +140,7 @@ VerticalMenu *pVertMenu;
 int VideoToDisk, GHasCareerLoaded, GLoadedCareerIsSaved, CursorPos, SizeUp;
 int NumVertMenuItems, VertMenuTopIndex, VertMenuTopChanged, MCState, CheckingCardPause;
 int GLoadAction, GSaveAction;
-int DAT_800d21c8, DAT_800d21cc, SaveNeedBlocks, SaveFreeBlocks, GReturnToState;
+int Delay, Retries, SaveNeedBlocks, SaveFreeBlocks, GReturnToState;
 
 int Card_CheckStatus(int, int);
 int Card_GetDirAndFreeBlocks(int, int);
@@ -180,7 +180,7 @@ int Front_MemCardUpdate() {
 				break;
 			}
 
-			switch (DAT_800d1380) {
+			switch (CardStatus) {
 				case 1:
 					SaveFreeBlocks = Card_GetDirAndFreeBlocks(0, 0);
 
@@ -201,8 +201,8 @@ int Front_MemCardUpdate() {
 							}
 
 							MCState = 4;
-							DAT_800d21c8 = 4;
-							DAT_800d21cc = 4;
+							Delay = 4;
+							Retries = 4;
 						} else {
 							MCState = 2;
 							FUN_800117b4();
@@ -233,7 +233,7 @@ int Front_MemCardUpdate() {
 
 			break;
 		case 8:
-			switch (DAT_800d1380) {
+			switch (CardStatus) {
 				case -1:
 					MCState = 9;
 					break;
@@ -305,16 +305,16 @@ int Front_MemCardUpdate() {
 			}
 
 			if (GSaveAction == 0)
-				FUN_8008e904(DAT_800a42e8, (char *)SaveGameName);
+				FUN_8008e904(s_800a42e8, (char *)SaveGameName);
 			else
-				FUN_8008e904(DAT_800a42dc, (char *)SaveGameName);
+				FUN_8008e904(s_800a42dc, (char *)SaveGameName);
 
 			if (GoBack) {
 				SFX_PlayX__FUisi(2, 0x2000, 0);
 				return SaveReturnState();
 			}
 
-			if (DAT_800d1380 == -1 && !VideoToDisk)
+			if (CardStatus == -1 && !VideoToDisk)
 				MCState = 9;
 
 			if (Activated && !VideoToDisk) {
@@ -336,8 +336,8 @@ int Front_MemCardUpdate() {
 						pYesNoMenu->CentreY();
 					} else {
 						MCState = 4;
-						DAT_800d21c8 = 4;
-						DAT_800d21cc = 4;
+						Delay = 4;
+						Retries = 4;
 					}
 				}
 			}
@@ -356,8 +356,8 @@ int Front_MemCardUpdate() {
 					SFX_PlayX__FUisi(5, 0x2000, 0);
 
 					MCState = 4;
-					DAT_800d21c8 = 4;
-					DAT_800d21cc = 4;
+					Delay = 4;
+					Retries = 4;
 				} else {
 					SFX_PlayX__FUisi(2, 0x2000, 0);
 
@@ -375,7 +375,7 @@ int Front_MemCardUpdate() {
 
 			break;
 		case 9:
-			switch (DAT_800d1380) {
+			switch (CardStatus) {
 				case -2:
 				case 1:
 				case 2:
@@ -390,7 +390,7 @@ int Front_MemCardUpdate() {
 
 			break;
 		case 18:
-			if (DAT_800d1380 == -1)
+			if (CardStatus == -1)
 				MCState = 17;
 
 			if (AnyButton) {
@@ -402,7 +402,7 @@ int Front_MemCardUpdate() {
 		case 10:
 			pYesNoMenu->Update();
 
-			switch (DAT_800d1380) {
+			switch (CardStatus) {
 				case 1:
 				case 2:
 					MCState = 0;
@@ -417,8 +417,8 @@ int Front_MemCardUpdate() {
 					SFX_PlayX__FUisi(5, 0x2000, 0);
 
 					MCState = 11;
-					DAT_800d21c8 = 4;
-					DAT_800d21cc = 4;
+					Delay = 4;
+					Retries = 4;
 				} else {
 					SFX_PlayX__FUisi(5, 0x2000, 0);
 					return SaveReturnState();
@@ -435,21 +435,21 @@ int Front_MemCardUpdate() {
 		case 11:
 			GSoftResetEnabled = 0;
 
-			if (DAT_800d1380 == 2 || DAT_800d1380 == -1) {
+			if (CardStatus == 2 || CardStatus == -1) {
 				MCState = 12;
-				DAT_800d21c8 = 75;
+				Delay = 75;
 				break;
 			}
 
-			if (--DAT_800d21c8 < 0 && DAT_800d1380) {
+			if (--Delay < 0 && CardStatus) {
 				if (Card_FormatCard(0, 0) == 1) {
 					MCState = 13;
-					DAT_800d21c8 = 75;
-				} else if (--DAT_800d21cc < 0) {
+					Delay = 75;
+				} else if (--Retries < 0) {
 					MCState = 12;
-					DAT_800d21c8 = 75;
+					Delay = 75;
 				} else {
-					DAT_800d21c8 = (4 - DAT_800d21cc) * 60;
+					Delay = (4 - Retries) * 60;
 				}
 			}
 
@@ -464,8 +464,8 @@ int Front_MemCardUpdate() {
 			break;
 		case 12:
 		case 13:
-			if (--DAT_800d21c8 < 0) {
-				if (DAT_800d1380 == -1)
+			if (--Delay < 0) {
+				if (CardStatus == -1)
 					MCState = 9;
 				else
 					MCState = 0;
@@ -481,12 +481,12 @@ int Front_MemCardUpdate() {
 		case 4:
 			GSoftResetEnabled = 0;
 
-			if (DAT_800d1380 == -1) {
+			if (CardStatus == -1) {
 				MCState = 6;
-				DAT_800d21c8 = 75;
+				Delay = 75;
 			}
 
-			if (--DAT_800d21c8 < 0 && DAT_800d1380) {
+			if (--Delay < 0 && CardStatus) {
 				int WriteError;
 
 				switch (GSaveAction) {
@@ -520,7 +520,7 @@ int Front_MemCardUpdate() {
 					}
 				} else {
 					MCState = 6;
-					DAT_800d21c8 = 75;
+					Delay = 75;
 				}
 			}
 
@@ -541,10 +541,10 @@ int Front_MemCardUpdate() {
 			{
 				char save_name[16];
 
-				memcpy(save_name, DAT_8009d154, 10);
+				memcpy(save_name, s_demoX_rec, 10);
 
 				save_name[4] = SaveGameName[0];
-				FUN_8008c190(DAT_8009d160, save_name);
+				FUN_8008c190(s_Saving_Replay_s, save_name);
 				FUN_80014868(1, save_name);
 
 				MCState = 7;
@@ -566,7 +566,7 @@ int Front_MemCardUpdate() {
 
 			break;
 		case 16:
-			switch (DAT_800d1380) {
+			switch (CardStatus) {
 				case 1: {
 					int WantedFileType;
 					int Vids;
@@ -646,7 +646,7 @@ int Front_MemCardUpdate() {
 
 			break;
 		case 17:
-			switch (DAT_800d1380) {
+			switch (CardStatus) {
 				case -2:
 				case 1:
 				case 2:
@@ -687,7 +687,7 @@ int Front_MemCardUpdate() {
 				}
 			}
 
-			if (GoBack || DAT_800d1380 == -1) {
+			if (GoBack || CardStatus == -1) {
 				SFX_PlayX__FUisi(147, 0x2000, 0);
 				return GReturnToState;
 			}

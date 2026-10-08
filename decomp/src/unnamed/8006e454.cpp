@@ -10,9 +10,9 @@ struct SLevel {
 };
 
 extern SLevel Levels[];
-extern char DAT_800a23a0[];
+extern char s_d_OF_5_s[];
 extern SMessageProg Messprog_Zoom;
-extern char DAT_800d3888[];
+extern char Msg[];
 extern int GGame;
 extern char *MechList;
 extern int GLevel;
@@ -36,6 +36,6 @@ extern "C" void FUN_8006e454(void) {
 		return;
 	}
 
-	FUN_8008b900(DAT_800d3888, DAT_800a23a0, n, Levels[GLevel].Goal);
-	Mess_Message(DAT_800d3888, &Messprog_Zoom, 1, 0, 0);
+	FUN_8008b900(Msg, s_d_OF_5_s, n, Levels[GLevel].Goal);
+	Mess_Message(Msg, &Messprog_Zoom, 1, 0, 0);
 }

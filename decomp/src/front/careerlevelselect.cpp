@@ -123,9 +123,9 @@ extern int DAT_800d3810[];
 extern int GGame; /* game mode */
 extern int DAT_800d1cb8;
 extern int Loading;
-extern int DAT_800d1708;
-extern PREManager *DAT_800d1b10;
-extern char DAT_800a21c0[]; /* "mainf.fnt" */
+extern int Cheat_LevelSelect;
+extern PREManager *SpoolerBlocksFileIO;
+extern char s_mainf_fnt_800a21c0[]; /* "mainf.fnt" */
 
 int DAT_800d1dc4 = 0; /* chosen level */
 int DAT_800d1dc8 = -1;
@@ -372,7 +372,7 @@ extern "C" void FUN_80066d7c() {
 
 	strcpy(text[0], Levels[cur].Name);
 	strcpy(text[1], Levels[cur].Name2);
-	Mess_SetCurrentFont(DAT_800a21c0);
+	Mess_SetCurrentFont(s_mainf_fnt_800a21c0);
 
 	tw[0] = Mess_TextWidth__FPCc(text[0]);
 	tw[1] = Mess_TextWidth__FPCc(text[1]);
@@ -530,7 +530,7 @@ extern "C" void FUN_80066d7c() {
 			}
 		}
 
-		Mess_SetCurrentFont(DAT_800a21c0);
+		Mess_SetCurrentFont(s_mainf_fnt_800a21c0);
 
 		for (int i = 0; i < 2; i++)
 			Mess_DrawText__FiiPCciUiib(tx[i], ty[i], text[i], 0, 0, 256, 0);
@@ -616,7 +616,7 @@ extern "C" void FUN_80066d7c() {
 					strcpy(text[1], Levels[sel].Name2);
 				}
 
-				Mess_SetCurrentFont(DAT_800a21c0);
+				Mess_SetCurrentFont(s_mainf_fnt_800a21c0);
 
 				tw[0] = Mess_TextWidth__FPCc(text[0]);
 				tw[1] = Mess_TextWidth__FPCc(text[1]);
@@ -717,7 +717,7 @@ extern "C" void FUN_80066d7c() {
 
 			SFX_PlayX__FUisi(146, 0x2000, 0);
 
-			if (DAT_800d1708) {
+			if (Cheat_LevelSelect) {
 				GCareer.LastLevel = sel;
 				break;
 			}
@@ -753,7 +753,7 @@ extern "C" void FUN_80066d7c() {
 	Mess_UnloadFont();
 	Mess_SetCurrentFont("stats1.fnt");
 	Mess_UnloadFont();
-	DAT_800d1b10->unloadPRE("Level.pre");
+	SpoolerBlocksFileIO->unloadPRE("Level.pre");
 
 	delete scoreBack;
 	delete tapeBox;

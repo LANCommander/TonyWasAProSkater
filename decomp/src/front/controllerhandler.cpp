@@ -68,12 +68,12 @@ class VerticalMenu {
 	void setString(int, char *);
 };
 
-extern SControl DAT_800c0a48[2]; /* Pad */
+extern SControl Pad[2]; /* Pad */
 extern SOptions GPreferences;
 extern SPadMap DAT_800bf260[2]; /* edited mapping */
 extern SPadMap DAT_800bf280[2]; /* mapping before the last change */
 extern SText GameText;
-extern char DAT_800d1d40[]; /* "%s %s" */
+extern char s_s_s[]; /* "%s %s" */
 
 int DAT_800d1d28;   /* player being configured */
 uchar DAT_800d2350; /* row last changed with left/right */
@@ -94,15 +94,15 @@ void FUN_8005eb78(VerticalMenu *menu) {
 	uchar left;
 	int sel;
 
-	if (pl == 1 && !DAT_800c0a48[1].Connected) {
-		DAT_800c0a48[1].Triangle.Triggered = 1;
+	if (pl == 1 && !Pad[1].Connected) {
+		Pad[1].Triangle.Triggered = 1;
 		return;
 	}
 
-	Pad_ClearTriggers(&DAT_800c0a48[1 - pl]);
+	Pad_ClearTriggers(&Pad[1 - pl]);
 
-	if (DAT_800c0a48[pl].Start.Triggered || DAT_800c0a48[pl].X.Triggered ||
-	    DAT_800c0a48[pl].Up.Triggered || DAT_800c0a48[pl].Down.Triggered) {
+	if (Pad[pl].Start.Triggered || Pad[pl].X.Triggered ||
+	    Pad[pl].Up.Triggered || Pad[pl].Down.Triggered) {
 		switch (DAT_800d2350) {
 			case 0:
 				if (DAT_800bf260[pl].Function[2] == DAT_800bf260[pl].Function[0])
@@ -170,10 +170,10 @@ void FUN_8005eb78(VerticalMenu *menu) {
 		FUN_8005eb28(pl);
 	}
 
-	if (DAT_800c0a48[pl].Left.Triggered || DAT_800c0a48[pl].Right.Triggered) {
-		left = DAT_800c0a48[pl].Left.Triggered;
-		Pad_ClearTriggers(&DAT_800c0a48[0]);
-		Pad_ClearTriggers(&DAT_800c0a48[1]);
+	if (Pad[pl].Left.Triggered || Pad[pl].Right.Triggered) {
+		left = Pad[pl].Left.Triggered;
+		Pad_ClearTriggers(&Pad[0]);
+		Pad_ClearTriggers(&Pad[1]);
 
 		if ((sel = menu->getSelected()) == 0) {
 			SFX_PlayX(144, 8192, 0);
@@ -248,7 +248,7 @@ void FUN_8005eb78(VerticalMenu *menu) {
 				SFX_PlayX(144, 8192, 0);
 
 			GPreferences.VibrationEnabled[pl] = left != 0;
-			FUN_8008b900(buf, DAT_800d1d40, GameText.Vibration,
+			FUN_8008b900(buf, s_s_s, GameText.Vibration,
 			             GPreferences.VibrationEnabled[pl] ? GameText.On : GameText.Off);
 			menu->setString(4, buf);
 		}
@@ -258,7 +258,7 @@ void FUN_8005eb78(VerticalMenu *menu) {
 				SFX_PlayX(144, 8192, 0);
 
 			GPreferences.AutoKickEnabled[pl] = left != 0;
-			FUN_8008b900(buf, DAT_800d1d40, GameText.Autokick,
+			FUN_8008b900(buf, s_s_s, GameText.Autokick,
 			             GPreferences.AutoKickEnabled[pl] ? GameText.On : GameText.Off);
 			menu->setString(5, buf);
 			menu->setString(0, FUN_8005ea74(DAT_800bf260[pl].Function[0]));
@@ -268,10 +268,10 @@ void FUN_8005eb78(VerticalMenu *menu) {
 		}
 	}
 
-	if (DAT_800c0a48[pl].Start.Triggered || DAT_800c0a48[pl].X.Triggered) {
+	if (Pad[pl].Start.Triggered || Pad[pl].X.Triggered) {
 		if (menu->getSelected() != 7) {
-			Pad_ClearTriggers(&DAT_800c0a48[0]);
-			Pad_ClearTriggers(&DAT_800c0a48[1]);
+			Pad_ClearTriggers(&Pad[0]);
+			Pad_ClearTriggers(&Pad[1]);
 		}
 
 		if (menu->getSelected() == 6) {
@@ -282,11 +282,11 @@ void FUN_8005eb78(VerticalMenu *menu) {
 			FUN_8005eb28(pl);
 
 			GPreferences.VibrationEnabled[pl] = 1;
-			FUN_8008b900(buf, DAT_800d1d40, GameText.Vibration, GameText.On);
+			FUN_8008b900(buf, s_s_s, GameText.Vibration, GameText.On);
 			menu->setString(4, buf);
 
 			GPreferences.AutoKickEnabled[pl] = 1;
-			FUN_8008b900(buf, DAT_800d1d40, GameText.Autokick, GameText.On);
+			FUN_8008b900(buf, s_s_s, GameText.Autokick, GameText.On);
 			menu->setString(5, buf);
 			menu->setString(0, FUN_8005ea74(DAT_800bf260[pl].Function[0]));
 			menu->setString(1, FUN_8005ea74(DAT_800bf260[pl].Function[1]));

@@ -32,7 +32,7 @@ int DAT_800d15e0, DAT_800d15e4;
 u_short Clut;
 
 extern int Pack_NoBottom, Pack_NoRight, Pal16X, Pal16Y;
-extern char DAT_8009ef84[];
+extern char s_memory_error[];
 
 #define Font_table   DAT_800a6110
 #define Num_fonts    DAT_800d15e0
@@ -112,7 +112,7 @@ int Mess_LoadFont(char *filename, char *file_buffer, int char_sep, int shadow_of
 	Font_table[this_font].mFont_scale = 256;
 
 	if (!Font_table[this_font].mChar_table)
-		printf(DAT_8009ef84);
+		printf(s_memory_error);
 
 	db = file_buffer + (Font_table[this_font].mNum_chars * 16 + 4) + 32;
 	char *tb = file_buffer + 4;

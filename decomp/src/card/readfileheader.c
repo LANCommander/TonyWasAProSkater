@@ -1,6 +1,6 @@
 /* Card_ReadFileHeader__FPcP9SCardHead (0x8001508c) */
 #include "names.h"
-extern char DAT_800d1388[];
+extern char s_bu00_s[];
 
 void FUN_8008b900(char *, char *, char *);
 int FUN_8008eb4c(char *, int);
@@ -14,7 +14,7 @@ int Card_ReadFileHeader(char *name, short *out) {
 	char buf[32];
 	int i, fd, n;
 
-	FUN_8008b900(buf, DAT_800d1388, name);
+	FUN_8008b900(buf, s_bu00_s, name);
 
 	for (i = 0; i < 8; i++) {
 		fd = FUN_8008eb4c(buf, 1);

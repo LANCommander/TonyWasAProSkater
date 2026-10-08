@@ -3,7 +3,7 @@
 extern char DAT_800a0534[];
 
 char MechList[8];
-int DAT_800d19a0;
+int NumMechs;
 
 void SFX_Stop(int a);
 void Mem_Delete(int a);
@@ -36,7 +36,7 @@ void FUN_80042380(char *p, int f) {
 
 	CBody_DeleteFrom(p, MechList);
 
-	DAT_800d19a0--;
+	NumMechs--;
 	FUN_800427bc(p);
 	FUN_8001dfec(p + 2772, 2);
 	FUN_8001dfec(p + 2696, 2);

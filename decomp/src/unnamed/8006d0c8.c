@@ -4,7 +4,7 @@
    the multiplier, and draws the score and x-multiplier text. */
 extern int GCareer_9b8[];
 extern int GVInfo1[];
-extern char DAT_800d1e88[], DAT_800d1e8c[], DAT_800d1e94[];
+extern char s_ld_800d1e88[], s_x_d_5[], s_x_d[];
 
 unsigned LastHoldingScore;
 
@@ -55,7 +55,7 @@ void FUN_8006d0c8(char *o, int x0, int y0) {
 			s2 = *(unsigned *)(o + 0xa64);
 
 		if (s2 || *(int *)(o + 0xa70) == 5) {
-			FUN_8008b900(b1, DAT_800d1e88, *(int *)(o + 0xa70) == 5 ? LastHoldingScore : s2);
+			FUN_8008b900(b1, s_ld_800d1e88, *(int *)(o + 0xa70) == 5 ? LastHoldingScore : s2);
 			Mess_SetRGB(128, 128, 128, 0);
 			GraffitiColor(o);
 
@@ -79,9 +79,9 @@ void FUN_8006d0c8(char *o, int x0, int y0) {
 
 			if (!s4) {
 				if (s3 & 1)
-					FUN_8008b900(b2, DAT_800d1e8c, s3 >> 1);
+					FUN_8008b900(b2, s_x_d_5, s3 >> 1);
 				else
-					FUN_8008b900(b2, DAT_800d1e94, s3 >> 1);
+					FUN_8008b900(b2, s_x_d, s3 >> 1);
 
 				Mess_SetRGB(128, 128, 128, 0);
 				GraffitiColor(o);

@@ -54,8 +54,8 @@ extern char *GameText_34[];
 extern char *GameText_1f4[];
 extern char *GameText_23c[];
 extern char *GameText_240[];
-extern char DAT_8009d0f0[];
-extern char DAT_8009d11c[];
+extern char s_no_space_do_you_want_to_delete_b[];
+extern char s_loading_video_file[];
 extern char SaveGameName[];
 extern char DAT_800d112c[];
 extern char DAT_800d1130[];
@@ -222,7 +222,7 @@ void Front_MemCardDisplay(void) {
 			Front_PrintGoBackSelect();
 			break;
 		case 14:
-			Mess_DrawText(s2, 100, DAT_8009d0f0, 0, 0, 256, 0);
+			Mess_DrawText(s2, 100, s_no_space_do_you_want_to_delete_b, 0, 0, 256, 0);
 			break;
 		case 19:
 			RGBRed();
@@ -243,7 +243,7 @@ void Front_MemCardDisplay(void) {
 			break;
 		case 21:
 			FUN_80011214();
-			Mess_DrawText(s2, 110, DAT_8009d11c, 0, 0, 256, 0);
+			Mess_DrawText(s2, 110, s_loading_video_file, 0, 0, 256, 0);
 			RGBRed();
 			Mess_DrawText(s2, 140, GameText.f1f8, 0, 0, 256, 0);
 			Mess_DrawText(s2, 166, GameText.f1fc, 0, 0, 256, 0);

@@ -44,9 +44,9 @@ struct SSkaterInfo {
 
 extern CCompetition theCompetition;
 extern SSkaterInfo Stats_2c[];
-extern char DAT_800a33a0[], DAT_800a33b8[], DAT_800a33c8[];
-extern char DAT_800d1fd4[];
-extern char DAT_800d1fd8[];
+extern char s_COMPETITION_STANDINGS[], s_Heat[], s_1_2_3_Total[];
+extern char s_s_800d1fd4[];
+extern char s_d_d[];
 extern char DAT_800d1fe0[];
 extern char *GameText_180[];
 
@@ -70,18 +70,18 @@ void Competition_LadderDisplay() {
 	Mess_SetScale(256);
 	Mess_SetTextJustify__FUc(0);
 	Mess_SetRGB(182, 132, 36, 0);
-	FUN_8008b900(text_buf, DAT_800a33a0);
+	FUN_8008b900(text_buf, s_COMPETITION_STANDINGS);
 	Mess_DrawText__FiiPCciUiib(256, 40, text_buf, 0, 0, 256, 0);
 	Mess_SetTextJustify__FUc(1);
 	Mess_SetScale(120);
-	FUN_8008b900(text_buf, DAT_800a33b8);
+	FUN_8008b900(text_buf, s_Heat);
 	Mess_DrawText__FiiPCciUiib(260, 50, text_buf, 0, 0, 256, 0);
-	FUN_8008b900(text_buf, DAT_800a33c8);
+	FUN_8008b900(text_buf, s_1_2_3_Total);
 	Mess_DrawText__FiiPCciUiib(260, 60, text_buf, 0, 0, 256, 0);
 	Mess_SetScale(160);
 
 	for (i = 0; i < 10; i++) {
-		FUN_8008b900(text_buf, DAT_800d1fd4,
+		FUN_8008b900(text_buf, s_s_800d1fd4,
 		             Stats_2c[pComp->mCompetitorList[pComp->mOrdering[i]]].pName);
 
 		if (pComp->mOrdering[i] == pComp->our_skater_num)
@@ -173,7 +173,7 @@ void Competition_LadderDisplay() {
 			if (a < pComp->mCurrentHeat) {
 				ushort s = pComp->mScore[pComp->mOrdering[b]][a];
 
-				FUN_8008b900(text_buf, DAT_800d1fd8, s / 10, s % 10);
+				FUN_8008b900(text_buf, s_d_d, s / 10, s % 10);
 				Mess_DrawText__FiiPCciUiib(a * 60 + 250, b * 14 + 70, text_buf, 0, 0, 256, 0);
 			}
 
@@ -181,7 +181,7 @@ void Competition_LadderDisplay() {
 				if (b * 20 < pComp->mLadderTimer) {
 					ushort s = pComp->mScore[pComp->mOrdering[b]][a];
 
-					FUN_8008b900(text_buf, DAT_800d1fd8, s / 10, s % 10);
+					FUN_8008b900(text_buf, s_d_d, s / 10, s % 10);
 				} else {
 					if (pComp->mOrdering[b] == pComp->our_skater_num)
 						Mess_SetRGB(182, 132, 36, 0);
@@ -201,7 +201,7 @@ void Competition_LadderDisplay() {
 				if (b * 20 < pComp->mLadderTimer || pComp->mCurrentHeat) {
 					ushort s = pComp->mTotalScore[pComp->mOrdering[b]];
 
-					FUN_8008b900(text_buf, DAT_800d1fd8, s / 10, s % 10);
+					FUN_8008b900(text_buf, s_d_d, s / 10, s % 10);
 				} else
 					FUN_8008b900(text_buf, DAT_800d1fe0);
 

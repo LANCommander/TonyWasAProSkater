@@ -51,7 +51,7 @@ class CTape {
 
 extern CTape *GTape[5];
 
-int DAT_800d1fbc, DAT_800d1fb8;
+int CTape_mOkayToDisplayTitle, CTape_mOkayToDisplayContinueButton;
 
 void Mess_SetTextJustify(unsigned char);
 void Mess_SetScale(int);
@@ -62,14 +62,14 @@ void CTape::AI(int tape_no) {
 	mTimer++;
 
 	if (mTimer < 60)
-		DAT_800d1fbc = 1;
+		CTape_mOkayToDisplayTitle = 1;
 	else
-		DAT_800d1fbc = 0;
+		CTape_mOkayToDisplayTitle = 0;
 
 	if (mSessionTapeNum * 20 + 80 < mTimer)
-		DAT_800d1fb8 = 1;
+		CTape_mOkayToDisplayContinueButton = 1;
 	else
-		DAT_800d1fb8 = 0;
+		CTape_mOkayToDisplayContinueButton = 0;
 
 	if (mTimer > 60) {
 		int temptime = mTimer - 60;

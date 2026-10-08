@@ -20,7 +20,7 @@ struct SControl {
 	int rest[11];
 };
 
-extern SControl DAT_800c0a48[2]; /* Pad */
+extern SControl Pad[2]; /* Pad */
 
 int DAT_800d2348;      /* quit countdown */
 unsigned DAT_800d1ca4; /* looping sound */
@@ -35,12 +35,12 @@ void FUN_8005c68c(void) {
 
 		DAT_800d1ca0 = 0;
 		DAT_800d1cb8 = 1;
-	} else if (DAT_800c0a48[0].Start.Pressed && DAT_800c0a48[0].Select.Pressed) {
+	} else if (Pad[0].Start.Pressed && Pad[0].Select.Pressed) {
 		DAT_800d2348--;
-		DAT_800c0a48[0].Start.Triggered = 0;
-	} else if (DAT_800c0a48[1].Start.Pressed && DAT_800c0a48[1].Select.Pressed) {
+		Pad[0].Start.Triggered = 0;
+	} else if (Pad[1].Start.Pressed && Pad[1].Select.Pressed) {
 		DAT_800d2348--;
-		DAT_800c0a48[1].Start.Triggered = 0;
+		Pad[1].Start.Triggered = 0;
 	} else {
 		DAT_800d2348 = 110;
 	}

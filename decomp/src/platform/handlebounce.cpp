@@ -50,7 +50,7 @@ class CPlatform : public Item {
 
 extern SPSXRegion PSXRegion[];
 extern CBruce *MechList;
-extern int DAT_800d19a0;
+extern int NumMechs;
 extern Item *EnvironmentalObjectList;
 
 void Platform_HandleBounce() {
@@ -95,7 +95,7 @@ void Platform_HandleBounce() {
 	FP1 -= 0x14000;
 	BP1 += 0x14000;
 
-	if (DAT_800d19a0 >= 2) {
+	if (NumMechs >= 2) {
 		LP2 = pSkater2->mOldPos.vx;
 		RP2 = pSkater2->mPos.vx;
 
@@ -147,7 +147,7 @@ void Platform_HandleBounce() {
 					    DP1 >= pItem->Pos.vy + (pBox[3] << 12) &&
 					    pItem->Pos.vy + (pBox[2] << 12) >= UP1)
 						((CPlatform *)pItem)->Bounce(MechList, MechList->mVel);
-					else if (DAT_800d19a0 >= 2 && RP2 >= pItem->Pos.vx + (pBox[1] << 12) &&
+					else if (NumMechs >= 2 && RP2 >= pItem->Pos.vx + (pBox[1] << 12) &&
 					         pItem->Pos.vx + (pBox[0] << 12) >= LP2 &&
 					         BP2 >= pItem->Pos.vz + (pBox[5] << 12) &&
 					         pItem->Pos.vz + (pBox[4] << 12) >= FP2 &&

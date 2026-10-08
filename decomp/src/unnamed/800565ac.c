@@ -13,7 +13,7 @@ int DAT_800d2304[2];
 int DAT_800d231c[2];
 
 extern int DAT_800d3758[];
-extern int DAT_800d1724, GHeadPart, GHeadUp;
+extern int Cheat_BigHead, GHeadPart, GHeadUp;
 
 void FUN_80059618(int);
 void Pack_Pack(int, int, int, short *, short *, int, int, int);
@@ -44,7 +44,7 @@ void FUN_800565ac(void) {
 		if (DAT_800d231c[i]) {
 			FUN_8006ed2c(DAT_800d3758[DAT_800d2304[i]]);
 
-			if (DAT_800d1724) {
+			if (Cheat_BigHead) {
 				e = Stats + DAT_800d2304[i];
 				GHeadUp = e->b14;
 				GHeadPart = e->b13;

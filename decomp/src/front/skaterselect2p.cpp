@@ -160,7 +160,7 @@ static int DAT_800d2314;
 
 extern int DAT_800d1cb8;
 extern int SelectedSkater2;
-extern int DAT_800d1724;
+extern int Cheat_BigHead;
 extern int Loading;
 extern int GHeadPart;
 extern int GHeadUp;
@@ -536,7 +536,7 @@ extern "C" int FUN_80056754(void) {
 							DAT_800d231c[p] = 1;
 							FUN_8006ed2c(DAT_800d3758[DAT_800d2304[p]]);
 
-							if (DAT_800d1724) {
+							if (Cheat_BigHead) {
 								GHeadUp = DAT_800a44fc[DAT_800d2304[p]].b14;
 								GHeadPart = DAT_800a44fc[DAT_800d2304[p]].b13;
 							}

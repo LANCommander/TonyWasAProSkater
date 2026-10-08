@@ -1,7 +1,7 @@
 /* FUN_800161d8 (0x800161d8) */
 #include "names.h"
-extern char DAT_8009e2ec[];
-extern char DAT_8009e2f8[];
+extern char s_ingame1_fnt[];
+extern char s_loading[];
 extern volatile int GameFade;
 
 void FUN_8006af64(void);
@@ -21,7 +21,7 @@ void FUN_800161d8(void) {
 	int i;
 
 	FUN_8006af64();
-	Mess_LoadFont__FPciii(DAT_8009e2ec, -1, -1, -1);
+	Mess_LoadFont__FPciii(s_ingame1_fnt, -1, -1, -1);
 	FUN_8008c3d0(1);
 
 	i = 0;
@@ -36,7 +36,7 @@ void FUN_800161d8(void) {
 		Mess_SetTextJustify(0);
 		Mess_SetScale(384);
 		Mess_SetRGB(150, 100, 25, 0);
-		Mess_DrawText(320, 240, DAT_8009e2f8, 1, 0, 256, 0);
+		Mess_DrawText(320, 240, s_loading, 1, 0, 256, 0);
 		FUN_8006b26c();
 	} while (i < 2);
 

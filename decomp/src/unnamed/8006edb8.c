@@ -7,13 +7,13 @@ typedef struct {
 } S;
 
 extern S PSXRegion[];
-extern int *DAT_800c09a8[];
+extern int *Memories[];
 
 void Mem_Delete(int *);
 
 void FUN_8006edb8(int i) {
 	int *d = PSXRegion[i].p14;
-	int *s = DAT_800c09a8[i];
+	int *s = Memories[i];
 
 	do {
 		int j = 0;
@@ -28,7 +28,7 @@ void FUN_8006edb8(int i) {
 		}
 	} while (0);
 
-	Mem_Delete(DAT_800c09a8[i]);
+	Mem_Delete(Memories[i]);
 
-	DAT_800c09a8[i] = 0;
+	Memories[i] = 0;
 }

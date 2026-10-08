@@ -1,8 +1,8 @@
 /* Options_Init__Fv (0x800105f4) */
 #include "names.h"
 extern int GPreferences[];
-extern char DAT_800d10dc[];
-extern char DAT_800d10e4[];
+extern char s_HORSE[];
+extern char s_AAA[];
 extern int SFXLEVEL, XALEVEL;
 
 int FUN_8008b900(char *, char *);
@@ -26,8 +26,8 @@ void Options_Init(void) {
 		GPreferences[75 + i * 4] = 3;
 	}
 
-	FUN_8008b900((char *)&GPreferences[100], DAT_800d10dc);
+	FUN_8008b900((char *)&GPreferences[100], s_HORSE);
 
 	GPreferences[99] = 5;
-	FUN_8008b900((char *)&GPreferences[100] - 80, DAT_800d10e4);
+	FUN_8008b900((char *)&GPreferences[100] - 80, s_AAA);
 }

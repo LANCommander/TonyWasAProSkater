@@ -101,7 +101,7 @@ extern STrickInfo DAT_800a7460, DAT_800a74e4, DAT_800a7510;
 extern short HeadBloodAtFrame[];
 extern CVector WorldUp;
 extern CVector DAT_800d25e4;
-extern char DAT_8009fe50[];
+extern char s_restart_at_start_of_main_physics[];
 
 int Cheat_StatsOverride;
 int DAT_800d1950;
@@ -511,7 +511,7 @@ void CBruce::DoPhysics() {
 			mKickSpeed -= 4096;
 	}
 
-	UberFrig(this, mPos, DAT_8009fe50);
+	UberFrig(this, mPos, s_restart_at_start_of_main_physics);
 
 	m1BC = mPos;
 

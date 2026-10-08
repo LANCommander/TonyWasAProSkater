@@ -24,11 +24,11 @@ extern CBruce *GSkater;
 extern SVideoInfo GVInfo1[];
 extern int XFrames;
 extern uint Xblanks;
-extern int DAT_800d1790;
-extern int DAT_800d1794;
-extern char DAT_800a2394[];
+extern int GStartTime;
+extern int GSkaterRegion;
+extern char s_ld_02ld[];
 
-int DAT_800d23c0;
+int Urgent;
 
 int SFX_PlayX(unsigned int, short, int);
 void Mess_SetRGB(uchar, uchar, uchar, int);
@@ -53,7 +53,7 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 	if (GGame == 7 && !pBruce->mTime)
 		return;
 
-	FUN_8001f138(DAT_800d1794);
+	FUN_8001f138(GSkaterRegion);
 
 	{
 		SVideoInfo *VInfo;
@@ -73,7 +73,7 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 				mins = 0;
 			}
 
-			FUN_8008b900(time, DAT_800a2394, mins, secs);
+			FUN_8008b900(time, s_ld_02ld, mins, secs);
 			Mess_SetRGB(128, 0, 0, 0);
 			Mess_SetTextJustify(0);
 			Mess_SetScale(256);
@@ -87,25 +87,25 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 
 				if (pBruce == GSkater) {
 					if (ticks >= 1 && ticks < 600) {
-						if (ticks < DAT_800d23c0) {
+						if (ticks < Urgent) {
 							int sub;
 
 							SFX_PlayX(22, 8192, 0);
 
-							sub = DAT_800d23c0 / 10;
+							sub = Urgent / 10;
 
 							if (sub < 10)
 								sub = 10;
 
-							DAT_800d23c0 -= sub;
+							Urgent -= sub;
 						}
 					} else {
-						DAT_800d23c0 = 600;
+						Urgent = 600;
 					}
 				}
 			}
 		}
 	}
 
-	FUN_8001f138(DAT_800d1790);
+	FUN_8001f138(GStartTime);
 }

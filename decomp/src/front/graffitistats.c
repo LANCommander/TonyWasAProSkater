@@ -5,8 +5,8 @@ typedef struct {
 	int f496, f500;
 } CBruce;
 
-extern char DAT_800d147c[], DAT_800d1484[], DAT_800d148c[], DAT_800d1494[], DAT_800d149c[],
-    DAT_800d14a4[], DAT_800d14ac[];
+extern char s_TAGS[], s_STEALS[], s_HIGH[], s_WINS[], s_LOSSES[],
+    s_STREAK[], s_d[];
 
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);
 void Mess_SetTextJustify(int);
@@ -19,23 +19,23 @@ void Graffiti_Stats(CBruce *b, int x, int y, int r, int g, int bl, int v1,
 
 	Mess_SetRGB(r, g, bl, 0);
 	Mess_SetTextJustify(1);
-	Mess_DrawText(x + 20, y, DAT_800d147c, 0, 0, 256, 0);
-	Mess_DrawText(x + 20, y + 17, DAT_800d1484, 0, 0, 256, 0);
-	Mess_DrawText(x + 20, y + 51, DAT_800d148c, 0, 0, 256, 0);
-	Mess_DrawText(x + 20, y + 68, DAT_800d1494, 0, 0, 256, 0);
-	Mess_DrawText(x + 20, y + 85, DAT_800d149c, 0, 0, 256, 0);
-	Mess_DrawText(x + 20, y + 102, DAT_800d14a4, 0, 0, 256, 0);
+	Mess_DrawText(x + 20, y, s_TAGS, 0, 0, 256, 0);
+	Mess_DrawText(x + 20, y + 17, s_STEALS, 0, 0, 256, 0);
+	Mess_DrawText(x + 20, y + 51, s_HIGH, 0, 0, 256, 0);
+	Mess_DrawText(x + 20, y + 68, s_WINS, 0, 0, 256, 0);
+	Mess_DrawText(x + 20, y + 85, s_LOSSES, 0, 0, 256, 0);
+	Mess_DrawText(x + 20, y + 102, s_STREAK, 0, 0, 256, 0);
 	Mess_SetTextJustify(2);
-	FUN_8008b900(buf, DAT_800d14ac, b->f496);
+	FUN_8008b900(buf, s_d, b->f496);
 	Mess_DrawText(x + 136, y, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, DAT_800d14ac, b->f500);
+	FUN_8008b900(buf, s_d, b->f500);
 	Mess_DrawText(x + 136, y + 17, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, DAT_800d14ac, v4);
+	FUN_8008b900(buf, s_d, v4);
 	Mess_DrawText(x + 136, y + 51, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, DAT_800d14ac, v1);
+	FUN_8008b900(buf, s_d, v1);
 	Mess_DrawText(x + 136, y + 68, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, DAT_800d14ac, v2);
+	FUN_8008b900(buf, s_d, v2);
 	Mess_DrawText(x + 136, y + 85, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, DAT_800d14ac, v3);
+	FUN_8008b900(buf, s_d, v3);
 	Mess_DrawText(x + 136, y + 102, buf, 0, 0, 256, 0);
 }

@@ -141,7 +141,7 @@ int RestartNode;
 short **OffsetList;
 int NumNodes;
 char *pCurrentObjFile;
-char DAT_800d1a14;
+char CurrentObjFileRegion;
 
 extern char *CheatRestarts[];
 extern char *HorseRestarts[];
@@ -295,7 +295,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 			case 0x8e:
 				pCurrentObjFile = (char *)pCommands;
 				pCommands = (ushort *)SkipString((char *)pCommands);
-				DAT_800d1a14 = Spool_FindRegion(pCurrentObjFile);
+				CurrentObjFileRegion = Spool_FindRegion(pCurrentObjFile);
 				break;
 
 			case 0x85: {

@@ -38,9 +38,9 @@ extern SPadMap DAT_800bf260[2];
 extern SPadMap DAT_800bf280[2];
 extern SText GameText;
 extern SLabels DAT_800a1d0c;
-extern char DAT_800a1cb8[];
-extern char DAT_800a1d2c[];
-extern char DAT_800d1d40[];
+extern char s_opt_ctr_bmp[];
+extern char s_options_bmp[];
+extern char s_s_s[];
 
 int DAT_800d1d28;
 
@@ -67,7 +67,7 @@ extern "C" int FUN_8005f6bc(int a) {
 
 	FUN_8005c97c(13);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(DAT_800a1cb8));
+	FUN_80061714(FUN_8005ca3c(s_opt_ctr_bmp));
 
 	labels = DAT_800a1d0c;
 	disabled[0] = 0;
@@ -103,12 +103,12 @@ extern "C" int FUN_8005f6bc(int a) {
 	labels.Name[2] = FUN_8005ea74(DAT_800bf260[pl].Function[2]);
 	labels.Name[3] = FUN_8005ea74(DAT_800bf260[pl].Function[3]);
 
-	FUN_8008b900(vib, DAT_800d1d40, GameText.Vibration,
+	FUN_8008b900(vib, s_s_s, GameText.Vibration,
 	             GPreferences.VibrationEnabled[pl] ? GameText.On : GameText.Off);
 
 	labels.Name[4] = vib;
 
-	FUN_8008b900(ak, DAT_800d1d40, GameText.Autokick,
+	FUN_8008b900(ak, s_s_s, GameText.Autokick,
 	             GPreferences.AutoKickEnabled[pl] ? GameText.On : GameText.Off);
 
 	labels.Name[5] = ak;
@@ -121,7 +121,7 @@ extern "C" int FUN_8005f6bc(int a) {
 	if (r == -1 || r == 1304) {
 		FUN_8005c97c(11);
 		FUN_8005ca64();
-		FUN_80061714(FUN_8005ca3c(DAT_800a1d2c));
+		FUN_80061714(FUN_8005ca3c(s_options_bmp));
 
 		r = -1;
 	}

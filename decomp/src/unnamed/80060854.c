@@ -4,8 +4,8 @@ typedef struct {
 } R;
 
 extern R GCareer_8[];
-extern char DAT_800a1f50[], DAT_800a1f60[], DAT_800a1f78[], DAT_800a1f88[];
-extern int DAT_800d1708;
+extern char s_GET_ALL_TAPES[], s_UNLOCK_OR_LOCK_LEVELS[], s_Levels_locked[], s_Levels_unlocked[];
+extern int Cheat_LevelSelect;
 
 int DAT_800d1d7c, DAT_800d1d80;
 
@@ -13,7 +13,7 @@ int FUN_8005e0e0(char **, int *, int, int, int *, int, int, int, int);
 void FUN_8008c190(char *);
 
 int FUN_80060854(int a) {
-	char *l[2] = { DAT_800a1f50, DAT_800a1f60 };
+	char *l[2] = { s_GET_ALL_TAPES, s_UNLOCK_OR_LOCK_LEVELS };
 	int k[2];
 	int v, i, j;
 
@@ -40,12 +40,12 @@ int FUN_80060854(int a) {
 			}
 		}
 	} else if (v == 114) {
-		DAT_800d1708 = DAT_800d1708 ^ 1;
+		Cheat_LevelSelect = Cheat_LevelSelect ^ 1;
 
-		if (DAT_800d1708 == 0)
-			FUN_8008c190(DAT_800a1f78);
+		if (Cheat_LevelSelect == 0)
+			FUN_8008c190(s_Levels_locked);
 		else
-			FUN_8008c190(DAT_800a1f88);
+			FUN_8008c190(s_Levels_unlocked);
 	}
 
 	return -1;

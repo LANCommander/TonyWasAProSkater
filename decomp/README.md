@@ -94,10 +94,17 @@ Validated on `CVector::operator+=` (`0x8004da3c`): the `move v0,a0` prologue and
   least 4 words in twins at least half aligned count (shorter runs and worse twins disagreed with
   the confident votes most of the time). Each demo global keeps only its best-supported retail
   address. `1/1` rows rest on a single access, so check those first if something looks off.
+  Two more passes cover what no twin reaches. `layout`: the data sections keep each module's
+  variable order, so between two exact names the same distance apart in demo and retail, every
+  demo symbol keeps its offset. A leave-one-out test on the exact names got 294/294 right. With only
+  one neighbour, the same guess was wrong 44 times out of 113, so that isn't used. `string`: a
+  referenced address that holds a C string becomes `s_<text>`, the way Ghidra names them.
+  Static members (`_7CCamera.TweakCol`) become `CCamera_TweakCol`, and function-local statics
+  (`old_camDist.394`) drop the counter.
   **`python tools/rename_data.py [--apply]`** then rewrites `DAT_` in the sources and the keys in
   their `.syms.json`. The address and type stay, so the code doesn't change. A file where the name
-  is already an identifier (a member, local or type) keeps its `DAT_`, because the new name could
-  bind to that instead. Verify a rename with `compile_all.mjs` before and after, with the names mapped
+  is already an identifier (a member declaration, local or type) keeps its `DAT_`, because the new
+  name could bind to that instead. Comments and `x.f`/`p->f` accesses don't count. Verify a rename with `compile_all.mjs` before and after, with the names mapped
   back to `DAT_`, plus `check_all.mjs`. Rerun both scripts as more functions get twins. The
   rest of the `DAT_`s are THPS1-only, or no twin touches them.
 - `src/unnamed/<addr>.c` holds unnamed functions. The trivial ones (empty bodies, `return K`,

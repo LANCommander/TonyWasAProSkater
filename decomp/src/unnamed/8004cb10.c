@@ -5,7 +5,7 @@ typedef struct {
 } R;
 
 extern R DAT_800be09c[];
-extern char DAT_800a12c8[];
+extern char s_Heaps_Small_0_d_Large_1_d[];
 extern char Pad_50[];
 extern int Used_4;
 extern int Used;
@@ -13,7 +13,7 @@ extern int Redbook_XACheckSectorOnVSync;
 extern int DAT_800d169c;
 extern int Redbook_XAModeSet;
 
-int DAT_800d1b10;
+int SpoolerBlocksFileIO;
 int LoadFromPRE;
 int ThePREFile;
 int ThePREFileSize;
@@ -34,7 +34,7 @@ void FileIO_Continue(void);
 void FileIO_Load(char *p) {
 	int a3, a2;
 
-	if (DAT_800d1b10 && LoadFromPRE) {
+	if (SpoolerBlocksFileIO && LoadFromPRE) {
 		Mem_Copy(p, (void *)ThePREFile, ThePREFileSize);
 
 		FileOpen = 0;
@@ -45,7 +45,7 @@ void FileIO_Load(char *p) {
 	a2 = DAT_800be09c[1].b - DAT_800be09c[1].a - Used_4;
 
 	if (Pad_50[0])
-		FUN_8008c190(DAT_800a12c8, a3, a2);
+		FUN_8008c190(s_Heaps_Small_0_d_Large_1_d, a3, a2);
 
 	GameFMV_StopFMV();
 

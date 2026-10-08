@@ -4,9 +4,9 @@ typedef struct {
 	short x, y, w, h;
 } R;
 
-extern char DAT_800c5b00[];
+extern char Vertices[];
 extern char *ProjectedVertices;
-extern char *DAT_800d2164;
+extern char *RotatedVertices;
 extern R DAT_800d1f8c[];
 
 void FUN_80047870(void);
@@ -28,8 +28,8 @@ void FUN_80022b4c(void);
 void FUN_80071d60(void) {
 	R r;
 
-	ProjectedVertices = DAT_800c5b00;
-	DAT_800d2164 = DAT_800c5b00 + 3200;
+	ProjectedVertices = Vertices;
+	RotatedVertices = Vertices + 3200;
 	FUN_80096b84();
 	FUN_80014d5c(1);
 	Pad_InitAtStart();

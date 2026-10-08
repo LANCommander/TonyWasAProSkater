@@ -4,8 +4,8 @@ typedef struct {
 	short x, y, z;
 } SV;
 
-SV DAT_800d18a4;
+SV SparkTrajectory;
 
 void Bit_SetSparkTrajectory(SV *v) {
-	DAT_800d18a4 = *v;
+	SparkTrajectory = *v;
 }

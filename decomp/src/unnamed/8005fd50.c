@@ -20,7 +20,7 @@ typedef struct {
 } O;
 
 extern V DAT_800a1d7c;
-extern char DAT_800a1d2c[], DAT_800a1d38[], DAT_800a1d44[], DAT_800a1d54[];
+extern char s_options_bmp[], s_opt_snd_bmp[], s_opt_dotr_bmp[], s_opt_dotg_bmp[];
 extern int GPreferences_4[];
 extern int XALEVEL;
 extern short GameFMV_StartX;
@@ -57,18 +57,18 @@ int FUN_8005fd50(int a) {
 	FUN_8005c734(-1);
 	FUN_8005c97c(12);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(DAT_800a1d38));
+	FUN_80061714(FUN_8005ca3c(s_opt_snd_bmp));
 
 	o = __nw__6CClassUi(24);
 
 	if (o)
-		o = __6SpritePciii(o, DAT_800a1d44, 1, 256, 256);
+		o = __6SpritePciii(o, s_opt_dotr_bmp, 1, 256, 256);
 
 	DAT_800d1d5c = o;
 	o2 = __nw__6CClassUi(24);
 
 	if (o2)
-		o2 = __6SpritePciii(o2, DAT_800a1d54, 1, 256, 256);
+		o2 = __6SpritePciii(o2, s_opt_dotg_bmp, 1, 256, 256);
 
 	DAT_800d1d60 = o2;
 	XALEVEL = 0;
@@ -96,7 +96,7 @@ int FUN_8005fd50(int a) {
 		GameFMV_StopFMV();
 		FUN_8005c97c(11);
 		FUN_8005ca64();
-		FUN_80061714(FUN_8005ca3c(DAT_800a1d2c));
+		FUN_80061714(FUN_8005ca3c(s_options_bmp));
 
 		XALEVEL = GPreferences_4[0] * 1365;
 	}

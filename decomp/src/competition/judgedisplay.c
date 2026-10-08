@@ -13,8 +13,8 @@ typedef struct {
 } J;
 
 extern J theCompetition;
-extern char DAT_800a33f0[], DAT_800a3400[], DAT_800a3410[], DAT_800a3424[], DAT_800a3430[],
-    DAT_800d1fd8[];
+extern char s_HEAT_d_OVER[], s_JUDGES_SCORES[], s_JUDGE_d_d_d[], s_JUDGE_d[], s_HEAT_d_SCORE[],
+    s_d_d[];
 extern char *GameText_180[];
 
 void Mess_DeleteAll(void);
@@ -36,9 +36,9 @@ void Competition_JudgeDisplay(void) {
 	Mess_SetScale(256);
 	Mess_SetTextJustify(0);
 	Mess_SetRGB(182, 132, 36, 0);
-	FUN_8008b900(buf, DAT_800a33f0, p->b192 + 1);
+	FUN_8008b900(buf, s_HEAT_d_OVER, p->b192 + 1);
 	Mess_DrawText(256, 40, buf, 0, 0, 256, 0);
-	Mess_DrawText(256, 70, DAT_800a3400, 0, 0, 256, 0);
+	Mess_DrawText(256, 70, s_JUDGES_SCORES, 0, 0, 256, 0);
 	Mess_SetRGB(122, 122, 122, 0);
 	Mess_SetTextJustify(1);
 
@@ -59,9 +59,9 @@ void Competition_JudgeDisplay(void) {
 			SFX_PlayX(52, 8192, 0);
 
 		if (s < p->i16) {
-			FUN_8008b900(buf, DAT_800a3410, i + 1, p->x[i] / 10, p->x[i] % 10);
+			FUN_8008b900(buf, s_JUDGE_d_d_d, i + 1, p->x[i] / 10, p->x[i] % 10);
 		} else {
-			FUN_8008b900(buf, DAT_800a3424, i + 1);
+			FUN_8008b900(buf, s_JUDGE_d, i + 1);
 		}
 
 		if (i == p->b91 || i == p->b90)
@@ -87,9 +87,9 @@ void Competition_JudgeDisplay(void) {
 
 		sum = sum / 3;
 		Mess_SetTextJustify(0);
-		FUN_8008b900(buf, DAT_800a3430, p->b192 + 1);
+		FUN_8008b900(buf, s_HEAT_d_SCORE, p->b192 + 1);
 		Mess_DrawText(200, 195, buf, 0, 0, 256, 0);
-		FUN_8008b900(buf, DAT_800d1fd8, sum / 10, sum % 10);
+		FUN_8008b900(buf, s_d_d, sum / 10, sum % 10);
 		Mess_SetScale(384);
 		Mess_DrawText(335, 195, buf, 0, 0, 256, 0);
 

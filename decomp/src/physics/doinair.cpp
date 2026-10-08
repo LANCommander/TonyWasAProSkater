@@ -158,7 +158,7 @@ extern int BulletCollisionCheck;
 extern CVector ZeroVector;
 extern CVector WorldUp;
 extern STrickInfo Group[];
-extern char DAT_8009fe10[];
+extern char s_New_Bail[];
 
 int Face_Air;
 int Face_Skateable;
@@ -380,7 +380,7 @@ void CBruce::DoInAirPhysics() {
 				}
 			} else {
 				mPos = mOldPos;
-				printf(DAT_8009fe10);
+				printf(s_New_Bail);
 				Bail__6CBrucei13ELimitBailVel(this, 0);
 			}
 		} else if (!Face_Skateable && (!Face_Air || m734 != 3)) {

@@ -1,6 +1,6 @@
 /* __4CCarPsii (0x8006b490) */
 #include "names.h"
-extern char DAT_800d1e2c[], DAT_800d1e34[], DAT_800d1e3c[], DAT_800a232c[], __vt_4CCar[];
+extern char s_c_taxi[], s_c_van[], s_c_cable[], s_c_police[], __vt_4CCar[];
 extern int BaddyList;
 
 int CarVol;
@@ -27,21 +27,21 @@ char *CCar_ctor(char *t, short *p, int id, int ty) {
 
 	switch (ty) {
 		case 0xd5:
-			CItem_InitItem(t, DAT_800d1e2c);
+			CItem_InitItem(t, s_c_taxi);
 
 			x = 0x71;
 			goto L;
 		case 0xd6:
 			*(int *)(t + 0x214) = 0;
-			CItem_InitItem(t, DAT_800a232c);
+			CItem_InitItem(t, s_c_police);
 			break;
 		case 0xd7:
-			CItem_InitItem(t, DAT_800d1e34);
+			CItem_InitItem(t, s_c_van);
 
 			x = 0x81;
 			goto L;
 		case 0xd8:
-			CItem_InitItem(t, DAT_800d1e3c);
+			CItem_InitItem(t, s_c_cable);
 
 			x = 0x86;
 		L:

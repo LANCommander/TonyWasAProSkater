@@ -40,8 +40,8 @@ struct SCareerRecord {
 extern SCompetition theCompetition;
 extern CBruce *GSkater;
 extern SCareerRecord GCareer_c[];
-extern char DAT_800a3250[], DAT_800a3268[], DAT_800a318c[], DAT_800a3288[], DAT_800a32a8[];
-extern char DAT_800a32bc[], DAT_800a32dc[], DAT_800a32f4[], DAT_800a3308[];
+extern char s_You_scored_all_golds[], s_Your_are_the_top_pro_skater[], s_Congratulations[], s_Watch_this_then_get_off_your[], s_couch_and_go_skate[];
+extern char s_Your_third_medal_Good_going[], s_You_just_might_become[], s_an_average_skater[], s_pro_skaters_get_all_golds[];
 extern char *GameText_180[];
 
 void Mess_DeleteAll();
@@ -65,11 +65,11 @@ void Competition_EndGameDisplay() {
 	Mess_SetTextJustify__FUc(0);
 
 	if (FUN_8007401c()) {
-		Mess_DrawText__FiiPCciUiib(256, 40, DAT_800a3250, 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 60, DAT_800a3268, 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 80, DAT_800a318c, 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 180, DAT_800a3288, 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 200, DAT_800a32a8, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 40, s_You_scored_all_golds, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 60, s_Your_are_the_top_pro_skater, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 80, s_Congratulations, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 180, s_Watch_this_then_get_off_your, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 200, s_couch_and_go_skate, 0, 0, 256, 0);
 
 		if (!pComp->pMedal[0])
 			pComp->pMedal[0] = Medal_Create((EMedalType)5, -30, 5, 140, 1536, 3);
@@ -80,10 +80,10 @@ void Competition_EndGameDisplay() {
 		if (!pComp->pMedal[2])
 			pComp->pMedal[2] = Medal_Create((EMedalType)5, 30, 5, 140, 1536, 3);
 	} else {
-		Mess_DrawText__FiiPCciUiib(256, 40, DAT_800a32bc, 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 60, DAT_800a32dc, 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 80, DAT_800a32f4, 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 180, DAT_800a3308, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 40, s_Your_third_medal_Good_going, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 60, s_You_just_might_become, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 80, s_an_average_skater, 0, 0, 256, 0);
+		Mess_DrawText__FiiPCciUiib(256, 180, s_pro_skaters_get_all_golds, 0, 0, 256, 0);
 
 		{
 			EMedalType m[3];

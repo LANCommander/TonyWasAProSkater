@@ -125,12 +125,12 @@ extern SCareer GCareer;
 extern SLevelInfo Levels[];
 extern SSkaterInfo Stats_2c[];
 extern char DAT_800a5b28[];
-extern char DAT_8009e3d4[], DAT_8009e3e8[], DAT_8009e3fc[], DAT_8009e40c[];
-extern char DAT_8009e41c[], DAT_8009e428[], DAT_8009e434[], DAT_8009e440[], DAT_8009e450[];
-extern char DAT_8009e460[], DAT_8009e470[], DAT_8009e484[], DAT_8009e494[];
-extern char DAT_8009e4a4[], DAT_8009e4b0[], DAT_8009e4bc[], DAT_8009e4cc[];
-extern char DAT_800d14ac[], DAT_800d14b0[], DAT_800d14b4[], DAT_800d14b8[];
-extern char DAT_800d14bc[], DAT_800d14c0[], DAT_800d14c8[], DAT_800d14d0[];
+extern char s_PLAYER_1_SET_SCORE[], s_PLAYER_2_SET_SCORE[], s_PLAYER_1_MATCH[], s_PLAYER_2_MATCH[];
+extern char s_TIME_IS_UP[], s_GAME_OVER[], s_ld_of_ld[], s_PLAYER_TWO_WINS[], s_PLAYER_ONE_WINS[];
+extern char s_SCORE_SET_AT_d[], s_NO_SCORE_SWITCH[], s_GOING_FOR_d[], s_YOU_SCORED_d[];
+extern char s_YOU_ARE_AN[], s_YOU_ARE_A[], s_PLAYER_ONE_d[], s_PLAYER_TWO_d[];
+extern char s_d[], DAT_800d14b0[], s_s_800d14b4[], s_ld[];
+extern char s_TIE[], s_PUSH[], s_SWITCH[], s_DRAW[];
 
 int Status;
 int GamePaused;
@@ -431,16 +431,16 @@ void Front_Display() {
 
 			if (GHorseMode == 0) {
 				if (GHorsePlayer == 0)
-					Mess_DrawText__FiiPCciUiib(256, 120, DAT_8009e3d4, 0, 0, 256, 0);
+					Mess_DrawText__FiiPCciUiib(256, 120, s_PLAYER_1_SET_SCORE, 0, 0, 256, 0);
 				else
-					Mess_DrawText__FiiPCciUiib(256, 120, DAT_8009e3e8, 0, 0, 256, 0);
+					Mess_DrawText__FiiPCciUiib(256, 120, s_PLAYER_2_SET_SCORE, 0, 0, 256, 0);
 			} else {
 				if (GHorsePlayer == 0)
-					Mess_DrawText__FiiPCciUiib(256, 120, DAT_8009e3fc, 0, 0, 256, 0);
+					Mess_DrawText__FiiPCciUiib(256, 120, s_PLAYER_1_MATCH, 0, 0, 256, 0);
 				else
-					Mess_DrawText__FiiPCciUiib(256, 120, DAT_8009e40c, 0, 0, 256, 0);
+					Mess_DrawText__FiiPCciUiib(256, 120, s_PLAYER_2_MATCH, 0, 0, 256, 0);
 
-				FUN_8008b900(Score, DAT_800d14ac, GHorseScore);
+				FUN_8008b900(Score, s_d, GHorseScore);
 				Mess_DrawText__FiiPCciUiib(256, 140, Score, 0, 0, 256, 0);
 			}
 
@@ -521,7 +521,7 @@ void Front_Display() {
 					             0);
 				}
 
-				FUN_8008b900(highScoreBuf, DAT_800d14b4,
+				FUN_8008b900(highScoreBuf, s_s_800d14b4,
 				             Stats_2c[GCareer.HighScores[GLevel][i].Skater].pName);
 
 				{
@@ -539,7 +539,7 @@ void Front_Display() {
 
 				Mess_SetTextJustify__FUc(1);
 				Mess_DrawText__FiiPCciUiib(StatsLeft[i], (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
-				FUN_8008b900(highScoreBuf, DAT_800d14ac,
+				FUN_8008b900(highScoreBuf, s_d,
 				             GCareer.HighScores[GLevel][i].Score);
 				Mess_SetTextJustify__FUc(2);
 				Mess_DrawText__FiiPCciUiib(StatsRight[i], (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
@@ -557,9 +557,9 @@ void Front_Display() {
 				Mess_SetRGB(182, 132, 36, 0);
 
 				if (GGame == 7)
-					Mess_DrawText__FiiPCciUiib(256, 40, DAT_8009e41c, 0, 0, 256, 0);
+					Mess_DrawText__FiiPCciUiib(256, 40, s_TIME_IS_UP, 0, 0, 256, 0);
 				else
-					Mess_DrawText__FiiPCciUiib(256, 40, DAT_8009e428, 0, 0, 256, 0);
+					Mess_DrawText__FiiPCciUiib(256, 40, s_GAME_OVER, 0, 0, 256, 0);
 			}
 
 			Mess_SetRGB(122, 122, 122, 0);
@@ -601,19 +601,19 @@ void Front_Display() {
 				}
 
 				Line = 0;
-				FUN_8008b900(Score1, DAT_800d14ac, pMan->mScore);
+				FUN_8008b900(Score1, s_d, pMan->mScore);
 				Mess_DrawText__FiiPCciUiib(StatsRight[0], Line++ * 18 + 60, Score1, 0, 0, 256, 0);
-				FUN_8008b900(Score2, DAT_800d14ac, GCareer.HighScores[GLevel][0].Score);
+				FUN_8008b900(Score2, s_d, GCareer.HighScores[GLevel][0].Score);
 				Mess_DrawText__FiiPCciUiib(StatsRight[1], Line++ * 18 + 60, Score2, 0, 0, 256, 0);
 
 				if (GGame == 1) {
-					FUN_8008b900(Tapes, DAT_8009e434, Career_LevelTapes(GLevel), 5);
+					FUN_8008b900(Tapes, s_ld_of_ld, Career_LevelTapes(GLevel), 5);
 					Mess_DrawText__FiiPCciUiib(StatsRight[2], Line++ * 18 + 60, Tapes, 0, 0, 256, 0);
 				}
 
-				FUN_8008b900(Tricks, DAT_800d14b8, pMan->mTricksLanded);
+				FUN_8008b900(Tricks, s_ld, pMan->mTricksLanded);
 				Mess_DrawText__FiiPCciUiib(StatsRight[3], Line++ * 18 + 60, Tricks, 0, 0, 256, 0);
-				FUN_8008b900(Bails, DAT_800d14b8, pMan->mBails);
+				FUN_8008b900(Bails, s_ld, pMan->mBails);
 				Mess_DrawText__FiiPCciUiib(StatsRight[4], Line * 18 + 60, Bails, 0, 0, 256, 0);
 
 				if (StatsLeft[0] == 90) {
@@ -654,11 +654,11 @@ void Front_Display() {
 				switch (GGame) {
 					case 8:
 						if (DAT_800d17cc->mGraffitiCount == GSkater->mGraffitiCount)
-							Mess_DrawText__FiiPCciUiib(256, 64, DAT_800d14bc, 0, 0, 256, 0);
+							Mess_DrawText__FiiPCciUiib(256, 64, s_TIE, 0, 0, 256, 0);
 						else if (GSkater->mGraffitiCount < DAT_800d17cc->mGraffitiCount)
-							Mess_DrawText__FiiPCciUiib(256, 64, DAT_8009e440, 0, 0, 256, 0);
+							Mess_DrawText__FiiPCciUiib(256, 64, s_PLAYER_TWO_WINS, 0, 0, 256, 0);
 						else
-							Mess_DrawText__FiiPCciUiib(256, 64, DAT_8009e450, 0, 0, 256, 0);
+							Mess_DrawText__FiiPCciUiib(256, 64, s_PLAYER_ONE_WINS, 0, 0, 256, 0);
 
 						Mess_SetScale(224);
 						Graffiti_Stats(GSkater, 30, 86, 32, 32, 128, GWins1,
@@ -686,24 +686,24 @@ void Front_Display() {
 							GHorseScore = GSkater->mHorseScore;
 
 							if (GHorseScore) {
-								FUN_8008b900(Score, DAT_8009e460, GHorseScore);
+								FUN_8008b900(Score, s_SCORE_SET_AT_d, GHorseScore);
 								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, Score, 0, 0, 256, 0);
 
 								NextHorseMode ^= 1;
 								NextHorsePlayer ^= 1;
 							} else {
-								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, DAT_8009e470, 0, 0, 256, 0);
+								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, s_NO_SCORE_SWITCH, 0, 0, 256, 0);
 
 								NextHorsePlayer ^= 1;
 							}
 						} else {
-							FUN_8008b900(Score, DAT_8009e484, GHorseScore);
+							FUN_8008b900(Score, s_GOING_FOR_d, GHorseScore);
 							Mess_DrawText__FiiPCciUiib(256, Line++ * 24 + 80, Score, 0, 0, 256, 0);
-							FUN_8008b900(Score, DAT_8009e494, GSkater->mHorseScore);
+							FUN_8008b900(Score, s_YOU_SCORED_d, GSkater->mHorseScore);
 							Mess_DrawText__FiiPCciUiib(256, Line++ * 24 + 80, Score, 0, 0, 256, 0);
 
 							if (GSkater->mHorseScore == (uint)GHorseScore) {
-								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, DAT_800d14c0, 0, 0, 256, 0);
+								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, s_PUSH, 0, 0, 256, 0);
 
 								NextHorsePlayer ^= 1;
 							} else if (GSkater->mHorseScore < (uint)GHorseScore) {
@@ -714,9 +714,9 @@ void Front_Display() {
 									char c = GCareer.HorseWord[0];
 
 									if (c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U')
-										FUN_8008b900(YouAre, DAT_8009e4a4);
+										FUN_8008b900(YouAre, s_YOU_ARE_AN);
 									else
-										FUN_8008b900(YouAre, DAT_8009e4b0);
+										FUN_8008b900(YouAre, s_YOU_ARE_A);
 
 									if (!GHorseContinue) {
 										GHorseScale += 32;
@@ -801,7 +801,7 @@ void Front_Display() {
 									NextHorseMode ^= 1;
 								}
 							} else {
-								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, DAT_800d14c8, 0, 0, 256, 0);
+								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, s_SWITCH, 0, 0, 256, 0);
 
 								NextHorsePlayer ^= 1;
 								NextHorseScore = GSkater->mHorseScore;
@@ -812,17 +812,17 @@ void Front_Display() {
 					} break;
 					case 6:
 					default:
-						FUN_8008b900(Score1, DAT_8009e4bc, s1);
-						FUN_8008b900(Score2, DAT_8009e4cc, s2);
+						FUN_8008b900(Score1, s_PLAYER_ONE_d, s1);
+						FUN_8008b900(Score2, s_PLAYER_TWO_d, s2);
 						Mess_DrawText__FiiPCciUiib(256, 75, Score1, 0, 0, 256, 0);
 						Mess_DrawText__FiiPCciUiib(256, 99, Score2, 0, 0, 256, 0);
 
 						if (s2 < s1)
-							Mess_DrawText__FiiPCciUiib(256, 123, DAT_8009e450, 0, 0, 256, 0);
+							Mess_DrawText__FiiPCciUiib(256, 123, s_PLAYER_ONE_WINS, 0, 0, 256, 0);
 						else if (s1 < s2)
-							Mess_DrawText__FiiPCciUiib(256, 123, DAT_8009e440, 0, 0, 256, 0);
+							Mess_DrawText__FiiPCciUiib(256, 123, s_PLAYER_TWO_WINS, 0, 0, 256, 0);
 						else
-							Mess_DrawText__FiiPCciUiib(256, 123, DAT_800d14d0, 0, 0, 256, 0);
+							Mess_DrawText__FiiPCciUiib(256, 123, s_DRAW, 0, 0, 256, 0);
 
 						break;
 				}

@@ -5,14 +5,14 @@ extern int CameraList;
 extern int XFrames;
 extern int BaddyList;
 extern int PowerUpList;
-extern int DAT_800d1718;
+extern int Cheat_FPS;
 extern int Cheat_StatsOverride;
 extern int GSkater;
 extern int Cheat_Fire;
 extern int GVInfo1[];
 extern int GVInfo2[];
 extern char DAT_800d25f0[];
-extern char DAT_800a0524[];
+extern char s_d_d_d_d[];
 
 typedef struct E {
 	char p[0xc];
@@ -150,11 +150,11 @@ void FUN_80042d04(char *a) {
 						I(0x194) = I(0x194) & ~0x1000;
 				}
 
-				if ((DAT_800d1718 || Cheat_StatsOverride) && a == (char *)GSkater) {
+				if ((Cheat_FPS || Cheat_StatsOverride) && a == (char *)GSkater) {
 					a2 = Cheat_StatsOverride;
 					t0 = a2;
 					p1 = DAT_800d25f0;
-					p2 = DAT_800a0524;
+					p2 = s_d_d_d_d;
 
 					if (a2 == 0) {
 						e = Stats[I(0x2e8)].f18;

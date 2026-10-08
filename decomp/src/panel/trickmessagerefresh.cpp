@@ -38,11 +38,11 @@ class CPanelData {
 };
 
 extern int ViewportMode;
-extern char DAT_800d1ea8[4]; /* "%d " */
-extern char DAT_800d1eac[8]; /* "%s%s" */
-extern char DAT_800d1eb4[];  /* "%s + %s" */
-extern char DAT_800d1ebc[];  /* "+ %s" */
-extern char DAT_800a23ac[8]; /* "%s + ^...^" */
+extern char s_d_800d1ea8[4]; /* "%d " */
+extern char s_s_s_800d1eac[8]; /* "%s%s" */
+extern char s_s_s_800d1eb4[];  /* "%s + %s" */
+extern char s_s_800d1ebc[];  /* "+ %s" */
+extern char s_s[8]; /* "%s + ^...^" */
 
 extern "C" {
 	int FUN_8008b900(char *, const char *, ...);
@@ -62,7 +62,7 @@ void CPanelData::TrickMessageRefresh() {
 	mTrickLine3[0] = 0;
 
 	if (mpBruce->m32C > 0 && (mpBruce->m734 != 2 || mpBruce->m32C >= 2))
-		p = mTrickLine1 + FUN_8008b900(mTrickLine1, DAT_800d1ea8, mpBruce->m32C * 180);
+		p = mTrickLine1 + FUN_8008b900(mTrickLine1, s_d_800d1ea8, mpBruce->m32C * 180);
 	else
 		p = mTrickLine1;
 
@@ -85,11 +85,11 @@ void CPanelData::TrickMessageRefresh() {
 		return;
 	}
 
-	FUN_8008b900(p, DAT_800d1eac, FUN_8006e534(mpBruce), mTQ[0].name);
+	FUN_8008b900(p, s_s_s_800d1eac, FUN_8006e534(mpBruce), mTQ[0].name);
 	Mess_SetScale(188);
 
 	for (int i = 1; i < mTQStack; i++) {
-		FUN_8008b900(tbuf, DAT_800d1eb4, p, mTQ[i].name);
+		FUN_8008b900(tbuf, s_s_s_800d1eb4, p, mTQ[i].name);
 
 		if (Mess_TextWidth__FPCc(tbuf) > lineWidth) {
 			currLine++;
@@ -100,11 +100,11 @@ void CPanelData::TrickMessageRefresh() {
 				p = mTrickLine3;
 
 			if (currLine == 3) {
-				FUN_8008b900(p, DAT_800a23ac, p);
+				FUN_8008b900(p, s_s, p);
 				return;
 			}
 
-			FUN_8008b900(p, DAT_800d1ebc, mTQ[i].name);
+			FUN_8008b900(p, s_s_800d1ebc, mTQ[i].name);
 		} else
 			FUN_8008b900(p, tbuf);
 	}

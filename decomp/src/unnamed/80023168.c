@@ -10,7 +10,7 @@ typedef struct {
 extern E movieDetails[];
 
 int GameFMV_Active;
-int DAT_800d1648;
+int CycleTracks;
 unsigned char GameFMV_CurrentTrack;
 unsigned short GameFMV_Width;
 unsigned short GameFMV_Height;
@@ -18,7 +18,7 @@ int GameFMV_EndFrame;
 int GameFMV_VLCBufferSize;
 int GameFMV_RingBufferSectors;
 unsigned char GameFMV_Is24Bit;
-int DAT_800d1680;
+int GameFMV_MusicScale;
 int GameFMV_StartSector;
 
 void FUN_80023168(int a) {
@@ -28,17 +28,17 @@ void FUN_80023168(int a) {
 	if (a < 0) {
 		a = ~a;
 	} else {
-		a = DAT_800d1648++;
+		a = CycleTracks++;
 
-		while (DAT_800d1648 < 26) {
-			if (movieDetails[DAT_800d1648].h4 == 96)
+		while (CycleTracks < 26) {
+			if (movieDetails[CycleTracks].h4 == 96)
 				break;
 
-			DAT_800d1648++;
+			CycleTracks++;
 		}
 
-		if (DAT_800d1648 == 26)
-			DAT_800d1648 = 2;
+		if (CycleTracks == 26)
+			CycleTracks = 2;
 	}
 
 	GameFMV_CurrentTrack = a;
@@ -48,6 +48,6 @@ void FUN_80023168(int a) {
 	GameFMV_VLCBufferSize = movieDetails[a].w12;
 	GameFMV_RingBufferSectors = movieDetails[a].w16;
 	GameFMV_Is24Bit = movieDetails[a].b20;
-	DAT_800d1680 = movieDetails[a].w28;
+	GameFMV_MusicScale = movieDetails[a].w28;
 	GameFMV_StartSector = movieDetails[a].w24;
 }

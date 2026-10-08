@@ -41,9 +41,9 @@ struct SMessageProg;
 
 extern SMessageProg Messprog_Zoom;
 extern char *GameText_25c[];
-extern char DAT_8009f0d4[];
-extern char DAT_8009f0e0[];
-extern char DAT_8009f0ec[];
+extern char s_Bonus_100[];
+extern char s_Bonus_200[];
+extern char s_Bonus_500[];
 extern int GNumberOfPlayers;
 extern CBruce *MechList;
 
@@ -155,15 +155,15 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 
 				switch (mType) {
 					case 21:
-						Trick_Trick__6CBruceiPcii(pMech, 76, DAT_8009f0d4, -100, 0);
+						Trick_Trick__6CBruceiPcii(pMech, 76, s_Bonus_100, -100, 0);
 						SFX_SetVoicePitch(Pong, 900);
 						break;
 					case 22:
-						Trick_Trick__6CBruceiPcii(pMech, 76, DAT_8009f0e0, -200, 0);
+						Trick_Trick__6CBruceiPcii(pMech, 76, s_Bonus_200, -200, 0);
 						SFX_SetVoicePitch(Pong, 1114);
 						break;
 					case 23:
-						Trick_Trick__6CBruceiPcii(pMech, 76, DAT_8009f0ec, -500, 0);
+						Trick_Trick__6CBruceiPcii(pMech, 76, s_Bonus_500, -500, 0);
 						SFX_SetVoicePitch(Pong, 1500);
 						break;
 				}

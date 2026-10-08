@@ -7,8 +7,9 @@ compile_all.mjs before and after (it compiles .c and .cpp).
   python tools/rename_data.py            report what would change
   python tools/rename_data.py --apply    rewrite src/**/*.{c,cpp,s} and their .syms.json
 
-A name is left as DAT_ in a file where it's already an identifier: a local, parameter, member or
-type of that name would capture the reference (and C++ methods see members unqualified). It's
+A name is left as DAT_ in a file where it's already an identifier outside comments and member
+accesses: a local, parameter, member or type of that name would capture the reference (and C++
+methods see members unqualified). It's
 left out everywhere if it's a names.h alias (the macro would turn it into a function symbol) or an
 identifier in the Psy-Q SDK headers. Line 1 (when it's the salvage header) and string literals are untouched.
 Idempotent: rerun it after data_names.tsv grows.
@@ -25,6 +26,7 @@ from gen_names_h import IDENT, PSYQ_INC, ROOT, STRING, current_aliases, map_body
 
 DAT = re.compile(r"\bDAT_([0-9a-f]{8})\b")
 COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
+MEMBER = re.compile(r"(?:\.|->)\s*[A-Za-z_]\w*")
 
 
 def main():
@@ -47,7 +49,8 @@ def main():
         header = s.startswith(("/*", "#"))      # the salvage header; otherwise line 1 is code
         body = STRING.sub('""', s.split("\n", 1)[1] if header else s)
         present = {int(a, 16) for a in DAT.findall(body)}
-        idents = set(IDENT.findall(body))
+        # identifiers that could capture the name: not in comments, not member accesses (x.f, p->f)
+        idents = set(IDENT.findall(MEMBER.sub(" ", COMMENT.sub(" ", body))))
         syms_path = os.path.splitext(f)[0] + ".syms.json"
         syms = json.load(open(syms_path)) if os.path.exists(syms_path) else None
         todo = {}

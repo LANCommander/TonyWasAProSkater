@@ -19,7 +19,7 @@ struct SPSXCache {
 
 extern SRegion PSXRegion[40];
 extern SPSXCache SpoolQ[20];
-extern char DAT_800d1f00[];
+extern char s_psx[];
 
 int FreePos;
 
@@ -89,7 +89,7 @@ int Spool_PSX(char *Name, int IsEnviro, int WhichHeap) {
 		*pDest = 0;
 	}
 
-	LoadNameExt(Name, DAT_800d1f00);
+	LoadNameExt(Name, s_psx);
 
 	if (IsEnviro != 2)
 		SpoolQ[FreePos].Type = IsEnviro != 0;

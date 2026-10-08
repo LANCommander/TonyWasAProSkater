@@ -25,12 +25,12 @@ extern SControl Pad[2];
 uint CheatCheck;
 
 extern int DAT_800d1d24;
-extern int DAT_800d1720;
+extern int Cheat_SlowMo;
 extern int Cheat_RestartSkip;
 extern int Cheat_StatsOverride;
 extern int Cheat_Fire;
-extern int DAT_800d1724;
-extern int DAT_800d1708;
+extern int Cheat_BigHead;
+extern int Cheat_LevelSelect;
 
 void frug(uint);
 
@@ -61,10 +61,10 @@ int Shell_DoCheatProcessing() {
 			Cheat_Fire ^= 1;
 			break;
 		case 0x1f71e119:
-			DAT_800d1720 ^= 1;
+			Cheat_SlowMo ^= 1;
 			break;
 		case 0x9c69b980:
-			DAT_800d1724 ^= 1;
+			Cheat_BigHead ^= 1;
 			break;
 		case 0x7f361998:
 			if (Cheat_StatsOverride == 10)
@@ -74,7 +74,7 @@ int Shell_DoCheatProcessing() {
 
 			break;
 		case 0xa7053a01:
-			DAT_800d1708 ^= 1;
+			Cheat_LevelSelect ^= 1;
 			break;
 		case 0x259f7af5:
 			if (Cheat_StatsOverride == 13)

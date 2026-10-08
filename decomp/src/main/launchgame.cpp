@@ -31,7 +31,7 @@ enum EPackInitType { PACK_0, PACK_1 };
 
 extern SSaveGame StartupGameState;
 extern SControl Pad[2];
-extern char DAT_8009f5b8[];
+extern char s_ENDCODE_TWEAKJUMP[];
 extern char DAT_8009f5cc[];
 extern int BackOut;
 extern int DemoTimer;
@@ -122,7 +122,7 @@ DUN:
 	GHorseDoneStart = 0;
 
 	if (EndCode == 7) {
-		FUN_8008c190(DAT_8009f5b8);
+		FUN_8008c190(s_ENDCODE_TWEAKJUMP);
 		Init_Cleanup__Fi(1);
 		Trig_ParseTRGFile();
 		FUN_80025a88();

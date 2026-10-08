@@ -1,6 +1,6 @@
 /* FUN_80065e04 (0x80065e04) */
 #include "names.h"
-extern int DAT_800d1b10;
+extern int SpoolerBlocksFileIO;
 
 void Mem_Delete(int);
 void ProcessNewPSX(int);
@@ -27,7 +27,7 @@ void FUN_80065e04(char *a, int b) {
 		}
 
 		if (*s == 2) {
-			PREManager_unloadPRE(DAT_800d1b10, (char *)(o + (int)a + 20));
+			PREManager_unloadPRE(SpoolerBlocksFileIO, (char *)(o + (int)a + 20));
 		} else if (*s == 1) {
 			q = (int *)(a + 0x24);
 			q = (int *)((char *)q + o);

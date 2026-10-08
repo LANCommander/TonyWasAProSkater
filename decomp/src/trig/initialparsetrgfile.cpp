@@ -12,7 +12,7 @@ struct CVector {
 	int vx, vy, vz;
 };
 
-extern char DAT_800d1a04[];
+extern char s_trg[];
 extern char *CheatRestarts[];
 extern char *HorseRestarts[];
 extern int GNumberOfPlayers;
@@ -41,7 +41,7 @@ void Trig_InitialParseTRGFile(char *pName) {
 	int Found;
 
 	{
-		char *pExt = DAT_800d1a04;
+		char *pExt = s_trg;
 		char *pDest = Name;
 
 		while (*pName)

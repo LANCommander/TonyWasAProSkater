@@ -8,14 +8,14 @@ typedef struct {
 	short x, y, z;
 } SV;
 
-SV DAT_800d18a4;
+SV SparkTrajectory;
 short SparkTrajectoryCone, SparkTrajectoryCone_2, SparkTrajectoryCone_4;
 
 int Redbook_Rnd(int);
 void Utils_GetVecFromMagDir(V *, int, SV *);
 
 void Bit_CalculateSparkVelocity(V *out, int mag) {
-	SV d = DAT_800d18a4;
+	SV d = SparkTrajectory;
 
 	if (SparkTrajectoryCone)
 		d.x += Redbook_Rnd(SparkTrajectoryCone) - (SparkTrajectoryCone >> 1);

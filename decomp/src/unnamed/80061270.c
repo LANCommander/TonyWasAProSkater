@@ -4,7 +4,7 @@ int DAT_800d1d84;
 int DAT_800d1d88;
 short DAT_800d1d8c, DAT_800d1d8e;
 
-extern char DAT_800a200c[], DAT_800a2024[], DAT_800a2048[];
+extern char s_checking_memory_card[], s_Loading_saved_data_from_MEMORY_C[], s_in_MEMORY_CARD_slot_1[];
 
 void FUN_8006b240(void);
 void FUN_80061ea0(void);
@@ -33,11 +33,11 @@ void FUN_80061270(int a) {
 
 			if (a == 0) {
 				Mess_SetFontScale(192);
-				Mess_DrawText(320, 357, DAT_800a200c, 1, 0, 256, 0);
+				Mess_DrawText(320, 357, s_checking_memory_card, 1, 0, 256, 0);
 			} else if (a == 1) {
 				Mess_SetFontScale(144);
-				Mess_DrawText(320, 341, DAT_800a2024, 1, 0, 256, 0);
-				Mess_DrawText(320, 373, DAT_800a2048, 1, 0, 256, 0);
+				Mess_DrawText(320, 341, s_Loading_saved_data_from_MEMORY_C, 1, 0, 256, 0);
+				Mess_DrawText(320, 373, s_in_MEMORY_CARD_slot_1, 1, 0, 256, 0);
 			}
 
 			FUN_8006b26c();

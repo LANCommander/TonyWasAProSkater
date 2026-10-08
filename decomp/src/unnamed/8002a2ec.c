@@ -9,7 +9,7 @@ typedef struct {
 } B;
 
 extern char __vt_11CSmokeTrail[];
-extern char DAT_800d18c4[];
+extern char s_Ribbon[];
 
 void CRibbon_ctor(B *, int, int, int, char *, char *, int, int);
 void CFT4Bit_SetTint(int, int, int, int);
@@ -18,7 +18,7 @@ void CFT4Bit_SetTransDecay(int, int);
 B *CSmokeTrail_ctor(B *p, int a1, int a2, int r, int g, int b) {
 	int i, j, t, n, dr, dg, db;
 
-	CRibbon_ctor(p, a1, a2, 2, DAT_800d18c4, DAT_800d18c4, 400, 1);
+	CRibbon_ctor(p, a1, a2, 2, s_Ribbon, s_Ribbon, 400, 1);
 
 	n = p->n;
 	dr = r / n;

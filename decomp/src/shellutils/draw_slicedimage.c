@@ -17,7 +17,7 @@ typedef struct {
 	unsigned len : 8;
 } TG;
 
-extern char DAT_800a20d8[];
+extern char s_OT_entry_is_d[];
 
 int OT_entry;
 
@@ -45,7 +45,7 @@ void SlicedImage_draw(SP *p, int x0, int y, int fb, int c4, int c5, int c6, int 
 	t0 = 0;
 
 	if ((unsigned)OT_entry >= 0x2000)
-		FUN_8008c190(DAT_800a20d8, OT_entry);
+		FUN_8008c190(s_OT_entry_is_d, OT_entry);
 
 	if (fb)
 		ot = (unsigned *)(pDoubleBuffer + 0x84);

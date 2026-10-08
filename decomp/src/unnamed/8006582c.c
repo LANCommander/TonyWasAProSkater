@@ -12,9 +12,9 @@ typedef struct C {
 	E e[8];
 } C;
 
-extern char DAT_800d1da4[], DAT_800d1da8[], DAT_800d1dac[], DAT_800d1db0[], DAT_800d1db4[],
-    DAT_800d1db8[], DAT_800a208c[], DAT_800a20a0[];
-extern int DAT_800d1b10;
+extern char s_fe[], s_FE[], DAT_800d1dac[], DAT_800d1db0[], s_pre[],
+    s_PRE[], s_File_s_not_found[], s_Not_enough_memory_to_load_s[];
+extern int SpoolerBlocksFileIO;
 
 int FileIO_Open(char *);
 void FileIO_Load(int);
@@ -49,7 +49,7 @@ void FUN_8006582c(C *a) {
 		s++;
 		ok = 0;
 
-		if (!FUN_8008f6fc(s, DAT_800d1da4) || !FUN_8008f6fc(s, DAT_800d1da8) ||
+		if (!FUN_8008f6fc(s, s_fe) || !FUN_8008f6fc(s, s_FE) ||
 		    !FUN_8008f6fc(s, DAT_800d1dac) || !FUN_8008f6fc(s, DAT_800d1db0))
 			ok = 1;
 
@@ -66,7 +66,7 @@ void FUN_8006582c(C *a) {
 		s++;
 		ok = 0;
 
-		if (!FUN_8008f6fc(s, DAT_800d1db4) || !FUN_8008f6fc(s, DAT_800d1db8))
+		if (!FUN_8008f6fc(s, s_pre) || !FUN_8008f6fc(s, s_PRE))
 			ok = 1;
 
 		if (ok)
@@ -83,7 +83,7 @@ void FUN_8006582c(C *a) {
 			a->e[a->cur].i18 = t;
 			break;
 		case 2:
-			PREManager_spoolPRE(DAT_800d1b10, a->e[a->cur].s);
+			PREManager_spoolPRE(SpoolerBlocksFileIO, a->e[a->cur].s);
 
 			a->e[a->cur].p = 0;
 			a->e[a->cur].i14 = -1;
@@ -94,14 +94,14 @@ void FUN_8006582c(C *a) {
 			n = FileIO_Open(a->e[a->cur].s);
 
 			if (n <= 0) {
-				FUN_8008c190(DAT_800a208c, a->e[a->cur].s);
+				FUN_8008c190(s_File_s_not_found, a->e[a->cur].s);
 				return;
 			}
 
 			a->e[a->cur].p = Mem_NewX(n, 1, 1);
 
 			if (a->e[a->cur].p == 0) {
-				FUN_8008c190(DAT_800a20a0, a->e[a->cur].s);
+				FUN_8008c190(s_Not_enough_memory_to_load_s, a->e[a->cur].s);
 				return;
 			}
 

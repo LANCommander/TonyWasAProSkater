@@ -7,7 +7,7 @@ typedef struct {
 	int f838;
 } B;
 
-int GGame, GState, DAT_800d1788, GSpinSpeed;
+int GGame, GState, GSpin, GSpinSpeed;
 B *GSkater;
 B *DAT_800d17cc;
 
@@ -58,7 +58,7 @@ void Game_Over(void) {
 
 	if (GState == 0) {
 		GState = 1;
-		DAT_800d1788 = 80;
+		GSpin = 80;
 		GSpinSpeed = 64;
 
 		if (DAT_800d17cc)

@@ -1,6 +1,6 @@
 /* Card_FormatCard__Fii (0x80015474) */
 #include "names.h"
-extern char DAT_8009e124[];
+extern char s_bu_1d_1d_8009e124[];
 
 void FUN_8008b900(char *, char *, int, int);
 void _clear_event_x(void);
@@ -11,7 +11,7 @@ int Card_FormatCard(int a, int b) {
 	char buf[8];
 	int s, r;
 
-	FUN_8008b900(buf, DAT_8009e124, a, b);
+	FUN_8008b900(buf, s_bu_1d_1d_8009e124, a, b);
 	_clear_event_x();
 
 	s = FUN_8008eaa8(buf);

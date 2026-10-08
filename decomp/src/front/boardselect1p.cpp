@@ -114,17 +114,17 @@ extern int DAT_800d33c4[];
 extern SlicedImage *DAT_800d36a4[][15];
 extern int DAT_800d1cb8;
 extern int GGame;
-extern PREManager *DAT_800d1b10;
-extern char DAT_800a1704[];
-extern char DAT_800a1714[];
-extern char DAT_800a1720[];
-extern char DAT_800a172c[];
-extern char DAT_800a1738[];
-extern char DAT_800a1744[];
-extern char DAT_800a1750[];
-extern char DAT_800a175c[];
-extern char DAT_800a1774[];
-extern char DAT_800a178c[];
+extern PREManager *SpoolerBlocksFileIO;
+extern char s_select_b_bmp[];
+extern char s_bar_d_bmp_800a1714[];
+extern char s_bar9_bmp_800a1720[];
+extern char s_mainf_fnt_800a172c[];
+extern char s_Box1_01_bmp[];
+extern char s_Box1_02_bmp[];
+extern char s_Box1_03_bmp[];
+extern char s_Get_d_tapes_to_unlock[];
+extern char s_Unlock_in_career_mode[];
+extern char s_Equip1_pre[];
 
 SlicedImage *DAT_800d22dc;
 uchar DAT_800d22e8;
@@ -191,7 +191,7 @@ extern "C" int FUN_80054510(int player) {
 
 	FUN_8005c97c(9);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(DAT_800a1704));
+	FUN_80061714(FUN_8005ca3c(s_select_b_bmp));
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
 	Pack_DefragmentFully();
@@ -256,9 +256,9 @@ extern "C" int FUN_80054510(int player) {
 		char name[16];
 
 		if (i < 4)
-			FUN_8008b900(name, DAT_800a1714, i + 1);
+			FUN_8008b900(name, s_bar_d_bmp_800a1714, i + 1);
 		else
-			FUN_8008b900(name, DAT_800a1720);
+			FUN_8008b900(name, s_bar9_bmp_800a1720);
 
 		bar[i] = new Sprite(name, 1, 32, 128);
 		row[i] = new Sprite(398, i * 24 + 116, 200, 20, 1, 32, 128);
@@ -312,7 +312,7 @@ extern "C" int FUN_80054510(int player) {
 
 	Sprite *textBar = new Sprite(0, 49, 585, 43, 1, 32, 128);
 
-	Mess_SetCurrentFont(DAT_800a172c);
+	Mess_SetCurrentFont(s_mainf_fnt_800a172c);
 
 	int textX = -Mess_TextWidth__FPCc(text);
 	int textY;
@@ -326,9 +326,9 @@ extern "C" int FUN_80054510(int player) {
 	textX = 117 - textSpeed * 10;
 
 	Sprite *title[3];
-	title[0] = new Sprite(DAT_800a1738, 1, 32, 128);
-	title[1] = new Sprite(DAT_800a1744, 1, 32, 128);
-	title[2] = new Sprite(DAT_800a1750, 1, 32, 128);
+	title[0] = new Sprite(s_Box1_01_bmp, 1, 32, 128);
+	title[1] = new Sprite(s_Box1_02_bmp, 1, 32, 128);
+	title[2] = new Sprite(s_Box1_03_bmp, 1, 32, 128);
 	PadBuffer *input = new PadBuffer(-1);
 	int result;
 
@@ -426,7 +426,7 @@ extern "C" int FUN_80054510(int player) {
 
 		if (textState != 3 && textState != 1) {
 			textBar->draw(0, 49, 0, -1, -1, -1);
-			Mess_SetCurrentFont(DAT_800a172c);
+			Mess_SetCurrentFont(s_mainf_fnt_800a172c);
 			Mess_DrawText__FiiPCciUiib(textX, textY, text, 0, 0, 256, 0);
 		}
 
@@ -658,14 +658,14 @@ extern "C" int FUN_80054510(int player) {
 					    DAT_800a44fc[DAT_800d22f0].Boards[deck].Req) {
 						FUN_8008e904(text, DAT_800a44fc[DAT_800d22f0].Boards[deck].Name);
 					} else if (GGame == 1) {
-						FUN_8008b900(text, DAT_800a175c,
+						FUN_8008b900(text, s_Get_d_tapes_to_unlock,
 						             DAT_800a44fc[DAT_800d22f0].Boards[deck].Req);
 					} else {
-						FUN_8008b900(text, DAT_800a1774,
+						FUN_8008b900(text, s_Unlock_in_career_mode,
 						             DAT_800a44fc[DAT_800d22f0].Boards[deck].Req);
 					}
 
-					Mess_SetCurrentFont(DAT_800a172c);
+					Mess_SetCurrentFont(s_mainf_fnt_800a172c);
 
 					textX = -Mess_TextWidth__FPCc(text);
 
@@ -765,7 +765,7 @@ extern "C" int FUN_80054510(int player) {
 	}
 
 	FUN_8006af64();
-	DAT_800d1b10->unloadPRE(DAT_800a178c);
+	SpoolerBlocksFileIO->unloadPRE(s_Equip1_pre);
 
 	delete input;
 	delete textBar;

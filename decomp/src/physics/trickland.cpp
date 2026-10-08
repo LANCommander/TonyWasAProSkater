@@ -8,8 +8,8 @@ typedef unsigned char uchar;
 struct Item;
 
 extern int GGame;
-extern char DAT_8009fc44[], DAT_8009fc50[], DAT_8009fc5c[], DAT_8009fc68[], DAT_8009fc74[],
-    DAT_8009fc80[], DAT_8009fc8c[], DAT_8009fc98[];
+extern char s_180_OLLIE[], s_360_OLLIE[], s_540_OLLIE[], s_720_OLLIE[], s_900_OLLIE[],
+    s_1080_OLLIE[], s_MEGA_OLLIE[], s_Setting_Playtime_to_0[];
 
 class CBruce {
   public:
@@ -81,25 +81,25 @@ void CBruce::Trick_Land() {
 
 			switch (n) {
 				case 1:
-					Trick_Trick(74, DAT_8009fc44, -50, 0);
+					Trick_Trick(74, s_180_OLLIE, -50, 0);
 					break;
 				case 2:
-					Trick_Trick(74, DAT_8009fc50, -100, 0);
+					Trick_Trick(74, s_360_OLLIE, -100, 0);
 					break;
 				case 3:
-					Trick_Trick(74, DAT_8009fc5c, -150, 0);
+					Trick_Trick(74, s_540_OLLIE, -150, 0);
 					break;
 				case 4:
-					Trick_Trick(74, DAT_8009fc68, -200, 0);
+					Trick_Trick(74, s_720_OLLIE, -200, 0);
 					break;
 				case 5:
-					Trick_Trick(74, DAT_8009fc74, -250, 0);
+					Trick_Trick(74, s_900_OLLIE, -250, 0);
 					break;
 				case 6:
-					Trick_Trick(74, DAT_8009fc80, -300, 0);
+					Trick_Trick(74, s_1080_OLLIE, -300, 0);
 					break;
 				case 7:
-					Trick_Trick(74, DAT_8009fc8c, -350, 0);
+					Trick_Trick(74, s_MEGA_OLLIE, -350, 0);
 					break;
 			}
 
@@ -117,7 +117,7 @@ void CBruce::Trick_Land() {
 		}
 
 		if (m364 && GGame == 7) {
-			FUN_8008c190(DAT_8009fc98);
+			FUN_8008c190(s_Setting_Playtime_to_0);
 
 			m330 = 0;
 		}

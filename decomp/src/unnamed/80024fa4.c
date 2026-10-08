@@ -30,7 +30,7 @@ extern int camDist;
 extern int camPitch;
 extern int camYOffset;
 
-int GGame, DAT_800d16dc, GameFrozen, Cheat_ScreenShots, DAT_800d1730, Mick_Darkness,
+int GGame, DAT_800d16dc, GameFrozen, Cheat_ScreenShots, PolyBufferBytesUsed, Mick_Darkness,
     ViewportMode, DAT_800d1748, GNumberOfPlayers, CloseCam;
 
 void BlackOut(int, int, int, int);
@@ -181,5 +181,5 @@ L90:
 
 	Flash_Display();
 
-	DAT_800d1730 = (pPoly & 0x7fffffff) - (pDoubleBuffer->f80a8 & 0x7fffffff);
+	PolyBufferBytesUsed = (pPoly & 0x7fffffff) - (pDoubleBuffer->f80a8 & 0x7fffffff);
 }

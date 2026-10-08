@@ -1,6 +1,6 @@
 /* AI__7CCamera (0x8007b7c4) flags=-fstructure-noalias */
 /* C++ (CAMERA.CPP). Demo twin (opcode-identical but for 3 spots); layout by THPS1 offsets
-   (CCamera members = demo + 0x2c). Pad is the SControl[2] array at DAT_800c0a48. */
+   (CCamera members = demo + 0x2c). Pad is the SControl[2] array at Pad. */
 #pragma interface
 
 typedef unsigned char uchar;
@@ -125,7 +125,7 @@ extern SSinCos rcossin_tbl;
 
 #define SIN(a) ((&rcossin_tbl)[(a) & 4095].s)
 
-extern SControl DAT_800c0a48[2];
+extern SControl Pad[2];
 extern CVector Camera_CamOffset;
 extern int Cheat_ScreenShots;
 extern int GameFrozen;
@@ -144,9 +144,9 @@ int DAT_800d2084;
 int DAT_800d2088;
 int DAT_800d208c;
 int DAT_800d2090;
-int DAT_800d240c;
-int DAT_800d2410;
-int DAT_800d2414;
+int old_camYOffset;
+int old_camDist;
+int old_camPitch;
 
 CVector operator<<(const CVector &, const int &);
 CVector operator+(const CVector &, const CVector &);
@@ -185,7 +185,7 @@ void CCamera::AI() {
 			mFocusPos = ((mFocus->mPos << 1) + mOldFocusPos) / 3;
 	}
 
-	if (DAT_800c0a48[0].Select.Pressed) {
+	if (Pad[0].Select.Pressed) {
 		if (DAT_800d2090)
 			DAT_800d208c = 1;
 
@@ -194,14 +194,14 @@ void CCamera::AI() {
 		DAT_800d2090 = 1;
 	}
 
-	if (Cheat_ScreenShots && DAT_800d208c && DAT_800c0a48[0].Select.Pressed) {
-		DAT_800c0a48[1].RightOne.Triggered = 0;
-		DAT_800c0a48[1].RightTwo.Triggered = 0;
+	if (Cheat_ScreenShots && DAT_800d208c && Pad[0].Select.Pressed) {
+		Pad[1].RightOne.Triggered = 0;
+		Pad[1].RightTwo.Triggered = 0;
 		DAT_800d2084 = 0;
-		DAT_800c0a48[0].LeftTwo.Triggered = 0;
+		Pad[0].LeftTwo.Triggered = 0;
 		DAT_800d208c = 0;
-		DAT_800c0a48[0].Select.Triggered = 0;
-		DAT_800c0a48[0].Start.Triggered = 0;
+		Pad[0].Select.Triggered = 0;
+		Pad[0].Start.Triggered = 0;
 		Mick_CameraTweak ^= 1;
 		GameFrozen = Mick_CameraTweak;
 
@@ -211,59 +211,59 @@ void CCamera::AI() {
 			int p = camPitch;
 			int z = mZoom;
 
-			DAT_800d240c = y;
-			DAT_800d2410 = d;
-			DAT_800d2414 = p;
+			old_camYOffset = y;
+			old_camDist = d;
+			old_camPitch = p;
 			DAT_800d2088 = z;
 		}
 	}
 
 	if (Mick_CameraTweak) {
-		if (DAT_800c0a48[1].Start.Pressed) {
-			camYOffset = DAT_800d240c;
-			camDist = DAT_800d2410;
-			camPitch = DAT_800d2414;
+		if (Pad[1].Start.Pressed) {
+			camYOffset = old_camYOffset;
+			camDist = old_camDist;
+			camPitch = old_camPitch;
 			mZoom = DAT_800d2088;
 		}
 
-		if (DAT_800c0a48[0].Square.Pressed)
+		if (Pad[0].Square.Pressed)
 			mZoom--;
 
-		if (DAT_800c0a48[0].Circle.Pressed)
+		if (Pad[0].Circle.Pressed)
 			mZoom++;
 
-		if (DAT_800c0a48[0].Triangle.Pressed)
+		if (Pad[0].Triangle.Pressed)
 			mZoom = 256;
 
-		if (DAT_800c0a48[1].Square.Pressed)
+		if (Pad[1].Square.Pressed)
 			extra_YRot -= 10;
 
-		if (DAT_800c0a48[1].Circle.Pressed)
+		if (Pad[1].Circle.Pressed)
 			extra_YRot += 10;
 
-		if (DAT_800c0a48[1].Left.Pressed) {
-			if (DAT_800c0a48[1].Select.Pressed)
+		if (Pad[1].Left.Pressed) {
+			if (Pad[1].Select.Pressed)
 				camDist -= 32;
 			else
 				camDist -= 8;
 		}
 
-		if (DAT_800c0a48[1].Right.Pressed) {
-			if (DAT_800c0a48[1].Select.Pressed)
+		if (Pad[1].Right.Pressed) {
+			if (Pad[1].Select.Pressed)
 				camDist += 32;
 			else
 				camDist += 8;
 		}
 
-		if (DAT_800c0a48[1].Up.Pressed) {
-			if (DAT_800c0a48[1].Select.Pressed)
+		if (Pad[1].Up.Pressed) {
+			if (Pad[1].Select.Pressed)
 				camPitch -= 32;
 			else
 				camPitch -= 8;
 		}
 
-		if (DAT_800c0a48[1].Down.Pressed) {
-			if (DAT_800c0a48[1].Select.Pressed)
+		if (Pad[1].Down.Pressed) {
+			if (Pad[1].Select.Pressed)
 				camPitch += 32;
 			else
 				camPitch += 8;
@@ -271,15 +271,15 @@ void CCamera::AI() {
 
 		camPitch &= 4095;
 
-		if (DAT_800c0a48[1].LeftOne.Pressed) {
-			if (DAT_800c0a48[1].Select.Pressed)
+		if (Pad[1].LeftOne.Pressed) {
+			if (Pad[1].Select.Pressed)
 				camYOffset -= 32;
 			else
 				camYOffset -= 8;
 		}
 
-		if (DAT_800c0a48[1].LeftTwo.Pressed) {
-			if (DAT_800c0a48[1].Select.Pressed)
+		if (Pad[1].LeftTwo.Pressed) {
+			if (Pad[1].Select.Pressed)
 				camYOffset += 32;
 			else
 				camYOffset += 8;

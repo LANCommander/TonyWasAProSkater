@@ -1,6 +1,6 @@
 /* FileIO_Init__Fv (0x8004c74c) */
 #include "names.h"
-extern char DAT_800a1294[], DAT_800a12a4[], DAT_800a12b0[], Directory[];
+extern char s_Retry_CdInit[], s_CD_HED_1[], s_CD_WAD_1[], Directory[];
 
 int Loading, WadStart, ReadSyncFailures;
 
@@ -23,13 +23,13 @@ void FileIO_Init(void) {
 	FUN_8008f208(0);
 
 	while (!FUN_80095b60()) {
-		FUN_8008c190(DAT_800a1294);
+		FUN_8008c190(s_Retry_CdInit);
 
 		for (s0 = 0; s0 < 100; s0++)
 			FUN_8008eebc(0);
 	}
 
-	while (!FUN_8009085c(buf, DAT_800a12a4)) {
+	while (!FUN_8009085c(buf, s_CD_HED_1)) {
 		while (!FUN_80095b60()) {
 			for (s0 = 0; s0 < 100; s0++)
 				FUN_8008eebc(0);
@@ -46,7 +46,7 @@ void FileIO_Init(void) {
 	while (FUN_80095a5c(1, 0) > 0)
 		FUN_8008eebc(0);
 
-	while (!FUN_8009085c(buf, DAT_800a12b0)) {
+	while (!FUN_8009085c(buf, s_CD_WAD_1)) {
 		for (s0 = 0; s0 < 100; s0++)
 			FUN_8008eebc(0);
 	}

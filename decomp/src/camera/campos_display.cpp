@@ -34,24 +34,24 @@ class CamPos {
 void Font_String(ushort, ushort, char *, uchar, uchar, uchar, uchar);
 void Font_Number(ushort, ushort, int, uchar, uchar, uchar, uchar);
 
-extern char DAT_800d2098[];
-extern char DAT_800d20a0[];
-extern char DAT_800a3528[];
+extern char s_Follow[];
+extern char s_Fixed[];
+extern char s_quaternion[];
 
 void CamPos::Display(ushort x, ushort y, uchar r, uchar g, uchar b) {
 	if (calc_mTripod) {
-		Font_String(x, y, DAT_800d2098, r, g, b, 0);
+		Font_String(x, y, s_Follow, r, g, b, 0);
 		Font_Number(x, y + 8, mTripod->mPos.vx >> 12, r, g, b, 0);
 		Font_Number(x, y + 16, mTripod->mPos.vy >> 12, r, g, b, 0);
 		Font_Number(x, y + 24, mTripod->mPos.vz >> 12, r, g, b, 0);
 	} else {
-		Font_String(x, y, DAT_800d20a0, r, g, b, 0);
+		Font_String(x, y, s_Fixed, r, g, b, 0);
 		Font_Number(x, y + 8, mTripodPos.vx >> 12, r, g, b, 0);
 		Font_Number(x, y + 16, mTripodPos.vy >> 12, r, g, b, 0);
 		Font_Number(x, y + 24, mTripodPos.vz >> 12, r, g, b, 0);
 	}
 
-	Font_String(x, y + 40, DAT_800a3528, r, g, b, 0);
+	Font_String(x, y + 40, s_quaternion, r, g, b, 0);
 	Font_Number(x, y + 48, mStickLength, r, g, b, 0);
 	Font_Number(x, y + 64, mStickOffset.vx >> 12, r, g, b, 0);
 	Font_Number(x, y + 72, mStickOffset.vy >> 12, r, g, b, 0);

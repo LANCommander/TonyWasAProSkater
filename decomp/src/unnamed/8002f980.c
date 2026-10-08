@@ -31,7 +31,7 @@ extern int Mips_FixMul(int, int);
 extern void CBruce_RotMatrixFromFRUVectors(B *);
 extern V __mi__C7CVector(const V *);
 
-extern char DAT_8009fcb0[];
+extern char s_WALL_RIDE[];
 
 void CBruce_StateTransition(B *o, int n) {
 	V a, r, r2;
@@ -64,7 +64,7 @@ void CBruce_StateTransition(B *o, int n) {
 	}
 
 	if (o->f734 == 5 && n == 1) {
-		CBruce_Trick_Trick(o, 64, DAT_8009fcb0, 500, 0);
+		CBruce_Trick_Trick(o, 64, s_WALL_RIDE, 500, 0);
 
 		if (o->f146 == 35) {
 			if (!(o->f134 & 2)) {

@@ -12,20 +12,20 @@ struct SLevel {
 	char pad58[120 - 0x58];
 };
 
-extern SDoubleBuffer *DAT_800d1a48; /* pDoubleBuffer */
-extern int DAT_800d1e28;            /* GLevel */
+extern SDoubleBuffer *pDoubleBuffer; /* pDoubleBuffer */
+extern int GLevel;            /* GLevel */
 
 int GNumberOfPlayers; /* number of players */
 
-extern SLevel DAT_800a5398[]; /* Levels */
+extern SLevel Levels[]; /* Levels */
 
-unsigned long DAT_800d177c; /* PolyBufferEnd */
+unsigned long PolyBufferEnd; /* PolyBufferEnd */
 
-#define POLYBUFFERSIZE (DAT_800a5398[DAT_800d1e28].PolyBufferExtra[GNumberOfPlayers - 1] + 0x17c00)
+#define POLYBUFFERSIZE (Levels[GLevel].PolyBufferExtra[GNumberOfPlayers - 1] + 0x17c00)
 
 void FUN_80024258(void) {
-	unsigned long Prims = DAT_800d1a48->Prims;
+	unsigned long Prims = pDoubleBuffer->Prims;
 	int Size = POLYBUFFERSIZE;
 
-	DAT_800d177c = (Prims + Size - 256) & 0x7fffffff;
+	PolyBufferEnd = (Prims + Size - 256) & 0x7fffffff;
 }

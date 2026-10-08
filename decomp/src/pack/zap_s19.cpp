@@ -9,7 +9,7 @@ struct TSPack {
 	uchar no_bottom, bpp, aligned;
 };
 
-TSPack *DAT_800d1a64;
+TSPack *Pack_pFull;
 
 TSPack *Pack_NewFree(int, int, int, int);
 int Pack_Merge(TSPack *);
@@ -17,7 +17,7 @@ int Pack_Merge(TSPack *);
 void Pack_Zap(int x, int y, int w, int h) {
 	TSPack *p_loop;
 REDO:
-	p_loop = DAT_800d1a64;
+	p_loop = Pack_pFull;
 
 	while (p_loop) {
 		if (p_loop->X + (p_loop->W - 1) >= x && p_loop->X < x + w &&

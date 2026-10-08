@@ -81,7 +81,7 @@ struct STrick {
 
 extern SSkater DAT_800a44fc[];
 extern STrick Group[];
-extern char DAT_8009fcbc[];
+extern char s_Handplant[];
 extern ushort DAT_800a7edc[];
 extern char *DAT_800a7ef0[];
 
@@ -231,7 +231,7 @@ inline void CBruce::StartHandPlant(int RailTrick, int Flags) {
 		m368 |= 0x4800;
 		SFX_PlayX(162, 0x2000, 0);
 	} else {
-		Trick_Trick(79, DAT_8009fcbc, 1000, 0);
+		Trick_Trick(79, s_Handplant, 1000, 0);
 		Debug_RunAnim1__6CBruceiii(this, 34, 8, 1544);
 
 		m368 |= 0x4800;

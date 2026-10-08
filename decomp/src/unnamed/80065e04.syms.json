@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","DAT_800d1b10":"0x800d1b10","Mem_Delete__FPv":"0x8004d5d0","ProcessNewPSX__Fi":"0x8006f290","Spool_ClearPSX__FPc":"0x8006fd18","Spool_Sync__Fv":"0x8007079c","unloadPRE__10PREManagerPc":"0x80066338"}
+{"gp":"0x800d1080","SpoolerBlocksFileIO":"0x800d1b10","Mem_Delete__FPv":"0x8004d5d0","ProcessNewPSX__Fi":"0x8006f290","Spool_ClearPSX__FPc":"0x8006fd18","Spool_Sync__Fv":"0x8007079c","unloadPRE__10PREManagerPc":"0x80066338"}

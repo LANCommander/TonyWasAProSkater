@@ -1,8 +1,8 @@
 /* FUN_8004fe28 (0x8004fe28) */
 #include "names.h"
-extern char DAT_800a1360[];
-extern char DAT_800a136c[];
-extern char DAT_800a1378[];
+extern char s_music_txt[];
+extern char s_credits_txt[];
+extern char s_credits_fnt[];
 extern char Pad[];
 
 int DAT_800d1b98[1];
@@ -54,10 +54,10 @@ void FUN_8004fe28(int a0, int a1) {
 	Pack_DefragmentFully();
 
 	if (a0 == 0)
-		s0i = FileIO_Open(DAT_800a1360);
+		s0i = FileIO_Open(s_music_txt);
 
 	if (a0 == 1)
-		s0i = FileIO_Open(DAT_800a136c);
+		s0i = FileIO_Open(s_credits_txt);
 
 	s0 = Mem_NewX(s0i, 1, 1);
 	FileIO_Load(s0);
@@ -110,7 +110,7 @@ void FUN_8004fe28(int a0, int a1) {
 	}
 
 	Mem_Delete(s0);
-	Mess_LoadFont__FPciii(DAT_800a1378, -1, -1, -1);
+	Mess_LoadFont__FPciii(s_credits_fnt, -1, -1, -1);
 	Mess_SetTextJustify(0);
 	Mess_SetScale(255);
 	Mess_SetRGB(150, 100, 25, 0);
