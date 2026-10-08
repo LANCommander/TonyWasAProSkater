@@ -26,17 +26,13 @@ struct FontInfo {
 	int mSpace_width;
 };
 
-extern FontInfo DAT_800a6110[10];
+extern FontInfo Font_table[10];
 
-int DAT_800d15e0, DAT_800d15e4;
+int Num_fonts, Current_font;
 u_short Clut;
 
 extern int Pack_NoBottom, Pack_NoRight, Pal16X, Pal16Y;
 extern char s_memory_error[];
-
-#define Font_table   DAT_800a6110
-#define Num_fonts    DAT_800d15e0
-#define Current_font DAT_800d15e4
 
 void Mess_SetNewFont(u_char);
 void *Mem_New(u_int, int, int);

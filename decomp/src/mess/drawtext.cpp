@@ -44,9 +44,9 @@ struct SDB {
 	u_long OT[3];
 };
 
-extern FontInfo DAT_800a6110[10];
+extern FontInfo Font_table[10];
 
-int DAT_800d15e4;
+int Current_font;
 SWobble *DAT_800d15e8;
 uchar TextJustification;
 u_int FlagsBGR;
@@ -56,9 +56,6 @@ u_int LastFlagsBGR;
 extern SDB *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
-
-#define Font_table   DAT_800a6110
-#define Current_font DAT_800d15e4
 
 int Mess_TextWidth(const char *);
 int Mess_GetScale(void);

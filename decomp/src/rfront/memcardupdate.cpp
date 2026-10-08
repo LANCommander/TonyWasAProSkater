@@ -114,7 +114,7 @@ extern "C" {
 	extern char ASCIIName[][11];
 	extern char *VertMenuItem[];
 	extern int VertMenuItemIndex[];
-	extern int DAT_800a5880[];
+	extern int FileType[];
 	extern char SLOT_DIR[][40];
 	extern SFrontStrings GameText;
 
@@ -587,7 +587,7 @@ int Front_MemCardUpdate() {
 						int i;
 
 						for (i = 0; i < 15; i++)
-							Vids += DAT_800a5880[i] == WantedFileType;
+							Vids += FileType[i] == WantedFileType;
 					}
 
 					if (Vids) {
@@ -597,7 +597,7 @@ int Front_MemCardUpdate() {
 							int i;
 
 							for (i = 0; i < 15; i++) {
-								if (DAT_800a5880[i] == WantedFileType) {
+								if (FileType[i] == WantedFileType) {
 									SCardHead CardHead;
 									char *p;
 
