@@ -135,7 +135,7 @@ extern "C" {
 	extern char s_press_x_to_continue[];        /* "press x to continue" */
 
 	int EndCode;       /* EndCode */
-	int DAT_800d16a4;       /* GGame */
+	int GGame;       /* GGame */
 	int GNumberOfPlayers;       /* GNumberOfPlayers */
 	char GVideoFlags;      /* GVideoFlags */
 	CPowerUp *GPowS; /* GPowS */
@@ -224,7 +224,7 @@ extern "C" {
 static inline void System_Logic(void) {
 	SControl TempPad;
 
-	if (DAT_800d16a4 == 7 && GHorsePlayer == 1) {
+	if (GGame == 7 && GHorsePlayer == 1) {
 		TempPad = Pad[0];
 		Pad[0] = Pad[1];
 		Pad[1] = TempPad;
@@ -234,7 +234,7 @@ static inline void System_Logic(void) {
 	FUN_80070ff4();
 	Pad_Restore__Fv();
 
-	if (DAT_800d16a4 == 7 && GHorsePlayer == 1) {
+	if (GGame == 7 && GHorsePlayer == 1) {
 		TempPad = Pad[0];
 		Pad[0] = Pad[1];
 		Pad[1] = TempPad;
@@ -367,7 +367,7 @@ void PlayAway(void) {
 	}
 
 	if (!GVideoReplay) {
-		if (DAT_800d16a4 == 1) {
+		if (GGame == 1) {
 			GVideoFlags = 0;
 
 			if (Career_Got__Fi(3))
@@ -382,7 +382,7 @@ void PlayAway(void) {
 		GVideoFlags = ((SVideoHead *)(GVInfo1.pBlockStart + 128))->VideoFlags;
 	}
 
-	if (DAT_800d16a4 == 1 && !Levels[GLevel].isCompetition) {
+	if (GGame == 1 && !Levels[GLevel].isCompetition) {
 		if (GVideoFlags & 2) {
 			GPowS->Visible = 1;
 			GPowK->Visible = 1;
@@ -474,7 +474,7 @@ void PlayAway(void) {
 
 		if (!GSkater->Dead && (!DAT_800d17cc || !DAT_800d17cc->Dead) && GState == 1) {
 			if (--GSpin <= 0) {
-				if (DAT_800d16a4 != 7 && GSkater->ma64) {
+				if (GGame != 7 && GSkater->ma64) {
 					GSpinSpeed = 0;
 					GSpin = 1;
 				} else {
@@ -504,7 +504,7 @@ void PlayAway(void) {
 
 					GState = 0;
 
-					if (Levels[GLevel].isCompetition && DAT_800d16a4 == 1)
+					if (Levels[GLevel].isCompetition && GGame == 1)
 						FUN_8001a1c8();
 					else
 						Front_SwitchOnEndLevelMenu__Fv();
@@ -537,7 +537,7 @@ void PlayAway(void) {
 			}
 		}
 
-		if ((GNumberOfPlayers == 1 || (DAT_800d16a4 == 7 && GHorseClearInput2)) && !Cheat_ScreenShots)
+		if ((GNumberOfPlayers == 1 || (GGame == 7 && GHorseClearInput2)) && !Cheat_ScreenShots)
 			Pad_ClearAllOne__Fi(1);
 
 		Game_Logic__Fv();
@@ -560,7 +560,7 @@ void PlayAway(void) {
 		if (!DemoTimer)
 			Front_PrintDemo__Fv();
 
-		FUN_8002357c(Levels[GLevel].m60 && (GNumberOfPlayers == 1 || DAT_800d16a4 == 7)
+		FUN_8002357c(Levels[GLevel].m60 && (GNumberOfPlayers == 1 || GGame == 7)
 		                 ? M3d_WireframeMode
 						 : 0);
 
@@ -574,7 +574,7 @@ void PlayAway(void) {
 		if (Vblanks == StartVblanks + 1)
 			Pause__Fi(1);
 
-		if (DAT_800d16a4 == 7) {
+		if (GGame == 7) {
 			if (!GHorseWordChosen) {
 				GHorseDoneStart = 1;
 				GHorseWordChosen = 1;

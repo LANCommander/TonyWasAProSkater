@@ -59,7 +59,7 @@ struct SControl {
 	SButton Down;     /* 0xb0 */
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0xc];
 	int Style; /* 0x0c */
 	char pad10[0x18 - 0x10];
@@ -79,7 +79,7 @@ struct STrick {
 	int w8, w9, w10;
 };
 
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern STrick Group[];
 extern char s_Handplant[];
 extern ushort DAT_800a7edc[];
@@ -191,7 +191,7 @@ class CBruce {
 
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (DAT_800a44fc[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
+	              : (Stats[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
 	                    mpStatBonus[n])
 
 int SFX_PlayX(unsigned int, short, int);
@@ -482,7 +482,7 @@ void CBruce::HandleStickToRail() {
 	if (m254 && m278 && XFrames - m274 < 35 && m268 && XFrames - m26C < 45) {
 		STrick *pTab = Group;
 
-		Flags = DAT_800a44fc[mSkaterIndex].Style + (m268 << 8) + (m278 << 4) + 3;
+		Flags = Stats[mSkaterIndex].Style + (m268 << 8) + (m278 << 4) + 3;
 		int f;
 
 		for (RailTrick = 32; (f = Group[RailTrick].Flags) > 0; RailTrick++) {

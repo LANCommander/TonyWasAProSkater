@@ -2,15 +2,15 @@
 #include "names.h"
 typedef struct {
 	char c[0x10];
-} SControl;
+} SButton;
 
 typedef struct {
-	SControl a, b, c, d;
+	SButton a, b, c, d;
 	char _40[0x15c - 0x40];
-	SControl *pa, *pc, *pb, *pd;
-} Pad;
+	SButton *pa, *pc, *pb, *pd;
+} SControl;
 
-extern Pad DAT_800c0a48[];
+extern SControl Pad[];
 extern char controllers[];
 
 int Pad_IdleTime, ControlSystemInitialised;
@@ -24,10 +24,10 @@ void Pad_InitAtStart(void) {
 	int i;
 
 	for (i = 0; i < 2; i++) {
-		DAT_800c0a48[i].pa = &DAT_800c0a48[i].a;
-		DAT_800c0a48[i].pb = &DAT_800c0a48[i].c;
-		DAT_800c0a48[i].pc = &DAT_800c0a48[i].b;
-		DAT_800c0a48[i].pd = &DAT_800c0a48[i].d;
+		Pad[i].pa = &Pad[i].a;
+		Pad[i].pb = &Pad[i].c;
+		Pad[i].pc = &Pad[i].b;
+		Pad[i].pd = &Pad[i].d;
 	}
 
 	Pad_ClearAll();

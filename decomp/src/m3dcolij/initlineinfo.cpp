@@ -45,7 +45,7 @@ struct SLineInfo {
 
 extern MATRIX Tfm;
 
-ushort DAT_800d20c8;
+ushort Inquiry;
 
 int M3dMaths_SquareRoot0(int);
 void NextInquiry();
@@ -174,5 +174,5 @@ void M3dColij_InitLineInfo(SLineInfo *pInfo) {
 
 	NextInquiry();
 
-	pInfo->Inquiry = DAT_800d20c8;
+	pInfo->Inquiry = Inquiry;
 }

@@ -58,7 +58,7 @@ struct SCompetition {
 	int NoPrompt; /* 0x12c */
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[44];
 	char *pName; /* 44 */
 	char pad30[340 - 48];
@@ -77,7 +77,7 @@ struct SGame {
 
 extern SCompetition theCompetition;
 extern char *MedalMessage[9];
-extern SSkater Stats[];
+extern SStats Stats[];
 extern SCareer GCareer;
 extern SGame *GSkater;
 extern int GLevel;

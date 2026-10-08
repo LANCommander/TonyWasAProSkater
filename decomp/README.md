@@ -104,7 +104,12 @@ Validated on `CVector::operator+=` (`0x8004da3c`): the `move v0,a0` prologue and
   **`python tools/rename_data.py [--apply]`** then rewrites `DAT_` in the sources and the keys in
   their `.syms.json`. The address and type stay, so the code doesn't change. A file where the name
   is already an identifier (a member declaration, local or type) keeps its `DAT_`, because the new
-  name could bind to that instead. Comments and `x.f`/`p->f` accesses don't count. Verify a rename with `compile_all.mjs` before and after, with the names mapped
+  name could bind to that instead. Comments and `x.f`/`p->f` accesses don't count, and neither
+  do members of a plain struct (C has no methods; in C++, no `(` in the body and nothing derives
+  from it). If a placeholder type or typedef takes the name, rename it to its SYM tag (`Pad` →
+  `SControl`, the skater record `SSkater` → `SStats`). **`data_names_manual.tsv`** holds the
+  globals named by hand, each with its basis (e.g. `GBoardStats`: retail moved it out of
+  `.sdata`, so the demo twin's gp access doesn't align). `data_names.py` merges it in. Verify a rename with `compile_all.mjs` before and after, with the names mapped
   back to `DAT_`, plus `check_all.mjs`. Rerun both scripts as more functions get twins. The
   rest of the `DAT_`s are THPS1-only, or no twin touches them.
 - `src/unnamed/<addr>.c` holds unnamed functions. The trivial ones (empty bodies, `return K`,

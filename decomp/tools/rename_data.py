@@ -8,9 +8,9 @@ compile_all.mjs before and after (it compiles .c and .cpp).
   python tools/rename_data.py --apply    rewrite src/**/*.{c,cpp,s} and their .syms.json
 
 A name is left as DAT_ in a file where it's already an identifier outside comments and member
-accesses: a local, parameter, member or type of that name would capture the reference (and C++
-methods see members unqualified). It's
-left out everywhere if it's a names.h alias (the macro would turn it into a function symbol) or an
+accesses: a local, parameter, member or type of that name would capture the reference (C++
+methods see members unqualified). Members of a plain struct don't count: C has no methods, and in
+C++ a struct with no '(' in its body that nothing derives from can't capture. It's left out everywhere if it's a names.h alias (the macro would turn it into a function symbol) or an
 identifier in the Psy-Q SDK headers. Line 1 (when it's the salvage header) and string literals are untouched.
 Idempotent: rerun it after data_names.tsv grows.
 """
@@ -27,6 +27,28 @@ from gen_names_h import IDENT, PSYQ_INC, ROOT, STRING, current_aliases, map_body
 DAT = re.compile(r"\bDAT_([0-9a-f]{8})\b")
 COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
 MEMBER = re.compile(r"(?:\.|->)\s*[A-Za-z_]\w*")
+CLASS_HEAD = re.compile(r"\b(?:struct|union|class)\s+(\w*)\s*(?::([^{;]*))?\{")
+
+
+def without_plain_members(t, cpp):
+    """Blank the bodies of struct definitions whose member names can't capture a global: every
+    one in C; in C++ only plain data (no '(' in the body, so no methods) that no class derives from,
+    since a method of the struct or a derived class would see its members unqualified."""
+    bases = {b for m in CLASS_HEAD.finditer(t) if m.group(2) for b in re.findall(r"\w+", m.group(2))}
+    out, pos = [], 0
+    for m in CLASS_HEAD.finditer(t):
+        if m.start() < pos:
+            continue                                  # nested in a body already blanked
+        depth, i = 1, m.end()
+        while depth and i < len(t):
+            depth += {"{": 1, "}": -1}.get(t[i], 0)
+            i += 1
+        body = t[m.end():i - 1]
+        if not cpp or ("(" not in body and m.group(1) not in bases):
+            out.append(t[pos:m.end()])
+            pos = i - 1
+    out.append(t[pos:])
+    return "".join(out)
 
 
 def main():
@@ -49,8 +71,10 @@ def main():
         header = s.startswith(("/*", "#"))      # the salvage header; otherwise line 1 is code
         body = STRING.sub('""', s.split("\n", 1)[1] if header else s)
         present = {int(a, 16) for a in DAT.findall(body)}
-        # identifiers that could capture the name: not in comments, not member accesses (x.f, p->f)
-        idents = set(IDENT.findall(MEMBER.sub(" ", COMMENT.sub(" ", body))))
+        # identifiers that could capture the name: not in comments, not member accesses (x.f, p->f),
+        # not members of plain structs
+        code = without_plain_members(COMMENT.sub(" ", body), f.endswith(".cpp"))
+        idents = set(IDENT.findall(MEMBER.sub(" ", code)))
         syms_path = os.path.splitext(f)[0] + ".syms.json"
         syms = json.load(open(syms_path)) if os.path.exists(syms_path) else None
         todo = {}

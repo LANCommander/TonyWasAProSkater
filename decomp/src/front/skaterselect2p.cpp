@@ -39,7 +39,7 @@ struct SBoard {
 	int pad[2];
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x13];
 	uchar b13;       /* 0x13 */
 	signed char b14; /* 0x14 */
@@ -144,7 +144,7 @@ class CBruce : public CSuper {
 
 extern SControl Pad[];
 extern SCareer GCareer;
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern char DoubleBuffer[];
 extern char MikeCamera[];
 extern char *pDoubleBuffer;
@@ -348,10 +348,10 @@ extern "C" int FUN_80056754(void) {
 			stat[p][k].type = k;
 		}
 
-		stat[p][0].value = DAT_800a44fc[DAT_800d2304[p]].Stats[0];
-		stat[p][1].value = DAT_800a44fc[DAT_800d2304[p]].Stats[1];
-		stat[p][2].value = DAT_800a44fc[DAT_800d2304[p]].Stats[2];
-		stat[p][3].value = DAT_800a44fc[DAT_800d2304[p]].Stats[3];
+		stat[p][0].value = Stats[DAT_800d2304[p]].Stats[0];
+		stat[p][1].value = Stats[DAT_800d2304[p]].Stats[1];
+		stat[p][2].value = Stats[DAT_800d2304[p]].Stats[2];
+		stat[p][3].value = Stats[DAT_800d2304[p]].Stats[3];
 	}
 
 	info[0][0] = new Sprite(203, 323, 150, 30, 1, 32, 128);
@@ -537,8 +537,8 @@ extern "C" int FUN_80056754(void) {
 							FUN_8006ed2c(DAT_800d3758[DAT_800d2304[p]]);
 
 							if (Cheat_BigHead) {
-								GHeadUp = DAT_800a44fc[DAT_800d2304[p]].b14;
-								GHeadPart = DAT_800a44fc[DAT_800d2304[p]].b13;
+								GHeadUp = Stats[DAT_800d2304[p]].b14;
+								GHeadPart = Stats[DAT_800d2304[p]].b13;
 							}
 
 							ProcessNewPSX__Fi(DAT_800d3758[DAT_800d2304[p]]);
@@ -637,10 +637,10 @@ extern "C" int FUN_80056754(void) {
 
 					loadX[p] = frameX[p] + 129;
 					textState[p] = 0;
-					stat[p][0].value = DAT_800a44fc[DAT_800d2304[p]].Stats[0];
-					stat[p][1].value = DAT_800a44fc[DAT_800d2304[p]].Stats[1];
-					stat[p][2].value = DAT_800a44fc[DAT_800d2304[p]].Stats[2];
-					stat[p][3].value = DAT_800a44fc[DAT_800d2304[p]].Stats[3];
+					stat[p][0].value = Stats[DAT_800d2304[p]].Stats[0];
+					stat[p][1].value = Stats[DAT_800d2304[p]].Stats[1];
+					stat[p][2].value = Stats[DAT_800d2304[p]].Stats[2];
+					stat[p][3].value = Stats[DAT_800d2304[p]].Stats[3];
 					break;
 				case 4:
 					shown[1 - p] = 0;
@@ -673,10 +673,10 @@ extern "C" int FUN_80056754(void) {
 
 					loadX[p] = frameX[p];
 					textState[p] = 0;
-					stat[p][0].value = DAT_800a44fc[DAT_800d2304[p]].Stats[0];
-					stat[p][1].value = DAT_800a44fc[DAT_800d2304[p]].Stats[1];
-					stat[p][2].value = DAT_800a44fc[DAT_800d2304[p]].Stats[2];
-					stat[p][3].value = DAT_800a44fc[DAT_800d2304[p]].Stats[3];
+					stat[p][0].value = Stats[DAT_800d2304[p]].Stats[0];
+					stat[p][1].value = Stats[DAT_800d2304[p]].Stats[1];
+					stat[p][2].value = Stats[DAT_800d2304[p]].Stats[2];
+					stat[p][3].value = Stats[DAT_800d2304[p]].Stats[3];
 					break;
 				case 8:
 					if (DAT_800d231c[p]) {
@@ -808,39 +808,39 @@ extern "C" int FUN_80056754(void) {
 				int ty = 330;
 
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d2304[p]].Info[0]) + ty -
-				                 (Mess_TextHeight(DAT_800a44fc[DAT_800d2304[p]].Info[0]) >> 1),
-				             DAT_800a44fc[DAT_800d2304[p]].Info[0], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[0]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[0]) >> 1),
+				             Stats[DAT_800d2304[p]].Info[0], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d2304[p]].Info[1]) + ty -
-				                 (Mess_TextHeight(DAT_800a44fc[DAT_800d2304[p]].Info[1]) >> 1),
-				             DAT_800a44fc[DAT_800d2304[p]].Info[1], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[1]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[1]) >> 1),
+				             Stats[DAT_800d2304[p]].Info[1], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d2304[p]].Info[2]) + ty -
-				                 (Mess_TextHeight(DAT_800a44fc[DAT_800d2304[p]].Info[2]) >> 1),
-				             DAT_800a44fc[DAT_800d2304[p]].Info[2], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[2]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[2]) >> 1),
+				             Stats[DAT_800d2304[p]].Info[2], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d2304[p]].Info[3]) + ty -
-				                 (Mess_TextHeight(DAT_800a44fc[DAT_800d2304[p]].Info[3]) >> 1),
-				             DAT_800a44fc[DAT_800d2304[p]].Info[3], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[3]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[3]) >> 1),
+				             Stats[DAT_800d2304[p]].Info[3], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d2304[p]].Info[4]) + ty -
-				                 (Mess_TextHeight(DAT_800a44fc[DAT_800d2304[p]].Info[4]) >> 1),
-				             DAT_800a44fc[DAT_800d2304[p]].Info[4], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[4]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[4]) >> 1),
+				             Stats[DAT_800d2304[p]].Info[4], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d2304[p]].Info[5]) + ty -
-				                 (Mess_TextHeight(DAT_800a44fc[DAT_800d2304[p]].Info[5]) >> 1),
-				             DAT_800a44fc[DAT_800d2304[p]].Info[5], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[5]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[5]) >> 1),
+				             Stats[DAT_800d2304[p]].Info[5], 0, 0, 256, 0);
 			}
 
 			if (panelState[p] == -1 && panelState[1 - p] <= 0 && infoTimer[1 - p] <= 0 &&
@@ -858,7 +858,7 @@ extern "C" int FUN_80056754(void) {
 
 				while (best[p] < 7) {
 					if (GCareer.Skater[DAT_800d2304[p]].NumTapes <
-					    DAT_800a44fc[DAT_800d2304[p]].Boards[best[p] + 1].Req)
+					    Stats[DAT_800d2304[p]].Boards[best[p] + 1].Req)
 						break;
 
 					best[p]++;
@@ -900,11 +900,11 @@ extern "C" int FUN_80056754(void) {
 					Mess_SetTextJustify__FUc(1);
 
 					if (p == 0) {
-						startX[p] = textX[p] = -Mess_TextWidth__FPCc(DAT_800a44fc[DAT_800d2304[p]].Name);
-						endX[p] = 208 - (Mess_TextWidth__FPCc(DAT_800a44fc[DAT_800d2304[p]].Name) >> 1);
+						startX[p] = textX[p] = -Mess_TextWidth__FPCc(Stats[DAT_800d2304[p]].Name);
+						endX[p] = 208 - (Mess_TextWidth__FPCc(Stats[DAT_800d2304[p]].Name) >> 1);
 					} else {
 						startX[p] = textX[p] = 640;
-						endX[p] = 496 - (Mess_TextWidth__FPCc(DAT_800a44fc[DAT_800d2304[p]].Name) >> 1);
+						endX[p] = 496 - (Mess_TextWidth__FPCc(Stats[DAT_800d2304[p]].Name) >> 1);
 					}
 
 					textSpeed[p] = (endX[p] - startX[p]) / 6;
@@ -914,8 +914,8 @@ extern "C" int FUN_80056754(void) {
 					{
 						int ty = 74;
 
-						textY[p] = Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d2304[p]].Name) + ty -
-						           (Mess_TextHeight(DAT_800a44fc[DAT_800d2304[p]].Name) >> 1);
+						textY[p] = Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Name) + ty -
+						           (Mess_TextHeight(Stats[DAT_800d2304[p]].Name) >> 1);
 					}
 
 					textState[p] = 2;
@@ -933,7 +933,7 @@ extern "C" int FUN_80056754(void) {
 					Mess_SetCurrentFont("mainf.fnt");
 					Mess_SetRGB(128, 128, 128, 0);
 					Mess_SetTextJustify__FUc(1);
-					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], DAT_800a44fc[DAT_800d2304[p]].Name, 0, 0, 256,
+					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0, 0, 256,
 					             0);
 					break;
 				case 3:
@@ -947,7 +947,7 @@ extern "C" int FUN_80056754(void) {
 					Mess_SetCurrentFont("mainf.fnt");
 					Mess_SetRGB(128, 128, 128, 0);
 					Mess_SetTextJustify__FUc(1);
-					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], DAT_800a44fc[DAT_800d2304[p]].Name, 0, 0, 256,
+					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0, 0, 256,
 					             0);
 					break;
 			}

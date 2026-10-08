@@ -35,7 +35,7 @@ struct SBoard {
 	int pad[2];
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x18];
 	int Stats[4]; /* 0x18 */
 	char pad28[0x58 - 0x28];
@@ -59,7 +59,7 @@ struct SCareer {
 	char LastTrucks[2]; /* 0x82a */
 };
 
-struct SStats {
+struct BoardStats {
 	uchar s[5];
 };
 
@@ -107,8 +107,8 @@ class PREManager {
 
 extern SControl Pad[];
 extern SCareer GCareer;
-extern SSkater DAT_800a44fc[];
-extern SStats DAT_800a8240[];
+extern SStats Stats[];
+extern BoardStats GBoardStats[];
 extern int DAT_800be438[];
 extern int DAT_800d33c4[];
 extern SlicedImage *DAT_800d36a4[][15];
@@ -268,14 +268,14 @@ extern "C" int FUN_80054510(int player) {
 
 	n = 0;
 	base[4] = 0;
-	base[0] = DAT_800a44fc[DAT_800d22f0].Stats[0];
-	base[1] = DAT_800a44fc[DAT_800d22f0].Stats[1];
-	base[2] = DAT_800a44fc[DAT_800d22f0].Stats[2];
-	base[3] = DAT_800a44fc[DAT_800d22f0].Stats[3];
+	base[0] = Stats[DAT_800d22f0].Stats[0];
+	base[1] = Stats[DAT_800d22f0].Stats[1];
+	base[2] = Stats[DAT_800d22f0].Stats[2];
+	base[3] = Stats[DAT_800d22f0].Stats[3];
 
 	while (n < 7) {
 		if (GCareer.Skater[DAT_800d22f0].NumTapes <
-		    DAT_800a44fc[DAT_800d22f0].Boards[n + 1].Req)
+		    Stats[DAT_800d22f0].Boards[n + 1].Req)
 			break;
 
 		n++;
@@ -284,10 +284,10 @@ extern "C" int FUN_80054510(int player) {
 			break;
 	}
 
-	board[0] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[0];
-	board[1] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[1];
-	board[2] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[2];
-	board[3] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[3];
+	board[0] = Stats[DAT_800d22f0].Boards[n].Stats[0];
+	board[1] = Stats[DAT_800d22f0].Boards[n].Stats[1];
+	board[2] = Stats[DAT_800d22f0].Boards[n].Stats[2];
+	board[3] = Stats[DAT_800d22f0].Boards[n].Stats[3];
 	board[4] = DAT_800be438[trucks];
 	delta[0] = 0;
 	delta[1] = 0;
@@ -308,7 +308,7 @@ extern "C" int FUN_80054510(int player) {
 
 	char text[48];
 
-	FUN_8008e904(text, DAT_800a44fc[DAT_800d22f0].Boards[deck].Name);
+	FUN_8008e904(text, Stats[DAT_800d22f0].Boards[deck].Name);
 
 	Sprite *textBar = new Sprite(0, 49, 585, 43, 1, 32, 128);
 
@@ -655,14 +655,14 @@ extern "C" int FUN_80054510(int player) {
 
 				if (textTimer == 0) {
 					if (GCareer.Skater[DAT_800d22f0].NumTapes >=
-					    DAT_800a44fc[DAT_800d22f0].Boards[deck].Req) {
-						FUN_8008e904(text, DAT_800a44fc[DAT_800d22f0].Boards[deck].Name);
+					    Stats[DAT_800d22f0].Boards[deck].Req) {
+						FUN_8008e904(text, Stats[DAT_800d22f0].Boards[deck].Name);
 					} else if (GGame == 1) {
 						FUN_8008b900(text, s_Get_d_tapes_to_unlock,
-						             DAT_800a44fc[DAT_800d22f0].Boards[deck].Req);
+						             Stats[DAT_800d22f0].Boards[deck].Req);
 					} else {
 						FUN_8008b900(text, s_Unlock_in_career_mode,
-						             DAT_800a44fc[DAT_800d22f0].Boards[deck].Req);
+						             Stats[DAT_800d22f0].Boards[deck].Req);
 					}
 
 					Mess_SetCurrentFont(s_mainf_fnt_800a172c);
@@ -693,16 +693,16 @@ extern "C" int FUN_80054510(int player) {
 		}
 
 		if (!statsDone) {
-			board[0] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[0];
-			board[1] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[1];
-			board[2] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[2];
-			board[3] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[3];
+			board[0] = Stats[DAT_800d22f0].Boards[n].Stats[0];
+			board[1] = Stats[DAT_800d22f0].Boards[n].Stats[1];
+			board[2] = Stats[DAT_800d22f0].Boards[n].Stats[2];
+			board[3] = Stats[DAT_800d22f0].Boards[n].Stats[3];
 
 			if (n < deck) {
-				delta[0] = DAT_800a44fc[DAT_800d22f0].Boards[deck].Stats[0] - board[0];
-				delta[1] = DAT_800a44fc[DAT_800d22f0].Boards[deck].Stats[1] - board[1];
-				delta[2] = DAT_800a44fc[DAT_800d22f0].Boards[deck].Stats[2] - board[2];
-				delta[3] = DAT_800a44fc[DAT_800d22f0].Boards[deck].Stats[3] - board[3];
+				delta[0] = Stats[DAT_800d22f0].Boards[deck].Stats[0] - board[0];
+				delta[1] = Stats[DAT_800d22f0].Boards[deck].Stats[1] - board[1];
+				delta[2] = Stats[DAT_800d22f0].Boards[deck].Stats[2] - board[2];
+				delta[3] = Stats[DAT_800d22f0].Boards[deck].Stats[3] - board[3];
 			} else {
 				delta[0] = 0;
 				delta[1] = 0;
@@ -722,14 +722,14 @@ extern "C" int FUN_80054510(int player) {
 			Pad_ClearTriggers(&Pad[1]);
 
 			result = 1;
-			DAT_800a8240[0].s[0] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[0];
-			DAT_800a8240[0].s[1] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[1];
-			DAT_800a8240[0].s[2] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[2];
-			DAT_800a8240[0].s[3] = DAT_800a44fc[DAT_800d22f0].Boards[n].Stats[3];
-			DAT_800a8240[0].s[4] = DAT_800be438[trucks];
+			GBoardStats[0].s[0] = Stats[DAT_800d22f0].Boards[n].Stats[0];
+			GBoardStats[0].s[1] = Stats[DAT_800d22f0].Boards[n].Stats[1];
+			GBoardStats[0].s[2] = Stats[DAT_800d22f0].Boards[n].Stats[2];
+			GBoardStats[0].s[3] = Stats[DAT_800d22f0].Boards[n].Stats[3];
+			GBoardStats[0].s[4] = DAT_800be438[trucks];
 
 			if (GCareer.Skater[DAT_800d22f0].NumTapes >=
-			    DAT_800a44fc[DAT_800d22f0].Boards[deck].Req) {
+			    Stats[DAT_800d22f0].Boards[deck].Req) {
 				int j;
 
 				/* Two nested one-pass loops (macro-like): they double the refs of the

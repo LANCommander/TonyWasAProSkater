@@ -88,7 +88,7 @@ struct STerrain {
 extern SVideoInfo GVInfo1, GVInfo2;
 extern int PosBits[], EulerBits[], FlipAngleBits[];
 extern CBruce *MechList, *GSkater;
-extern volatile int DAT_800d1a24;
+extern volatile int Xblanks;
 extern CTrickOb *TrickObList;
 extern int TrickPlayer;
 extern CBruce *pCurrentPlayer;
@@ -211,7 +211,7 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 	VInfo->OldXblanks += GetNBitsUnsigned(VInfo, 2) + 2;
 
 	if (NChunks == 1) {
-		int n = VInfo->OldXblanks - DAT_800d1a24;
+		int n = VInfo->OldXblanks - Xblanks;
 
 		for (i = 0; i < n; i++)
 			FUN_8008eebc(0);
@@ -320,5 +320,5 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 	}
 
 	if (NChunks != 1)
-		VInfo->OldXblanks = DAT_800d1a24;
+		VInfo->OldXblanks = Xblanks;
 }

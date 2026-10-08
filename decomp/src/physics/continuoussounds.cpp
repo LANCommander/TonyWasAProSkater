@@ -13,13 +13,13 @@ struct CVector {
 	int vx, vy, vz;
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x18];
 	int Stats[10]; /* 0x18 */
 	char pad40[340 - 0x40];
 };
 
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 
 int Cheat_StatsOverride;
 
@@ -60,7 +60,7 @@ class CBruce {
 
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (DAT_800a44fc[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
+	              : (Stats[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
 	                    mpStatBonus[n])
 #define MaxSpeed (((GetStat(1) + 50) << 12) * 3 * 15 / 28)
 

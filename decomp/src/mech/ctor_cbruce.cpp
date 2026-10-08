@@ -32,7 +32,7 @@ struct CSVector {
 	}
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x18];
 	int Stats[10]; /* 0x18 */
 	char pad40[340 - 0x40];
@@ -49,7 +49,7 @@ struct SFront {
 	int m584;
 };
 
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern SLevel Levels[];
 extern int GLevel;
 extern int GGame;
@@ -223,7 +223,7 @@ class CBruce : public CSuper {
 
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (DAT_800a44fc[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
+	              : (Stats[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
 	                    mpStatBonus[n])
 
 void *Mem_New(uint, int, int);

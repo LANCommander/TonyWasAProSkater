@@ -18,7 +18,7 @@ struct SBoard {
 	int pad;
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x54];
 	SBoard Boards[8]; /* 0x54 */
 };
@@ -53,7 +53,7 @@ class SlicedImage : public CItem {
 };
 
 extern SCareer GCareer;
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern int DAT_800d2c1c[3];             /* pictures per column */
 extern char DAT_800d2c2c[2][3][15][16]; /* picture file names */
 extern SlicedImage *DAT_800d31cc[2][3][15];
@@ -99,8 +99,8 @@ extern "C" void FUN_80050c5c(void) {
 
 		for (int i = 0; i < DAT_800d2c1c[0]; i++) {
 			if (GCareer.Skater[DAT_800d22d0[p]].NumTapes >=
-			    DAT_800a44fc[DAT_800d22d0[p]].Boards[i].Req) {
-				strcpy(DAT_800d2c2c[p][0][i], DAT_800a44fc[DAT_800d22d0[p]].Boards[i].File);
+			    Stats[DAT_800d22d0[p]].Boards[i].Req) {
+				strcpy(DAT_800d2c2c[p][0][i], Stats[DAT_800d22d0[p]].Boards[i].File);
 
 				DAT_800d2c2c[p][0][i][1] = '2';
 			} else {

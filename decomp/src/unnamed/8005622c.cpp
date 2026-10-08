@@ -20,7 +20,7 @@ struct CVector {
 	}
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x8];
 	char *pName; /* 0x08 */
 	int Style;   /* 0x0c */
@@ -30,7 +30,7 @@ struct SSkater {
 	char pad44[340 - 0x44];
 };
 
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern char DAT_800be444[];
 
 int DAT_800d2304[2];
@@ -67,7 +67,7 @@ extern "C" CBruce *FUN_8005622c(int Player) {
 	CBruce *pBruce = new CBruce;
 	pBruce->mSkaterIndex = DAT_800d2304[Player];
 
-	pBruce->InitItem(DAT_800a44fc[DAT_800d2304[Player]].pName);
+	pBruce->InitItem(Stats[DAT_800d2304[Player]].pName);
 
 	pBruce->m150 = 0x10000;
 
@@ -81,8 +81,8 @@ extern "C" CBruce *FUN_8005622c(int Player) {
 		pBruce->mPos.Set(DAT_800d22fc, DAT_800d22f8, 0x1bc000);
 	FUN_8008b238(&pBruce->mRotMatrix);
 
-	if (*DAT_800a44fc[DAT_800d2304[Player]].pStance == 'R' ||
-	    *DAT_800a44fc[DAT_800d2304[Player]].pStance == 'r')
+	if (*Stats[DAT_800d2304[Player]].pStance == 'R' ||
+	    *Stats[DAT_800d2304[Player]].pStance == 'r')
 		pBruce->mFlags |= 2;
 	pBruce->mp3C = DAT_800be444;
 	return pBruce;

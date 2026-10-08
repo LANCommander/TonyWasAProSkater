@@ -17,7 +17,7 @@ struct SBoard {
 	int pad;
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x54];
 	SBoard Boards[8]; /* 0x54 */
 };
@@ -52,7 +52,7 @@ class SlicedImage : public CItem {
 };
 
 extern SCareer GCareer;
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern int DAT_800d3394[3];          /* load offset from the start entry (-1: not started) */
 extern int DAT_800d33a4[3];          /* start entry */
 extern int DAT_800d33b4[3];          /* column fully loaded */
@@ -93,8 +93,8 @@ extern "C" void FUN_80053dbc(void) {
 	DAT_800d33a4[2] = GCareer.LastWheel[0];
 
 	for (int i = 0; i < DAT_800d33c4[0]; i++) {
-		if (GCareer.Skater[DAT_800d22f0].NumTapes >= DAT_800a44fc[DAT_800d22f0].Boards[i].Req)
-			strcpy(DAT_800d33d4[0][i], DAT_800a44fc[DAT_800d22f0].Boards[i].File);
+		if (GCareer.Skater[DAT_800d22f0].NumTapes >= Stats[DAT_800d22f0].Boards[i].Req)
+			strcpy(DAT_800d33d4[0][i], Stats[DAT_800d22f0].Boards[i].File);
 		else
 			strcpy(DAT_800d33d4[0][i], "b1lock01.bmp");
 

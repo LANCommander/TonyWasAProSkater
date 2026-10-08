@@ -11,7 +11,7 @@ struct SBoard {
 	int pad;
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x54];
 	SBoard Boards[8];
 	char pad[340 - 0x54 - 8 * 32];
@@ -23,13 +23,13 @@ struct SSkaterCareer {
 	char pad9[14 - 9];
 };
 
-struct SStats {
+struct BoardStats {
 	uchar s[5];
 };
 
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern SSkaterCareer GCareer[];
-extern SStats DAT_800a8240[];
+extern BoardStats GBoardStats[];
 extern int GNumberOfPlayers;
 
 struct CBruce {
@@ -44,20 +44,20 @@ void CBruce::GetStats(int Skater) {
 
 		while (highest_board < 7) {
 			if (GCareer[mSkaterIndex].NumTapes <
-			    DAT_800a44fc[mSkaterIndex].Boards[highest_board + 1].Req)
+			    Stats[mSkaterIndex].Boards[highest_board + 1].Req)
 				break;
 
 			highest_board++;
 		}
 
-		DAT_800a8240[Skater].s[0] = DAT_800a44fc[mSkaterIndex].Boards[highest_board].Stats[0];
-		DAT_800a8240[Skater].s[1] = DAT_800a44fc[mSkaterIndex].Boards[highest_board].Stats[1];
-		DAT_800a8240[Skater].s[2] = DAT_800a44fc[mSkaterIndex].Boards[highest_board].Stats[2];
-		DAT_800a8240[Skater].s[3] = DAT_800a44fc[mSkaterIndex].Boards[highest_board].Stats[3];
+		GBoardStats[Skater].s[0] = Stats[mSkaterIndex].Boards[highest_board].Stats[0];
+		GBoardStats[Skater].s[1] = Stats[mSkaterIndex].Boards[highest_board].Stats[1];
+		GBoardStats[Skater].s[2] = Stats[mSkaterIndex].Boards[highest_board].Stats[2];
+		GBoardStats[Skater].s[3] = Stats[mSkaterIndex].Boards[highest_board].Stats[3];
 	} else {
-		DAT_800a8240[Skater].s[0] = 3;
-		DAT_800a8240[Skater].s[1] = 3;
-		DAT_800a8240[Skater].s[2] = 3;
-		DAT_800a8240[Skater].s[3] = 3;
+		GBoardStats[Skater].s[0] = 3;
+		GBoardStats[Skater].s[1] = 3;
+		GBoardStats[Skater].s[2] = 3;
+		GBoardStats[Skater].s[3] = 3;
 	}
 }

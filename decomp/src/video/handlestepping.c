@@ -2,9 +2,9 @@
 #include "names.h"
 typedef struct {
 	unsigned char b[0x16c];
-} Pad;
+} SControl;
 
-extern Pad DAT_800c0a48[];
+extern SControl Pad[];
 extern unsigned char DAT_800c0a48b[];
 
 extern struct {
@@ -40,10 +40,10 @@ void Video_HandleStepping(void) {
 	if (Status == 20 || Status == 22 || Status == 21)
 		return;
 
-	if (DAT_800c0a48[0].b[0x11] || (GNumberOfPlayers == 2 && DAT_800c0a48[1].b[0x11])) {
+	if (Pad[0].b[0x11] || (GNumberOfPlayers == 2 && Pad[1].b[0x11])) {
 		v = GVInfo1.step;
-		DAT_800c0a48[0].b[0x11] = 0;
-		DAT_800c0a48[1].b[0x11] = 0;
+		Pad[0].b[0x11] = 0;
+		Pad[1].b[0x11] = 0;
 		v ^= 1;
 		GVInfo1.step = v;
 		GameFrozen = v;
@@ -55,7 +55,7 @@ void Video_HandleStepping(void) {
 
 	GameFrozen = 1;
 
-	if (DAT_800c0a48[0].b[0x20] || (GNumberOfPlayers == 2 && DAT_800c0a48[1].b[0x20])) {
+	if (Pad[0].b[0x20] || (GNumberOfPlayers == 2 && Pad[1].b[0x20])) {
 		if (DAT_800d1df0 != 0) {
 			DAT_800d1df0--;
 			return;
@@ -66,7 +66,7 @@ void Video_HandleStepping(void) {
 		return;
 	}
 
-	if (DAT_800c0a48[0].b[0] || (GNumberOfPlayers == 2 && DAT_800c0a48[1].b[0])) {
+	if (Pad[0].b[0] || (GNumberOfPlayers == 2 && Pad[1].b[0])) {
 		if (DAT_800d1df0 != 0) {
 			DAT_800d1df0--;
 			return;

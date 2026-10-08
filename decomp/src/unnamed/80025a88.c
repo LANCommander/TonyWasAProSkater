@@ -39,7 +39,7 @@ typedef struct CC {
 extern L Levels[];
 extern SP Stats[];
 extern int GVideoRestart[];
-extern char DAT_800a8240[];
+extern char GBoardStats[];
 extern char DAT_800a8245[];
 extern int SelectedSkater;
 
@@ -102,7 +102,7 @@ void FUN_80025a88(void) {
 	if (*Stats[pBruce->m744].s == 'R' || *Stats[pBruce->m744].s == 'r')
 		pBruce->m308 |= 2;
 
-	pBruce->m408 = DAT_800a8240;
+	pBruce->m408 = GBoardStats;
 	CBruce_GetStats(pBruce, 0);
 
 	if (Stats[pBruce->m744].c == 16384)

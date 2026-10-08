@@ -1,0 +1,4 @@
+# Hand-named retail globals: tools/data_names.py merges these into data_names.tsv (they win over
+# its passes). Each row records its basis; add one whenever the twins can't prove a name.
+# addr	name	basis
+0x800a8240	GBoardStats	demo GetStats__6CBrucei writes four stat bytes of GBoardStats (gp+0x1ec4, BoardStats[2]) where retail's twin indexes this 5-byte-per-player array; demo has it in .sdata, retail in .data, so the accesses don't align

@@ -37,7 +37,7 @@ struct SControl {
 	SButton Down;     /* 0xb0 */
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0xc];
 	int Style; /* 0x0c */
 	char pad10[340 - 0x10];
@@ -57,7 +57,7 @@ struct STrick {
 	int w10;      /* 0x28 */
 };
 
-extern SSkater Stats[];
+extern SStats Stats[];
 extern STrick Group[];
 extern int XFrames;
 

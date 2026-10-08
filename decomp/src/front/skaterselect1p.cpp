@@ -38,7 +38,7 @@ struct SBoard {
 	int pad[2];
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[8];
 	char *pModel; /* 0x08 */
 	char pad0c[0x13 - 0x0c];
@@ -155,7 +155,7 @@ class CBruce : public CSuper {
 
 extern SControl Pad[];
 extern SCareer GCareer;
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern SCompetition Levels[];
 extern int DAT_800d37b4[];
 extern int DAT_800d37e4[];
@@ -304,10 +304,10 @@ extern "C" int FUN_80059794() {
 		rows[r].bar = r;
 	}
 
-	rows[0].value = DAT_800a44fc[DAT_800d1c40].Stats[0];
-	rows[1].value = DAT_800a44fc[DAT_800d1c40].Stats[1];
-	rows[2].value = DAT_800a44fc[DAT_800d1c40].Stats[2];
-	rows[3].value = DAT_800a44fc[DAT_800d1c40].Stats[3];
+	rows[0].value = Stats[DAT_800d1c40].Stats[0];
+	rows[1].value = Stats[DAT_800d1c40].Stats[1];
+	rows[2].value = Stats[DAT_800d1c40].Stats[2];
+	rows[3].value = Stats[DAT_800d1c40].Stats[3];
 
 	EraseSprite *bioRect1 = new EraseSprite(203, 287, 188, 33);
 	EraseSprite *bioRect2 = new EraseSprite(203, 320, 188, 94);
@@ -461,12 +461,12 @@ extern "C" int FUN_80059794() {
 				if (!DAT_800d2344 && DAT_800d37e4[DAT_800d1c40]) {
 					DAT_800d2344 = 1;
 
-					if (*DAT_800a44fc[DAT_800d1c40].pModel) {
+					if (*Stats[DAT_800d1c40].pModel) {
 						FUN_8006ed2c(DAT_800d37b4[DAT_800d1c40]);
 
 						if (Cheat_BigHead) {
-							GHeadPart = DAT_800a44fc[DAT_800d1c40].m13;
-							GHeadUp = DAT_800a44fc[DAT_800d1c40].m14;
+							GHeadPart = Stats[DAT_800d1c40].m13;
+							GHeadUp = Stats[DAT_800d1c40].m14;
 						}
 
 						ProcessNewPSX__Fi(DAT_800d37b4[DAT_800d1c40]);
@@ -590,7 +590,7 @@ extern "C" int FUN_80059794() {
 				if (DAT_800d2344) {
 					delete pBruce;
 
-					if (*DAT_800a44fc[DAT_800d1c40].pModel) {
+					if (*Stats[DAT_800d1c40].pModel) {
 						ClearRegion__Fiii(DAT_800d37b4[DAT_800d1c40], 1, 1);
 						FUN_8006edb8(DAT_800d37b4[DAT_800d1c40]);
 					}
@@ -623,12 +623,12 @@ extern "C" int FUN_80059794() {
 				DAT_800d2344 = DAT_800d37e4[DAT_800d1c40];
 
 				if (DAT_800d2344) {
-					if (*DAT_800a44fc[DAT_800d1c40].pModel) {
+					if (*Stats[DAT_800d1c40].pModel) {
 						FUN_8006ed2c(DAT_800d37b4[DAT_800d1c40]);
 
 						if (Cheat_BigHead) {
-							GHeadUp = DAT_800a44fc[DAT_800d1c40].m14;
-							GHeadPart = DAT_800a44fc[DAT_800d1c40].m13;
+							GHeadUp = Stats[DAT_800d1c40].m14;
+							GHeadPart = Stats[DAT_800d1c40].m13;
 						}
 
 						ProcessNewPSX__Fi(DAT_800d37b4[DAT_800d1c40]);
@@ -645,10 +645,10 @@ extern "C" int FUN_80059794() {
 				}
 
 				nameState = 0;
-				rows[0].value = DAT_800a44fc[DAT_800d1c40].Stats[0];
-				rows[1].value = DAT_800a44fc[DAT_800d1c40].Stats[1];
-				rows[2].value = DAT_800a44fc[DAT_800d1c40].Stats[2];
-				rows[3].value = DAT_800a44fc[DAT_800d1c40].Stats[3];
+				rows[0].value = Stats[DAT_800d1c40].Stats[0];
+				rows[1].value = Stats[DAT_800d1c40].Stats[1];
+				rows[2].value = Stats[DAT_800d1c40].Stats[2];
+				rows[3].value = Stats[DAT_800d1c40].Stats[3];
 
 				if (dir == 1) {
 					state = 3;
@@ -690,10 +690,10 @@ extern "C" int FUN_80059794() {
 				int n;
 
 				for (n = 0; n < 15; n++) {
-					if (DAT_800a44fc[DAT_800d1c40].pName[n] == ' ')
+					if (Stats[DAT_800d1c40].pName[n] == ' ')
 						break;
 
-					first[n] = DAT_800a44fc[DAT_800d1c40].pName[n];
+					first[n] = Stats[DAT_800d1c40].pName[n];
 				}
 
 				first[n] = 0;
@@ -750,16 +750,16 @@ extern "C" int FUN_80059794() {
 
 			while (best < 7) {
 				if (GCareer.Skater[DAT_800d1c40].NumTapes <
-				    DAT_800a44fc[DAT_800d1c40].Boards[best + 1].Req)
+				    Stats[DAT_800d1c40].Boards[best + 1].Req)
 					break;
 
 				best++;
 			}
 
-			bonus[0] = DAT_800a44fc[DAT_800d1c40].Boards[best].Stats[0];
-			bonus[1] = DAT_800a44fc[DAT_800d1c40].Boards[best].Stats[1];
-			bonus[2] = DAT_800a44fc[DAT_800d1c40].Boards[best].Stats[2];
-			bonus[3] = DAT_800a44fc[DAT_800d1c40].Boards[best].Stats[3];
+			bonus[0] = Stats[DAT_800d1c40].Boards[best].Stats[0];
+			bonus[1] = Stats[DAT_800d1c40].Boards[best].Stats[1];
+			bonus[2] = Stats[DAT_800d1c40].Boards[best].Stats[2];
+			bonus[3] = Stats[DAT_800d1c40].Boards[best].Stats[3];
 
 			for (int r = 0; r < 4; r++) {
 				int b = rows[r].bar;
@@ -792,29 +792,29 @@ extern "C" int FUN_80059794() {
 			Mess_SetRGB(128, 128, 128, 0);
 			Mess_SetTextJustify__FUc(1);
 			Mess_DrawText__FiiPCciUiib(203,
-			             299 - (Mess_TextHeight(DAT_800a44fc[DAT_800d1c40].pBio[0]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d1c40].pBio[0]),
-			             DAT_800a44fc[DAT_800d1c40].pBio[0], 0, 0, 256, 0);
+			             299 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[0]) >> 1) +
+			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[0]),
+			             Stats[DAT_800d1c40].pBio[0], 0, 0, 256, 0);
 			Mess_DrawText__FiiPCciUiib(203,
-			             320 - (Mess_TextHeight(DAT_800a44fc[DAT_800d1c40].pBio[1]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d1c40].pBio[1]),
-			             DAT_800a44fc[DAT_800d1c40].pBio[1], 0, 0, 256, 0);
+			             320 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[1]) >> 1) +
+			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[1]),
+			             Stats[DAT_800d1c40].pBio[1], 0, 0, 256, 0);
 			Mess_DrawText__FiiPCciUiib(203,
-			             341 - (Mess_TextHeight(DAT_800a44fc[DAT_800d1c40].pBio[2]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d1c40].pBio[2]),
-			             DAT_800a44fc[DAT_800d1c40].pBio[2], 0, 0, 256, 0);
+			             341 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[2]) >> 1) +
+			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[2]),
+			             Stats[DAT_800d1c40].pBio[2], 0, 0, 256, 0);
 			Mess_DrawText__FiiPCciUiib(203,
-			             362 - (Mess_TextHeight(DAT_800a44fc[DAT_800d1c40].pBio[3]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d1c40].pBio[3]),
-			             DAT_800a44fc[DAT_800d1c40].pBio[3], 0, 0, 256, 0);
+			             362 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[3]) >> 1) +
+			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[3]),
+			             Stats[DAT_800d1c40].pBio[3], 0, 0, 256, 0);
 			Mess_DrawText__FiiPCciUiib(203,
-			             383 - (Mess_TextHeight(DAT_800a44fc[DAT_800d1c40].pBio[4]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d1c40].pBio[4]),
-			             DAT_800a44fc[DAT_800d1c40].pBio[4], 0, 0, 256, 0);
+			             383 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[4]) >> 1) +
+			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[4]),
+			             Stats[DAT_800d1c40].pBio[4], 0, 0, 256, 0);
 			Mess_DrawText__FiiPCciUiib(203,
-			             404 - (Mess_TextHeight(DAT_800a44fc[DAT_800d1c40].pBio[5]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d1c40].pBio[5]),
-			             DAT_800a44fc[DAT_800d1c40].pBio[5], 0, 0, 256, 0);
+			             404 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[5]) >> 1) +
+			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[5]),
+			             Stats[DAT_800d1c40].pBio[5], 0, 0, 256, 0);
 
 			if (textTimer == 0)
 				medalTimer = 3;
@@ -859,11 +859,11 @@ extern "C" int FUN_80059794() {
 				Mess_SetTextJustify__FUc(0);
 
 				nameR = 320;
-				nameX = -Mess_TextWidth__FPCc(DAT_800a44fc[DAT_800d1c40].pName) >> 1;
+				nameX = -Mess_TextWidth__FPCc(Stats[DAT_800d1c40].pName) >> 1;
 				nameStep = (nameR - nameX) / 6;
 				nameState = 3;
-				nameY = 70 - (Mess_TextHeight(DAT_800a44fc[DAT_800d1c40].pName) >> 1) +
-				        Mess_TextHeightAboveBaseline__FPCc(DAT_800a44fc[DAT_800d1c40].pName);
+				nameY = 70 - (Mess_TextHeight(Stats[DAT_800d1c40].pName) >> 1) +
+				        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pName);
 				nameR -= nameStep;
 				nameL = nameX - nameStep;
 				break;
@@ -880,7 +880,7 @@ extern "C" int FUN_80059794() {
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
 				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, DAT_800a44fc[DAT_800d1c40].pName, 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].pName, 0, 0, 256, 0);
 				break;
 			case 4:
 				nameX -= nameStep;
@@ -893,7 +893,7 @@ extern "C" int FUN_80059794() {
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
 				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, DAT_800a44fc[DAT_800d1c40].pName, 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].pName, 0, 0, 256, 0);
 				break;
 			case 5:
 				nameBar->draw(0, 54, 0, -1, -1, -1);
@@ -901,7 +901,7 @@ extern "C" int FUN_80059794() {
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
 				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, DAT_800a44fc[DAT_800d1c40].pName, 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].pName, 0, 0, 256, 0);
 
 				nameState = 2;
 				break;

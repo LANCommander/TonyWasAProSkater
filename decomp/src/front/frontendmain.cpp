@@ -65,7 +65,7 @@ extern "C" {
 	extern SDoubleBuffer DoubleBuffer[2]; /* DB */
 	extern SName DemoName;            /* DemoName */
 	extern int GRollCredits;              /* GRollCredits */
-	extern int DAT_800d16a4;              /* GGame */
+	extern int GGame;              /* GGame */
 	extern int GAutoTest;              /* autotest */
 	extern int GAutoPlayer1;
 	extern int GAutoPlayer2;
@@ -173,12 +173,12 @@ top:
 
 		if (!GAutoGame) {
 			GNumberOfPlayers = 1;
-			DAT_800d16a4 = 1;
+			GGame = 1;
 			players = 1;
 		} else {
 			players = 2;
 			GNumberOfPlayers = 2;
-			DAT_800d16a4 = 8;
+			GGame = 8;
 		}
 
 		if (++GAutoPlayer1 == 11)
@@ -209,7 +209,7 @@ top:
 		skater = DAT_800a7068[0];
 		players = 1;
 
-		switch (DAT_800d16a4) {
+		switch (GGame) {
 			case 1:
 				menu = 16;
 				break;
@@ -319,38 +319,38 @@ mainmenu:
 				Career_Init__Fv();
 			}
 
-			DAT_800d16a4 = players;
+			GGame = players;
 			menu = 16;
 			goto skater1;
 		case 3:
-			DAT_800d16a4 = choice;
+			GGame = choice;
 			mode = 1;
 			goto skater1;
 		case 4:
-			DAT_800d16a4 = 2;
+			GGame = 2;
 			mode = 1;
 			goto skater1;
 		case 34:
 			mode = 1;
-			DAT_800d16a4 = 5;
+			GGame = 5;
 			menu = 32;
 			players = 2;
 			goto skater2;
 		case 33:
 			mode = 3;
-			DAT_800d16a4 = 8;
+			GGame = 8;
 			menu = 32;
 			players = 2;
 			goto skater2;
 		case 1234567:
 			mode = 1;
-			DAT_800d16a4 = 6;
+			GGame = 6;
 			menu = 32;
 			players = 2;
 			goto skater2;
 		case 35:
 			mode = 5;
-			DAT_800d16a4 = 7;
+			GGame = 7;
 			menu = 32;
 			players = 2;
 			goto skater2;
@@ -359,7 +359,7 @@ mainmenu:
 			choice = GVideoRestart.Level;
 			skater = GVideoRestart.Skater;
 			StartScreen = 3;
-			DAT_800d16a4 = GVideoRestart.GGame;
+			GGame = GVideoRestart.GGame;
 			goto replay;
 		case 1554:
 			players = 2;
@@ -367,7 +367,7 @@ mainmenu:
 			choice = GVideoRestart.Level;
 			skater = GVideoRestart.Skater2;
 			StartScreen = 3;
-			DAT_800d16a4 = GVideoRestart.GGame;
+			GGame = GVideoRestart.GGame;
 			SelectedSkater2 = GVideoRestart.Skater;
 		replay:
 			FUN_8005ca10();
@@ -375,7 +375,7 @@ mainmenu:
 			goto launch;
 		case 19:
 			DAT_800d1d80 = players;
-			DAT_800d16a4 = players;
+			GGame = players;
 			menu = 16;
 			goto skater1;
 		case 100:
@@ -501,7 +501,7 @@ demo:
 	skater = GVideoRestart.Skater;
 	choice = GVideoRestart.Level;
 	SelectedSkater2 = GVideoRestart.Skater2;
-	DAT_800d16a4 = GVideoRestart.GGame;
+	GGame = GVideoRestart.GGame;
 	FUN_8005cae8();
 
 	StartScreen = 4;
@@ -585,6 +585,6 @@ credits:
 	FUN_8005c8dc(0);
 	FUN_800161d8();
 
-	DAT_800d16a4 = 3;
+	GGame = 3;
 	goto top;
 }

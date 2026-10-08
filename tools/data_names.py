@@ -268,6 +268,17 @@ def main():
     clash = sorted({r[1] for r in rows if count[r[1]] > 1})
     rows = [r for r in rows if count[r[1]] == 1]
 
+    # hand-named globals (decomp/data_names_manual.tsv) replace whatever the passes gave
+    manual = {}
+    for l in open(P("decomp", "data_names_manual.tsv"), encoding="utf-8"):
+        if l.startswith("0x"):
+            a, n, basis = l.rstrip("\n").split("\t")[:3]
+            manual[int(a, 16)] = (n, basis)
+    manual_names = {n for n, _ in manual.values()}
+    rows = [r for r in rows if r[0] not in manual and r[1] not in manual_names]
+    rows += [[a, n, "manual", 0, 0, 0, "", basis] for a, (n, basis) in manual.items()]
+    count = collections.Counter(r[1] for r in rows)
+
     # strings: every referenced, still unnamed address that holds a C string
     have, taken, refs = {r[0] for r in rows}, set(count), set(votes)
     for l in open(P("decomp", "functions.tsv"), encoding="utf-8"):
@@ -286,17 +297,19 @@ def main():
     rows.sort()
 
     with open(P("decomp", "data_names.tsv"), "w", encoding="utf-8", newline="\n") as o:
-        o.write("# Retail globals named from their THPS2-demo twins (tools/data_names.py; don't edit by hand).\n"
+        o.write("# Retail globals named from their THPS2-demo twins (tools/data_names.py; don't edit by hand:\n"
+                "# hand names go in data_names_manual.tsv).\n"
                 "# votes = aligned twin accesses agreeing / all accesses seen. kind: exact = a demo SYM global or\n"
                 "# label at the twin address; offset = <Base>_<hex offset> inside a typed demo object (note: member);\n"
-                "# layout = between two exact names the same distance apart in demo and retail; string = s_<text>.\n"
+                "# layout = between two exact names the same distance apart in demo and retail; string = s_<text>;\n"
+                "# manual = from data_names_manual.tsv (note: basis).\n"
                 "# addr\tname\tkind\tvotes\tdemo_addr\tdemo_type\tnote\n")
         for ra, name, kind, n, tot, da, typ, note in rows:
             votes_s, demo_s = f"{n}/{tot}" if tot else "", f"0x{da:08x}" if da else ""
             o.write(f"0x{ra:08x}\t{name}\t{kind}\t{votes_s}\t{demo_s}\t{typ}\t{note}\n")
     print(f"twins {len(pairs)} (aligned {used}); retail data addresses seen {len(votes)}, "
           f"ambiguous {ambiguous}, stray {stray}, named {len(rows)} "
-          f"({', '.join(f'{sum(r[2] == k for r in rows)} {k}' for k in ('exact', 'offset', 'layout', 'string'))}); "
+          f"({', '.join(f'{sum(r[2] == k for r in rows)} {k}' for k in ('exact', 'offset', 'layout', 'string', 'manual'))}); "
           f"name clashes dropped {len(clash)}: {' '.join(clash[:12])}{' ...' if len(clash) > 12 else ''}")
 
 

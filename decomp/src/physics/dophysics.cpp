@@ -57,7 +57,7 @@ struct SControl {
 	SButton Down;     /* 0xb0 */
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x18];
 	int Stats[10]; /* 0x18 */
 	char pad40[340 - 0x40];
@@ -92,7 +92,7 @@ struct SLineInfo {
 	char pad89[168 - 0x89];
 };
 
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 extern SCareer GCareer;
 extern SLevel Levels[];
 extern STrickInfo DAT_800a7250, DAT_800a727c, DAT_800a72a8, DAT_800a72d4, DAT_800a7300,
@@ -230,7 +230,7 @@ class CBruce {
 
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (DAT_800a44fc[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
+	              : (Stats[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
 	                    mpStatBonus[n])
 #define MAXSPEED(k) (((GetStat(1) + (k)) << 12) * 3 * 15 / 28)
 
@@ -274,7 +274,7 @@ void CBruce::DoPhysics() {
 	Gravity.vz = 0;
 	mGravity.Set(0, 13000, 0);
 
-	switch (DAT_800a44fc[mSkaterIndex].Stats[4]) {
+	switch (Stats[mSkaterIndex].Stats[4]) {
 		case 0:
 			DAT_800a74e4 = DAT_800a727c;
 			DAT_800a7510 = DAT_800a72a8;

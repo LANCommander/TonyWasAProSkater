@@ -34,7 +34,7 @@ struct SBoard {
 	int pad[2];
 };
 
-struct SSkater {
+struct SStats {
 	char pad0[0x18];
 	int Stats[4]; /* 0x18 */
 	char pad28[0x58 - 0x28];
@@ -58,7 +58,7 @@ struct SCareer {
 	char LastTrucks[2]; /* 0x82a */
 };
 
-struct SStats {
+struct BoardStats {
 	uchar s[5];
 };
 
@@ -117,8 +117,8 @@ class PREManager {
 
 extern SControl Pad[];
 extern SCareer GCareer;
-extern SSkater DAT_800a44fc[];
-extern SStats DAT_800a8240[];
+extern SStats Stats[];
+extern BoardStats GBoardStats[];
 extern int DAT_800be42c[];
 extern int DAT_800d2c1c[];
 extern SlicedImage *DAT_800d31cc[][3][15];
@@ -309,16 +309,16 @@ extern "C" int FUN_80051660(int player) {
 	int lastBoard = 7;
 
 	for (int p = 0; p < 2; p++) {
-		base[p][0] = DAT_800a44fc[DAT_800d22d0[p]].Stats[0];
-		base[p][1] = DAT_800a44fc[DAT_800d22d0[p]].Stats[1];
-		base[p][2] = DAT_800a44fc[DAT_800d22d0[p]].Stats[2];
-		base[p][3] = DAT_800a44fc[DAT_800d22d0[p]].Stats[3];
+		base[p][0] = Stats[DAT_800d22d0[p]].Stats[0];
+		base[p][1] = Stats[DAT_800d22d0[p]].Stats[1];
+		base[p][2] = Stats[DAT_800d22d0[p]].Stats[2];
+		base[p][3] = Stats[DAT_800d22d0[p]].Stats[3];
 		base[p][4] = 0;
 		n[p] = 0;
 
 		while (n[p] < lastBoard) {
 			if (GCareer.Skater[DAT_800d22d0[p]].NumTapes <
-			    DAT_800a44fc[DAT_800d22d0[p]].Boards[n[p] + 1].Req)
+			    Stats[DAT_800d22d0[p]].Boards[n[p] + 1].Req)
 				break;
 
 			n[p]++;
@@ -379,7 +379,7 @@ extern "C" int FUN_80051660(int player) {
 		textTimer[p] = 2;
 		savedTextState[p] = 2;
 		savedTextTimer[p] = 10;
-		FUN_8008e904(text[p], DAT_800a44fc[DAT_800d22d0[p]].Boards[deck[p]].Name);
+		FUN_8008e904(text[p], Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
 
 		if (p == 0)
 			textX[p] = -Mess_TextWidth__FPCc(text[0]);
@@ -752,12 +752,12 @@ extern "C" int FUN_80051660(int player) {
 
 					if (textTimer[p] == 0) {
 						if (GCareer.Skater[DAT_800d22d0[p]].NumTapes >=
-						    DAT_800a44fc[DAT_800d22d0[p]].Boards[deck[p]].Req)
+						    Stats[DAT_800d22d0[p]].Boards[deck[p]].Req)
 							FUN_8008e904(text[p],
-							             DAT_800a44fc[DAT_800d22d0[p]].Boards[deck[p]].Name);
+							             Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
 						else
 							FUN_8008b900(text[p], s_Get_d_tapes,
-							             DAT_800a44fc[DAT_800d22d0[p]].Boards[deck[p]].Req);
+							             Stats[DAT_800d22d0[p]].Boards[deck[p]].Req);
 
 						Mess_SetCurrentFont(s_mainf_fnt);
 
@@ -799,14 +799,14 @@ extern "C" int FUN_80051660(int player) {
 			if (Pad[p].Start.Triggered || Pad[p].X.Triggered) {
 				Pad_ClearTriggers(&Pad[p]);
 
-				DAT_800a8240[p].s[0] = 3;
-				DAT_800a8240[p].s[1] = 3;
-				DAT_800a8240[p].s[2] = 3;
-				DAT_800a8240[p].s[3] = 3;
-				DAT_800a8240[p].s[4] = DAT_800be42c[trucks[p]];
+				GBoardStats[p].s[0] = 3;
+				GBoardStats[p].s[1] = 3;
+				GBoardStats[p].s[2] = 3;
+				GBoardStats[p].s[3] = 3;
+				GBoardStats[p].s[4] = DAT_800be42c[trucks[p]];
 
 				if (GCareer.Skater[DAT_800d22d0[p]].NumTapes >=
-				    DAT_800a44fc[DAT_800d22d0[p]].Boards[deck[p]].Req) {
+				    Stats[DAT_800d22d0[p]].Boards[deck[p]].Req) {
 					int j;
 
 					GCareer.LastDeck[p] = deck[p];

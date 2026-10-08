@@ -2,23 +2,23 @@
 #include "names.h"
 typedef struct {
 	char b[16];
-} SB;
+} SButton;
 
 typedef struct {
-	SB btn[16];
+	SButton btn[16];
 	char pad[0x48];
 	signed char a148, a149, a14a, a14b;
 	int f14c, f150;
 	int pad154;
 	unsigned short t158, t15a;
 	char pad2[0x16c - 0x15c];
-} Pad;
+} SControl;
 
 typedef struct {
 	unsigned char b[32];
 } Raw;
 
-extern Pad DAT_800c0a48[];
+extern SControl Pad[];
 extern Raw theControllers[];
 
 int DAT_800d1f34, DAT_800d1f38, DAT_800d1f3c, DAT_800d1f40, DAT_800d1f44, DAT_800d1f48,
@@ -28,11 +28,11 @@ int DAT_800d23e4, DAT_800d23e8, DAT_800d23ec, DAT_800d23f0, DAT_800d23f4, DAT_80
     DAT_800d23fc, DAT_800d2400;
 
 void Pad_ActuatorOff(int, int);
-void Pad_Button(SB *, int);
+void Pad_Button(SButton *, int);
 void ReadControllers(void);
 int FUN_80070f18(int, int, int, int);
 
-#define B DAT_800c0a48
+#define B Pad
 #define R theControllers
 
 int FUN_80070ff4(void) {
@@ -136,7 +136,7 @@ int FUN_80070ff4(void) {
 		int j;
 
 		for (j = 0; j < 2; j++) {
-			SB *q = B[j].btn;
+			SButton *q = B[j].btn;
 
 			Pad_Button(q++, s2 & 0x10);
 			Pad_Button(q++, s2 & 0x80);

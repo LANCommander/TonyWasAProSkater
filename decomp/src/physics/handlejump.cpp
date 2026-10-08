@@ -31,7 +31,7 @@ struct CVector {
 
 CVector operator*(const CVector &, const int &);
 
-struct SSkater {
+struct SStats {
 	char pad0[0x18];
 	int Stats[10]; /* 0x18 */
 	char pad40[340 - 0x40];
@@ -50,7 +50,7 @@ struct CPanelData {
 	char pad[4];
 };
 
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 
 int Cheat_StatsOverride;
 
@@ -155,7 +155,7 @@ class CBruce {
 
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (DAT_800a44fc[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
+	              : (Stats[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
 	                    mpStatBonus[n])
 
 int Redbook_Rnd(int);

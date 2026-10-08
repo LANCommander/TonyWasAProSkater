@@ -377,6 +377,7 @@
 0x800a7f1c	WorldUp	exact	2/2	0x800e0144	CVector	
 0x800a814c	SkaterHooks	exact	1/1	0x800c0878	short[14][10]	
 0x800a8228	HeadBloodAtFrame	exact	1/1	0x800c0990	short[14]	
+0x800a8240	GBoardStats	manual				demo GetStats__6CBrucei writes four stat bytes of GBoardStats (gp+0x1ec4, BoardStats[2]) where retail's twin indexes this 5-byte-per-player array; demo has it in .sdata, retail in .data, so the accesses don't align
 0x800a824c	ZeroVector	exact	6/6	0x800e2018	CVector	
 0x800a8258	GapTricks	exact	2/2	0x800c09ac	SGapTrick[304]	
 0x800a8788	CheatRestarts	exact	3/3	0x800c132c	char*[20]	

@@ -48,7 +48,7 @@ CVector operator/(const CVector &, const int &);
 CVector operator+(const CVector &, const CVector &);
 CVector operator-(const CVector &, const CVector &);
 
-struct SSkater {
+struct SStats {
 	char pad0[0xc];
 	int Style; /* 0x0c */
 	char pad10[0x18 - 0x10];
@@ -63,7 +63,7 @@ struct SColl {
 	uchar x90; /* 0x90 */
 };
 
-extern SSkater DAT_800a44fc[];
+extern SStats Stats[];
 
 int Cheat_StatsOverride;
 
@@ -145,7 +145,7 @@ class CBruce {
 
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (DAT_800a44fc[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
+	              : (Stats[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
 	                    mpStatBonus[n])
 
 short PingPong(int, int, int);
@@ -189,8 +189,8 @@ void CBruce::DoOnRailPhysics() {
 		switch (mAnim) {
 			case 41:
 			case 68:
-				if (DAT_800a44fc[mSkaterIndex].Style == 0 ||
-				    DAT_800a44fc[mSkaterIndex].Style == 0x6000)
+				if (Stats[mSkaterIndex].Style == 0 ||
+				    Stats[mSkaterIndex].Style == 0x6000)
 					Debug_RunAnim__6CBruceii(this, 41, 3104);
 				else
 					Debug_RunAnim1__6CBruceiii(this, 41, 5, 3106);
@@ -198,8 +198,8 @@ void CBruce::DoOnRailPhysics() {
 				break;
 			case 40:
 			case 67:
-				if (DAT_800a44fc[mSkaterIndex].Style == 0 ||
-				    DAT_800a44fc[mSkaterIndex].Style == 0x6000)
+				if (Stats[mSkaterIndex].Style == 0 ||
+				    Stats[mSkaterIndex].Style == 0x6000)
 					Debug_RunAnim__6CBruceii(this, 40, 3112);
 				else
 					Debug_RunAnim1__6CBruceiii(this, 40, 3, 3114);
@@ -227,7 +227,7 @@ void CBruce::DoOnRailPhysics() {
 			case 62:
 			case 63:
 			case 64:
-				switch (DAT_800a44fc[mSkaterIndex].Style) {
+				switch (Stats[mSkaterIndex].Style) {
 					case 0x2000:
 						mFrame = PingPong(23, 25, 15);
 						break;
@@ -259,7 +259,7 @@ void CBruce::DoOnRailPhysics() {
 			case 62:
 			case 63:
 			case 64:
-				switch (DAT_800a44fc[mSkaterIndex].Style) {
+				switch (Stats[mSkaterIndex].Style) {
 					case 0x2000:
 					case 0x5000:
 					case 0x6000:
