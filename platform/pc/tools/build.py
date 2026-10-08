@@ -201,7 +201,7 @@ NATIVE_OK = re.compile(r"^(__alloca|___chkstk.*|__[a-z]*div[sd]i3|__[a-z]*mod[sd
                        r"__ashldi3|__ashrdi3|__lshrdi3|__cmpdi2|__ucmpdi2|_?memcpy|_?memset|"
                        r"_?memmove|__fixunsdfdi|__floatdidf|_?abort|_?PC_Gte\w+|__ZTV.*|___cxa_.*|"
                        r"___gxx_personality.*|__Unwind.*|___dso_handle|_atexit|"
-                       r"__GLOBAL_OFFSET_TABLE_)$")
+                       r"__GLOBAL_OFFSET_TABLE_|_?pc_delete_mark|_?pc_vdelete)$")
 
 
 def strip_us(sym):
@@ -247,6 +247,7 @@ def build_tu(ctx, tu, flags_hash):
         classes = {}
         if is_cxx:
             text, classes = portsrc.transform_cxx(text, vtables_of(tu["syms"]), tukey(tu))
+            text = portsrc.mark_deletes(text)
     except Exception as e:  # noqa: BLE001
         meta["errors"].append("transform: %s" % e)
         json.dump(meta, open(meta_path, "w"))
@@ -340,10 +341,22 @@ def relocate_data_defs(asm, res):
             if addr is not None:
                 relocated.append((sym, addr))
                 continue
-        m = re.match(r"^([^\s:]+):$", s)
-        if m and m.group(1) in globls and not section.startswith(".text"):
+        # file statics (`static int x;`): the matching build placed them at retail addresses too,
+        # listed in the TU's own .syms.json (never resolved through the global maps)
+        m = re.match(r"\.lcomm\s+([^,\s]+)\s*,", s)
+        if m:
             sym = m.group(1)
-            addr = res.data_addr(strip_us(sym), cxx_sym=sym)
+            addr = res.static_addr(sym)
+            if addr is not None:
+                relocated.append((sym, addr))
+                continue
+        m = re.match(r"^([^\s:]+):$", s)
+        if m and not section.startswith(".text"):
+            sym = m.group(1)
+            if sym in globls:
+                addr = res.data_addr(strip_us(sym), cxx_sym=sym)
+            else:
+                addr = res.static_addr(sym)
             if addr is not None:
                 relocated.append((sym, addr))
                 out_lines.append(line.replace(sym + ":", sym + "$pcdead:"))
@@ -389,6 +402,15 @@ class Resolver:
             return self.ctx.data_names[name]
         return None
 
+    def static_addr(self, sym):
+        """Retail address of a file-static data symbol, from this TU's .syms.json only. C statics
+        are `_name`, C++ namespace-scope statics `__ZL<len><name>`."""
+        name = strip_us(sym)
+        m = re.match(r"_ZL(\d+)(\w+)$", name)
+        if m and len(m.group(2)) == int(m.group(1)):
+            name = m.group(2)
+        return self.syms.get(name)
+
     def func_addr_c(self, name):
         if name in self.syms:
             return self.syms[name]
@@ -399,7 +421,8 @@ class Resolver:
     def plan(self, defined, undefined):
         """Return ({old: new}, info) for objcopy."""
         renames, info = {}, {"defines": {}, "unresolved": [], "thunks": [], "dtor_calls": [],
-                             "dtor_defs": [], "globalize": []}
+                             "dtor_defs": [], "globalize": [], "dtor_calls_d": [],
+                             "del_wrappers": []}
         dem = demangle_itanium([s[1:] for s in undefined + [d for _, d in defined]
                                 if s.startswith("__Z")]) if self.is_cxx else {}
         primary = self.tu["addr"]
@@ -445,7 +468,13 @@ class Resolver:
                 else:
                     addr = self.ctx.fn_by_name.get(name)
             if addr is not None and addr < GAME_CODE_END:
-                renames[sym] = "_pcfn_%08x" % addr
+                if re.search(r"C1E", name):
+                    # egcs constructors return `this` and C callers use it; g++'s return void.
+                    # link.py wraps the native constructor at the retail address.
+                    renames[sym] = "_pcctor_%08x" % addr
+                    info.setdefault("ctor_defs", []).append(addr)
+                else:
+                    renames[sym] = "_pcfn_%08x" % addr
                 info["defines"][hex(addr)] = name
         # the earliest sources carry no header and a placeholder name (`op`): a TU that defines a
         # single unmapped function defines the manifest's function
@@ -501,8 +530,22 @@ class Resolver:
                 return self.vthunk(cls, "~", info, dtor=True)
             if target is None:
                 return None
+            if name.endswith("D1Ev"):
+                # complete-object destructor: frees when called for a delete statement
+                info["dtor_calls_d"].append(target)
+                return "_pcdtorcalld_%08x" % target
             info["dtor_calls"].append(target)
             return "_pcdtorcall_%08x" % target
+        if sig.endswith("operatordelete(void*)"):
+            r = self.resolve_cxx_plain(name, d, sig, q, info)
+            if r is None or not r.startswith("_psx_"):
+                return r
+            a = int(r[5:13], 16)
+            info["del_wrappers"].append(a)
+            return "_pcdel_%08x" % a
+        return self.resolve_cxx_plain(name, d, sig, q, info)
+
+    def resolve_cxx_plain(self, name, d, sig, q, info):
         if sig in self.syms_by_sig:
             return "_psx_%08x" % self.syms_by_sig[sig]
         # virtual methods: dispatch through the retail vtable

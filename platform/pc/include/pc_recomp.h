@@ -27,12 +27,14 @@ typedef struct {
     void (*body)(void);
 } PcRecompBody;
 
-/* PS1 memory: main RAM and the scratchpad are mapped at their own addresses. */
-#define MEM32(a) (*(volatile u32 *)(uintptr_t)(u32)(a))
-#define MEM16(a) (*(volatile u16 *)(uintptr_t)(u32)(a))
-#define MEM16S(a) (*(volatile s16 *)(uintptr_t)(u32)(a))
-#define MEM8(a) (*(volatile u8 *)(uintptr_t)(u32)(a))
-#define MEM8S(a) (*(volatile s8 *)(uintptr_t)(u32)(a))
+/* PS1 memory: main RAM and the scratchpad are mapped at their own addresses. KUSEG RAM addresses
+ * (below 8 MB, which hand-written code uses for primitive buffers) go to the KSEG0 mapping. */
+#define PADDR(a) ((uintptr_t)((u32)(a) < 0x00800000u ? (u32)(a) | 0x80000000u : (u32)(a)))
+#define MEM32(a) (*(volatile u32 *)PADDR(a))
+#define MEM16(a) (*(volatile u16 *)PADDR(a))
+#define MEM16S(a) (*(volatile s16 *)PADDR(a))
+#define MEM8(a) (*(volatile u8 *)PADDR(a))
+#define MEM8S(a) (*(volatile s8 *)PADDR(a))
 
 #define REGS_DECL                                                                                  \
     u32 at, v0, v1, a0, a1, a2, a3, t0, t1, t2, t3, t4, t5, t6, t7, s0, s1, s2, s3, s4, s5, s6,     \
@@ -99,7 +101,9 @@ static inline void rc_swr(u32 rt, u32 addr) {
     MEM32(a) = (MEM32(a) & ~(0xffffffffu << sh)) | (rt << sh);
 }
 
-u32 rc_enter(void (*body)(void), u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7);
+/* Native -> translated: a0-a3 in registers, up to 8 more arguments on the PS1 stack (sp+16..). */
+#define RC_STACK_ARGS 8
+u32 rc_enter(void (*body)(void), u32 a0, u32 a1, u32 a2, u32 a3, const u32 *stack);
 void rc_call_native(u32 target);
 void rc_call_indirect(u32 target);
 u32 rc_cop0_read(int reg);

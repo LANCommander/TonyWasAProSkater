@@ -12,6 +12,8 @@
 
 #include "pc_gpu.h"
 
+extern volatile uint32_t pc_heartbeat;
+
 #define VRAM_W 1024
 #define VRAM_H 512
 
@@ -519,6 +521,38 @@ static void cmd_polygon(const uint32_t *w)
         }
     }
 
+    if (getenv("THPS_GPUSTATS")) {
+        /* per-frame polygon statistics: count, and how many lie entirely outside the area */
+        static uint32_t frame = ~0u, count, outside;
+        static int minx, maxx, miny, maxy;
+        if (frame != pc_heartbeat) {
+            if (count)
+                fprintf(stderr, "gpu f%u: %u polygons (%u outside the drawing area), x %d..%d "
+                                "y %d..%d, area %d,%d-%d,%d ofs %d,%d\n",
+                        frame, count, outside, minx, maxx, miny, maxy, gs.clip_l, gs.clip_t,
+                        gs.clip_r, gs.clip_b, gs.ofs_x, gs.ofs_y);
+            frame = pc_heartbeat;
+            count = outside = 0;
+            minx = miny = 1 << 30;
+            maxx = maxy = -(1 << 30);
+        }
+        count++;
+        int lo_x = 1 << 30, hi_x = -(1 << 30), lo_y = 1 << 30, hi_y = -(1 << 30);
+        for (int i = 0; i < n; i++) {
+            int x = v[i].x, y = v[i].y;
+            if (x < lo_x) lo_x = x;
+            if (x > hi_x) hi_x = x;
+            if (y < lo_y) lo_y = y;
+            if (y > hi_y) hi_y = y;
+        }
+        if (hi_x < gs.clip_l || lo_x > gs.clip_r || hi_y < gs.clip_t || lo_y > gs.clip_b)
+            outside++;
+        if (lo_x < minx) minx = lo_x;
+        if (hi_x > maxx) maxx = hi_x;
+        if (lo_y < miny) miny = lo_y;
+        if (hi_y > maxy) maxy = hi_y;
+    }
+
     Prim p;
     prim_from_state(&p, tex, raw, semi, clut);
     int shaded = gouraud && !p.raw;
@@ -720,9 +754,54 @@ static void set_texwindow(uint32_t v)
     gs.tw_or_y = (uint8_t)((oy & my) * 8);
 }
 
+/* THPS_GPUTRACE=<frame>: from that presented frame on, log VRAM transfers, copies, fills and
+ * drawing-environment changes to stderr. */
+extern volatile uint32_t pc_heartbeat;
+
+static void trace_cmd(const uint32_t *w)
+{
+    static int from = -2;
+    static uint32_t last_env[8];
+    uint32_t op = w[0] >> 24;
+    if (from == -2) {
+        const char *e = getenv("THPS_GPUTRACE");
+        from = e ? atoi(e) : -1;
+    }
+    if (from < 0 || (int)pc_heartbeat < from)
+        return;
+    if (op >= 0xe1 && op <= 0xe6) {
+        if (last_env[op - 0xe0] == w[0])
+            return;
+        last_env[op - 0xe0] = w[0];
+        fprintf(stderr, "gpu f%u: E%x %06x\n", pc_heartbeat, op & 15, w[0] & 0xffffff);
+    } else if (op >> 5 == 5 || op >> 5 == 6 || op >> 5 == 4 || op == 0x02) {
+        fprintf(stderr, "gpu f%u: %s %08x %08x %08x%s\n", pc_heartbeat,
+                op == 0x02 ? "fill" : op >> 5 == 4 ? "copy" : op >> 5 == 5 ? "load" : "store",
+                w[0], w[1], w[2], op >> 5 == 4 ? "" : "");
+    }
+}
+
+/* A breakpoint target for debugging (gdb: break pc_gpu_suspicious). */
+void PC_Backtrace(const char *why);
+static uint32_t s_ring[64];
+static unsigned s_ringpos;
+void pc_gpu_suspicious(const uint32_t *w)
+{
+    static int once;
+    (void)w;
+    if (!once++ && getenv("THPS_GPUTRACE")) {
+        PC_Backtrace("pixel data executed as a GPU command");
+        for (unsigned i = 0; i < 64; i++)
+            fprintf(stderr, "%08x%c", s_ring[(s_ringpos + i) & 63], (i & 7) == 7 ? 10 : 32);
+    }
+}
+
 static void execute(const uint32_t *w)
 {
     uint32_t op = w[0] >> 24;
+    trace_cmd(w);
+    if (w[0] == 0x80008000u)
+        pc_gpu_suspicious(w);
     switch (op >> 5) {
     case 1: cmd_polygon(w); return;
     case 2: cmd_line(w); return;
@@ -779,6 +858,7 @@ static int gp0_size(uint32_t op)
 
 void PC_GpuWriteGP0(uint32_t word)
 {
+    s_ring[s_ringpos++ & 63] = word;
     if (gs.mode == MODE_TO_VRAM) {
         xfer_put((uint16_t)word);
         xfer_put((uint16_t)(word >> 16));
@@ -799,6 +879,22 @@ void PC_GpuWriteGP0(uint32_t word)
         gs.fifo_n = 0;
         execute(gs.fifo);
     }
+}
+
+/* Debugging: describe an unfinished command/transfer, or return NULL when the GPU is idle. */
+const char *PC_GpuPendingState(void)
+{
+    static char buf[160];
+    if (gs.mode == MODE_TO_VRAM)
+        snprintf(buf, sizeof buf, "VRAM load %d/%d halfwords", gs.xfer_i, gs.xfer_n);
+    else if (gs.mode == MODE_POLYLINE)
+        snprintf(buf, sizeof buf, "unterminated poly-line");
+    else if (gs.fifo_n)
+        snprintf(buf, sizeof buf, "command %08x has %d of %d words", gs.fifo[0], gs.fifo_n,
+                 gs.fifo_need);
+    else
+        return NULL;
+    return buf;
 }
 
 uint32_t PC_GpuReadData(void)
@@ -931,17 +1027,33 @@ void PC_GpuVBlank(void)
 
 void PC_GpuDrawChain(const uint32_t *first)
 {
-    static int warned;
-    const uint32_t *p = first;
+    static int warned, warned_len;
+    const uint32_t *p = first, *slow = first;
     for (int guard = 0; guard < (1 << 20); guard++) {
         uint32_t tag = p[0];
         uint32_t len = tag >> 24;
+        if (len > 16 && !warned_len) {
+            warned_len = 1;
+            fprintf(stderr, "[gpu] DrawChain: packet at %08x has %u words (tag %08x)\n",
+                    (unsigned)(uintptr_t)p, len, tag);
+        }
         for (uint32_t i = 1; i <= len; i++)
             PC_GpuWriteGP0(p[i]);
         uint32_t next = tag & 0xffffff;
         if (next & 0x800000)
             return;
         p = (const uint32_t *)(uintptr_t)(0x80000000u | next);
+        if (guard & 1) {
+            slow = (const uint32_t *)(uintptr_t)(0x80000000u | (slow[0] & 0xffffff));
+            if (slow == p) {
+                if (!warned) {
+                    warned = 1;
+                    fprintf(stderr, "[gpu] DrawChain: cyclic ordering table at %08x\n",
+                            (unsigned)(uintptr_t)p);
+                }
+                return;
+            }
+        }
     }
     if (!warned) {
         warned = 1;

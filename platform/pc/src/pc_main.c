@@ -20,6 +20,7 @@
 #define EXE_STACK_SIZE_VAR 0x800d0544u
 
 PcRegs pc_r;
+extern volatile uint32_t pc_heartbeat;
 int pc_trace;
 
 static char s_dataDir[MAX_PATH];
@@ -112,6 +113,63 @@ const char *PC_NameOf(uint32_t addr) {
     return buf[n];
 }
 
+extern const PcFunc pc_recomp_game_funcs[];
+
+/* THPS_MIPS: run game functions from the retail MIPS (translated) instead of the decompiled C,
+ * for A/B debugging. A comma list applied left to right: "all", an address, a range "lo-hi", each
+ * optionally prefixed with '!' to go back to C. E.g. THPS_MIPS=all,!80080000-80085000. */
+static int MipsSelected(uint32_t addr, const char *spec) {
+    int sel = 0;
+    const char *p = spec;
+    while (*p) {
+        int neg = 0, hit;
+        uint32_t lo, hi;
+        char *e;
+        if (*p == '!') {
+            neg = 1;
+            p++;
+        }
+        if (!strncmp(p, "all", 3)) {
+            hit = 1;
+            p += 3;
+        } else {
+            lo = hi = strtoul(p, &e, 16);
+            p = e;
+            if (*p == '-') {
+                hi = strtoul(p + 1, &e, 16);
+                p = e;
+            }
+            hit = addr >= lo && addr <= hi;
+        }
+        if (hit)
+            sel = !neg;
+        while (*p && *p != ',')
+            p++;
+        if (*p == ',')
+            p++;
+    }
+    return sel;
+}
+
+static void SelectMips(void) {
+    const char *spec = getenv("THPS_MIPS");
+    const PcFunc *t;
+    int n = 0;
+    if (!spec || !*spec)
+        return;
+    for (t = pc_recomp_game_funcs; t->addr; t++) {
+        FnEntry *e;
+        if (!MipsSelected(t->addr, spec) || !(e = FindFn(t->addr)))
+            continue;
+        if (!strcmp(e->kind, "c")) {
+            e->fn = t->fn;
+            e->kind = "mips";
+            n++;
+        }
+    }
+    PC_Log("THPS_MIPS: %d game functions run as translated retail code", n);
+}
+
 /* Later tables take precedence: stubs < translated MIPS < HLE < decompiled C. */
 static void BuildFunctionTable(void) {
     int cap = 0, i, j;
@@ -134,6 +192,25 @@ static void BuildFunctionTable(void) {
             s_fns[j++] = s_fns[i];
     }
     s_nfns = j;
+    SelectMips();
+}
+
+static uint32_t pc_count_addr[32];
+static volatile uint32_t pc_count[32];
+static int pc_ncount;
+
+/* Called once per vblank: print and reset THPS_COUNT counters. */
+void PC_CountReport(uint32_t frame) {
+    char line[1024];
+    int i, n = 0, any = 0;
+    for (i = 0; i < pc_ncount; i++) {
+        n += snprintf(line + n, sizeof line - n, " %s=%u", PC_NameOf(pc_count_addr[i]),
+                      pc_count[i]);
+        any |= pc_count[i] != 0;
+        pc_count[i] = 0;
+    }
+    if (any)
+        PC_Log("count f%u:%s", frame, line);
 }
 
 /* A 5-byte `jmp rel32` over the first bytes of each function's (unused) MIPS code. */
@@ -152,6 +229,36 @@ static void InstallTrampolines(void) {
             counts[2]++;
         else
             counts[3]++;
+    }
+    {
+        /* THPS_COUNT=addr,addr,...: count calls per frame (PC_CountReport prints them) by
+         * routing those trampolines through `inc [counter]; jmp native` stubs */
+        const char *spec = getenv("THPS_COUNT");
+        static uint8_t *stubs;
+        int k = 0;
+        if (spec && !stubs)
+            stubs = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+        while (spec && *spec && k < 32) {
+            char *e;
+            uint32_t a = strtoul(spec, &e, 16);
+            FnEntry *f = FindFn(a);
+            if (f) {
+                uint8_t *s = stubs + 16 * k, *p = PSX_PTR(a);
+                int32_t rel;
+                pc_count_addr[k] = a;
+                s[0] = 0xff;
+                s[1] = 0x05;
+                *(uint32_t *)(s + 2) = (uint32_t)(uintptr_t)&pc_count[k];
+                s[6] = 0xe9;
+                rel = (int32_t)((uintptr_t)f->fn - ((uintptr_t)s + 11));
+                memcpy(s + 7, &rel, 4);
+                rel = (int32_t)((uintptr_t)s - ((uintptr_t)p + 5));
+                memcpy(p + 1, &rel, 4);
+                k++;
+            }
+            spec = *e == ',' ? e + 1 : e;
+        }
+        pc_ncount = k;
     }
     FlushInstructionCache(GetCurrentProcess(), PSX_PTR(PSX_EXE_BASE), PSX_RAM_SIZE - 0x10000);
     PC_Log("functions: %d decompiled C, %d HLE, %d translated MIPS, %d missing (stubs)", counts[0],
@@ -175,18 +282,17 @@ uint32_t PC_MissingFunction(uint32_t addr) {
 
 /* ---- translated-MIPS support ---------------------------------------------------------------- */
 
-u32 rc_enter(void (*body)(void), u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7) {
+u32 rc_enter(void (*body)(void), u32 a0, u32 a1, u32 a2, u32 a3, const u32 *stack) {
     PcRegs save = pc_r;
-    u32 sp = (save.r[29] - 64) & ~7u, v0, v1;
+    u32 sp = (save.r[29] - 16 - 4 * RC_STACK_ARGS - 32) & ~7u, v0, v1;
+    int i;
     pc_r.r[29] = sp;
     pc_r.r[4] = a0;
     pc_r.r[5] = a1;
     pc_r.r[6] = a2;
     pc_r.r[7] = a3;
-    MEM32(sp + 16) = a4;
-    MEM32(sp + 20) = a5;
-    MEM32(sp + 24) = a6;
-    MEM32(sp + 28) = a7;
+    for (i = 0; i < RC_STACK_ARGS; i++)
+        MEM32(sp + 16 + 4 * i) = stack[i];
     pc_r.r[28] = EXE_GP;
     pc_r.r[31] = 0xfffffff0u;
     body();
@@ -198,7 +304,7 @@ u32 rc_enter(void (*body)(void), u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5,
     return v0;
 }
 
-typedef uint64_t (*NativeFn)(u32, u32, u32, u32, u32, u32, u32, u32);
+typedef uint64_t (*NativeFn)(u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32);
 
 static void CallNative(u32 target, int indirect) {
     u32 sp = pc_r.r[29];
@@ -211,7 +317,8 @@ static void CallNative(u32 target, int indirect) {
         return;
     }
     r = ((NativeFn)fn)(pc_r.r[4], pc_r.r[5], pc_r.r[6], pc_r.r[7], MEM32(sp + 16), MEM32(sp + 20),
-                       MEM32(sp + 24), MEM32(sp + 28));
+                       MEM32(sp + 24), MEM32(sp + 28), MEM32(sp + 32), MEM32(sp + 36),
+                       MEM32(sp + 40), MEM32(sp + 44));
     pc_r.r[2] = (u32)r;
     pc_r.r[3] = (u32)(r >> 32);
 }
@@ -238,6 +345,21 @@ void rc_bad_jump(u32 pc, u32 target) {
 }
 
 void rc_untranslatable(u32 entry) { PC_Fatal("function %08x could not be translated", entry); }
+
+/* ---- C++ delete (see link.py, "destructor thunks") -------------------------------------------- */
+
+void *pc_delete_marked, *pc_delete_freed;
+
+void pc_vdelete(void *vtable, int slot, void *obj) {
+    uint8_t *e = (uint8_t *)vtable + 8 + 8 * slot;
+    void (*dtor)(void *, int) = *(void (**)(void *, int))(e + 4);
+    dtor((uint8_t *)obj + *(int16_t *)e, 3);
+}
+
+void pc_delete_mark(void *p) {
+    pc_delete_marked = p;
+    pc_delete_freed = NULL;
+}
 
 /* ---- memory map ----------------------------------------------------------------------------- */
 
@@ -469,10 +591,90 @@ static int FixLowAccess(EXCEPTION_POINTERS *ep) {
     return 1;
 }
 
+/* A breakpoint target for debuggers: called once for a genuine crash, before the report. */
+void __attribute__((noinline)) PC_CrashHook(void) { __asm__ volatile(""); }
+
+/* The R3000 never traps on division: `div` by zero leaves LO = (dividend < 0 ? 1 : -1) (or all
+ * ones unsigned) and HI = dividend, and INT_MIN / -1 gives LO = INT_MIN, HI = 0. The game relies
+ * on that (retail uses unchecked div). x86 div/idiv trap instead: give the MIPS result in
+ * eax/edx and step over the instruction. Each site is logged once. */
+static int FixDivide(EXCEPTION_POINTERS *ep) {
+    CONTEXT *c = ep->ContextRecord;
+    uint8_t *p = (uint8_t *)c->Eip, modrm;
+    int mod, rm, len, sgn;
+    int opsize16 = 0;
+    while (*p == 0x66 || *p == 0x67 || *p == 0x2e || *p == 0x3e || *p == 0x26 || *p == 0x36 ||
+           *p == 0x64 || *p == 0x65) {
+        if (*p == 0x66)
+            opsize16 = 1;
+        p++;
+    }
+    if (*p != 0xf7 || opsize16)
+        return 0;
+    modrm = p[1];
+    if (((modrm >> 3) & 7) != 6 && ((modrm >> 3) & 7) != 7)
+        return 0;
+    sgn = ((modrm >> 3) & 7) == 7;
+    mod = modrm >> 6;
+    rm = modrm & 7;
+    len = 2;
+    if (mod != 3 && rm == 4)
+        len++; /* SIB */
+    if (mod == 1)
+        len += 1;
+    else if (mod == 2 || (mod == 0 && rm == 5))
+        len += 4;
+    if (mod == 0 && rm == 4 && (p[2] & 7) == 5)
+        len += 4; /* SIB with no base: disp32 */
+    {
+        uint32_t dividend = c->Eax;
+        if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_INT_OVERFLOW) {
+            c->Eax = 0x80000000u;
+            c->Edx = 0;
+        } else {
+            c->Eax = sgn ? ((int32_t)dividend < 0 ? 1u : 0xffffffffu) : 0xffffffffu;
+            c->Edx = dividend;
+        }
+    }
+    {
+        static DWORD seen[64];
+        static int nseen;
+        int i, known = 0;
+        for (i = 0; i < nseen; i++)
+            known |= seen[i] == c->Eip;
+        if (!known && nseen < 64) {
+            seen[nseen++] = c->Eip;
+            PC_Log("division by zero at eip=%08lx given the MIPS result", c->Eip);
+        }
+    }
+    c->Eip = (DWORD)(uintptr_t)(p + len);
+    return 1;
+}
+
 static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
     EXCEPTION_RECORD *r = ep->ExceptionRecord;
     CONTEXT *c = ep->ContextRecord;
     DWORD code = r->ExceptionCode;
+    if ((code == EXCEPTION_INT_DIVIDE_BY_ZERO || code == EXCEPTION_INT_OVERFLOW) && FixDivide(ep))
+        return EXCEPTION_CONTINUE_EXECUTION;
+    if (code == EXCEPTION_SINGLE_STEP && (c->Dr6 & 1)) {
+        /* THPS_WATCH hit: log the write */
+        static int hits;
+        DWORD *bp = (DWORD *)c->Ebp;
+        int i;
+        c->Dr6 = 0;
+        if (hits++ < 200) {
+            fprintf(stderr, "watch: [%08lx] = %08x at eip=%08lx, frame %u; callers", c->Dr0,
+                    *(uint32_t *)c->Dr0, c->Eip, pc_heartbeat);
+            for (i = 0; i < 6 && bp && !IsBadReadPtr(bp, 8); i++) {
+                fprintf(stderr, " %08lx", bp[1]);
+                bp = (DWORD *)bp[0];
+            }
+            fputc('\n', stderr);
+        }
+        if (!s_fix.active)
+            return EXCEPTION_CONTINUE_EXECUTION;
+    }
     if (code == EXCEPTION_SINGLE_STEP && s_fix.active) {
         if (s_fix.active == 1)
             *RegPtr(c, s_fix.reg) -= s_fix.bias;
@@ -487,6 +689,7 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
         code != EXCEPTION_INT_DIVIDE_BY_ZERO && code != EXCEPTION_STACK_OVERFLOW &&
         code != EXCEPTION_PRIV_INSTRUCTION)
         return EXCEPTION_CONTINUE_SEARCH;
+    PC_CrashHook();
     fprintf(stderr, "\n*** crash: exception %08lx at eip=%08lx", code, c->Eip);
     if (code == EXCEPTION_ACCESS_VIOLATION)
         fprintf(stderr, " (%s %08lx)", r->ExceptionInformation[0] == 8   ? "execute"
@@ -512,6 +715,18 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
                     MB_ICONERROR);
     ExitProcess(3);
     return EXCEPTION_CONTINUE_SEARCH;
+}
+
+/* Print the caller's native backtrace (frame-pointer walk) for symbolize.py. */
+void PC_Backtrace(const char *why) {
+    DWORD *bp = (DWORD *)__builtin_frame_address(0);
+    int i;
+    fprintf(stderr, "*** %s\n    backtrace:\n", why);
+    for (i = 0; i < 24 && bp && !IsBadReadPtr(bp, 8); i++) {
+        fprintf(stderr, "      %08lx\n", bp[1]);
+        bp = (DWORD *)bp[0];
+    }
+    fflush(stderr);
 }
 
 /* ---- hang watchdog ----------------------------------------------------------------------------- */
@@ -574,6 +789,18 @@ int main(int argc, char **argv) {
     PC_GteReset();
     PC_HleInit();
     Crt0();
+    if (getenv("THPS_WATCH")) {
+        /* hardware write watchpoint on a 4-byte word (debug register 0) */
+        CONTEXT c;
+        memset(&c, 0, sizeof c);
+        c.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+        c.Dr0 = strtoul(getenv("THPS_WATCH"), NULL, 16) & ~3u;
+        c.Dr7 = 1 | (1u << 16) | (3u << 18); /* L0, write, 4 bytes */
+        if (!SetThreadContext(GetCurrentThread(), &c))
+            PC_Log("THPS_WATCH: SetThreadContext failed (%lu)", GetLastError());
+        else
+            PC_Log("watching writes to %08lx", c.Dr0);
+    }
     PC_Log("starting game main at %08x", EXE_GAME_MAIN);
     ((int (*)(void))PSX_PTR(EXE_GAME_MAIN))();
     PC_Log("game main returned");

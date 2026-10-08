@@ -11,22 +11,41 @@
 #define NTSC_HZ 60
 
 extern volatile uint32_t pc_heartbeat;
+void PC_CountReport(uint32_t frame);
 static uint32_t s_vsyncCallback;
 static uint32_t s_vblanks;
 static LARGE_INTEGER s_freq, s_next;
 static int s_inTick;
 static int s_unthrottled;
+/* THPS_DETERMINISTIC=1: a virtual clock instead of the wall clock, so automated runs (scripted
+ * input, frame dumps) behave the same every time. Each poll of hardware state advances it 1 ms. */
+static int s_det;
+static LONGLONG s_virtualNow;
 
-static void (*s_vsyncHooks[4])(void);
+static LONGLONG Now(void) {
+    LARGE_INTEGER t;
+    if (s_det)
+        return s_virtualNow;
+    QueryPerformanceCounter(&t);
+    return t.QuadPart;
+}
 
 uint32_t PC_VBlankCount(void) { return s_vblanks; }
 
 static void ClockInit(void) {
-    QueryPerformanceFrequency(&s_freq);
-    QueryPerformanceCounter(&s_next);
+    s_det = getenv("THPS_DETERMINISTIC") && atoi(getenv("THPS_DETERMINISTIC"));
+    if (s_det)
+        s_freq.QuadPart = 1000000;
+    else
+        QueryPerformanceFrequency(&s_freq);
+    s_next.QuadPart = Now();
     s_unthrottled = getenv("THPS_FAST") && atoi(getenv("THPS_FAST"));
 }
 
+static void DebugHooks(void);
+
+/* One vertical blank: input, the game's VSync callback, then show the display area (games that
+ * flip buffers from the callback never call VSync(0) while playing). */
 static void RunVBlank(void) {
     s_vblanks++;
     PC_InputPoll();
@@ -35,6 +54,13 @@ static void RunVBlank(void) {
         ((void (*)(void))PSX_PTR(s_vsyncCallback))();
         s_inTick = 0;
     }
+    PC_GpuPresent();
+    PC_CountReport(pc_heartbeat);
+    pc_heartbeat++;
+    PC_PumpEvents();
+    DebugHooks();
+    if (PC_QuitRequested())
+        ExitProcess(0);
 }
 
 int PC_TickVBlank(void) {
@@ -42,7 +68,9 @@ int PC_TickVBlank(void) {
     int n = 0;
     if (!s_freq.QuadPart)
         ClockInit();
-    QueryPerformanceCounter(&now);
+    if (s_det)
+        s_virtualNow += 1000;
+    now.QuadPart = Now();
     while (now.QuadPart >= s_next.QuadPart && n < 4) {
         s_next.QuadPart += s_freq.QuadPart / NTSC_HZ;
         RunVBlank();
@@ -92,13 +120,16 @@ static void WaitVBlank(void) {
     uint32_t start = s_vblanks;
     if (!s_freq.QuadPart)
         ClockInit();
-    if (s_unthrottled) {
-        QueryPerformanceCounter(&s_next);
+    if (s_det) {
+        s_virtualNow = s_next.QuadPart;
+        PC_TickVBlank();
+    } else if (s_unthrottled) {
+        s_next.QuadPart = Now();
         RunVBlank();
     } else {
         while (s_vblanks == start) {
             LARGE_INTEGER now;
-            QueryPerformanceCounter(&now);
+            now.QuadPart = Now();
             if (now.QuadPart < s_next.QuadPart) {
                 LONGLONG ms = (s_next.QuadPart - now.QuadPart) * 1000 / s_freq.QuadPart;
                 if (ms > 1)
@@ -107,12 +138,6 @@ static void WaitVBlank(void) {
             PC_TickVBlank();
         }
     }
-    PC_GpuPresent();
-    pc_heartbeat++;
-    PC_PumpEvents();
-    DebugHooks();
-    if (PC_QuitRequested())
-        ExitProcess(0);
 }
 
 int VSync(int mode) {

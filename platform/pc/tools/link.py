@@ -46,6 +46,10 @@ def jal_targets(img):
         w = int.from_bytes(img[off:off + 4], "little")
         if (w >> 26) == 3:
             out.add(0x80000000 | ((w & 0x3FFFFFF) << 2))
+        elif (w >> 26) == 1 and ((w >> 16) & 31) in (16, 17):  # bltzal / bgezal
+            imm = w & 0xFFFF
+            imm = imm - 0x10000 if imm & 0x8000 else imm
+            out.add((TEXT_START + off + 4 + (imm << 2)) & 0xFFFFFFFF)
     return out
 
 
@@ -114,10 +118,14 @@ def link(ctx, metas, out, toolbin):
             game[int(a, 16)] = "pcfn_%08x" % int(a, 16)
 
     # ---- 3. translate the rest from MIPS ----------------------------------------------------
-    entries = {}
+    # Every game function is translated too (by its known size), so any of them can run as
+    # retail MIPS instead of decompiled C for A/B debugging (THPS_MIPS, see pc_main.c). Calls to
+    # game functions from translated code go through the runtime table, which honours that choice.
+    entries, sizes = {}, {}
     for a, (size, mangled, _) in ctx.functions.items():
-        if a not in game and not mangled.startswith("D_"):
+        if not mangled.startswith("D_"):
             entries[a] = mangled
+            sizes[a] = size
     lib_entries = {a for a in jal_targets(img) if GAME_END <= a < LIB_END}
     for n, addrs in psyq.items():
         for a in addrs:
@@ -134,22 +142,30 @@ def link(ctx, metas, out, toolbin):
             names[a] = n
     for a in lib_entries:
         entries.setdefault(a, names.get(a))
-    native = set(game) | set(hle) | set(override)
+    native = set(hle) - set(override)  # overridden functions stay translated (wrappers call them)
     ent_file = os.path.join(gen, "recomp_entries.txt")
     nat_file = os.path.join(gen, "recomp_native.txt")
-    write_if_changed(ent_file, "".join("0x%08x %s\n" % (a, entries[a] or "") for a in
-                                       sorted(entries)))
+    disp_file = os.path.join(gen, "recomp_dispatch.txt")
+    write_if_changed(ent_file, "".join("0x%08x %s%s\n" % (a, entries[a] or "-",
+                                                          " %d" % sizes[a] if a in sizes else "")
+                                       for a in sorted(entries)))
     write_if_changed(nat_file, "".join("0x%08x\n" % a for a in sorted(native)))
-    recomp_c = os.path.join(gen, "recomp.c")
-    if not os.path.exists(recomp_c) or any(os.path.getmtime(recomp_c) < os.path.getmtime(p) for p in
-                                           (ent_file, nat_file, os.path.join(HERE, "mips2c.py"))):
+    write_if_changed(disp_file, "".join("0x%08x\n" % a for a in sorted(set(game) | set(override))))
+    nsplit = 8
+    recomp_cs = [os.path.join(gen, "recomp_%d.c" % k) for k in range(nsplit)]
+    stamp = os.path.join(gen, "recomp.stamp")
+    if not os.path.exists(stamp) or any(os.path.getmtime(stamp) < os.path.getmtime(p) for p in
+                                        (ent_file, nat_file, disp_file,
+                                         os.path.join(HERE, "mips2c.py"))):
         r = subprocess.run([sys.executable, os.path.join(HERE, "mips2c.py"), "--exe", EXE,
-                            "--entries", ent_file, "--native", nat_file, "-o", recomp_c],
+                            "--entries", ent_file, "--native", nat_file, "--dispatch", disp_file,
+                            "--split", str(nsplit), "-o", os.path.join(gen, "recomp.c")],
                            capture_output=True, text=True)
         sys.stdout.write(r.stdout)
         sys.stderr.write(r.stderr)
         if r.returncode:
             raise SystemExit("mips2c failed")
+        open(stamp, "w").write("")
     recomp_addrs = {e for e in entries if e not in native}
 
     # ---- 4. tables, stubs, thunks, names ----------------------------------------------------
@@ -206,7 +222,20 @@ def link(ctx, metas, out, toolbin):
                  " if (T[m].a < a) lo = m + 1; else hi = m - 1; } return NULL; }")
     write_if_changed(os.path.join(gen, "names.c"), "\n".join(lines) + "\n")
 
-    # thunks: virtual dispatch through the retail vtable, and destructor-call adapters
+    # Thunks: virtual dispatch through the retail vtable, and destructor-call adapters.
+    # Destructors (egcs): in_chrg bit 0 means "free the object afterwards". A delete statement
+    # records its pointer (pc_delete_mark); the destructor call for exactly that object passes
+    # in_chrg 3 and notes the object as freed, so the operator delete g++ emits next is skipped
+    # (_pcdel_*). Base-class destructor calls (_pcdtorcall_*) always pass 0.
+    def delete_flag():
+        return ["\txorl %edx, %edx",
+                "\tcmpl _pc_delete_marked, %eax",
+                "\tjne 1f",
+                "\tmovl %eax, _pc_delete_freed",
+                "\tmovl $0, _pc_delete_marked",
+                "\tmovl $3, %edx",
+                "1:"]
+
     asm = ["\t.text"]
     done = set()
     for m in metas:
@@ -216,22 +245,74 @@ def link(ctx, metas, out, toolbin):
             done.add(t["key"])
             slot = t["slot"]
             asm += ["\t.globl _pcvt_%s" % t["key"], "_pcvt_%s:" % t["key"],
-                    "\tmovl 4(%esp), %eax",
-                    "\tmovl _%s, %%ecx" % t["off"],
-                    "\tmovl (%eax,%ecx), %ecx",
-                    "\tmovswl %d(%%ecx), %%edx" % (8 + 8 * slot),
-                    "\taddl %edx, %eax"]
+                    "\tmovl 4(%esp), %eax"]
             if t["dtor"]:
-                asm += ["\tpushl $0", "\tpushl %eax", "\tcall *%d(%%ecx)" % (12 + 8 * slot),
+                asm += delete_flag()
+            asm += ["\tmovl _%s, %%ecx" % t["off"],
+                    "\tmovl (%eax,%ecx), %ecx"]
+            if t["dtor"]:
+                asm += ["\tpushl %edx",
+                        "\tmovswl %d(%%ecx), %%edx" % (8 + 8 * slot),
+                        "\taddl %edx, %eax",
+                        "\tpushl %eax", "\tcall *%d(%%ecx)" % (12 + 8 * slot),
                         "\taddl $8, %esp", "\tret"]
             else:
-                asm += ["\tmovl %eax, 4(%esp)", "\tjmp *%d(%%ecx)" % (12 + 8 * slot)]
+                asm += ["\tmovswl %d(%%ecx), %%edx" % (8 + 8 * slot),
+                        "\taddl %edx, %eax",
+                        "\tmovl %eax, 4(%esp)", "\tjmp *%d(%%ecx)" % (12 + 8 * slot)]
         for a in m.get("dtor_calls", []):
             if ("d", a) in done:
                 continue
             done.add(("d", a))
             asm += ["\t.globl _pcdtorcall_%08x" % a, "_pcdtorcall_%08x:" % a,
-                    "\tpushl $0", "\tpushl 8(%esp)", "\tmovl $0x%08x, %%eax" % a, "\tcall *%eax","\taddl $8, %esp",
+                    "\tpushl $0", "\tpushl 8(%esp)", "\tmovl $0x%08x, %%eax" % a,
+                    "\tcall *%eax", "\taddl $8, %esp", "\tret"]
+        for a in m.get("dtor_calls_d", []):
+            if ("dd", a) in done:
+                continue
+            done.add(("dd", a))
+            asm += ["\t.globl _pcdtorcalld_%08x" % a, "_pcdtorcalld_%08x:" % a,
+                    "\tmovl 4(%esp), %eax"] + delete_flag() + [
+                    "\tpushl %edx", "\tpushl %eax", "\tmovl $0x%08x, %%eax" % a,
+                    "\tcall *%eax", "\taddl $8, %esp", "\tret"]
+        for a in m.get("del_wrappers", []):
+            if ("del", a) in done:
+                continue
+            done.add(("del", a))
+            asm += ["\t.globl _pcdel_%08x" % a, "_pcdel_%08x:" % a,
+                    "\tmovl 4(%esp), %eax",
+                    "\tcmpl _pc_delete_freed, %eax",
+                    "\tjne 1f",
+                    "\tmovl $0, _pc_delete_freed",
+                    "\tret",
+                    "1:",
+                    "\tmovl $0, _pc_delete_marked",
+                    "\tmovl $0x%08x, %%eax" % a,
+                    "\tjmp *%eax"]
+    # constructors defined in C++: call the native one with the caller's argument words, then
+    # return `this` as egcs constructors do
+    for m in metas:
+        for a in m.get("ctor_defs", []):
+            if ("ctor", a) in done:
+                continue
+            done.add(("ctor", a))
+            asm += ["\t.globl _pcfn_%08x" % a, "_pcfn_%08x:" % a,
+                    "\tpushl %ebx",
+                    "\tpushl %esi",
+                    "\tpushl %edi",
+                    "\tmovl 16(%esp), %ebx",          # this
+                    "\tsubl $48, %esp",
+                    "\tleal 64(%esp), %esi",          # first argument word
+                    "\tmovl %esp, %edi",
+                    "\tmovl $12, %ecx",
+                    "\tcld",
+                    "\trep movsl",
+                    "\tcall _pcctor_%08x" % a,
+                    "\taddl $48, %esp",
+                    "\tmovl %ebx, %eax",
+                    "\tpopl %edi",
+                    "\tpopl %esi",
+                    "\tpopl %ebx",
                     "\tret"]
     # extra names objcopy needed when two symbols in one object map to the same thunk
     aliases = set()
@@ -255,7 +336,8 @@ def link(ctx, metas, out, toolbin):
     gflags = rt_flags + ["-O1", "-Wno-unused-label", "-Wno-unused-but-set-variable",
                          "-Wno-maybe-uninitialized"]
     jobs = [(os.path.join(gen, n), os.path.join(gen, n[:-2] + ".o"))
-            for n in ("game_table.c", "hle_table.c", "stubs.c", "names.c", "recomp.c")]
+            for n in ["game_table.c", "hle_table.c", "stubs.c", "names.c"] +
+            ["recomp_%d.c" % k for k in range(nsplit)]]
     with cf.ThreadPoolExecutor() as ex:
         gen_objs = list(ex.map(lambda j: cc(j[0], j[1], gflags), jobs))
     th_o = os.path.join(gen, "thunks.o")

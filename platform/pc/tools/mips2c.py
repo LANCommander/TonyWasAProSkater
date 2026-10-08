@@ -23,6 +23,7 @@ usage: mips2c.py --exe SLUS --entries FILE --native FILE -o out.c
            native even if the address is also in entries
 """
 import argparse
+import os
 import struct
 import sys
 
@@ -153,12 +154,16 @@ def decode(i):
         i.target = (i.addr + 4 + (i.simm << 2)) & 0xFFFFFFFF
 
 
-# Port fixes for single instructions, by address. The retail renderer strips the top byte off
-# pPoly (`sll 8; srl 8`) and writes primitives through the KUSEG pointer; on PC main RAM only
-# exists at 0x80000000 and pPoly/PolyBufferEnd stay KSEG0 (see the PC_PORT blocks in decomp/src).
+# Port fixes for single instructions, by address. The retail renderers (0x80086f40, 0x800898ac)
+# strip pPoly's top byte and use the 24-bit value both as a pointer and inside packet tags
+# (len << 24 | addr), so they keep doing that (translated memory accesses map KUSEG to main RAM,
+# see MEM32 in pc_recomp.h). On the C side pPoly and PolyBufferEnd stay KSEG0 (PC_PORT blocks in
+# decomp/src): compare against a 24-bit PolyBufferEnd, and store pPoly back with bit 31 set.
 PATCHES = {
-    0x80086FA8: "v0 = (v0 >> 8) | 0x80000000u; /* PC: keep pPoly in KSEG0 */",
-    0x80089900: "v0 = (v0 >> 8) | 0x80000000u; /* PC: keep pPoly in KSEG0 */",
+    0x80086FA0: "at = MEM32((at + 6012)) & 0xffffffu; /* PC: 24-bit PolyBufferEnd */",
+    0x800898F4: "at = MEM32((at + 6012)) & 0xffffffu; /* PC: 24-bit PolyBufferEnd */",
+    0x80087630: "MEM32(t0) = v0 | 0x80000000u; /* PC: pPoly stays KSEG0 */",
+    0x80089D28: "MEM32(t0) = v0 | 0x80000000u; /* PC: pPoly stays KSEG0 */",
 }
 
 
@@ -398,6 +403,9 @@ def emit_function(f, translated, native, out):
     out.append("\tREGS_IN();")
     out.append("\tu32 ra_in_ = ra; (void)ra_in_;")  # `jr` through a saved copy of ra returns
     addrs = sorted(f.insns)
+    if addrs[0] != ent:
+        # the function reuses code that lies before its entry point
+        out.append("\tgoto L_%08x;" % ent)
     # targets needing a label: branch/jump targets and anything after a delay slot jumped into
     labels = set(f.labels) | {ent}
     has_indirect = any(f.insns[a].kind == "jr" and f.insns[a].rs != 31 for a in addrs)
@@ -415,7 +423,7 @@ def emit_function(f, translated, native, out):
             out.append("L_%08x:" % a)
         if i.kind in ("branch", "branchcall", "jump", "call", "jr", "jalr"):
             ds = f.insns.get(a + 4)
-            dsc = op_c(ds) if ds else ""
+            dsc = (PATCHES.get(ds.addr) or op_c(ds)) if ds else ""
             if i.kind == "branch":
                 out.append("\t{ int c_ = %s; %s if (c_) goto L_%08x; }" % (branch_cond(i), dsc,
                                                                          i.target))
@@ -492,52 +500,90 @@ def emit_function(f, translated, native, out):
     out.append("}")
 
 
+DISPATCH = set()  # translated functions that are still called through the runtime's table
+
+
 def call_c(target, ret, f, translated, native, tail=False):
-    if target in translated and target not in native:
+    if target in translated and target not in native and target not in DISPATCH:
         return "REGS_OUT(); rb_%08x(); REGS_IN();" % target
     return "REGS_OUT(); rc_call_native(0x%08xu); REGS_IN();" % target
+
+
+def discover_linear(exe, entry, size):
+    """Compiled code with a known size: every instruction in [entry, entry + size) belongs to the
+    function (this also covers switch jump-table targets, which flow analysis can't see)."""
+    f = Func(entry, None)
+    for a in range(entry, entry + size, 4):
+        f.insns[a] = Insn(a, exe.word(a))
+    for a, i in f.insns.items():
+        if i.kind in ("branch", "jump") and i.target in f.insns:
+            f.labels.add(i.target)
+    f.max_addr = max(f.insns)
+    return f
+
+
+def read_addrs(path):
+    out = set()
+    if path:
+        for line in open(path):
+            p = line.split()
+            if p and not p[0].startswith("#"):
+                out.add(int(p[0], 16))
+    return out
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--exe", required=True)
-    ap.add_argument("--entries", required=True)
-    ap.add_argument("--native", default=None)
+    ap.add_argument("--entries", required=True, help='lines "0xADDR [name|-] [size]"')
+    ap.add_argument("--native", default=None, help="addresses not to translate (HLE/C only)")
+    ap.add_argument("--dispatch", default=None,
+                    help="translated addresses to call through the runtime table (C or MIPS)")
     ap.add_argument("--known", default=None, help="extra known function entries (one per line)")
+    ap.add_argument("--split", type=int, default=1, help="write the output as N files")
     ap.add_argument("-o", "--out", required=True)
     a = ap.parse_args()
     exe = Exe(a.exe)
-    entries = {}
+    entries, sizes = {}, {}
     for line in open(a.entries):
         p = line.split()
         if p and not p[0].startswith("#"):
-            entries[int(p[0], 16)] = p[1] if len(p) > 1 else None
-    native = set()
-    if a.native:
-        for line in open(a.native):
-            p = line.split()
-            if p and not p[0].startswith("#"):
-                native.add(int(p[0], 16))
-    known = set(entries) | native
-    if a.known:
-        for line in open(a.known):
-            p = line.split()
-            if p and not p[0].startswith("#"):
-                known.add(int(p[0], 16))
+            addr = int(p[0], 16)
+            entries[addr] = p[1] if len(p) > 1 and p[1] != "-" else None
+            if len(p) > 2:
+                sizes[addr] = int(p[2])
+    native = read_addrs(a.native)
+    DISPATCH.update(read_addrs(a.dispatch))
+    known = set(entries) | native | read_addrs(a.known)
     funcs = []
     for e in sorted(entries):
         if e in native:
             continue
-        f = discover(exe, e, known)
+        if e in sizes:
+            f = discover_linear(exe, e, sizes[e])
+            outside = [i for i in f.insns.values() if i.kind in ("branch", "jump") and
+                       i.target not in f.insns]
+            if outside:
+                # hand-written code that branches into shared code past its end: add what flow
+                # analysis reaches
+                g = discover(exe, e, known)
+                for a2, i2 in g.insns.items():
+                    f.insns.setdefault(a2, i2)
+                f.labels |= g.labels
+                f.local_calls |= g.local_calls
+                f.max_addr = max(f.insns)
+        else:
+            f = discover(exe, e, known)
         f.name = entries[e]
         funcs.append(f)
     translated = {f.entry for f in funcs}
-    out = ['/* Generated by platform/pc/tools/mips2c.py from the retail executable. Do not edit. */',
-           '#include "pc_recomp.h"', ""]
-    for f in funcs:
-        out.append("void rb_%08x(void);" % f.entry)
-    out.append("")
-    for f in funcs:
+    head = ['/* Generated by platform/pc/tools/mips2c.py from the retail executable. Do not edit. */',
+            '#include "pc_recomp.h"', ""]
+    head += ["void rb_%08x(void);" % f.entry for f in funcs] + [""]
+    n = max(1, a.split)
+    parts = [list(head) for _ in range(n)]
+    for k, f in enumerate(funcs):
+        out = parts[k * n // len(funcs)] if funcs else parts[0]
         try:
             body = []
             emit_function(f, translated, native, body)
@@ -546,20 +592,26 @@ def main():
             print("mips2c: %s: %s" % (f.name or hex(f.entry), e), file=sys.stderr)
             out.append("void rb_%08x(void) { rc_untranslatable(0x%08xu); }" % (f.entry, f.entry))
         out.append("")
-    # native entry wrappers + table
-    for f in funcs:
-        out.append("u32 rcw_%08x(u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7) "
-                   "{ return rc_enter(rb_%08x, a0, a1, a2, a3, a4, a5, a6, a7); }" % (f.entry, f.entry))
-    out.append("const PcFunc pc_recomp_funcs[] = {")
-    for f in funcs:
-        out.append("\t{0x%08xu, (void *)rcw_%08x}," % (f.entry, f.entry))
-    out.append("\t{0, 0}\n};")
-    out.append("const PcRecompBody pc_recomp_bodies[] = {")
-    for f in funcs:
-        out.append("\t{0x%08xu, rb_%08x}," % (f.entry, f.entry))
-    out.append("\t{0, 0}\n};")
-    open(a.out, "w").write("\n".join(out) + "\n")
-    print("mips2c: %d functions -> %s" % (len(funcs), a.out))
+        out.append("u32 rcw_%08x(u32 a0, u32 a1, u32 a2, u32 a3, u32 a4, u32 a5, u32 a6, u32 a7, "
+                   "u32 a8, u32 a9, u32 a10, u32 a11) { u32 st[8] = {a4, a5, a6, a7, a8, a9, a10, "
+                   "a11}; return rc_enter(rb_%08x, a0, a1, a2, a3, st); }" % (f.entry, f.entry))
+    out = parts[-1]
+    out += ["u32 rcw_%08x(u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32);" % f.entry
+            for f in funcs]
+    # game functions (also implemented in C) and the rest go in separate tables: the runtime
+    # prefers C for game functions unless THPS_MIPS says otherwise
+    for tname, pick in (("pc_recomp_funcs", lambda f: f.entry not in DISPATCH),
+                        ("pc_recomp_game_funcs", lambda f: f.entry in DISPATCH)):
+        out.append("const PcFunc %s[] = {" % tname)
+        out += ["\t{0x%08xu, (void *)rcw_%08x}," % (f.entry, f.entry) for f in funcs if pick(f)]
+        out.append("\t{0, 0}\n};")
+    base, ext = os.path.splitext(a.out)
+    for k, part in enumerate(parts):
+        path = a.out if n == 1 else "%s_%d%s" % (base, k, ext)
+        text = "\n".join(part) + "\n"
+        if not os.path.exists(path) or open(path).read() != text:
+            open(path, "w").write(text)
+    print("mips2c: %d functions -> %s (%d file%s)" % (len(funcs), a.out, n, "s" if n > 1 else ""))
 
 
 if __name__ == "__main__":

@@ -386,6 +386,41 @@ def _root_of(classes, c):
     return c
 
 
+_DELETE_RE = re.compile(r"(?<![\w.>])(?<!operator )(?<!operator)delete\s+(?![\[(])")
+
+
+def mark_deletes(src):
+    """egcs implements `delete p` by calling p's destructor with in_chrg 3, and the destructor
+    frees through its class's operator delete. Native g++ calls the destructor and then an
+    operator delete of its own choosing. Each delete statement records its pointer first
+    (pc_delete_mark) so the build's destructor thunks pass in_chrg 3 for exactly that object, and
+    the operator delete that follows is skipped (see link.py, "destructor thunks")."""
+    clean = _strip_comments(src)
+    out, i = [], 0
+    for m in _DELETE_RE.finditer(clean):
+        if m.start() < i:
+            continue
+        # the operand runs to the statement's ';' at depth 0
+        j, depth = m.end(), 0
+        while j < len(clean):
+            c = clean[j]
+            if c in "([":
+                depth += 1
+            elif c in ")]":
+                depth -= 1
+            elif c == ";" and depth == 0:
+                break
+            j += 1
+        if j >= len(clean) or depth:
+            continue
+        expr = src[m.end():j]
+        out.append(src[i:m.start()])
+        out.append("pc_delete(%s);" % expr)
+        i = j + 1
+    out.append(src[i:])
+    return "".join(out)
+
+
 _CAST_INC_RE = re.compile(r"\*\s*\(\s*\(\s*([\w ]+?)\s*\*\s*\)\s*(\w+)\s*\)\s*\+\+")
 
 
@@ -401,6 +436,7 @@ def transform_cxx(src, vtables, tukey="tu"):
     build: {class: {"vptr_root": root class, "slots": [...], "has_delete": bool}})."""
     src = re.sub(r"^[ \t]*#[ \t]*pragma[ \t]+(interface|implementation)\b[^\n*]*$", "", src, flags=re.M)
     classes, order = parse_classes(src)
+    clean = _strip_comments(src)
     info = {}
     edits = []  # (pos, text_to_insert)
     for n in order:
@@ -412,6 +448,16 @@ def transform_cxx(src, vtables, tukey="tu"):
                    "has_delete": c.has_delete, "bases": c.bases}
         if c.root:
             edits.append((c.body_end, "\npublic: void *__vptr;\n"))
+        is_template = re.search(r"template\s*<[^<>]*>\s*$", clean[:c.body_start].rsplit(";", 1)[-1]
+                                .rsplit("}", 1)[-1].split("class " + n)[0].split("struct " + n)[0])
+        if "~" in c.slots and root and not is_template:
+            # egcs deletes through the vtable destructor with in_chrg 3 (see pc_game.h)
+            semi = clean.find(";", c.body_end)
+            r = root.name
+            edits.append((semi + 1,
+                          "\nstatic inline void pc_delete(%s *p) { if (p) pc_vdelete("
+                          "static_cast<%s *>(p)->__vptr, %d, static_cast<%s *>(p)); }\n"
+                          % (n, r, c.slots.index("~"), r)))
     # constructors / destructors of polymorphic classes defined in this TU: store the vtable
     clean = _strip_comments(src)
     for n, c in classes.items():

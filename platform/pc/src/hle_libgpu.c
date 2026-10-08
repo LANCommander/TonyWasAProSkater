@@ -166,6 +166,13 @@ int LoadImage(RECT *rect, u_long *p)
     if (!rect_ok(rect) || !p)
         return 0;
     int words = (rect->w * rect->h + 1) / 2;
+    {
+        extern const char *PC_GpuPendingState(void);
+        const char *st = PC_GpuPendingState();
+        if (st)
+            fprintf(stderr, "LoadImage(%d,%d %dx%d): GPU busy: %s\n", rect->x, rect->y, rect->w,
+                    rect->h, st);
+    }
     PC_GpuWriteGP0(0x01000000u);
     PC_GpuWriteGP0(0xa0000000u);
     PC_GpuWriteGP0((uint32_t)xfer_xy(rect));

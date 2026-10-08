@@ -77,6 +77,12 @@ Backspace = Select, Q/W/E/R = L1/R1/L2/R2. Game controllers work through SDL.
 | `THPS_FAST=1` | don't throttle to 60 Hz |
 | `THPS_MOVIES=1` | run the original FMV code (movies are skipped by default) |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
+| `THPS_DETERMINISTIC=1` | virtual clock: identical runs every time (use with `THPS_INPUT` for bisecting) |
+| `THPS_MIPS=all,!lo-hi,addr` | run those game functions as translated retail MIPS instead of decompiled C (A/B debugging) |
+| `THPS_WATCH=addr` | hardware write watchpoint on a 4-byte word: logs value, native EIP and callers |
+| `THPS_COUNT=addr,...` | log per-frame call counts of those functions |
+| `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log VRAM transfers and drawing-environment changes / polygon counts per frame |
+| `THPS_TRACE_PSX`, `THPS_TRACE_CULL`, `THPS_TRACE_RENDER` | spooler, frustum-culling and renderer traces |
 
 Crash logs and the 5-second hang watchdog print native backtraces;
 `python platform/pc/tools/symbolize.py < log` turns them into function/file:line.
@@ -85,9 +91,17 @@ than they really take (harmless on MIPS, where the value stays in its register; 
 
 ## Status
 
-Boots through the game's initialisation to the title screen and the front-end menus, with
-working keyboard/controller input. Not done yet: audio (SPU, XA music), FMV (STR/MDEC; movies
-are skipped), memory card (always "no card"), 64-bit build.
+Boots through the front end (menus, skater/board/level select with 3D models) into a level, and
+the game plays with full 3D rendering. Not done yet: audio (SPU, XA music), FMV (STR/MDEC;
+movies are skipped), memory card (always "no card"), 64-bit build. Running every game function
+as translated MIPS (`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase.
+
+Port glue worth knowing about (see the tools for details):
+- C++ follows the egcs ABI where the retail code depends on it: vtable layout, `delete` through
+  the virtual destructor with in_chrg 3, constructors returning `this`.
+- File statics in decompiled TUs live at their retail addresses (listed in each `.syms.json`).
+- Hardware behaviour the game relies on is emulated: MIPS division never traps (the fault
+  handler gives the MIPS result), low KUSEG addresses map to RAM, busy-waits let vblanks happen.
 
 Changes the port needs in `decomp/src` are guarded by `#ifdef PC_PORT` or are honest signatures
 that still compile to the same bytes. `node decomp/tools/check_all.mjs` must stay green.
