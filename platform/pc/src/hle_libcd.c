@@ -1,6 +1,12 @@
 /* libcd over a raw (2352-byte sector, MODE2/2352) disc image. Reads complete immediately; the
- * asynchronous API shape (CdRead + CdReadSync, callbacks) is kept. Streaming (XA audio, STR
- * movies) is not implemented yet: CdlReadS just reports success. */
+ * asynchronous API shape (CdRead + CdReadSync, callbacks) is kept.
+ *
+ * Streaming (CdRead2 / CdlReadS, used for the music and the movies) reads from the current
+ * location at the drive's speed, 75 or 150 sectors/s, paced on the vblank clock
+ * (PC_CdStreamVBlank). With XA enabled (mode bit 0x40) audio sectors go through the XA decoder to
+ * the SPU's CD input. STR video chunks are assembled into whole frames in the ring the game set
+ * with StSetRing, for StGetNext/StFreeRing. A full ring drops a frame instead of stalling the
+ * drive, so the music never waits on the game. */
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +14,8 @@
 
 #include "pc_hle.h"
 #include "pc_runtime.h"
+#include "pc_spu.h"
+#include "pc_xa.h"
 
 typedef struct {
     uint8_t minute, second, sector, track;
@@ -35,6 +43,59 @@ static uint32_t s_loc; /* current LBA */
 static uint8_t s_mode;
 static uint32_t s_readCallback, s_syncCallback;
 static int s_debug;
+
+/* ---- streaming state ---------------------------------------------------------------------- */
+
+#define CdlModeSpeed 0x80
+#define CdlModeRT 0x40      /* XA-ADPCM playback */
+#define STR_MAGIC 0x0160
+#define STR_HEADER 32
+#define STR_PAYLOAD 2016
+#define ST_MAX_FRAMES 8
+
+enum { FR_FREE, FR_FILLING, FR_READY, FR_TAKEN };
+typedef struct {
+    int state;
+    uint32_t addr, size; /* slot in the ring: the sector header, then the frame's payload */
+    uint32_t frame, seq;
+    int chunks, got;
+} StFrame;
+
+static int s_streaming, s_streamXa;
+static uint32_t s_streamAcc;  /* sectors owed, in sixtieths */
+static int s_jumped;          /* a Setloc/Seek moved the head: the XA history starts over */
+static uint32_t s_ring, s_ringSize, s_ringWrite;
+static int s_stMask;
+static StFrame s_fr[ST_MAX_FRAMES];
+static uint32_t s_frSeq;
+static int s_filling = -1;
+
+static void StreamStart(int mode, const char *why) {
+    s_mode = (uint8_t)mode;
+    s_streamXa = (mode & CdlModeRT) != 0;
+    if (s_jumped)
+        PC_XaReset();
+    s_jumped = 0;
+    s_streaming = 1;
+    s_streamAcc = 0;
+    PC_Trace("%s: stream from lba %u (mode %02x%s)", why, s_loc, mode & 0xff,
+             s_streamXa ? ", XA" : "");
+}
+
+static void StreamStop(void) {
+    if (s_streaming)
+        PC_Trace("stream stopped at lba %u", s_loc);
+    s_streaming = 0;
+}
+
+int CdPosToInt(CdlLOC *p);
+
+static void Locate(const uint8_t *param) {
+    uint32_t lba = (uint32_t)CdPosToInt((CdlLOC *)param);
+    if (lba != s_loc)
+        s_jumped = 1;
+    s_loc = lba;
+}
 
 static int FileExists(const char *p) {
     DWORD a = GetFileAttributesA(p);
@@ -179,11 +240,24 @@ int CdControl(uint8_t com, uint8_t *param, uint8_t *result) {
     switch (com) {
     case CdlSetloc:
         if (param)
-            s_loc = (uint32_t)CdPosToInt((CdlLOC *)param);
+            Locate(param);
         break;
     case CdlSetmode:
         if (param)
             s_mode = param[0];
+        break;
+    case CdlReadS:
+        StreamStart(s_mode, "CdlReadS");
+        break;
+    case CdlPause:
+    case CdlStop:
+        StreamStop();
+        break;
+    case CdlMute:
+        PC_SpuCdMute(1);
+        break;
+    case CdlDemute:
+        PC_SpuCdMute(0);
         break;
     case CdlGetlocL:
         if (result) {
@@ -195,7 +269,8 @@ int CdControl(uint8_t com, uint8_t *param, uint8_t *result) {
     case CdlSeekL:
     case CdlSeekP:
         if (param)
-            s_loc = (uint32_t)CdPosToInt((CdlLOC *)param);
+            Locate(param);
+        StreamStop();
         break;
     default:
         PC_Trace("CdControl(%d)", com);
@@ -226,6 +301,7 @@ int CdRead(int sectors, uint32_t buf, int mode) {
     uint8_t *dst = PSX_PTR(buf);
     int size = (mode & 0x20) ? 2340 : 2048; /* CdlModeSize1: whole sector minus sync */
     PC_Trace("CdRead(%d sectors at lba %u -> %08x, mode %02x)", sectors, s_loc, buf, mode);
+    StreamStop(); /* the drive does one read at a time */
     for (i = 0; i < sectors; i++) {
         if (size == 2048) {
             PC_CdReadSector(s_loc, dst);
@@ -277,12 +353,14 @@ uint32_t CdReadyCallback(uint32_t func) {
 }
 
 int CdRead2(int mode) {
-    PC_Trace("CdRead2(%02x) at lba %u: streaming not implemented", mode, s_loc);
+    StreamStart(mode, "CdRead2");
     return 1;
 }
 
+/* CdMix(CdlATV *): the CD-audio-to-SPU mixer levels. */
 int CdMix(void *vol) {
-    (void)vol;
+    if (vol)
+        PC_SpuCdSetMix((const uint8_t *)vol);
     return 1;
 }
 
@@ -290,17 +368,152 @@ int CdStatus(void) { return CdlStatStandby; }
 int CdMode(void) { return s_mode; }
 int CdLastCom(void) { return 0; }
 
-/* Streaming library (STR movies / XA): inert until movies are supported. */
-void StSetRing(uint32_t ring, int size) { (void)ring; (void)size; }
-void StClearRing(void) {}
-void StUnSetRing(void) {}
+/* ---- streaming: the St* ring library -------------------------------------------------------- */
+
+static void ClearFrames(void) {
+    memset(s_fr, 0, sizeof s_fr);
+    s_filling = -1;
+    s_ringWrite = s_ring;
+}
+
+static int Overlaps(uint32_t a, uint32_t n) {
+    for (int i = 0; i < ST_MAX_FRAMES; i++)
+        if (s_fr[i].state != FR_FREE && a < s_fr[i].addr + s_fr[i].size && s_fr[i].addr < a + n)
+            return 1;
+    return 0;
+}
+
+/* A slot of `need` bytes in the ring for a new frame, or -1 if the ring is full. */
+static int AllocFrame(uint32_t need) {
+    int i;
+    uint32_t a = s_ringWrite;
+    need = (need + 3) & ~3u;
+    if (!s_ring || need > s_ringSize)
+        return -1;
+    for (i = 0; i < ST_MAX_FRAMES && s_fr[i].state != FR_FREE; i++)
+        ;
+    if (i == ST_MAX_FRAMES)
+        return -1;
+    if (a + need > s_ring + s_ringSize)
+        a = s_ring;
+    if (Overlaps(a, need))
+        return -1;
+    s_fr[i].addr = a;
+    s_fr[i].size = need;
+    s_ringWrite = a + need;
+    return i;
+}
+
+/* One STR video chunk (2048 bytes of user data: 32-byte header, 2016 bytes of payload). */
+static void StreamData(const uint8_t *u) {
+    StFrame *f;
+    int chunk, chunks;
+    uint32_t frame;
+    if ((u[0] | u[1] << 8) != STR_MAGIC || !s_ring || s_stMask)
+        return;
+    chunk = u[4] | u[5] << 8;
+    chunks = u[6] | u[7] << 8;
+    frame = u[8] | u[9] << 8 | u[10] << 16 | (uint32_t)u[11] << 24;
+    if (chunks <= 0 || chunks > 64 || chunk >= chunks)
+        return;
+    f = s_filling >= 0 ? &s_fr[s_filling] : NULL;
+    if (f && (f->frame != frame || f->chunks != chunks)) { /* the last one never completed */
+        f->state = FR_FREE;
+        f = NULL;
+        s_filling = -1;
+    }
+    if (!f) {
+        int i = AllocFrame(STR_HEADER + (uint32_t)chunks * STR_PAYLOAD);
+        if (i < 0)
+            return;                         /* ring full: drop this frame, keep streaming */
+        f = &s_fr[i];
+        f->state = FR_FILLING;
+        f->frame = frame;
+        f->chunks = chunks;
+        f->got = 0;
+        memcpy(PSX_PTR(f->addr), u, STR_HEADER);
+        s_filling = i;
+    }
+    memcpy(PSX_PTR(f->addr + STR_HEADER + (uint32_t)chunk * STR_PAYLOAD), u + STR_HEADER,
+           STR_PAYLOAD);
+    if (++f->got >= f->chunks) {
+        f->state = FR_READY;
+        f->seq = s_frSeq++;
+        s_filling = -1;
+    }
+}
+
+/* Called once per vblank: read the sectors the drive would have read since the last one. */
+void PC_CdStreamVBlank(void) {
+    static uint8_t raw[2352];
+    static int16_t pcm[PC_XA_MAX_FRAMES * 2];
+    if (!s_streaming || !s_disc)
+        return;
+    s_streamAcc += (s_mode & CdlModeSpeed) ? 150 : 75;
+    while (s_streamAcc >= 60) {
+        s_streamAcc -= 60;
+        if (s_loc >= s_sectors || !PC_CdReadRawSector(s_loc, raw)) {
+            StreamStop();
+            return;
+        }
+        s_loc++;
+        if (raw[15] != 2)
+            continue;
+        if (raw[18] & 0x04) {               /* submode: audio */
+            int rate, n;
+            if (s_streamXa && (n = PC_XaDecodeSector(raw, pcm, &rate)))
+                PC_SpuCdQueue(pcm, n, rate);
+        } else {
+            StreamData(raw + 24);
+        }
+    }
+}
+
+void StSetRing(uint32_t ring, int size) {
+    s_ring = ring;
+    s_ringSize = (uint32_t)size * 2048;
+    ClearFrames();
+}
+
+void StClearRing(void) { ClearFrames(); }
+
+void StUnSetRing(void) {
+    s_ring = 0;
+    s_ringSize = 0;
+    ClearFrames();
+}
+
 void StSetStream(int mode, int start, int end, uint32_t f1, uint32_t f2) {
     (void)mode; (void)start; (void)end; (void)f1; (void)f2;
+    ClearFrames();
 }
+
+/* StGetNext(&addr, &header): the oldest complete frame. 0 = got one, 1 = none ready. */
 int StGetNext(uint32_t *addr, uint32_t *header) {
-    (void)addr; (void)header;
-    return 1; /* no data */
+    StFrame *best = NULL;
+    for (int i = 0; i < ST_MAX_FRAMES; i++)
+        if (s_fr[i].state == FR_READY && (!best || s_fr[i].seq < best->seq))
+            best = &s_fr[i];
+    if (!best)
+        return 1;
+    best->state = FR_TAKEN;
+    *addr = best->addr + STR_HEADER;
+    *header = best->addr;
+    return 0;
 }
-int StFreeRing(uint32_t base) { (void)base; return 0; }
-void StSetMask(int mask, int start, int end) { (void)mask; (void)start; (void)end; }
+
+int StFreeRing(uint32_t base) {
+    for (int i = 0; i < ST_MAX_FRAMES; i++)
+        if (s_fr[i].state != FR_FREE && s_fr[i].addr + STR_HEADER == base) {
+            s_fr[i].state = FR_FREE;
+            return 0;
+        }
+    return 1;
+}
+
+void StSetMask(int mask, int start, int end) {
+    (void)start; (void)end;
+    s_stMask = mask;
+}
+
 void StCdInterrupt(void) {}

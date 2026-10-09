@@ -83,6 +83,8 @@ Backspace = Select, Q/W/E/R = L1/R1/L2/R2. Game controllers work through SDL.
 | `THPS_COUNT=addr,...` | log per-frame call counts of those functions |
 | `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log VRAM transfers and drawing-environment changes / polygon counts per frame |
 | `THPS_TRACE_PSX`, `THPS_TRACE_CULL`, `THPS_TRACE_RENDER` | spooler, frustum-culling and renderer traces |
+| `THPS_AUDIO=0` / `THPS_AUDIO_DUMP=file` | no sound device / also write the mixed output as raw s16le stereo 44.1 kHz |
+| `THPS_TRACE_SPU=1` | log SPU key on/off per voice |
 
 Crash logs and the 5-second hang watchdog print native backtraces;
 `python platform/pc/tools/symbolize.py < log` turns them into function/file:line.
@@ -92,8 +94,12 @@ than they really take (harmless on MIPS, where the value stays in its register; 
 ## Status
 
 Boots through the front end (menus, skater/board/level select with 3D models) into a level, and
-the game plays with full 3D rendering. Not done yet: audio (SPU, XA music), FMV (STR/MDEC;
-movies are skipped), memory card (always "no card"), 64-bit build. Running every game function
+the game plays with full 3D rendering. Sound effects and music play: `src/pc_spu.c` models the
+SPU (sound RAM, 24 ADPCM voices, ADSR, master volume, CD audio input) and mixes it to an SDL audio
+device. The songs are XA audio inside the soundtrack STR files; `src/hle_libcd.c` streams them like
+the drive does and `src/pc_xa.c` decodes them. Not done yet: SPU reverb, exact ADSR curves, FMV
+video (MDEC; full-screen movies are skipped), memory card (always "no card"), 64-bit build.
+Running every game function
 as translated MIPS (`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase.
 
 Port glue worth knowing about (see the tools for details):

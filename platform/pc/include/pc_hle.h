@@ -39,6 +39,8 @@ void PC_InputFillPadBuffer(int port, uint8_t *buf);
 int PC_CdOpen(void);
 int PC_CdReadSector(uint32_t lba, void *dst2048);       /* mode 2 form 1 user data */
 int PC_CdReadRawSector(uint32_t lba, void *dst2352);    /* whole raw sector */
+/* Once per vblank: advance a CD stream (CdRead2/CdlReadS) by the sectors read since the last. */
+void PC_CdStreamVBlank(void);
 
 #ifdef __cplusplus
 }

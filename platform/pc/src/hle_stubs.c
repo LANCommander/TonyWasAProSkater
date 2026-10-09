@@ -1,42 +1,19 @@
-/* Libraries that are inert in this first port: SPU/sound (no audio yet), the memory card (no card
- * inserted), host-PC file I/O (LIBSN), and the MDEC (no movies). Each returns what the game
- * expects from a working-but-idle device. */
+/* Libraries that are inert in this port: the memory card (no card inserted), host-PC file I/O
+ * (LIBSN), the MDEC (no movies), and SPU reverb (the SPU itself is in pc_spu.c). Each returns what
+ * the game expects from a working-but-idle device. */
 #include <stdint.h>
 #include <string.h>
 
 #include "pc_hle.h"
 #include "pc_runtime.h"
 
-/* ---- SPU / libsnd -------------------------------------------------------------------------- */
+/* ---- SPU reverb / libsnd: not modelled yet (pc_spu.c has the voices and the mixer) ----------- */
 
-static uint32_t s_spuAlloc = 0x1010;
-
-void hle__SpuInit(int mode) { (void)mode; }
-void SpuStart(void) {}
-int SpuInitMalloc(int num, uint32_t top) { (void)num; (void)top; s_spuAlloc = 0x1010; return num; }
-int SpuMalloc(int size) {
-    uint32_t a = s_spuAlloc;
-    s_spuAlloc += (uint32_t)(size + 15) & ~15u;
-    return s_spuAlloc <= 0x80000 ? (int)a : -1;
-}
-uint32_t SpuSetTransferStartAddr(uint32_t a) { return a; }
-uint32_t SpuRead(uint32_t addr, uint32_t size) { memset(PSX_PTR(addr), 0, size); return size; }
-int SpuIsTransferCompleted(int flag) { (void)flag; return 1; }
-void SpuNSetVoiceAttr(int v, void *attr) { (void)v; (void)attr; }
-void SpuGetVoiceAttr(void *attr) { (void)attr; }
-void SpuGetVoicePitch(int v, uint16_t *pitch) { (void)v; if (pitch) *pitch = 0; }
-void SpuGetVoiceEnvelope(int v, int16_t *env) { (void)v; if (env) *env = 0; }
-void SpuSetCommonAttr(void *attr) { (void)attr; }
-void SpuSetKey(int on, uint32_t voices) { (void)on; (void)voices; }
 int SpuSetReverbModeParam(void *attr) { (void)attr; return 0; }
 int SpuSetReverbVoice(int on, uint32_t voices) { (void)on; return (int)voices; }
 int SpuSetReverb(int on) { return on; }
 int SpuClearReverbWorkArea(int mode) { (void)mode; return 0; }
 void SsUtReverbOff(void) {}
-uint16_t SsPitchFromNote(int note, int fine, int cn, int cf) {
-    (void)note; (void)fine; (void)cn; (void)cf;
-    return 0x1000;
-}
 
 /* ---- memory card (libcard + libapi card events): no card in either slot -------------------- */
 

@@ -49,6 +49,7 @@ static void DebugHooks(void);
 static void RunVBlank(void) {
     s_vblanks++;
     PC_InputPoll();
+    PC_CdStreamVBlank();
     PC_GpuRunDueCallback();
     if (s_vsyncCallback && !s_inTick) {
         s_inTick = 1;
