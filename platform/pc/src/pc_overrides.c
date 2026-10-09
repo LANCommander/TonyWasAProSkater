@@ -159,6 +159,25 @@ uint32_t hleov_800858ac(uint32_t list, uint32_t flags) {
     if (on && n) {
         for (p = list, n = 0; p && n < 10000; p = *(uint32_t *)PSX_PTR(p + 28), n++)
             culled += (*(uint16_t *)PSX_PTR(p) & 0x8000) != 0;
+        /* Per-item identity tracking (not just the aggregate count): log items whose culled bit
+         * FLIPS vs the last time this exact list ran, to catch a subset flickering in/out that
+         * nets to a small aggregate delta. */
+        if (n > 200) {
+            static uint32_t prev_addr[512];
+            static uint8_t prev_culled[512];
+            static int prev_n;
+            uint32_t i = 0;
+            for (p = list; p && i < 512 && i < n; p = *(uint32_t *)PSX_PTR(p + 28), i++) {
+                uint8_t now_c = (*(uint16_t *)PSX_PTR(p) & 0x8000) != 0;
+                if (prev_n == (int)n && prev_addr[i] == p && prev_culled[i] != now_c)
+                    PC_Log("  flip f%u idx=%u item=%08x %s pos %d %d %d", pc_heartbeat, i, p,
+                           now_c ? "NOW_CULLED" : "NOW_VISIBLE", *(int32_t *)PSX_PTR(p + 4) >> 12,
+                           *(int32_t *)PSX_PTR(p + 8) >> 12, *(int32_t *)PSX_PTR(p + 12) >> 12);
+                prev_addr[i] = p;
+                prev_culled[i] = now_c;
+            }
+            prev_n = (int)n;
+        }
         uint32_t cam = *(uint32_t *)PSX_PTR(0x800d217c);
         PC_Log("cull f%u list %08x: %u items, %u culled (%u before), flags %x", pc_heartbeat, list, n,
                culled, before, flags);

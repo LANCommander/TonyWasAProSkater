@@ -44,9 +44,22 @@ extern "C" int FUN_80089ddc(unsigned long *, int);
 #define getaddr(p)     (unsigned long)((*(unsigned long *)(p)) & 0x00ffffff)
 #define addPrim(ot, p) setaddr(p, getaddr(ot)), setaddr(ot, p)
 
+#ifdef PC_PORT
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 void Db_Render() {
-	if (pOtherBuffer->RenderNow)
+	if (pOtherBuffer->RenderNow) {
+#ifdef PC_PORT
+		if (getenv("THPS_TRACE_CULL")) {
+			extern volatile unsigned pc_heartbeat;
+			fprintf(stderr, "db_render_stall f%u other=%p RenderNow=%d Rendering=%d\n", pc_heartbeat,
+			        (void *)pOtherBuffer, pOtherBuffer->RenderNow, pOtherBuffer->Rendering);
+		}
+#endif
 		Pause(1);
+	}
 
 	setRECT(&pDoubleBuffer->Window, 0, pDoubleBuffer->Top, 512, 240);
 	FUN_8008cf34(&pDoubleBuffer->Clip, &pDoubleBuffer->Window);
@@ -58,6 +71,12 @@ void Db_Render() {
 	FUN_80089ddc(pDoubleBuffer->OrderingTable, FUN_80048c74());
 
 	pDoubleBuffer->RenderNow = 1;
+#ifdef PC_PORT
+	if (getenv("THPS_TRACE_CULL")) {
+		extern volatile unsigned pc_heartbeat;
+		fprintf(stderr, "db_render f%u buf=%p\n", pc_heartbeat, (void *)pDoubleBuffer);
+	}
+#endif
 	SDoubleBuffer *q = DoubleBuffer;
 	SDoubleBuffer *p = q;
 

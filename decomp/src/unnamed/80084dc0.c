@@ -20,11 +20,24 @@ int FUN_80089790(E *, int, int);
 void FUN_8009736c(int, int, int);
 void FUN_800898ac(E *, E *, int);
 
+#ifdef PC_PORT
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 void FUN_80084dc0(P *p, int c) {
 	E *v = p->v;
 	int n = p->n;
 	int r = FUN_80089790(v, n, c);
 	E *w;
+
+#ifdef PC_PORT
+	if (getenv("THPS_TRACE_CULL")) {
+		extern volatile unsigned pc_heartbeat;
+		fprintf(stderr, "80084dc0 f%u p=%p n=%d c=%d r=%08x %s\n", pc_heartbeat, (void *)p, n, c, r,
+		        (r & 0x6000e000) ? "CULLED" : "drawn");
+	}
+#endif
 
 	v += n;
 

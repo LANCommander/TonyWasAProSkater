@@ -16,6 +16,11 @@ extern "C" {
 	#include <inline_c.h>
 }
 
+#ifdef PC_PORT
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
@@ -175,6 +180,24 @@ void M3d_Render(void *p) {
 		if (pItem->Flags & 0x8000)
 			goto next;
 
+#ifdef PC_PORT
+		if (getenv("THPS_TRACE_CULL")) {
+			static uchar prev_active[64];
+			static int prev_valid;
+			uchar reg = pItem->Region;
+			uchar now = PSXRegion[reg].Active != 0;
+			if (reg < 64) {
+				if (prev_valid && prev_active[reg] != now) {
+					extern volatile unsigned pc_heartbeat;
+					fprintf(stderr, "region f%u region=%u Active %u->%u item=%p\n", pc_heartbeat,
+					        reg, prev_active[reg], now, (void *)pItem);
+				}
+				prev_active[reg] = now;
+			}
+			prev_valid = 1;
+		}
+#endif
+
 		if (!PSXRegion[pItem->Region].Active)
 			goto next;
 
@@ -287,12 +310,33 @@ void M3d_Render(void *p) {
 			if (pModel->LODDist < 0) {
 				if (-((short)(pModel->LODDist * pCurrentViewport->Fov / 191) * DpqMax >> 10) <
 				        Position.vz &&
-				    pModel->NextLOD == 0xffff)
+				    pModel->NextLOD == 0xffff) {
+#ifdef PC_PORT
+					if (getenv("THPS_TRACE_CULL")) {
+						extern volatile unsigned pc_heartbeat;
+						fprintf(stderr,
+						        "lodskip(neg) f%u item=%p model=%p LODDist=%d vz=%d thresh=%d\n",
+						        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->LODDist,
+						        Position.vz,
+						        -((short)(pModel->LODDist * pCurrentViewport->Fov / 191) * DpqMax >>
+						          10));
+					}
+#endif
 					goto next;
+				}
 			} else {
 				if (pModel->LODDist * pCurrentViewport->Fov / 191 < Position.vz &&
-				    pModel->NextLOD == 0xffff)
+				    pModel->NextLOD == 0xffff) {
+#ifdef PC_PORT
+					if (getenv("THPS_TRACE_CULL")) {
+						extern volatile unsigned pc_heartbeat;
+						fprintf(stderr, "lodskip(pos) f%u item=%p model=%p LODDist=%d vz=%d thresh=%d\n",
+						        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->LODDist,
+						        Position.vz, pModel->LODDist * pCurrentViewport->Fov / 191);
+					}
+#endif
 					goto next;
+				}
 			}
 		} else {
 			while (pModel->LODDist * pCurrentViewport->Fov / 191 < Position.vz &&
@@ -310,6 +354,16 @@ void M3d_Render(void *p) {
 			Fast = 1;
 		else
 			Fast = 0;
+
+#ifdef PC_PORT
+		if (getenv("THPS_TRACE_CULL")) {
+			extern volatile unsigned pc_heartbeat;
+			fprintf(stderr,
+			        "render f%u item=%p model=%p verts=%d vz=%d radius=%d yon10=%d Fast=%d\n",
+			        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->NumVertices, Position.vz,
+			        pModel->Radius >> 12, (ushort)(pCurrentViewport->Yon / 10), Fast);
+		}
+#endif
 
 		if (ANGLES_SET(pItem)) {
 			FUN_8008b3d4(&pItem->Angles, &WorldTransform);

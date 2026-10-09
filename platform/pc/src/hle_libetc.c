@@ -49,6 +49,7 @@ static void DebugHooks(void);
 static void RunVBlank(void) {
     s_vblanks++;
     PC_InputPoll();
+    PC_GpuRunDueCallback();
     if (s_vsyncCallback && !s_inTick) {
         s_inTick = 1;
         ((void (*)(void))PSX_PTR(s_vsyncCallback))();
@@ -156,6 +157,8 @@ int VSync(int mode) {
 
 int VSyncCallback(uint32_t func) {
     s_vsyncCallback = func;
+    if (getenv("THPS_TRACE_CULL"))
+        fprintf(stderr, "VSyncCallback(%08x) registered at f%u\n", func, pc_heartbeat);
     return 0;
 }
 

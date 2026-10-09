@@ -1,5 +1,9 @@
 /* FUN_80024fa4 (0x80024fa4) */
 #include "names.h"
+#ifdef PC_PORT
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 typedef struct {
 	char pad[0x80a8];
 	unsigned f80a8;
@@ -182,4 +186,14 @@ L90:
 	Flash_Display();
 
 	PolyBufferBytesUsed = (pPoly & 0x7fffffff) - (pDoubleBuffer->f80a8 & 0x7fffffff);
+
+#ifdef PC_PORT
+	if (getenv("THPS_TRACE_CULL")) {
+		extern volatile unsigned pc_heartbeat;
+		extern unsigned long PolyBufferEnd;
+		fprintf(stderr, "polybuf f%u used=%d cap=%ld remaining=%ld\n", pc_heartbeat,
+		        PolyBufferBytesUsed, (long)(PolyBufferEnd & 0x7fffffff) - (long)(pDoubleBuffer->f80a8 & 0x7fffffff),
+		        (long)(PolyBufferEnd & 0x7fffffff) - (long)(pPoly & 0x7fffffff));
+	}
+#endif
 }

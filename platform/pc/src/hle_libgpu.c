@@ -21,6 +21,7 @@ static int s_debug;
 static void (*s_drawsync_cb)(void);
 static DRAWENV s_drawenv;
 static DISPENV s_dispenv;
+static int s_cb_scheduled;
 
 /* ---- packet word builders (shared with SetDrawEnv and the DR_* setters) ---- */
 
@@ -98,6 +99,8 @@ u_long DrawSyncCallback(void (*func)(void))
 {
     void (*old)(void) = s_drawsync_cb;
     s_drawsync_cb = func;
+    if (getenv("THPS_TRACE_CULL"))
+        fprintf(stderr, "DrawSyncCallback(%p) old=%p\n", (void *)func, (void *)old);
     return (u_long)(uintptr_t)old;
 }
 
@@ -249,17 +252,32 @@ void DrawOTag(u_long *p)
     }
     s_in_draw = 1;
     PC_GpuDrawChain((const uint32_t *)p);
-    for (int rounds = 0;; rounds++) {
-        if (s_drawsync_cb && rounds < MAX_CB_ROUNDS)
-            s_drawsync_cb();
-        if (s_npending == 0)
-            break;
+    while (s_npending) {
         u_long *next = s_pending[0];
         memmove(&s_pending[0], &s_pending[1], (size_t)(s_npending - 1) * sizeof s_pending[0]);
         s_npending--;
         PC_GpuDrawChain((const uint32_t *)next);
     }
     s_in_draw = 0;
+    /* Real GPU drawing is asynchronous DMA: games that register a DrawSyncCallback (like THPS1's
+     * double-buffer state machine, Db_CallBack) expect it to fire once the GPU goes idle, roughly
+     * a vblank after this submission -- not before this function even returns. Calling it
+     * synchronously here collapses that multi-tick pipeline into one tick, which desyncs any game
+     * logic gated on "is the GPU still busy" (see PC_GpuRunDueCallback, called once per vblank). */
+    if (s_drawsync_cb)
+        s_cb_scheduled = 1;
+}
+
+/* Fire any DrawSyncCallback scheduled by a DrawOTag since the last tick -- called once per vblank,
+ * before the game's own VSync callback runs, so state it depends on (e.g. Db_CallBack clearing
+ * THPS1's "Rendering" flag) is settled by the time game logic checks it that tick. */
+void PC_GpuRunDueCallback(void)
+{
+    if (!s_cb_scheduled)
+        return;
+    s_cb_scheduled = 0;
+    if (s_drawsync_cb)
+        s_drawsync_cb();
 }
 
 void DrawOTagEnv(u_long *p, DRAWENV *env)

@@ -3,7 +3,21 @@
  * checked against 32 bits. Division is the hardware's UNR (Newton-Raphson) reciprocal. */
 #include "pc_gte.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+extern volatile uint32_t pc_heartbeat;
+static int nclip_dump_active(void)
+{
+	static int from = -2, to = -2;
+	if (from == -2) {
+		const char *e = getenv("THPS_GPUDUMP");
+		if (!e || sscanf(e, "%d-%d", &from, &to) != 2)
+			from = to = -1;
+	}
+	return from >= 0 && (int)pc_heartbeat >= from && (int)pc_heartbeat <= to;
+}
 
 typedef struct {
 	/* data registers */
@@ -134,6 +148,7 @@ static inline void set_mac_ir(int i, int64_t v, int shift, int lm)
 
 static void push_sz(int64_t z)
 {
+	int64_t raw = z;
 	if (z < 0) {
 		z = 0;
 		g.flag |= F_SZ3_OTZ;
@@ -141,28 +156,44 @@ static void push_sz(int64_t z)
 		z = 0xFFFF;
 		g.flag |= F_SZ3_OTZ;
 	}
+	if (nclip_dump_active() && raw != z)
+		fprintf(stderr, "push_sz f%u raw=%lld clamped_to=%lld\n", pc_heartbeat, (long long)raw,
+		        (long long)z);
 	g.sz[0] = g.sz[1];
 	g.sz[1] = g.sz[2];
 	g.sz[2] = g.sz[3];
 	g.sz[3] = (uint16_t)z;
 }
 
+/* THPS_GPUDUMP diagnostic only: sticky per-vertex saturation, parallel to the sx/sy ring, so
+ * cmd_nclip can tell whether any of the 3 vertices it's testing got clamped (g.flag is reset at
+ * the top of every GTE op, so it can't see a prior RTPS's saturation by the time NCLIP runs). */
+static int s_sat_ring[3];
+
 static void push_sxy(int64_t x, int64_t y)
 {
+	int sat = 0;
 	if (x < -0x400) {
 		x = -0x400;
 		g.flag |= F_SX2;
+		sat = 1;
 	} else if (x > 0x3FF) {
 		x = 0x3FF;
 		g.flag |= F_SX2;
+		sat = 1;
 	}
 	if (y < -0x400) {
 		y = -0x400;
 		g.flag |= F_SY2;
+		sat = 1;
 	} else if (y > 0x3FF) {
 		y = 0x3FF;
 		g.flag |= F_SY2;
+		sat = 1;
 	}
+	s_sat_ring[0] = s_sat_ring[1];
+	s_sat_ring[1] = s_sat_ring[2];
+	s_sat_ring[2] = sat;
 	g.sx[0] = g.sx[1];
 	g.sy[0] = g.sy[1];
 	g.sx[1] = g.sx[2];
@@ -295,6 +326,12 @@ static void cmd_nclip(void)
 	            (int64_t)g.sx[0] * g.sy[2] - (int64_t)g.sx[1] * g.sy[0] - (int64_t)g.sx[2] * g.sy[1];
 	mac0_check(v);
 	g.mac[0] = (int32_t)v;
+	if (nclip_dump_active()) {
+		int sat = s_sat_ring[0] || s_sat_ring[1] || s_sat_ring[2];
+		fprintf(stderr, "nclip f%u (%d,%d)-(%d,%d)-(%d,%d) area=%lld%s\n", pc_heartbeat, g.sx[0],
+		        g.sy[0], g.sx[1], g.sy[1], g.sx[2], g.sy[2], (long long)v,
+		        sat ? " SATURATED" : "");
+	}
 }
 
 static void cmd_op(int shift, int lm)
@@ -320,6 +357,10 @@ static void cmd_avsz3(void)
 	mac0_check(v);
 	g.mac[0] = (int32_t)v;
 	set_otz(v >> 12);
+	if (nclip_dump_active())
+		fprintf(stderr, "avsz3 f%u sz=%u,%u,%u zsf3=%d raw=%lld otz=%u%s\n", pc_heartbeat, g.sz[1],
+		        g.sz[2], g.sz[3], g.zsf3, (long long)(v >> 12), g.otz,
+		        (g.flag & F_SZ3_OTZ) ? " SAT" : "");
 }
 
 static void cmd_avsz4(void)
@@ -328,6 +369,10 @@ static void cmd_avsz4(void)
 	mac0_check(v);
 	g.mac[0] = (int32_t)v;
 	set_otz(v >> 12);
+	if (nclip_dump_active())
+		fprintf(stderr, "avsz4 f%u sz=%u,%u,%u,%u zsf4=%d raw=%lld otz=%u%s\n", pc_heartbeat, g.sz[0],
+		        g.sz[1], g.sz[2], g.sz[3], g.zsf4, (long long)(v >> 12), g.otz,
+		        (g.flag & F_SZ3_OTZ) ? " SAT" : "");
 }
 
 static void cmd_mvmva(uint32_t op, int shift, int lm)

@@ -82,9 +82,26 @@ void PC_GpuShutdown(void)
     }
 }
 
+extern volatile uint32_t pc_heartbeat;
+
 void PC_GpuPresent(void)
 {
     PC_GpuVBlank();
+
+    {
+        static int from = -2, to = -2;
+        if (from == -2) {
+            const char *e = getenv("THPS_GPUDUMP");
+            if (!e || sscanf(e, "%d-%d", &from, &to) != 2)
+                from = to = -1;
+        }
+        if (from >= 0 && (int)pc_heartbeat >= from && (int)pc_heartbeat <= to) {
+            PC_GpuDisplay dd;
+            PC_GpuGetDisplay(&dd);
+            fprintf(stderr, "present f%u disp_x=%d disp_y=%d\n", pc_heartbeat, dd.x, dd.y);
+        }
+    }
+
     if (s_headless || !s_texture)
         return;
 

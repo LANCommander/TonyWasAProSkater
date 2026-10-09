@@ -23,11 +23,24 @@ void FUN_80086500(int, int);
 void FUN_8009736c(int, int, int);
 void FUN_80086f40(E *, E *, int);
 
+#ifdef PC_PORT
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 void FUN_80085018(P *p, int c) {
 	E *v = p->v;
 	int n = p->n;
 	int r = FUN_80086d2c(v, n, c);
 	E *w;
+
+#ifdef PC_PORT
+	if (getenv("THPS_TRACE_CULL")) {
+		extern volatile unsigned pc_heartbeat;
+		fprintf(stderr, "80085018 f%u p=%p n=%d c=%d r=%08x %s\n", pc_heartbeat, (void *)p, n, c, r,
+		        (r & 0xbf) ? "CULLED" : "drawn");
+	}
+#endif
 
 	if (TestTheWater)
 		FUN_80086500(n, WaterClipValue);

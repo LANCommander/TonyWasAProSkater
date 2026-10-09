@@ -15,6 +15,11 @@ extern int FUN_80048c74(void);
 extern int FUN_8008c94c(void *a);
 extern int FUN_8008c8dc(void *a);
 
+#ifdef PC_PORT
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 void FUN_80048d24(void) {
 	int i;
 	int *q;
@@ -28,6 +33,16 @@ void FUN_80048d24(void) {
 
 				q = &DoubleBuffer[i].arr[FUN_80048c74()];
 				FUN_8008c8dc(q - 1);
+#ifdef PC_PORT
+				if (getenv("THPS_TRACE_CULL")) {
+					extern volatile unsigned pc_heartbeat;
+					fprintf(stderr, "d24_fired f%u buf=%d\n", pc_heartbeat, i);
+				}
+#endif
+			} else if (getenv("THPS_TRACE_CULL")) {
+				extern volatile unsigned pc_heartbeat;
+				fprintf(stderr, "d24_blocked f%u buf=%d Rendering=%d,%d Visible=%d\n", pc_heartbeat,
+				        i, DoubleBuffer[i].f78, DoubleBuffer[1 - i].f78, DoubleBuffer[i].f70);
 			}
 		}
 	}

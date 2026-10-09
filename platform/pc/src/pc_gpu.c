@@ -107,9 +107,12 @@ typedef struct {
 static void prim_from_state(Prim *p, int textured, int raw, int semi, uint16_t clut)
 {
     uint32_t dm = gs.drawmode;
+    static int nosemi_dbg = -1;
+    if (nosemi_dbg < 0)
+        nosemi_dbg = getenv("THPS_DBG_NOSEMI") && atoi(getenv("THPS_DBG_NOSEMI"));
     p->textured = textured;
     p->raw = textured && raw;
-    p->semi = semi;
+    p->semi = semi && !nosemi_dbg;
     p->abr = (dm >> 5) & 3;
     p->tp_x = (dm & 0xf) * 64;
     p->tp_y = ((dm >> 4) & 1) * 256;
@@ -175,6 +178,39 @@ static inline uint16_t blend(uint32_t fg, uint32_t bg, int abr)
     return (uint16_t)c;
 }
 
+/* THPS_GPUDUMP pixel-level stats: how many pixels a triangle's scanline loop attempted vs how many
+ * bailed out on a transparent (zero) texel, reset per-triangle by draw_triangle. */
+uint32_t g_tex_attempts, g_tex_skips;
+int g_tex_stat_on;
+
+/* THPS_GPUDUMP + THPS_GPUDUMPBOX="x0,y0,x1,y1": count every shade_pixel entry (regardless of
+ * transparency outcome) whose (x,y) falls in the box, to tell "nothing ever targeted this pixel"
+ * apart from "something targeted it but bailed." */
+static void coverage_hit(int x, int y)
+{
+    static int from = -2, to = -2, bx0, by0, bx1, by1;
+    static uint32_t frame = ~0u, n;
+    if (from == -2) {
+        const char *e = getenv("THPS_GPUDUMP");
+        if (!e || sscanf(e, "%d-%d", &from, &to) != 2)
+            from = to = -1;
+        const char *b = getenv("THPS_GPUDUMPBOX");
+        if (!b || sscanf(b, "%d,%d,%d,%d", &bx0, &by0, &bx1, &by1) != 4)
+            bx0 = by0 = bx1 = by1 = 0;
+    }
+    if (from < 0 || (int)pc_heartbeat < from || (int)pc_heartbeat > to)
+        return;
+    if (frame != pc_heartbeat) {
+        if (frame != ~0u)
+            fprintf(stderr, "coverage f%u: %u shade_pixel calls hit box %d,%d-%d,%d\n", frame, n, bx0,
+                    by0, bx1, by1);
+        frame = pc_heartbeat;
+        n = 0;
+    }
+    if (x >= bx0 && x <= bx1 && y >= by0 && y <= by1)
+        n++;
+}
+
 static inline void shade_pixel(const Prim *p, int x, int y, unsigned r, unsigned g, unsigned b,
                                unsigned u, unsigned v)
 {
@@ -182,8 +218,20 @@ static inline void shade_pixel(const Prim *p, int x, int y, unsigned r, unsigned
     int dy = p->dither ? (y & 3) : 2, dx = p->dither ? (x & 3) : 3;
     const uint8_t *lut = s_dither_lut[dy][dx];
 
+    coverage_hit(x, y);
+
     if (p->textured) {
         uint16_t t = sample_texel(p, u & 0xff, v & 0xff);
+        if (g_tex_stat_on) {
+            g_tex_attempts++;
+            if (t == 0)
+                g_tex_skips++;
+        }
+        static int opaque_dbg = -1;
+        if (opaque_dbg < 0)
+            opaque_dbg = getenv("THPS_DBG_OPAQUE") && atoi(getenv("THPS_DBG_OPAQUE"));
+        if (t == 0 && opaque_dbg)
+            t = 0x8000u | 0x1ce7u; /* mid-gray, non-transparent: bisection probe */
         if (t == 0)
             return;
         if (p->raw) {
@@ -290,16 +338,52 @@ static int tri_too_big(const Vtx *a, const Vtx *b, const Vtx *c)
     if (b->y > maxy) maxy = b->y;
     if (c->y < miny) miny = c->y;
     if (c->y > maxy) maxy = c->y;
-    return (maxx - minx) >= 1024 || (maxy - miny) >= 512;
+    int big = (maxx - minx) >= 1024 || (maxy - miny) >= 512;
+    if (big && getenv("THPS_GPUSTATS")) {
+        static uint32_t frame = ~0u, n;
+        if (frame != pc_heartbeat) {
+            if (n)
+                fprintf(stderr, "gpu f%u: %u oversized triangles rejected\n", frame, n);
+            frame = pc_heartbeat;
+            n = 0;
+        }
+        n++;
+        if (n <= 3)
+            fprintf(stderr, "  too-big tri (%d,%d)-(%d,%d)-(%d,%d)\n", a->x, a->y, b->x, b->y, c->x,
+                    c->y);
+    }
+    return big;
+}
+
+/* THPS_GPUDUMP=from-to: log every submitted triangle's raw vertices and final verdict for frames
+ * in that (inclusive) range, regardless of which early-out rejects it. */
+static int gpudump_active(void)
+{
+    static int from = -2, to = -2;
+    if (from == -2) {
+        const char *e = getenv("THPS_GPUDUMP");
+        if (e && sscanf(e, "%d-%d", &from, &to) == 2) {
+            /* ok */
+        } else {
+            from = to = -1;
+        }
+    }
+    return from >= 0 && (int)pc_heartbeat >= from && (int)pc_heartbeat <= to;
 }
 
 static void draw_triangle(const Prim *p, int gouraud, const Vtx *v0, const Vtx *v1, const Vtx *v2)
 {
     const Vtx *t;
     unsigned cv;
+    int dump = gpudump_active();
+    const Vtx *o0 = v0, *o1 = v1, *o2 = v2;
 
-    if (tri_too_big(v0, v1, v2))
+    if (tri_too_big(v0, v1, v2)) {
+        if (dump)
+            fprintf(stderr, "tri f%u (%d,%d,rgb%02x%02x%02x)-(%d,%d)-(%d,%d) -> TOO_BIG\n",
+                    pc_heartbeat, o0->x, o0->y, o0->r, o0->g, o0->b, o1->x, o1->y, o2->x, o2->y);
         return;
+    }
 
     /* sort by y, tracking which vertex is the top-left "core" vertex */
     if (v1->x <= v0->x)
@@ -322,8 +406,12 @@ static void draw_triangle(const Prim *p, int gouraud, const Vtx *v0, const Vtx *
     }
     cv >>= 1;
 
-    if (v0->y == v2->y)
+    if (v0->y == v2->y) {
+        if (dump)
+            fprintf(stderr, "tri f%u (%d,%d)-(%d,%d)-(%d,%d) -> FLAT_Y\n", pc_heartbeat, o0->x,
+                    o0->y, o1->x, o1->y, o2->x, o2->y);
         return;
+    }
 
     int64_t base_coord = xfp_make(v0->x);
     int64_t base_step = xfp_step(v2->x - v0->x, v2->y - v0->y);
@@ -341,8 +429,25 @@ static void draw_triangle(const Prim *p, int gouraud, const Vtx *v0, const Vtx *
     /* attribute gradients: det(A, B) over the screen-space determinant */
 #define CALCIS(A, B) ((int64_t)(v1->A - v0->A) * (v2->B - v1->B) - (int64_t)(v2->A - v1->A) * (v1->B - v0->B))
     int64_t denom = CALCIS(x, y);
-    if (denom == 0)
+    if (denom == 0) {
+        if (dump)
+            fprintf(stderr, "tri f%u (%d,%d)-(%d,%d)-(%d,%d) -> ZERO_AREA\n", pc_heartbeat, o0->x,
+                    o0->y, o1->x, o1->y, o2->x, o2->y);
         return;
+    }
+    {
+        static long mindenom_dbg = -1;
+        if (mindenom_dbg < 0) {
+            const char *e = getenv("THPS_DBG_MINDENOM");
+            mindenom_dbg = e ? atol(e) : 0;
+        }
+        if (mindenom_dbg && (denom < mindenom_dbg && denom > -mindenom_dbg)) {
+            if (dump)
+                fprintf(stderr, "tri f%u (%d,%d)-(%d,%d)-(%d,%d) denom=%lld -> MINDENOM_SKIP\n",
+                        pc_heartbeat, o0->x, o0->y, o1->x, o1->y, o2->x, o2->y, (long long)denom);
+            return;
+        }
+    }
     IDeltas d;
     memset(&d, 0, sizeof d);
     if (gouraud) {
@@ -358,8 +463,19 @@ static void draw_triangle(const Prim *p, int gouraud, const Vtx *v0, const Vtx *
         d.dv_dx = (uint32_t)(int32_t)(CALCIS(v, y) * (1 << FBS) / denom) << FPP;
         d.du_dy = (uint32_t)(int32_t)(CALCIS(x, u) * (1 << FBS) / denom) << FPP;
         d.dv_dy = (uint32_t)(int32_t)(CALCIS(x, v) * (1 << FBS) / denom) << FPP;
+        if (dump)
+            fprintf(stderr,
+                    "  tex f%u (%d,%d)-(%d,%d)-(%d,%d) denom=%lld du_dx=%d du_dy=%d dv_dx=%d "
+                    "dv_dy=%d u=%d,%d,%d v=%d,%d,%d\n",
+                    pc_heartbeat, o0->x, o0->y, o1->x, o1->y, o2->x, o2->y, (long long)denom,
+                    (int32_t)d.du_dx, (int32_t)d.du_dy, (int32_t)d.dv_dx, (int32_t)d.dv_dy, o0->u,
+                    o1->u, o2->u, o0->v, o1->v, o2->v);
     }
 #undef CALCIS
+
+    if (dump)
+        fprintf(stderr, "tri f%u (%d,%d)-(%d,%d)-(%d,%d) clip %d,%d-%d,%d -> drawn\n", pc_heartbeat,
+                o0->x, o0->y, o1->x, o1->y, o2->x, o2->y, gs.clip_l, gs.clip_t, gs.clip_r, gs.clip_b);
 
     const Vtx *vs[3] = { v0, v1, v2 };
     const Vtx *core = vs[cv];
@@ -396,6 +512,9 @@ static void draw_triangle(const Prim *p, int gouraud, const Vtx *v0, const Vtx *
     part[vo ^ 1].step[!rf] = base_step;
     part[vo ^ 1].dec = vp != 0;
 
+    g_tex_stat_on = dump && p->textured;
+    g_tex_attempts = g_tex_skips = 0;
+
     for (int i = 0; i < 2; i++) {
         int y = part[i].y, yb = part[i].y_bound;
         int64_t lc = part[i].x[0], ls = part[i].step[0];
@@ -422,6 +541,12 @@ static void draw_triangle(const Prim *p, int gouraud, const Vtx *v0, const Vtx *
                 rc += rs;
             }
         }
+    }
+
+    if (g_tex_stat_on) {
+        fprintf(stderr, "  pix f%u (%d,%d)-(%d,%d)-(%d,%d) attempts=%u zero_skips=%u\n", pc_heartbeat,
+                o0->x, o0->y, o1->x, o1->y, o2->x, o2->y, g_tex_attempts, g_tex_skips);
+        g_tex_stat_on = 0;
     }
 }
 
@@ -557,6 +682,37 @@ static void cmd_polygon(const uint32_t *w)
     prim_from_state(&p, tex, raw, semi, clut);
     int shaded = gouraud && !p.raw;
     p.dither = dither_on() && (shaded || (tex && !p.raw));
+    /* THPS_GPUBT="frame,x0,y0,x1,y1": one-shot native backtrace the first time a triangle with a
+     * vertex in that box is submitted on that exact heartbeat -- to identify which (possibly
+     * unnamed/hand-written-MIPS) caller submits a specific piece of geometry. */
+    {
+        static int from = -2, bx0, by0, bx1, by1, fired;
+        if (from == -2) {
+            const char *e = getenv("THPS_GPUBT");
+            if (!e || sscanf(e, "%d,%d,%d,%d,%d", &from, &bx0, &by0, &bx1, &by1) != 5)
+                from = -1;
+        }
+        if (!fired && from >= 0 && (int)pc_heartbeat == from) {
+            for (int vi = 0; vi < n; vi++) {
+                if (v[vi].x >= bx0 && v[vi].x <= bx1 && v[vi].y >= by0 && v[vi].y <= by1) {
+                    fired = 1;
+                    extern void PC_Backtrace(const char *);
+                    char why[128];
+                    snprintf(why, sizeof why, "GPUBT hit: v%d=(%d,%d) f%u", vi, v[vi].x, v[vi].y,
+                             pc_heartbeat);
+                    PC_Backtrace(why);
+                    break;
+                }
+            }
+        }
+    }
+    if (gpudump_active())
+        fprintf(stderr,
+                "poly f%u quad=%d tex=%d semi=%d abr=%d raw=%d v0=(%d,%d,rgb%02x%02x%02x) "
+                "v1=(%d,%d,rgb%02x%02x%02x) v2=(%d,%d,rgb%02x%02x%02x)%s\n",
+                pc_heartbeat, quad, tex, semi, p.abr, raw, v[0].x, v[0].y, v[0].r, v[0].g, v[0].b,
+                v[1].x, v[1].y, v[1].r, v[1].g, v[1].b, v[2].x, v[2].y, v[2].r, v[2].g, v[2].b,
+                quad ? " +quad" : "");
     draw_triangle(&p, shaded, &v[0], &v[1], &v[2]);
     if (quad)
         draw_triangle(&p, shaded, &v[1], &v[2], &v[3]);
@@ -820,16 +976,30 @@ static void execute(const uint32_t *w)
         gs.e3 = w[0] & 0xfffff;
         gs.clip_l = (int)(w[0] & 0x3ff);
         gs.clip_t = (int)((w[0] >> 10) & 0x1ff);
+        if (getenv("THPS_DBG_NOCLIP")) {
+            gs.clip_l = 0;
+            gs.clip_t = 0;
+        }
+        if (gpudump_active())
+            fprintf(stderr, "env f%u E3 clip_l=%d clip_t=%d\n", pc_heartbeat, gs.clip_l, gs.clip_t);
         break;
     case 0xe4:
         gs.e4 = w[0] & 0xfffff;
         gs.clip_r = (int)(w[0] & 0x3ff);
         gs.clip_b = (int)((w[0] >> 10) & 0x1ff);
+        if (getenv("THPS_DBG_NOCLIP")) {
+            gs.clip_r = VRAM_W - 1;
+            gs.clip_b = VRAM_H - 1;
+        }
+        if (gpudump_active())
+            fprintf(stderr, "env f%u E4 clip_r=%d clip_b=%d\n", pc_heartbeat, gs.clip_r, gs.clip_b);
         break;
     case 0xe5:
         gs.e5 = w[0] & 0x3fffff;
         gs.ofs_x = sext11(w[0]);
         gs.ofs_y = sext11(w[0] >> 11);
+        if (gpudump_active())
+            fprintf(stderr, "env f%u E5 ofs_x=%d ofs_y=%d\n", pc_heartbeat, gs.ofs_x, gs.ofs_y);
         break;
     case 0xe6:
         gs.mask_set = (int)(w[0] & 1);
@@ -957,6 +1127,9 @@ void PC_GpuWriteGP1(uint32_t word)
     case 0x05:
         gs.disp_x = (int)(v & 0x3ff);
         gs.disp_y = (int)((v >> 10) & 0x1ff);
+        if (gpudump_active())
+            fprintf(stderr, "env f%u GP1(05) disp_x=%d disp_y=%d\n", pc_heartbeat, gs.disp_x,
+                    gs.disp_y);
         break;
     case 0x06:
         gs.h_start = (int)(v & 0xfff);

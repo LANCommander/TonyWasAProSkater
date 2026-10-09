@@ -34,6 +34,10 @@ uint16_t *PC_GpuVram(void);
 /* Present the current display area (GP1 display start/mode) to the window. Called once per VSync. */
 void PC_GpuPresent(void);
 
+/* Fire a DrawSyncCallback scheduled by DrawOTag since the last tick (deferred to approximate real,
+ * asynchronous GPU completion timing). Called once per vblank, before the game's VSync callback. */
+void PC_GpuRunDueCallback(void);
+
 /* Write the whole VRAM (or the display area) to a .bmp, for debugging. */
 int PC_GpuDumpVram(const char *path);
 int PC_GpuDumpDisplay(const char *path);
