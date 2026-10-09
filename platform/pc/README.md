@@ -48,7 +48,8 @@ Needs MSYS2 with the `mingw32` (i686) toolchain and SDL2
 
 - `extern/thps1_retail/SLUS_008.60` (the USA executable), and
 - `extern/thps1_disc/thps1.bin`, a raw MODE2/2352 image of the USA disc
-  (`chdman extractcd -i "Tony Hawk's Pro Skater (USA).chd" -o thps1.cue -ob thps1.bin`).
+  (`chdman extractcd -i "Tony Hawk's Pro Skater (USA).chd" -o thps1.cue -ob thps1.bin`), needed
+  for the first startup only.
 
 ```
 python tools/psyq_sigmatch.py          # once: names the Psy-Q library functions (build/psyq_names.tsv)
@@ -56,22 +57,34 @@ python platform/pc/tools/build.py      # -> build/pc/thps.exe
 build/pc/thps.exe
 ```
 
-On the first startup the port extracts game data from the disc image into `Data/` next to
-`thps.exe` (`src/pc_assets.c`), and from then on reads those files instead of the disc. So far
-that is the STR files, kept as raw 2352-byte sectors (XA audio intact; ffmpeg and jPSXdec play
-them):
+On the first startup the port extracts the game data from the disc image into `Data/` next to
+`thps.exe` (`src/pc_assets.c`) and from then on reads only those files: after that the disc image
+is not needed (it is only opened again if something is missing).
 
 | path | what |
 |---|---|
+| `Data/Levels/` | level geometry (`sk<level>*.psx`) |
+| `Data/Scripts/` | level trigger scripts (`*.trg`) |
+| `Data/Models/` | skaters, cars, medals, items (`*.psx`) |
+| `Data/Textures/` | images (`*.bmp`) |
+| `Data/Sounds/` | sound banks (`*.vab`) |
+| `Data/Fonts/`, `Data/Packs/`, `Data/Demos/`, `Data/Text/`, `Data/Misc/` | fonts, PRE archives, attract-mode replays, credits text, the rest |
 | `Data/Movies/*.STR` | the full-screen movies |
 | `Data/Music/*.STR` | the soundtrack (XA audio plus the 96x64 video the front end shows) |
 | `Data/Music/Playlist.m3u` | the song order, written once from the game's own table, then yours to edit |
+| `Data/Manifest.txt` | the files that came from `CD.WAD`; written last, so extraction resumes if interrupted |
 
-The file list and which files are songs come from the retail executable's movie table. Missing
-files are extracted again on the next start; the playlist is never overwritten (delete it to get
-the default back). Playlist entries are relative to `Data/Music` or absolute; an STR the game
-doesn't know plays with its first song's settings. Everything else still comes from the disc
-image, so it is still required.
+The game's own indexes say what to extract: `CD.HED` lists the files packed in `CD.WAD`
+(extracted with their names, by type; the level codes come from the `sk<level>_t.trg` scripts),
+and the retail executable's movie table lists the STR files and which are songs. STR files keep
+their raw 2352-byte sectors (XA audio intact; ffmpeg and jPSXdec play them).
+
+At runtime files are found by name anywhere under `Data/`. `src/pc_fileio.c` replaces the game's
+CD.WAD loader (FileIO_Open/Load/Continue/Sync) with plain file reads; STR files are mounted at
+virtual CD positions for the streaming code. Missing files are extracted again on the next start
+(with the disc image present); the playlist is never overwritten (delete it to get the default
+back). Playlist entries are relative to `Data/Music` or absolute; an STR the game doesn't know
+plays with its first song's settings.
 
 The build compiles every TU in `decomp/matched.tsv` (and the near-miss sources in
 `decomp/nearmiss.tsv`), translates the remaining MIPS with `tools/mips2c.py`, generates the glue in

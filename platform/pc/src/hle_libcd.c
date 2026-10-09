@@ -6,6 +6,9 @@
  * range comes from the file. So the game's own CD code (Setloc + CdRead2 for the songs and the
  * movies) runs unchanged on files that no longer need the disc.
  *
+ * The image itself is only opened when something has to come from it (first-startup extraction,
+ * or a file that isn't in Data/), so once the data is extracted it isn't needed at all.
+ *
  * Streaming (CdRead2 / CdlReadS, used for the music and the movies) reads from the current
  * location at the drive's speed, 75 or 150 sectors/s, paced on the vblank clock
  * (PC_CdStreamVBlank). With XA enabled (mode bit 0x40) audio sectors go through the XA decoder to
@@ -106,10 +109,11 @@ static void Locate(const uint8_t *param) {
 /* ---- mounted files ------------------------------------------------------------------------ */
 
 #define MAX_MOUNTS 256
-/* Mounted files start on the second after the image ends. CdIntToPos/CdPosToInt carry the
- * minute's tens digit in a nibble, so positions reach 159:59:74: room for the 26 STR files and
- * a few more songs. */
+/* Mounted files start past the end of the disc (the USA disc ends at LBA 280809), whether or not
+ * the image is open. CdIntToPos/CdPosToInt carry the minute's tens digit in a nibble, so
+ * positions reach 159:59:74: room for the 26 STR files and a few more songs. */
 #define MOUNT_ALIGN 75
+#define MOUNT_BASE (63 * 60 * 75)
 #define MOUNT_END (160 * 60 * 75 - 150)
 
 typedef struct {
@@ -144,7 +148,8 @@ int PC_CdMountFile(const char *path, uint32_t *lba, uint32_t *sectors) {
     _fseeki64(m->f, 0, SEEK_END);
     size = _ftelli64(m->f);
     if (!s_mountNext)
-        s_mountNext = (s_sectors + MOUNT_ALIGN) / MOUNT_ALIGN * MOUNT_ALIGN;
+        s_mountNext = s_sectors > MOUNT_BASE ? (s_sectors + MOUNT_ALIGN) / MOUNT_ALIGN * MOUNT_ALIGN
+                                             : MOUNT_BASE;
     if (s_mountNext + size / 2352 > MOUNT_END) {
         PC_Log("cannot mount %s: no CD positions left", full);
         fclose(m->f);
@@ -190,8 +195,9 @@ int PC_CdOpen(void) {
         found = FileExists(path);
     }
     if (!found)
-        PC_Fatal("No disc image found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro "
-                 "Skater (USA) next to SLUS_008.60 as thps1.bin, or set THPS_DISC.");
+        PC_Fatal("The game data has to be extracted from your disc first, and no disc image was "
+                 "found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro Skater (USA) next "
+                 "to SLUS_008.60 as thps1.bin, or set THPS_DISC.");
     s_disc = fopen(path, "rb");
     if (!s_disc)
         PC_Fatal("cannot open %s", path);
@@ -377,7 +383,6 @@ int CdControlB(uint8_t com, uint8_t *param, uint8_t *result) { return CdControl(
 int CdControlF(uint8_t com, uint8_t *param) { return CdControl(com, param, NULL); }
 
 int CdInit(void) {
-    PC_CdOpen();
     return 1;
 }
 

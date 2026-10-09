@@ -4,9 +4,15 @@
  *   Data/Movies/   the full-screen movies (*.STR)
  *   Data/Music/    the soundtrack (*.STR: XA audio + the small video the front end shows) and
  *                  Playlist.m3u, the order the songs play in (editable)
+ *   Data/Levels/   level geometry (sk<level>*.psx)    Data/Scripts/   level scripts (*.trg)
+ *   Data/Models/   skaters, cars, items (*.psx)       Data/Textures/  images (*.bmp)
+ *   Data/Sounds/   sound banks (*.vab)                Data/Fonts/     fonts (*.fnt)
+ *   Data/Packs/    PRE archives of small files        Data/Demos/     attract-mode replays (*.rec)
+ *   Data/Text/, Data/Misc/                            Data/Manifest.txt  what came from CD.WAD
  *
  * The extracted STR files keep every raw 2352-byte sector, so the XA audio survives and the files
- * play in tools that understand PlayStation STR (ffmpeg, jPSXdec). */
+ * play in tools that understand PlayStation STR (ffmpeg, jPSXdec). The CD.WAD files are the
+ * plain file contents. */
 #ifndef PC_ASSETS_H
 #define PC_ASSETS_H
 
@@ -22,7 +28,8 @@ void PC_AssetsInit(void);
  * thps.exe). */
 void PC_AssetsPath(char *out, int n, const char *rel);
 
-/* The extracted copy of a disc file ("\\SUICIDE.STR;1"): 1 and its path, or 0. */
+/* The file under Data/ with this name, in any folder ("\\SUICIDE.STR;1", "skware.psx"): 1 and
+ * its path, or 0. */
 int PC_AssetsFind(const char *discName, char *path, int n);
 
 #ifdef __cplusplus
