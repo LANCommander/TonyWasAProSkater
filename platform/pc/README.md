@@ -56,6 +56,23 @@ python platform/pc/tools/build.py      # -> build/pc/thps.exe
 build/pc/thps.exe
 ```
 
+On the first startup the port extracts game data from the disc image into `Data/` next to
+`thps.exe` (`src/pc_assets.c`), and from then on reads those files instead of the disc. So far
+that is the STR files, kept as raw 2352-byte sectors (XA audio intact; ffmpeg and jPSXdec play
+them):
+
+| path | what |
+|---|---|
+| `Data/Movies/*.STR` | the full-screen movies |
+| `Data/Music/*.STR` | the soundtrack (XA audio plus the 96x64 video the front end shows) |
+| `Data/Music/Playlist.m3u` | the song order, written once from the game's own table, then yours to edit |
+
+The file list and which files are songs come from the retail executable's movie table. Missing
+files are extracted again on the next start; the playlist is never overwritten (delete it to get
+the default back). Playlist entries are relative to `Data/Music` or absolute; an STR the game
+doesn't know plays with its first song's settings. Everything else still comes from the disc
+image, so it is still required.
+
 The build compiles every TU in `decomp/matched.tsv` (and the near-miss sources in
 `decomp/nearmiss.tsv`), translates the remaining MIPS with `tools/mips2c.py`, generates the glue in
 `build/pc/gen/` and links. `build/pc/build_report.txt` lists compile errors and unresolved symbols.
@@ -68,6 +85,7 @@ Backspace = Select, Q/W/E/R = L1/R1/L2/R2. Game controllers work through SDL.
 | variable | effect |
 |---|---|
 | `THPS_EXE`, `THPS_DISC` | paths to `SLUS_008.60` and the disc image (else found next to the exe or in `extern/`) |
+| `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
 | `THPS_SCALE=n` | window scale (default 3) |
 | `THPS_HEADLESS=1` | no window (for automated runs) |
 | `THPS_FRAMES=n` | exit after n frames |
@@ -97,7 +115,9 @@ Boots through the front end (menus, skater/board/level select with 3D models) in
 the game plays with full 3D rendering. Sound effects and music play: `src/pc_spu.c` models the
 SPU (sound RAM, 24 ADPCM voices, ADSR, master volume, CD audio input) and mixes it to an SDL audio
 device. The songs are XA audio inside the soundtrack STR files; `src/hle_libcd.c` streams them like
-the drive does and `src/pc_xa.c` decodes them. Not done yet: SPU reverb, exact ADSR curves, FMV
+the drive does (from the extracted files, which it mounts at CD positions past the end of the
+image) and `src/pc_xa.c` decodes them. `src/pc_music.c` picks the next song from
+`Data/Music/Playlist.m3u` instead of the game's fixed rotation. Not done yet: SPU reverb, exact ADSR curves, FMV
 video (MDEC; full-screen movies are skipped), memory card (always "no card"), 64-bit build.
 Running every game function
 as translated MIPS (`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase.

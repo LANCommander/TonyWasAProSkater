@@ -35,10 +35,16 @@ void PC_InputInit(void);
 void PC_InputPoll(void);
 void PC_InputFillPadBuffer(int port, uint8_t *buf);
 
-/* CD image. */
+/* CD image. Sector reads see the disc image plus the mounted files. */
 int PC_CdOpen(void);
 int PC_CdReadSector(uint32_t lba, void *dst2048);       /* mode 2 form 1 user data */
 int PC_CdReadRawSector(uint32_t lba, void *dst2352);    /* whole raw sector */
+/* The disc image only: n raw sectors from lba, and ISO 9660 lookup (size in bytes). */
+int PC_CdReadDiscSectors(uint32_t lba, uint32_t n, void *dst);
+int PC_CdFindDiscFile(const char *name, uint32_t *lba, uint32_t *size);
+/* Make a file of raw 2352-byte sectors (an extracted STR) readable as if it were on the disc,
+ * at an LBA past the end of the image. Mounting the same file again gives the same LBA. */
+int PC_CdMountFile(const char *path, uint32_t *lba, uint32_t *sectors);
 /* Once per vblank: advance a CD stream (CdRead2/CdlReadS) by the sectors read since the last. */
 void PC_CdStreamVBlank(void);
 

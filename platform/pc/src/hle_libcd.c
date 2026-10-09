@@ -1,6 +1,11 @@
 /* libcd over a raw (2352-byte sector, MODE2/2352) disc image. Reads complete immediately; the
  * asynchronous API shape (CdRead + CdReadSync, callbacks) is kept.
  *
+ * Files extracted to Data/ (pc_assets.c) replace their disc copies: CdSearchFile finds the
+ * extracted file and "mounts" it at an LBA past the end of the image, and every read in that
+ * range comes from the file. So the game's own CD code (Setloc + CdRead2 for the songs and the
+ * movies) runs unchanged on files that no longer need the disc.
+ *
  * Streaming (CdRead2 / CdlReadS, used for the music and the movies) reads from the current
  * location at the drive's speed, 75 or 150 sectors/s, paced on the vblank clock
  * (PC_CdStreamVBlank). With XA enabled (mode bit 0x40) audio sectors go through the XA decoder to
@@ -12,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "pc_assets.h"
 #include "pc_hle.h"
 #include "pc_runtime.h"
 #include "pc_spu.h"
@@ -97,6 +103,71 @@ static void Locate(const uint8_t *param) {
     s_loc = lba;
 }
 
+/* ---- mounted files ------------------------------------------------------------------------ */
+
+#define MAX_MOUNTS 256
+/* Mounted files start on the second after the image ends. CdIntToPos/CdPosToInt carry the
+ * minute's tens digit in a nibble, so positions reach 159:59:74: room for the 26 STR files and
+ * a few more songs. */
+#define MOUNT_ALIGN 75
+#define MOUNT_END (160 * 60 * 75 - 150)
+
+typedef struct {
+    char path[MAX_PATH]; /* full path */
+    FILE *f;
+    uint32_t lba, sectors;
+} Mount;
+
+static Mount s_mounts[MAX_MOUNTS];
+static int s_nmounts;
+static uint32_t s_mountNext;
+
+int PC_CdMountFile(const char *path, uint32_t *lba, uint32_t *sectors) {
+    char full[MAX_PATH];
+    Mount *m;
+    long long size;
+    int i;
+    if (!GetFullPathNameA(path, sizeof full, full, NULL))
+        return 0;
+    for (i = 0; i < s_nmounts; i++)
+        if (!_stricmp(s_mounts[i].path, full)) {
+            *lba = s_mounts[i].lba;
+            *sectors = s_mounts[i].sectors;
+            return 1;
+        }
+    if (s_nmounts == MAX_MOUNTS)
+        return 0;
+    m = &s_mounts[s_nmounts];
+    m->f = fopen(full, "rb");
+    if (!m->f)
+        return 0;
+    _fseeki64(m->f, 0, SEEK_END);
+    size = _ftelli64(m->f);
+    if (!s_mountNext)
+        s_mountNext = (s_sectors + MOUNT_ALIGN) / MOUNT_ALIGN * MOUNT_ALIGN;
+    if (s_mountNext + size / 2352 > MOUNT_END) {
+        PC_Log("cannot mount %s: no CD positions left", full);
+        fclose(m->f);
+        return 0;
+    }
+    snprintf(m->path, sizeof m->path, "%s", full);
+    m->lba = s_mountNext;
+    m->sectors = (uint32_t)(size / 2352);
+    s_mountNext += (m->sectors + MOUNT_ALIGN) / MOUNT_ALIGN * MOUNT_ALIGN;
+    s_nmounts++;
+    PC_Trace("mounted %s at lba %u (%u sectors)", full, m->lba, m->sectors);
+    *lba = m->lba;
+    *sectors = m->sectors;
+    return 1;
+}
+
+static Mount *MountAt(uint32_t lba) {
+    for (int i = 0; i < s_nmounts; i++)
+        if (lba >= s_mounts[i].lba && lba < s_mounts[i].lba + s_mounts[i].sectors)
+            return &s_mounts[i];
+    return NULL;
+}
+
 static int FileExists(const char *p) {
     DWORD a = GetFileAttributesA(p);
     return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY);
@@ -130,13 +201,22 @@ int PC_CdOpen(void) {
     return 1;
 }
 
-int PC_CdReadRawSector(uint32_t lba, void *dst) {
+int PC_CdReadDiscSectors(uint32_t lba, uint32_t n, void *dst) {
     if (!s_disc && !PC_CdOpen())
         return 0;
-    if (lba >= s_sectors)
+    if (lba >= s_sectors || n > s_sectors - lba)
         return 0;
     _fseeki64(s_disc, (long long)lba * 2352, SEEK_SET);
-    return fread(dst, 1, 2352, s_disc) == 2352;
+    return fread(dst, 2352, n, s_disc) == n;
+}
+
+int PC_CdReadRawSector(uint32_t lba, void *dst) {
+    Mount *m = MountAt(lba);
+    if (m) {
+        _fseeki64(m->f, (long long)(lba - m->lba) * 2352, SEEK_SET);
+        return fread(dst, 1, 2352, m->f) == 2352;
+    }
+    return PC_CdReadDiscSectors(lba, 1, dst);
 }
 
 int PC_CdReadSector(uint32_t lba, void *dst) {
@@ -198,12 +278,12 @@ static int FindInDir(uint32_t lba, uint32_t size, const char *name, int len, uin
     return 0;
 }
 
-CdlFILE *CdSearchFile(CdlFILE *fp, const char *name) {
+int PC_CdFindDiscFile(const char *name, uint32_t *outLba, uint32_t *outSize) {
     uint8_t pvd[2048];
     uint32_t lba, size;
-    const char *p = name, *base;
+    const char *p = name;
     if (!PC_CdReadSector(16, pvd))
-        return NULL;
+        return 0;
     memcpy(&lba, pvd + 156 + 2, 4);
     memcpy(&size, pvd + 156 + 10, 4);
     while (*p) {
@@ -215,11 +295,24 @@ CdlFILE *CdSearchFile(CdlFILE *fp, const char *name) {
         e = p;
         while (*e && *e != '\\' && *e != '/')
             e++;
-        if (!FindInDir(lba, size, p, (int)(e - p), &lba, &size)) {
-            PC_Log("CdSearchFile(%s): not found", name);
-            return NULL;
-        }
+        if (!FindInDir(lba, size, p, (int)(e - p), &lba, &size))
+            return 0;
         p = e;
+    }
+    *outLba = lba;
+    *outSize = size;
+    return 1;
+}
+
+CdlFILE *CdSearchFile(CdlFILE *fp, const char *name) {
+    char path[MAX_PATH];
+    uint32_t lba, size;
+    const char *base;
+    if (PC_AssetsFind(name, path, sizeof path) && PC_CdMountFile(path, &lba, &size)) {
+        size *= 2048; /* ISO sizes count user data */
+    } else if (!PC_CdFindDiscFile(name, &lba, &size)) {
+        PC_Log("CdSearchFile(%s): not found", name);
+        return NULL;
     }
     CdIntToPos((int)lba, &fp->pos);
     fp->size = size;
@@ -447,12 +540,12 @@ static void StreamData(const uint8_t *u) {
 void PC_CdStreamVBlank(void) {
     static uint8_t raw[2352];
     static int16_t pcm[PC_XA_MAX_FRAMES * 2];
-    if (!s_streaming || !s_disc)
+    if (!s_streaming)
         return;
     s_streamAcc += (s_mode & CdlModeSpeed) ? 150 : 75;
     while (s_streamAcc >= 60) {
         s_streamAcc -= 60;
-        if (s_loc >= s_sectors || !PC_CdReadRawSector(s_loc, raw)) {
+        if (!PC_CdReadRawSector(s_loc, raw)) {
             StreamStop();
             return;
         }

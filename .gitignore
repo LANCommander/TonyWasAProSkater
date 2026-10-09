@@ -12,6 +12,9 @@
 # Analysis artifacts / intermediates
 /build/
 
+# PC port data extracted from the user's disc on first startup (copyrighted)
+Data/
+
 # Ghidra project (machine-local, regenerable via scripts\build_project.ps1)
 /ghidra/*.gpr
 /ghidra/*.rep/
