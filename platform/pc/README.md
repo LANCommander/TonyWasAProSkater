@@ -23,7 +23,12 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
   function pointers.
 - **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` modules and the pure parts of the Psy-Q
   libraries) is translated to C by `tools/mips2c.py`. The output runs on a register file, with
-  memory at the same addresses and GTE instructions going to the software GTE.
+  memory at the same addresses and GTE instructions going to the software GTE. Every game
+  function now has C instead: the hand-written ones are C interpretations listed in
+  `decomp/reimpl.tsv` (built like decompiled C), each checked against the retail code by a test
+  in `tests/` that runs the original MIPS in a small reference interpreter (`tests/mips_ref.c`).
+  `reimpl.tsv` also holds byte-exact C for the few compiler-generated C++ functions a native
+  build can't take from their matching source. What is still translated is Psy-Q library code.
 - **Hardware libraries** (GPU, CD, SPU, pad, memory card, BIOS) are high-level reimplementations
   ("HLE") of the Psy-Q entry points, in `src/`.
 

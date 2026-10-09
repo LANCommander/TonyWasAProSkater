@@ -1,0 +1,15 @@
+# C the PC port builds for functions whose matching source (in matched.tsv) can't give a native build
+# the function: hand-written assembly (the .s stays the matching source; this C is not byte-exact by
+# design), and compiler-generated C++ code a native C++ compiler doesn't emit the same way. Without a
+# row here the port would run the translated retail MIPS.
+# verify: a test in platform/pc/tests/ (against the retail code), or a matcher (cc/sym/div, as in
+# matched.tsv: byte-exact; node tools/check_all.mjs re-verifies those rows too)
+# src	addr	size	verify	name
+src/init/mips_cvecdotprod.c	0x800720ec	120	test_fixedmath	Mips_CVecDotProd__FP7CVectorT0
+src/init/mips_dotprod2sign.c	0x80072038	88	test_fixedmath	Mips_DotProd2Sign
+src/init/mips_fixmul.c	0x80072090	28	test_fixedmath	Mips_FixMul__Fii
+src/init/mips_dotprod2.c	0x800720ac	64	test_fixedmath	Mips_DotProd2
+src/shatter/decdctvlc3.c	0x80022498	76	test_decdctvlc	DecDCTvlcBuild3
+src/shatter/decdctvlc3.c	0x800224e4	1288	test_decdctvlc	DecDCTvlc3
+src/competition/teardown.c	0x80077060	124	sym	FUN_80077060
+src/competition/dtor_ccompetition.c	0x80077130	148	sym	FUN_80077130

@@ -1164,3 +1164,4 @@ src/front/frontendmain.cpp	0x8005bb70	2824	sym	FUN_8005bb70
 src/front/display.cpp	0x80017d70	8484	sym	Front_Display__Fv
 src/unnamed/8002566c.c	0x8002566c	1052	sym	FUN_8002566c
 src/physics/handlejump.cpp	0x80038268	4940	div	HandleJump__6CBruce
+src/credits/dtor_citem.c	0x8005bb3c	52	sym	_._5CItem

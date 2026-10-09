@@ -518,6 +518,11 @@ def discover_linear(exe, entry, size):
     for a, i in f.insns.items():
         if i.kind in ("branch", "jump") and i.target in f.insns:
             f.labels.add(i.target)
+        # hand-written code calling its own internal subroutines (as in discover)
+        if i.kind == "call" and i.target in f.insns and i.target != entry:
+            f.labels.add(i.target)
+            f.local_calls.add(a + 8)
+            f.labels.add(a + 8)
     f.max_addr = max(f.insns)
     return f
 

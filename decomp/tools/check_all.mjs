@@ -1,4 +1,6 @@
 // Re-verify every function listed in matched.tsv with its matcher; exits non-zero on any regression.
+// Also the reimpl.tsv rows verified by a matcher (port-only C that is byte-exact too), reported
+// apart so they don't count twice in the totals.
 // Usage: node tools/check_all.mjs [filterSubstring]
 import { readFileSync, existsSync } from 'node:fs';
 import { execFile } from 'node:child_process';
@@ -7,9 +9,11 @@ import { cpus } from 'node:os';
 
 const run = promisify(execFile);
 const filter = process.argv[2] ?? '';
-const rows = readFileSync('matched.tsv', 'utf8').split('\n')
+const tsv = path => readFileSync(path, 'utf8').split('\n')
   .filter(l => l.trim() && !l.startsWith('#')).map(l => l.split('\t'))
   .filter(r => r.join(' ').includes(filter));
+const rows = tsv('matched.tsv');
+const reimpl = tsv('reimpl.tsv').filter(r => ['cc', 'sym', 'div'].includes(r[3]));
 
 async function check([src, addr, size, tool, name]) {
   const syms = src.replace(/\.cpp$|\.c$|\.s$/, '.syms.json');
@@ -35,16 +39,20 @@ async function check([src, addr, size, tool, name]) {
   return { name, src, size: +size, ok: last.includes('EXACT'), last };
 }
 
-const results = [];
-const queue = [...rows];
+const results = [], extra = [];
+const queue = [...rows.map(r => [r, results]), ...reimpl.map(r => [r, extra])];
 await Promise.all(Array.from({ length: Math.max(1, cpus().length - 1) }, async () => {
-  while (queue.length) results.push(await check(queue.shift()));
+  while (queue.length) { const [r, into] = queue.shift(); into.push(await check(r)); }
 }));
 results.sort((a, b) => a.src.localeCompare(b.src));
 for (const r of results) console.log(`${r.ok ? 'ok  ' : 'FAIL'} ${r.src.padEnd(34)} ${r.last}`);
 const bad = results.filter(r => !r.ok).length;
+extra.sort((a, b) => a.src.localeCompare(b.src));
+for (const r of extra) console.log(`${r.ok ? 'ok  ' : 'FAIL'} ${r.src.padEnd(34)} ${r.last}  (reimpl.tsv)`);
+const badExtra = extra.filter(r => !r.ok).length;
 // game code = .text up to the end of M3d_PreprocessPulsingColours; the Psy-Q libraries follow it
 const GAME_BYTES = 0x800858ac - 0x80010000;
 const bytes = results.reduce((n, r) => n + (r.ok ? r.size : 0), 0);
 console.log(`\n${results.length - bad}/${results.length} exact, ${bytes} of ${GAME_BYTES} game-code bytes (${(100 * bytes / GAME_BYTES).toFixed(1)}%)`);
-process.exit(bad ? 1 : 0);
+if (extra.length) console.log(`${extra.length - badExtra}/${extra.length} reimpl.tsv rows exact`);
+process.exit(bad || badExtra ? 1 : 0);

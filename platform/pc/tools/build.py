@@ -4,7 +4,7 @@
     python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link]
 
 Pipeline for every decompiled TU (decomp/matched.tsv, plus the near-miss sources for functions
-that aren't byte-exact yet):
+that aren't byte-exact yet, and decomp/reimpl.tsv: hand-written assembly reimplemented in C):
 
   1. source transforms (portsrc.py): inline GTE asm -> software GTE calls; for C++, the egcs
      virtual-function ABI on top of non-virtual native classes;
@@ -88,7 +88,7 @@ HEADER_RE = re.compile(r"^/\*\s*(\S+)\s+\((0x[0-9a-fA-F]+)\)(.*?)\*/")
 
 def load_tus():
     tus = {}
-    for kind in ("matched.tsv", "nearmiss.tsv"):
+    for kind in ("matched.tsv", "nearmiss.tsv", "reimpl.tsv"):
         for p in read_tsv(os.path.join(DECOMP, kind)):
             src = p[0]
             if src.endswith(".s") or src in tus:
