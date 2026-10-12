@@ -295,6 +295,8 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |
 | `THPS_WINDOW=WxH` | a window of that size (drawing area), whatever Settings.ini says; headless too |
 | `THPS_WIDESCREEN=0\|1` | widescreen off or on, whatever Settings.ini says |
+| `THPS_DRAWDIST=pct\|full`, `THPS_OBJDIST=pct`, `THPS_FOG=0\|1\|2` | draw distance (50-400, or the entire level), object distance (50-400) and fog (normal, light, off), whatever Settings.ini says |
+| `THPS_FAR_RANGE=n` | entire level: items reaching beyond n (default 30000) take the double-precision path; a small n compares it with the PS1 transforms on near items |
 | `THPS_HEADLESS=1` | no window (for automated runs; uses the software renderer unless `THPS_RENDERER=gl`) |
 | `THPS_RENDERER=gl\|sw` | OpenGL (default) or the software rasteriser |
 | `THPS_GL_SCALE=n` | OpenGL: draw the screens at n times the PS1 resolution (default: the window's resolution) |
@@ -312,6 +314,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_SHOT=f1,f2` / `THPS_SHOTDIR` | dump the display and VRAM as BMPs at those frames (with OpenGL, also `frameNNNNN_gl.bmp` at the resolution it was drawn at) |
 | `THPS_INPUT=frame:mask,...` | scripted pad input for player 1 (PS1 button mask, pressed = 1, held from that frame; X is both Ollie and Menu Accept, Triangle Grind and Menu Back, Start is Pause) |
 | `THPS_KEYS=frame:Key+Key,...` | scripted keyboard (Settings.ini key names, held from that frame; `frame:` releases), read through the bindings |
+| `THPS_NOGAMEPAD=1` | ignore connected gamepads, so scripted runs navigate the menus the same way with or without one |
 | `THPS_TRACE=1` | log CD, BIOS and debug-print activity, and player 1's actions as they change |
 | `THPS_FAST=1` | don't throttle to 60 Hz |
 | `THPS_MOVIES=0` | skip every movie |

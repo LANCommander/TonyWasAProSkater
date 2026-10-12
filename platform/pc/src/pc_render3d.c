@@ -96,7 +96,7 @@ static int s_native, s_verify, s_stats, s_neardrop, s_retailfade, s_nclip;
 static struct {
     uint32_t faces, culled, badtag, layers, draws, calls, water, fade, fb_fade, fb_nolayer;
     uint32_t water_checked, water_bad;
-    uint32_t vchecked[8], vbad[8], sign_checked, sign_bad, near;} st;
+    uint32_t vchecked[8], vbad[8], sign_checked, sign_bad, near, far;} st;
 
 /* ---------------------------------------------------------------------------------------------
  * Float vertices */
@@ -226,6 +226,85 @@ static uint32_t widen_fast(uint32_t out, int n, uint32_t r, int pad, int xl, int
     return (r & ~0x6000u) | (all & 1 ? 0x2000u : 0) | (all & 2 ? 0x4000u : 0);
 }
 
+/* ---------------------------------------------------------------------------------------------
+ * The entire level (R3d_FarBegin) */
+
+static struct {
+    int on;
+    double m[3][3], t[3];
+    int fogstart, fogshift;
+} s_far;
+
+void R3d_FarBegin(const double m[3][3], const double t[3], int fogstart, int fogshift)
+{
+    memcpy(s_far.m, m, sizeof s_far.m);
+    memcpy(s_far.t, t, sizeof s_far.t);
+    s_far.fogstart = fogstart;
+    s_far.fogshift = fogshift;
+    s_far.on = 1;
+}
+
+void R3d_FarEnd(void)
+{
+    s_far.on = 0;
+}
+
+static int clamp16(double v, int lo, int hi)
+{
+    return v < lo ? lo : v > hi ? hi : (int)lrint(v);
+}
+
+/* TransformAndOutcodeItemVertices in double precision: the same cache entries (screen word,
+ * depth limited to 16 bits, outcodes against the widened viewport, no far plane) and rotated
+ * x, y, and the float vertices. */
+static uint32_t far_transform(uint32_t a0, int n)
+{
+    uint32_t pv = M32(G_PROJECTED), rot = M32(G_ROTATED), vp = M32(G_VIEWPORT);
+    double h = (double)(PC_GteGetCtrl(26) & 0xffff);
+    double ofx = (int32_t)PC_GteGetCtrl(24) / 65536.0, ofy = (int32_t)PC_GteGetCtrl(25) / 65536.0;
+    int xr = M16(vp), yb = M16(vp + 2), xl = M16(vp + 4), yt = M16(vp + 6), hither = M16(vp + 8);
+    int wxl, wxr, pad = viewport_pad(&wxl, &wxr);
+    uint32_t all = 0xffff;
+
+    if (n == 0)
+        return 0xff;
+    st.far++;
+    xl -= pad;
+    xr += pad;
+    s_pv_base = pv;
+    s_last_kind = T_ITEM;
+    for (int i = 0; i < n && i < PV_SLOTS; i++) {
+        uint32_t v = a0 + (uint32_t)i * 8, dst = pv + (uint32_t)i * 8;
+        double in[3] = { S16(v), S16(v + 2), S16(v + 4) }, o[3];
+        for (int r = 0; r < 3; r++)
+            o[r] = s_far.m[r][0] * in[0] + s_far.m[r][1] * in[1] + s_far.m[r][2] * in[2] +
+                   s_far.t[r];
+        int sx, sy;
+        if (o[2] >= 1) {
+            sx = clamp16(ofx + h * o[0] / o[2], -1024, 1023);
+            sy = clamp16(ofy + h * o[1] / o[2], -1024, 1023);
+        } else {
+            /* the GTE's divide overflows: saturated, away from the axis */
+            sx = o[0] > 0 ? 1023 : -1024;
+            sy = o[1] > 0 ? 1023 : -1024;
+        }
+        uint32_t oc = (uint32_t)(sx > xr) | (uint32_t)(sx < xl) << 1 | (uint32_t)(sy > yb) << 2 |
+                      (uint32_t)(sy < yt) << 3 | (uint32_t)(o[2] < hither) << 4;
+        if (o[2] < 0)
+            oc ^= 0xf;
+        oc |= (oc ^ 0xff) << 8;
+        M32(dst) = (uint32_t)(uint16_t)sx | (uint32_t)(uint16_t)sy << 16;
+        M16(dst + 4) = (uint16_t)clamp16(o[2], -32768, 32767);
+        M16(dst + 6) = (uint16_t)oc;
+        M32(rot + (uint32_t)i * 8) = (uint32_t)(uint16_t)clamp16(o[0], -32768, 32767) |
+                                     (uint32_t)(uint16_t)clamp16(o[1], -32768, 32767) << 16;
+        set_shadow(dst, (float)o[0], (float)o[1], (float)o[2]);
+        all &= oc;
+    }
+    M32(SCR(0x3d4)) = pv + (uint32_t)n * 8;   /* SCR_PROJECTED_END */
+    return all;
+}
+
 /* Run a retail vertex transform and keep its vertices unrounded. a0 = vertices, a1 = count. */
 static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uint32_t a2,
                           uint32_t a3)
@@ -235,6 +314,8 @@ static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uin
         fn[kind] = PC_Impl(addr);
     if (!s_native)
         return fn[kind](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
+    if (s_far.on && kind == T_ITEM)
+        return far_transform(a0, (int)a1);
 
     uint32_t pv = M32(G_PROJECTED), rot = M32(G_ROTATED), pool = M32(G_FREESTITCH);
     int fast = kind == T_SFAST || kind == T_SFAST_DW || kind == T_FAST;
@@ -776,8 +857,21 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
                 zmax = z;
         }
         int d = zmax - dpqmin, fog = 0;
-        if (d > 0)
+        if (s_far.on) {
+            /* the true depth: beyond 16 bits, and no far plane, so the fog stops at full */
+            float fz = sh[0]->z;
+            for (int i = 1; i < nvtx; i++)
+                if (sh[i]->z > fz)
+                    fz = sh[i]->z;
+            d = s_far.fogstart == INT32_MAX ? 0 : (int)fz - s_far.fogstart;
+            if (d > 0) {
+                int64_t f = s_far.fogshift < 0 ? (int64_t)d >> -s_far.fogshift
+                                               : (int64_t)d << s_far.fogshift;
+                fog = f > 4096 ? 4096 : (int)f;
+            }
+        } else if (d > 0) {
             fog = dpqshift < 0 ? d >> -dpqshift : d << dpqshift;
+        }
         PC_GteSetData(8, (uint32_t)fog);
         /* fade-to-colour mode (the front end): beyond the fog distance a face is added onto a
          * flat polygon of the fade colour, which takes the share the fog would (below) */
@@ -1195,6 +1289,8 @@ static void stats_tick(void)
                     "in %u calls, %u layers, %u draws, %u faded; retail: %u fade, %u no layer\n",
             st.faces, st.culled, st.badtag, st.water, st.calls, st.layers, st.draws, st.fade, st.fb_fade,
             st.fb_nolayer);
+    if (st.far)
+        fprintf(stderr, "[r3d] %u models beyond the 16-bit view (entire level)\n", st.far);
     if (s_verify)
         fprintf(stderr, "[r3d] near-plane faces: %u\n", st.near);
     if (s_verify && st.water_checked)

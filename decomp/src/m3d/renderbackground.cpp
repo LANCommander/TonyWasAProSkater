@@ -18,6 +18,12 @@ SCamera *pCurrentCamera;
 int pColourTable;
 ushort DpqMin;
 
+#ifdef PC_PORT
+#include "pc_video.h"
+
+extern int DpqMax;
+#endif
+
 void RenderBackgroundModel(SModel *);
 void RenderBackgroundModelNonRotated(SModel *);
 
@@ -70,5 +76,9 @@ void M3d_RenderBackground(void *p) {
 		pItem = pItem->NextItem;
 	} while (pItem);
 
+#ifdef PC_PORT
+	*(short *)0x1f800284 = PC_DrawFogMin(DpqMin, DpqMax);
+#else
 	*(short *)0x1f800284 = DpqMin;
+#endif
 }

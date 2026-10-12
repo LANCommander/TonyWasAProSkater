@@ -12,6 +12,15 @@ typedef struct CBody {
 CBody *SuspendedList;
 unsigned SuspendDistance;
 
+#ifdef PC_PORT
+#include "pc_video.h"
+
+/* objects keep moving as far away as Options > Graphics > Draw Distance shows them */
+#define SUSPEND_DISTANCE PC_DrawSuspendDistance(SuspendDistance)
+#else
+#define SUSPEND_DISTANCE SuspendDistance
+#endif
+
 extern CBody *MechList __attribute__((section(".data")));
 extern int GNumberOfPlayers __attribute__((section(".data")));
 unsigned Utils_CrapDist(int *, int *);
@@ -37,7 +46,7 @@ void Ob_MaybeUnSuspendOrCull(void) {
 					d = d2;
 			}
 
-			if (!(SuspendDistance < d))
+			if (!(SUSPEND_DISTANCE < d))
 				CBody_UnSuspend(b);
 		}
 

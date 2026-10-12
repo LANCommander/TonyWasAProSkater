@@ -27,6 +27,15 @@ void R3d_ChainEnd(void);
 /* THPS_R3D_DUMP: the faces of the layer drawn last, to a text file (debugging). */
 void R3d_DumpLast(const char *path);
 
+/* Drawing the entire level (Options > Graphics > Draw Distance, pc_video.h; M3d_Render): the PS1
+ * transforms work in 16-bit view space, so items beyond it are drawn from here. Between these,
+ * the item transform (M3dAsm_TransformAndOutcodeItemVertices) works in double precision: view =
+ * m * vertex + t (m: the view matrix times the item's rotation, t: the item's view-space
+ * position), with no far plane; its faces are fogged on their true depth (fog from fogstart,
+ * INT_MAX for none, with fogshift as DpqShift). */
+void R3d_FarBegin(const double m[3][3], const double t[3], int fogstart, int fogshift);
+void R3d_FarEnd(void);
+
 #ifdef __cplusplus
 }
 #endif

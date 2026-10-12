@@ -7,6 +7,7 @@
  * software GPU, unless THPS_RENDERER=gl (then OpenGL draws into a hidden window of THPS_SCALE
  * times 320x240, whatever Settings.ini says). THPS_FILTER=1 selects linear scaling. Event pumping
  * is the input layer's job; it hands window events to PC_VideoEvent. */
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,7 @@
 
 #include "pc_gpu.h"
 #include "pc_gpu_gl.h"
+#include "pc_render3d.h"
 #include "pc_runtime.h"
 #include "pc_settings.h"
 #include "pc_video.h"
@@ -42,6 +44,20 @@ int PC_GpuIsHeadless(void)
 static PcVideoSettings s_set;
 static int s_last_full = PC_VIDEO_BORDERLESS;   /* where Alt+Enter goes from a window */
 static const char *const s_mode_names[PC_VIDEO_MODES] = { "Windowed", "Borderless", "Fullscreen" };
+static const char *const s_fog_names[PC_FOG_MODES] = { "Normal", "Light", "Off" };
+
+static int clamp_distance(int d)
+{
+    return d < PC_DISTANCE_MIN ? PC_DISTANCE_MIN : d > PC_DISTANCE_MAX ? PC_DISTANCE_MAX : d;
+}
+
+/* a draw distance: percent, or "Full" for the entire level */
+static int parse_draw_distance(const char *v)
+{
+    while (*v == ' ' || *v == '\t')
+        v++;
+    return SDL_strncasecmp(v, "full", 4) ? clamp_distance(atoi(v)) : PC_DISTANCE_FULL;
+}
 
 void PC_VideoSettingsDefaults(void)
 {
@@ -50,6 +66,9 @@ void PC_VideoSettingsDefaults(void)
     s_set.win_w = 960;
     s_set.win_h = 720;
     s_set.widescreen = 1;
+    s_set.draw_distance = 100;
+    s_set.object_distance = 100;
+    s_set.fog = PC_FOG_NORMAL;
 }
 
 int PC_VideoSettingsLine(const char *section, const char *key, char *value)
@@ -77,6 +96,14 @@ int PC_VideoSettingsLine(const char *section, const char *key, char *value)
     } else if (!SDL_strcasecmp(key, "Widescreen")) {
         s_set.widescreen = !SDL_strncasecmp(value, "on", 2) || *value == '1' ||
                            !SDL_strncasecmp(value, "yes", 3);
+    } else if (!SDL_strcasecmp(key, "DrawDistance")) {
+        s_set.draw_distance = parse_draw_distance(value);
+    } else if (!SDL_strcasecmp(key, "ObjectDistance")) {
+        s_set.object_distance = clamp_distance(atoi(value));
+    } else if (!SDL_strcasecmp(key, "Fog")) {
+        for (i = 0; i < PC_FOG_MODES; i++)
+            if (!SDL_strncasecmp(value, s_fog_names[i], strlen(s_fog_names[i])))
+                s_set.fog = i;
     } else {
         PC_Log("Settings.ini: unknown setting \"%s\" in [Video]", key);
     }
@@ -92,7 +119,11 @@ void PC_VideoWriteSettings(FILE *f)
           "; WindowSize is the window's drawing area. Either way the game is drawn at the\n"
           "; resolution it is shown at. Widescreen = On shows more of the world at the sides on\n"
           "; screens wider than 4:3 (the menus and the 2D overlays stay 4:3); Off keeps the\n"
-          "; game 4:3 with black bars. Alt+Enter switches between the window and fullscreen.\n",
+          "; game 4:3 with black bars. Alt+Enter switches between the window and fullscreen.\n"
+          "; DrawDistance is how far the level is drawn, in percent of the original (50-400;\n"
+          "; the fog moves out with it), or Full for the entire level (the fog then reaches\n"
+          "; across it); ObjectDistance how far models keep their detail and stay visible\n"
+          "; (50-400). Fog = Normal, Light (only the far half) or Off.\n",
           f);
     fprintf(f, "\n[Video]\nMode = %s\nWindowSize = %dx%d\n", s_mode_names[s_set.mode], s_set.win_w,
             s_set.win_h);
@@ -101,6 +132,11 @@ void PC_VideoWriteSettings(FILE *f)
     else
         fputs("FullscreenResolution =\n", f);
     fprintf(f, "Widescreen = %s\n", s_set.widescreen ? "On" : "Off");
+    if (s_set.draw_distance == PC_DISTANCE_FULL)
+        fputs("DrawDistance = Full\n", f);
+    else
+        fprintf(f, "DrawDistance = %d\n", s_set.draw_distance);
+    fprintf(f, "ObjectDistance = %d\nFog = %s\n", s_set.object_distance, s_fog_names[s_set.fog]);
 }
 
 void PC_VideoGetSettings(PcVideoSettings *s)
@@ -111,6 +147,127 @@ void PC_VideoGetSettings(PcVideoSettings *s)
 int PC_VideoSave(void)
 {
     return PC_SettingsSave();
+}
+
+/* ---- draw distance ---- */
+
+static int s_level_size;   /* PC_DrawSetLevelSize */
+
+/* THPS_DRAWDIST (percent or "full"), THPS_OBJDIST and THPS_FOG (0-2) override Settings.ini, for
+ * tests */
+static void draw_env(void)
+{
+    static int done;
+    const char *e;
+    if (done)
+        return;
+    done = 1;
+    if ((e = getenv("THPS_DRAWDIST")))
+        s_set.draw_distance = parse_draw_distance(e);
+    if ((e = getenv("THPS_OBJDIST")))
+        s_set.object_distance = clamp_distance(atoi(e));
+    if ((e = getenv("THPS_FOG")) && atoi(e) >= 0 && atoi(e) < PC_FOG_MODES)
+        s_set.fog = atoi(e);
+}
+
+int PC_DrawFull(void)
+{
+    draw_env();
+    return s_set.draw_distance == PC_DISTANCE_FULL && R3d_Native();
+}
+
+void PC_DrawSetLevelSize(int size)
+{
+    s_level_size = size;
+}
+
+/* how far the fog ends: DpqMax times the draw distance; for the entire level the far side of the
+ * level (at least 4 times) */
+static double fog_end(int dpqmax)
+{
+    double end;
+    if (s_set.draw_distance != PC_DISTANCE_FULL)
+        return (double)dpqmax * s_set.draw_distance / 100;
+    end = 4.0 * dpqmax;
+    return s_level_size > end ? s_level_size : end;
+}
+
+static int scaled_far(int dpqmax)
+{
+    double far = fog_end(dpqmax);
+    return far > 0x7fff ? 0x7fff : (int)far;
+}
+
+int PC_DrawFarPlane(int dpqmax)
+{
+    draw_env();
+    return s_set.draw_distance == 100 ? dpqmax : scaled_far(dpqmax);
+}
+
+/* fog as the level sets it */
+static int fog_retail(void)
+{
+    draw_env();
+    return s_set.draw_distance == 100 && s_set.fog == PC_FOG_NORMAL;
+}
+
+/* the fog's range with the settings; it ends at fog_end */
+static double fog_range(int dpqmin, int dpqmax)
+{
+    double range = (dpqmax - dpqmin) * fog_end(dpqmax) / (dpqmax > 0 ? dpqmax : 1);
+    if (s_set.fog == PC_FOG_LIGHT)
+        range /= 2;
+    return range < 1 ? 1 : range;
+}
+
+int PC_DrawFogStart(int dpqmin, int dpqmax)
+{
+    if (fog_retail())
+        return dpqmin;
+    if (s_set.fog == PC_FOG_OFF)
+        return INT_MAX;
+    return (int)(fog_end(dpqmax) - fog_range(dpqmin, dpqmax));
+}
+
+int PC_DrawFogMin(int dpqmin, int dpqmax)
+{
+    int start = PC_DrawFogStart(dpqmin, dpqmax);
+    return start > 0x7fff ? 0x7fff : start;   /* nothing nearer is fogged */
+}
+
+/* as M3dInit_SetFoggingParams: the shift that takes the range to 4096 */
+int PC_DrawFogShift(int dpqmin, int dpqmax, int dpqshift)
+{
+    double range;
+    int shift = 0;
+    if (fog_retail())
+        return dpqshift;
+    if (s_set.fog == PC_FOG_OFF)
+        return 0;
+    range = fog_range(dpqmin, dpqmax);
+    for (; range < 4096; range *= 2)
+        shift++;
+    for (; range > 4096; range /= 2)
+        shift--;
+    return shift;
+}
+
+int PC_DrawObjectDistance(int d)
+{
+    draw_env();
+    return s_set.object_distance == 100 ? d : (int)((int64_t)d * s_set.object_distance / 100);
+}
+
+unsigned PC_DrawSuspendDistance(unsigned d)
+{
+    uint64_t far;
+    draw_env();
+    if (s_set.draw_distance <= 100)
+        return d;
+    if (s_set.draw_distance == PC_DISTANCE_FULL)
+        return 0xffffffffu;
+    far = (uint64_t)d * (unsigned)s_set.draw_distance / 100;
+    return far > 0xffffffffu ? 0xffffffffu : (unsigned)far;
 }
 
 /* ---- window modes ---- */

@@ -9,8 +9,9 @@
  *
  * Native 3D (info bit 0x4000, pc_render3d.c) has view-space positions: u_proj = (screen x and y
  * of the view axis incl. the drawing offset, focal length H, near plane). Depth is linear view
- * z / 65536. The PS1 draws in painter order, and coplanar surfaces (decals, shadows) rely on it,
- * so colour is tested a little in front of the true depth (u_dpass 0) and the true depth is
+ * z / 2^20 (the entire level reaches beyond 16 bits; a float depth loses nothing by the power
+ * of two). The PS1 draws in painter order, and coplanar surfaces (decals, shadows) rely on it, so
+ * colour is tested a little in front of the true depth (u_dpass 0) and the true depth is
  * written in a second, depth-only pass (u_dpass 1): a later surface wins a tie, and anything
  * further than the tolerance stays hidden. Emulated primitives with a view depth (0x2000) are
  * tested the same way; the rest have depth 0 and always pass. 0x8000 (sky) is at depth 1.
@@ -137,9 +138,9 @@ static const char *gl_draw_fs =
     "    o_color = vec4(c, mask);\n"
     "    o_blend = vec4(0.0, 0.0, 0.0, 1.0 - keep);\n"
     "    if ((info & 0x8000u) != 0u) gl_FragDepth = 1.0;\n"
-    "    else if ((info & 0x4000u) != 0u && u_dpass == 1) gl_FragDepth = clamp(v_z / 65536.0, 0.0, 1.0);\n"
+    "    else if ((info & 0x4000u) != 0u && u_dpass == 1) gl_FragDepth = clamp(v_z / 1048576.0, 0.0, 1.0);\n"
     "    else if ((info & 0x6000u) != 0u)\n"
-    "        gl_FragDepth = clamp((v_z * (1.0 - 1.0 / 256.0) - 2.0) / 65536.0, 0.0, 1.0);\n"
+    "        gl_FragDepth = clamp((v_z * (1.0 - 1.0 / 256.0) - 2.0) / 1048576.0, 0.0, 1.0);\n"
     "    else gl_FragDepth = 0.0;\n"
     "}\n";
 

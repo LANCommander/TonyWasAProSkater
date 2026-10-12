@@ -387,12 +387,15 @@ static uint32_t XInputMask(const XINPUT_GAMEPAD *g) {
 
 /* Polling an empty XInput slot is slow, so empty slots are only tried every 120 polls. */
 static void PollGamepads(void) {
+    static int ignore = -1;   /* THPS_NOGAMEPAD=1: none (scripted test runs) */
     int i, p = 0;
+    if (ignore < 0)
+        ignore = getenv("THPS_NOGAMEPAD") && atoi(getenv("THPS_NOGAMEPAD")) != 0;
     for (i = 0; i < XI_SLOTS; i++) {
         XINPUT_STATE st;
         uint32_t was = s_xi[i].down;
         s_xi[i].pressed = 0;
-        if (!s_xinputGetState || (!s_xi[i].connected && s_xi[i].retry-- > 0))
+        if (!s_xinputGetState || ignore || (!s_xi[i].connected && s_xi[i].retry-- > 0))
             continue;
         if (s_xinputGetState(i, &st) == ERROR_SUCCESS) {
             if (!s_xi[i].connected)

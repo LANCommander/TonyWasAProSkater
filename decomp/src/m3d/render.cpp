@@ -20,8 +20,19 @@ extern "C" {
 #include "game/camera.h"
 
 #ifdef PC_PORT
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "pc_render3d.h"
+#include "pc_video.h"
+
+/* a model's level-of-detail distance: Options > Graphics > Object Distance; past its last one a
+   model isn't drawn, except level geometry when drawing the entire level */
+#define LOD_DIST(d)    PC_DrawObjectDistance(d)
+#define LOD_LAST(pMod) ((pMod)->NextLOD == 0xffff && !keepAll)
+#else
+#define LOD_DIST(d)    (d)
+#define LOD_LAST(pMod) ((pMod)->NextLOD == 0xffff)
 #endif
 
 #define RGB2GPU(c)    ((((c) & 0xff) << 2) | (((c) & 0xff00) << 5) | (((c) & 0xff0000) << 8))
@@ -77,6 +88,111 @@ void *pColourTable;
 void M3d_PreprocessWibblyTextures(int);
 void RenderSuperItem(Item *);
 
+#ifdef PC_PORT
+/* Options > Graphics > Draw Distance = Entire Level (pc_video.h). The PS1 transforms work in 16-bit
+   view space: BoundingSpherePreprocessing culls every item more than 32767 from the camera on an
+   axis, and the far plane can't go past it. Items that reach beyond FAR_RANGE (not super items)
+   are tested against the view here instead, and the native renderer draws them from
+   double-precision vertices (R3d_FarBegin). */
+#define FAR_RANGE 30000
+
+/* THPS_FAR_RANGE: a smaller one, to compare the two paths on nearer items (debugging) */
+static int FarRange() {
+	static int range;
+
+	if (!range)
+		range = getenv("THPS_FAR_RANGE") ? atoi(getenv("THPS_FAR_RANGE")) : FAR_RANGE;
+
+	return range;
+}
+
+/* 1: such an item, in view (rel: its position relative to the camera); -1: out of view or hidden
+   (skip: the hiding flags BoundingSpherePreprocessing was given); 0: an ordinary item. */
+static int FarItem(Item *pItem, int skip, int *rel) {
+	SModel *pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
+	SVECTOR *n = (SVECTOR *)&FrustumNormals; /* the view's planes in camera space */
+	int r = pModel->Radius >> 12;
+	int reach = 0;
+	double l[3];
+	int i;
+
+	if (pItem->Flags & 0x200) {
+		int s = pItem->Scale.vx;
+
+		if (pItem->Scale.vy > s)
+			s = pItem->Scale.vy;
+
+		if (pItem->Scale.vz > s)
+			s = pItem->Scale.vz;
+
+		r = (int)((long long)r * s >> 12);
+	}
+
+	rel[0] = (pItem->Position.vx >> 12) - pCurrentCamera->Position.vx;
+	rel[1] = (pItem->Position.vy >> 12) - pCurrentCamera->Position.vy;
+	rel[2] = (pItem->Position.vz >> 12) - pCurrentCamera->Position.vz;
+
+	for (i = 0; i < 3; i++)
+		if (abs(rel[i]) + r > reach)
+			reach = abs(rel[i]) + r;
+
+	if (reach < FarRange())
+		return 0;
+
+	if (pItem->Flags & (skip | 0x1000))
+		return -1;
+
+	/* in camera space, against the near plane and the four sides (planes 1-5) */
+	for (i = 0; i < 3; i++)
+		l[i] = ((double)pCurrentCamera->Inverse.m[i][0] * rel[0] +
+		        (double)pCurrentCamera->Inverse.m[i][1] * rel[1] +
+		        (double)pCurrentCamera->Inverse.m[i][2] * rel[2]) / 4096;
+
+	if (l[2] + r < pCurrentViewport->Hither)
+		return -1;
+
+	for (i = 2; i < 6; i++)
+		if ((n[i].vx * l[0] + n[i].vy * l[1] + n[i].vz * l[2]) / 4096 < -r)
+			return -1;
+
+	return 1;
+}
+
+/* the diagonal of what the level's items cover: where the fog ends when it is all drawn */
+static void MeasureLevel(Item *pItem) {
+	int lo[3], hi[3], first = 1, i;
+
+	for (; pItem; pItem = pItem->NextItem) {
+		SModel *pModel;
+		int c[3], r;
+
+		if (!PSXRegion[pItem->Region].Usable)
+			continue;
+
+		pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
+		r = pModel->Radius >> 12;
+		c[0] = pItem->Position.vx >> 12;
+		c[1] = pItem->Position.vy >> 12;
+		c[2] = pItem->Position.vz >> 12;
+
+		for (i = 0; i < 3; i++) {
+			if (first || c[i] - r < lo[i])
+				lo[i] = c[i] - r;
+
+			if (first || c[i] + r > hi[i])
+				hi[i] = c[i] + r;
+		}
+
+		first = 0;
+	}
+
+	if (!first)
+		PC_DrawSetLevelSize((int)sqrt((double)(hi[0] - lo[0]) * (hi[0] - lo[0]) +
+		                              (double)(hi[1] - lo[1]) * (hi[1] - lo[1]) +
+		                              (double)(hi[2] - lo[2]) * (hi[2] - lo[2])));
+}
+#endif
+
 void M3d_Render(void *p) {
 	Item *pItem = (Item *)p;
 	VECTOR Position;
@@ -87,6 +203,14 @@ void M3d_Render(void *p) {
 	SModel *pModel;
 	uint GlobalFaceFlags;
 	ushort yon;
+#ifdef PC_PORT
+	int full = PC_DrawFull();
+	int far = 0;
+	int farSkip = pItem != BaddyList && Camera_CurrentMikeCamera ? 64 : 1;
+	int farRel[3];
+	double farPos[3];
+	int keepAll;
+#endif
 
 	if (!pItem)
 		return;
@@ -99,14 +223,35 @@ void M3d_Render(void *p) {
 		FUN_800858ac(pItem, Camera_CurrentMikeCamera ? 64 : 1);
 	else
 		FUN_800858ac(pItem, 1);
+#ifdef PC_PORT
+	/* the entire level: also the level geometry its scripts hide (Downhill Jam shows each section
+	   of the course only as the skater nears it), and none of it dropped beyond its last level of
+	   detail */
+	keepAll = full && pItem == EnviroList;
+
+	if (keepAll) {
+		farSkip = 0;
+		FUN_800858ac(pItem, 0);
+	}
+#endif
 
 	if (pItem == EnviroList) {
 		M3d_PreprocessWibblyTextures(EnvRegions);
 		M3d_PreprocessWibblyTextures(EnvRegions_4);
+#ifdef PC_PORT
+		if (full)
+			MeasureLevel(pItem);
+#endif
 	}
 
+#ifdef PC_PORT
+	/* Options > Graphics > Draw Distance and Fog */
+	SCRATCH_S(0x284) = PC_DrawFogMin(DpqMin, DpqMax);
+	SCRATCH_S(0x294) = PC_DrawFogShift(DpqMin, DpqMax, (short)DpqShift);
+#else
 	SCRATCH_S(0x284) = DpqMin;
 	SCRATCH_S(0x294) = DpqShift;
+#endif
 	SCRATCH_S(0x2b4) = M3d_OTPushback;
 	SCRATCH_S(0x2c4) = M3d_OTPushback2;
 	SCRATCH_S(0x2d4) = 0;
@@ -115,8 +260,18 @@ void M3d_Render(void *p) {
 	SCRATCH_I(0x354) = M3d_FadeColour;
 
 	while (pItem) {
+#ifdef PC_PORT
+		far = 0;
+
+		if (full && !(pItem->Flags & 2) && PSXRegion[pItem->Region].Usable)
+			far = FarItem(pItem, farSkip, farRel);
+
+		if (far < 0 || (!far && (pItem->Flags & 0x8000)))
+			goto next;
+#else
 		if (pItem->Flags & 0x8000)
 			goto next;
+#endif
 
 #ifdef PC_PORT
 		if (getenv("THPS_TRACE_CULL")) {
@@ -170,6 +325,10 @@ void M3d_Render(void *p) {
 
 		SCRATCH_I(0x3f4) = GlobalFaceFlags;
 		TestTheWater = (pItem->Flags >> 3) & 1;
+#ifdef PC_PORT
+		if (far)
+			TestTheWater = 0; /* its vertices aren't in the GTE's 16 bits */
+#endif
 
 		if (pItem->Flags & 2) {
 			if (pItem == MechList)
@@ -239,16 +398,32 @@ void M3d_Render(void *p) {
 		gte_rtv0();
 		gte_stlvnl(&Position);
 
+#ifdef PC_PORT
+		if (far) {
+			/* PosnRelCam doesn't fit the GTE: the view-space position in full */
+			int i;
+
+			for (i = 0; i < 3; i++)
+				farPos[i] = ((double)pCurrentCamera->View.m[i][0] * farRel[0] +
+				             (double)pCurrentCamera->View.m[i][1] * farRel[1] +
+				             (double)pCurrentCamera->View.m[i][2] * farRel[2]) / 4096;
+
+			Position.vx = (long)floor(farPos[0]);
+			Position.vy = (long)floor(farPos[1]);
+			Position.vz = (long)floor(farPos[2]);
+		}
+#endif
+
 		if (pModel->zMax < 0) {
-			while (-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10) <
+			while (LOD_DIST(-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10)) <
 			           Position.vz &&
 			       pModel->NextLOD != 0xffff)
 				pModel = PSXRegion[pItem->Region].ppModels[pModel->NextLOD];
 
 			if (pModel->zMax < 0) {
-				if (-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10) <
+				if (LOD_DIST(-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10)) <
 				        Position.vz &&
-				    pModel->NextLOD == 0xffff) {
+				    LOD_LAST(pModel)) {
 #ifdef PC_PORT
 					if (getenv("THPS_TRACE_CULL")) {
 						extern volatile unsigned pc_heartbeat;
@@ -263,8 +438,8 @@ void M3d_Render(void *p) {
 					goto next;
 				}
 			} else {
-				if (pModel->zMax * pCurrentViewport->Zoom / 191 < Position.vz &&
-				    pModel->NextLOD == 0xffff) {
+				if (LOD_DIST(pModel->zMax * pCurrentViewport->Zoom / 191) < Position.vz &&
+				    LOD_LAST(pModel)) {
 #ifdef PC_PORT
 					if (getenv("THPS_TRACE_CULL")) {
 						extern volatile unsigned pc_heartbeat;
@@ -277,12 +452,12 @@ void M3d_Render(void *p) {
 				}
 			}
 		} else {
-			while (pModel->zMax * pCurrentViewport->Zoom / 191 < Position.vz &&
+			while (LOD_DIST(pModel->zMax * pCurrentViewport->Zoom / 191) < Position.vz &&
 			       pModel->NextLOD != 0xffff)
 				pModel = PSXRegion[pItem->Region].ppModels[pModel->NextLOD];
 
-			if (pModel->zMax * pCurrentViewport->Zoom / 191 < Position.vz &&
-			    pModel->NextLOD == 0xffff)
+			if (LOD_DIST(pModel->zMax * pCurrentViewport->Zoom / 191) < Position.vz &&
+			    LOD_LAST(pModel))
 				goto next;
 		}
 
@@ -292,6 +467,11 @@ void M3d_Render(void *p) {
 			Fast = 1;
 		else
 			Fast = 0;
+
+#ifdef PC_PORT
+		if (far)
+			Fast = 0;
+#endif
 
 #ifdef PC_PORT
 		if (getenv("THPS_TRACE_CULL")) {
@@ -361,7 +541,12 @@ void M3d_Render(void *p) {
 			} else {
 				FUN_80084dc0(pModel, &PosnRelCam);
 			}
-		} else if (!ANGLES_SET(pItem) && !(pItem->Flags & 0x200)) {
+		}
+#ifdef PC_PORT
+		else if (!far && !ANGLES_SET(pItem) && !(pItem->Flags & 0x200)) {
+#else
+		else if (!ANGLES_SET(pItem) && !(pItem->Flags & 0x200)) {
+#endif
 			if (*(uint *)&pItem->Frame & 0xff00ff) {
 				if (pItem->Frame)
 					SCRATCH_S(0x2b4) = (signed char)pItem->Frame << 5;
@@ -379,6 +564,25 @@ void M3d_Render(void *p) {
 		} else {
 			gte_SetTransVector(&Position);
 
+#ifdef PC_PORT
+			if (far) {
+				double m[3][3];
+				int i, j;
+
+				/* the view matrix times the item's rotation (and scale) */
+				for (i = 0; i < 3; i++)
+					for (j = 0; j < 3; j++)
+						m[i][j] = ((double)pCurrentCamera->View.m[i][0] * WorldTransform.m[0][j] +
+						           (double)pCurrentCamera->View.m[i][1] * WorldTransform.m[1][j] +
+						           (double)pCurrentCamera->View.m[i][2] * WorldTransform.m[2][j]) /
+						          (4096.0 * 4096.0);
+
+				R3d_FarBegin(m, farPos,
+				             (pItem->Flags & 0x2000) ? 0x7fffffff : PC_DrawFogStart(DpqMin, DpqMax),
+				             PC_DrawFogShift(DpqMin, DpqMax, (short)DpqShift));
+			}
+#endif
+
 			if (*(uint *)&pItem->Frame & 0xff00ff) {
 				if (pItem->Frame)
 					SCRATCH_S(0x2b4) = (signed char)pItem->Frame << 5;
@@ -393,11 +597,20 @@ void M3d_Render(void *p) {
 			} else {
 				FUN_80084d18(pModel);
 			}
+
+#ifdef PC_PORT
+			if (far)
+				R3d_FarEnd();
+#endif
 		}
 
 		if (pItem->Flags & 0x2000) {
 			SCRATCH_S(0x2d4) = 0;
+#ifdef PC_PORT
+			SCRATCH_S(0x284) = PC_DrawFogMin(DpqMin, DpqMax);
+#else
 			SCRATCH_S(0x284) = DpqMin;
+#endif
 			pCurrentViewport->Yon = yon;
 		}
 	next:

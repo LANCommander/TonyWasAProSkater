@@ -412,17 +412,66 @@ extern "C" int FUN_8005f6bc(int a) {
 
 /* PC: the graphics screen (Options > Graphics, from the options menu FUN_80060274): the window
    mode (windowed, borderless fullscreen, fullscreen), the resolution, which the game is drawn
-   at, and widescreen (pc_video.h). Left and right change a row; Apply switches the window, then asks whether to
-   keep it: Accept keeps it and saves Settings.ini, Back or KEEP_FRAMES without an answer go back
-   to the old settings (a fullscreen mode the monitor can't show leaves nothing to click on).
-   Drawn like the controls screen above. */
+   at, widescreen, the draw distances and the fog (pc_video.h). Left and right change a row;
+   Apply switches the window, then asks whether to keep it: Accept keeps it and saves
+   Settings.ini, Back or KEEP_FRAMES without an answer go back to the old settings (a fullscreen
+   mode the monitor can't show leaves nothing to click on). Changes that leave the window as it
+   is (the draw distances, the fog) are kept and saved straight away. Drawn like the controls
+   screen above. */
 #include "pc_video.h"
 
-enum { GFX_MODE, GFX_RESOLUTION, GFX_WIDESCREEN, GFX_APPLY, GFX_BACK, GFX_ROWS };
+enum {
+	GFX_MODE,
+	GFX_RESOLUTION,
+	GFX_WIDESCREEN,
+	GFX_DRAW_DISTANCE,
+	GFX_OBJECT_DISTANCE,
+	GFX_FOG,
+	GFX_APPLY,
+	GFX_BACK,
+	GFX_ROWS
+};
 
 #define KEEP_FRAMES (15 * 60)
 
 static const char *const s_modeLabels[PC_VIDEO_MODES] = {"WINDOWED", "BORDERLESS", "FULLSCREEN"};
+static const char *const s_fogLabels[PC_FOG_MODES] = {"NORMAL", "LIGHT", "OFF"};
+
+/* the distance steps, in percent (Settings.ini may hold others in between); the last, the entire
+   level, only for the draw distance */
+static const int s_distances[] = {100, 200, 300, 400, PC_DISTANCE_FULL};
+#define DRAW_STEPS   5
+#define OBJECT_STEPS 4
+
+static int StepDistance(int cur, int d, int n) {
+	int i;
+
+	if (d > 0) {
+		for (i = 0; i < n; i++)
+			if (s_distances[i] > cur)
+				return s_distances[i];
+
+		return s_distances[0];
+	}
+
+	for (i = n - 1; i >= 0; i--)
+		if (s_distances[i] < cur)
+			return s_distances[i];
+
+	return s_distances[n - 1];
+}
+
+/* the menu font has letters and digits only */
+static void DistanceLabel(char *buf, int pct) {
+	if (pct == PC_DISTANCE_FULL)
+		FUN_8008b900(buf, s_s_s, "ENTIRE", "LEVEL");
+	else if (pct == 100)
+		FUN_8008b900(buf, s_s_s, "NORMAL", "");
+	else if (pct % 100 == 0)
+		FUN_8008b900(buf, (char *)"%dX", pct / 100);
+	else
+		FUN_8008b900(buf, (char *)"%d PERCENT", pct);
+}
 
 /* the resolution a mode uses */
 static int *ResOf(PcVideoSettings *s, int mode) {
@@ -451,9 +500,15 @@ static void StepResolution(PcVideoSettings *s, int d) {
 	PC_VideoResolution(s->mode, at, &r[0], &r[1]);
 }
 
-static int SameSettings(const PcVideoSettings *a, const PcVideoSettings *b) {
+/* the same window: nothing to confirm */
+static int SameWindow(const PcVideoSettings *a, const PcVideoSettings *b) {
 	return a->mode == b->mode && a->win_w == b->win_w && a->win_h == b->win_h &&
 	       a->full_w == b->full_w && a->full_h == b->full_h && a->widescreen == b->widescreen;
+}
+
+static int SameSettings(const PcVideoSettings *a, const PcVideoSettings *b) {
+	return SameWindow(a, b) && a->draw_distance == b->draw_distance &&
+	       a->object_distance == b->object_distance && a->fog == b->fog;
 }
 
 extern "C" void PC_GraphicsOptions(int a) {
@@ -528,8 +583,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 				SFX_PlayX(144, 8192, 0);
 			}
 
-			if (p->MenuAccept.Triggered && (sel == GFX_MODE || sel == GFX_RESOLUTION ||
-			                                 sel == GFX_WIDESCREEN))
+			if (p->MenuAccept.Triggered && sel < GFX_APPLY)
 				d = 1;
 
 			if (d && sel == GFX_MODE) {
@@ -545,11 +599,25 @@ extern "C" void PC_GraphicsOptions(int a) {
 			} else if (d && sel == GFX_WIDESCREEN) {
 				edit.widescreen ^= 1;
 				SFX_PlayX(144, 8192, 0);
+			} else if (d && sel == GFX_DRAW_DISTANCE) {
+				edit.draw_distance = StepDistance(edit.draw_distance, d, DRAW_STEPS);
+				SFX_PlayX(144, 8192, 0);
+			} else if (d && sel == GFX_OBJECT_DISTANCE) {
+				edit.object_distance = StepDistance(edit.object_distance, d, OBJECT_STEPS);
+				SFX_PlayX(144, 8192, 0);
+			} else if (d && sel == GFX_FOG) {
+				edit.fog = (edit.fog + d + PC_FOG_MODES) % PC_FOG_MODES;
+				SFX_PlayX(144, 8192, 0);
 			}
 
 			if (p->MenuAccept.Triggered && sel == GFX_APPLY) {
 				if (SameSettings(&edit, &cur)) {
 					SFX_PlayX(147, 8192, 0);
+				} else if (SameWindow(&edit, &cur)) {
+					PC_VideoApply(&edit);
+					cur = edit;
+					PC_VideoSave();
+					SFX_PlayX(145, 8192, 0);
 				} else {
 					old = cur;
 					PC_VideoApply(&edit);
@@ -604,6 +672,23 @@ extern "C" void PC_GraphicsOptions(int a) {
 					Text(NAME_X, y, 1, "WIDESCREEN");
 					Text(SLOT_X1 - 60, y, 0, edit.widescreen ? "ON" : "OFF");
 					break;
+				case GFX_DRAW_DISTANCE:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "DRAW DISTANCE");
+					DistanceLabel(buf, edit.draw_distance);
+					Text(SLOT_X1 - 60, y, 0, buf);
+					break;
+				case GFX_OBJECT_DISTANCE:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "OBJECT DISTANCE");
+					DistanceLabel(buf, edit.object_distance);
+					Text(SLOT_X1 - 60, y, 0, buf);
+					break;
+				case GFX_FOG:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "FOG");
+					Text(SLOT_X1 - 60, y, 0, s_fogLabels[edit.fog]);
+					break;
 				case GFX_APPLY:
 					SetColour(on, SameSettings(&edit, &cur));
 					Text(NAME_X, y, 1, "APPLY");
@@ -617,7 +702,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 		if (keep) {
 			Mess_SetRGB(182, 132, 36, 0);
-			Text(NAME_X, ROW_TOP + 7 * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
+			Text(NAME_X, ROW_TOP + (GFX_ROWS + 2) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
 			FUN_8008b900(buf, (char *)"ACCEPT TO KEEP   BACK TO UNDO   %d", (keep + 59) / 60);
 		} else if (sel == GFX_MODE || (sel == GFX_RESOLUTION && edit.mode != PC_VIDEO_BORDERLESS)) {
 			FUN_8008b900(buf, s_s_s, "LEFT OR RIGHT TO CHANGE", "");
@@ -625,6 +710,12 @@ extern "C" void PC_GraphicsOptions(int a) {
 			FUN_8008b900(buf, s_s_s, "BORDERLESS USES THE", "DESKTOP RESOLUTION");
 		} else if (sel == GFX_WIDESCREEN) {
 			FUN_8008b900(buf, s_s_s, "MORE OF THE WORLD AT THE", "SIDES OF WIDE SCREENS");
+		} else if (sel == GFX_DRAW_DISTANCE) {
+			FUN_8008b900(buf, s_s_s, "HOW FAR AWAY THE LEVEL", "AND ITS FOG ARE DRAWN");
+		} else if (sel == GFX_OBJECT_DISTANCE) {
+			FUN_8008b900(buf, s_s_s, "HOW FAR OBJECTS STAY", "DETAILED AND VISIBLE");
+		} else if (sel == GFX_FOG) {
+			FUN_8008b900(buf, s_s_s, "LIGHT FOGS ONLY THE", "FARTHEST PART");
 		} else if (sel == GFX_APPLY && !SameSettings(&edit, &cur)) {
 			FUN_8008b900(buf, s_s_s, "ACCEPT TO SWITCH", "");
 		} else {

@@ -36,6 +36,15 @@ extern int GNumberOfPlayers;
 
 unsigned SuspendDistance;
 
+#ifdef PC_PORT
+#include "pc_video.h"
+
+/* objects keep moving as far away as Options > Graphics > Draw Distance shows them */
+#define SUSPEND_DISTANCE PC_DrawSuspendDistance(SuspendDistance)
+#else
+#define SUSPEND_DISTANCE SuspendDistance
+#endif
+
 void CItem_FlashUpdate(O *);
 void CBody_Suspend(O *, O **);
 void FUN_800440ec(O *);
@@ -77,7 +86,7 @@ void Ob_AI(O **a) {
 
 			m->fe8 = d;
 
-			if ((m->f52 & 2) && SuspendDistance < d) {
+			if ((m->f52 & 2) && SUSPEND_DISTANCE < d) {
 				CBody_Suspend(m, a);
 			} else {
 				FUN_800440ec(m);
