@@ -123,7 +123,7 @@ effects are silent). The executable is still the PS1's `SLUS_008.60`. Needs the 
 
 ## Saves
 
-The memory card is a folder: `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Saves`
+The memory card is a folder: `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`
 (`src/hle_libcard.c`). The game's own card code runs unchanged and sees a formatted card in slot 1;
 each card file (career saves `BASLUS-00860THPSG..`, replays `..THPSV..`) is one `.mcs` file there,
 the single-save format MemcardRex and the emulators import and export, so saves can be moved
@@ -192,7 +192,7 @@ The build compiles every TU in `decomp/matched.tsv` (and the near-miss sources i
 ## Controls
 
 Keys and gamepad buttons are bound to game actions (`src/pc_input.c`). Each action takes two keys
-and two gamepad buttons, kept in `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Settings.ini`
+and two gamepad buttons, kept in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Settings.ini`
 (written with the defaults on the first startup). The keyboard plays player 1; each player has
 their own gamepad bindings (`[Skate Gamepad]`/`[Menu Gamepad]` for player 1, `... Gamepad 2` for
 player 2).
@@ -262,7 +262,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 |---|---|
 | `THPS_EXE`, `THPS_DISC` | paths to `SLUS_008.60` and the disc image (else found next to the exe or in `extern/`); a `.gdi` is the Dreamcast disc |
 | `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
-| `THPS_SAVE_DIR` | the memory card folder (default `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Saves`) |
+| `THPS_SAVE_DIR` | the memory card folder (default `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`) |
 | `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |
 | `THPS_WINDOW=WxH` | a window of that size (drawing area), whatever Settings.ini says; headless too |
 | `THPS_WIDESCREEN=0\|1` | widescreen off or on, whatever Settings.ini says |

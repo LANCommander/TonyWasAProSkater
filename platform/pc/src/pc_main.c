@@ -431,11 +431,24 @@ void (*pc_hires_before_draw)(void);
 const char *PC_UserDir(void) {
     static char dir[MAX_PATH];
     if (!dir[0]) {
+        /* FOLDERID_SavedGames, spelled out so we don't depend on libuuid */
+        static const GUID kSavedGames = {0x4c5c32ff, 0xbb9d, 0x43b0,
+                                         {0xb5, 0xb4, 0x2d, 0x72, 0xe5, 0x4e, 0xaa, 0xa4}};
         char home[MAX_PATH], *s;
-        if (getenv("USERPROFILE"))
-            snprintf(home, sizeof home, "%s", getenv("USERPROFILE"));
-        else if (SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, home) != S_OK)
-            strcpy(home, ".");
+        PWSTR wide = NULL;
+        home[0] = 0;
+        if (SHGetKnownFolderPath(&kSavedGames, KF_FLAG_CREATE, NULL, &wide) == S_OK &&
+            !WideCharToMultiByte(CP_ACP, 0, wide, -1, home, sizeof home, NULL, NULL))
+            home[0] = 0;
+        CoTaskMemFree(wide);
+        if (!home[0]) {
+            if (getenv("USERPROFILE"))
+                snprintf(home, sizeof home, "%s\\Saved Games", getenv("USERPROFILE"));
+            else if (SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, home) == S_OK)
+                strncat(home, "\\Saved Games", sizeof home - strlen(home) - 1);
+            else
+                strcpy(home, ".");
+        }
         snprintf(dir, sizeof dir, "%s\\Neversoft\\Tony Hawk's Pro Skater", home);
         for (s = dir; *s; s++)
             if (*s == '/')

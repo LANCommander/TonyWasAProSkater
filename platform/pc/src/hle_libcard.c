@@ -1,4 +1,4 @@
-/* The memory card, as a folder of save files: %USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Saves
+/* The memory card, as a folder of save files: Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves
  * (THPS_SAVE_DIR overrides it).
  *
  * The game's card code (decomp/src/card) is unchanged. It talks to the card through two layers,
