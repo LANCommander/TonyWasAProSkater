@@ -381,6 +381,18 @@ def link(ctx, metas, out, toolbin, mips=False):
         run([gcc, "-m32", "-c", os.path.join(gen, "image.s"), "-o", img_o], cwd=gen)
     gen_objs.append(img_o)
 
+    # application icon: SDL2 gives the window the exe's first icon, so this also sets the taskbar
+    # and title-bar icon
+    ico = os.path.join(ROOT, "icon.ico")
+    write_if_changed(os.path.join(gen, "thps.rc"),
+                     '1 ICON "%s"\n' % ico.replace("\\", "/"))
+    res_o = os.path.join(gen, "thps_res.o")
+    if not os.path.exists(res_o) or os.path.getmtime(res_o) < max(
+            os.path.getmtime(ico), os.path.getmtime(os.path.join(gen, "thps.rc"))):
+        run([os.path.join(toolbin, "windres.exe"), "-F", "pe-i386",
+             os.path.join(gen, "thps.rc"), "-o", res_o])
+    gen_objs.append(res_o)
+
     game_objs = [os.path.join(out, "obj", os.path.splitext(m["src"])[0] + ".o") for m in metas]
     rsp = os.path.join(gen, "objs.rsp")
     open(rsp, "w").write("\n".join('"%s"' % o.replace("\\", "/") for o in
