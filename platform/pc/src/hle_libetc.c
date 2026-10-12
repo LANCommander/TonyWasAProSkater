@@ -6,6 +6,7 @@
 
 #include "pc_gpu.h"
 #include "pc_hle.h"
+#include "pc_render3d.h"
 #include "pc_runtime.h"
 
 #define NTSC_HZ 60
@@ -112,6 +113,10 @@ static void DebugHooks(void) {
                 PC_GpuDumpDisplay(path);
                 snprintf(path, sizeof path, "%s/vram%05d.bmp", dir, frames);
                 PC_GpuDumpVram(path);
+                if (getenv("THPS_R3D_DUMP")) {
+                    snprintf(path, sizeof path, "%s/faces%05d.txt", dir, frames);
+                    R3d_DumpLast(path);
+                }
                 PC_Log("frame %d: dumped display", frames);
             }
             while (*p && *p != ',')

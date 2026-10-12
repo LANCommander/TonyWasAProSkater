@@ -24,6 +24,8 @@ int R3d_Native(void);
  * (its words are not GPU commands). R3d_ChainEnd at the end of the chain. */
 int R3d_ChainPacket(const uint32_t *p, uint32_t len);
 void R3d_ChainEnd(void);
+/* THPS_R3D_DUMP: the faces of the layer drawn last, to a text file (debugging). */
+void R3d_DumpLast(const char *path);
 
 #ifdef __cplusplus
 }

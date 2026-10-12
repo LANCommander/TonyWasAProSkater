@@ -1043,6 +1043,11 @@ static void fill_part(int x0, int y0, int x1, int y1)
 
 void PC_GlFill(int x, int y, int w, int h, uint32_t rgb24)
 {
+    static int dbg = -1;
+    if (dbg < 0)
+        dbg = getenv("THPS_DBG_FILL") ? (int)strtoul(getenv("THPS_DBG_FILL"), NULL, 16) : 0;
+    if (dbg && w >= 256 && h >= 200)
+        rgb24 = (uint32_t)dbg;   /* THPS_DBG_FILL=bbggrr: screen clears in a colour gaps show */
     flush();
     prepare();
     /* the fill colour is reduced to 15 bits, like everything else in VRAM */

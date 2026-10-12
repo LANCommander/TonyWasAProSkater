@@ -30,7 +30,10 @@
  * THPS_R3DSTATS=1 prints counts once a second, THPS_R3D_VERIFY=1 checks the float vertices against
  * the integers retail computed, THPS_R3D_NEARDROP=1 drops faces crossing the near plane that
  * retail dropped (those without the subdivision flag), THPS_R3D_RETAILFADE=1 leaves calls in
- * fade-to-colour mode to retail (A/B of the native version; not for Dreamcast models). */
+ * fade-to-colour mode to retail (A/B of the native version; not for Dreamcast models),
+ * THPS_R3D_NCLIP=1 culls back faces with retail's integer screen-space test, THPS_R3D_DUMP=1 writes
+ * the last layer's faces next to each THPS_SHOT (with THPS_DBG_FILL=bbggrr, pc_gpu_gl.c, painting
+ * the screen clears, cracks in the level stand out). */
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -88,7 +91,7 @@ void PC_RenderTrace(const char *what, uint32_t ret);
 #define GTE_DPCS 0x0780010u
 #define GTE_DPCL 0x0680029u
 
-static int s_native, s_verify, s_stats, s_neardrop, s_retailfade;
+static int s_native, s_verify, s_stats, s_neardrop, s_retailfade, s_nclip;
 
 static struct {
     uint32_t faces, culled, badtag, layers, draws, calls, water, fade, fb_fade, fb_nolayer;
@@ -343,6 +346,7 @@ typedef struct {
     uint32_t first;
     float zmin, zmax;   /* view depth range of its corners */
     uint16_t hd;        /* its HD texture (pc_dctex.h), 0 if none */
+    uint32_t src;       /* the face's address in the model (THPS_R3D_DUMP) */
 } Face;
 
 typedef struct {
@@ -410,6 +414,8 @@ static PC_GlVert *alloc_verts(Batch *b, int n)
     return v;
 }
 
+static uint32_t s_src;   /* the face being added */
+
 static void add_face(Batch *b, int bucket, int cls, int nv, uint32_t first, uint16_t hd)
 {
     float zmin = 1e30f, zmax = -1e30f;
@@ -431,6 +437,7 @@ static void add_face(Batch *b, int bucket, int cls, int nv, uint32_t first, uint
     f->zmin = zmin;
     f->zmax = zmax;
     f->hd = hd;
+    f->src = s_src;
 }
 
 static void add_page(Batch *b, uint16_t tpage, uint16_t clut)
@@ -658,6 +665,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
         uint32_t f = (w0 & (uint32_t)((int32_t)gff >> 16)) | (gff & 0xffff);
         uint32_t a0 = face;
         face += f >> 16;
+        s_src = a0;
         if (!(f & 0xc0))
             continue;
         uint32_t w1 = M32(a0 + 4);
@@ -707,42 +715,52 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
             continue;
         }
 
-        /* back faces: retail's screen-space test, or in view space where that has no meaning */
+        /* back faces: in view space, from the unrounded vertices. Retail tests the integer screen
+         * positions (NCLIP), which gets faces seen almost edge-on wrong: less than a pixel high
+         * on the PS1, but at higher resolutions the ones it drops leave cracks in the level
+         * (Chicago's floor along the walls). THPS_R3D_NCLIP=1 uses retail's test. */
         int visible;
+        float d1 = det3(sh[0], sh[1], sh[2]), d2 = tri ? 0 : det3(sh[1], sh[3], sh[2]);
         if (near) {
             st.near++;
             if (!(f & 0x1000) && s_neardrop)
                 continue;
             /* retail's near-plane path tests v0, v1, v2 in view space and doesn't apply the
              * mirror flag; a quad's other half counts too here */
-            float d1 = det3(sh[0], sh[1], sh[2]), d2 = tri ? 0 : det3(sh[1], sh[3], sh[2]);
             visible = d1 >= 0 || d2 > 0;
         } else {
-            int x[4], y[4];
-            for (int i = 0; i < 4; i++) {
-                uint32_t s = M32(sl[i]);
-                if (fast) {
-                    x[i] = (int32_t)(s << 21) >> 21;
-                    y[i] = (int32_t)(s << 5) >> 21;
-                } else {
-                    x[i] = (int16_t)s;
-                    y[i] = (int16_t)(s >> 16);
-                }
-            }
-            int32_t n1 = nclip(x[0], y[0], x[1], y[1], x[2], y[2]);
-            int32_t n2 = tri ? 0 : nclip(x[1], y[1], x[2], y[2], x[3], y[3]);
-            if (s_verify && (n1 > 64 || n1 < -64)) {
-                /* the view-space test near faces use must agree with this one */
-                float d1 = det3(sh[0], sh[1], sh[2]);
-                st.sign_checked++;
-                if ((d1 > 0) != (n1 > 0))
-                    st.sign_bad++;
-            }
             if (mirror) {
-                n1 = -n1;
-                n2 = -n2;
+                d1 = -d1;
+                d2 = -d2;
             }
-            visible = n1 > 0 || n2 < 0;
+            visible = d1 > 0 || d2 > 0;
+            if (s_nclip || s_verify) {
+                int x[4], y[4];
+                for (int i = 0; i < 4; i++) {
+                    uint32_t s = M32(sl[i]);
+                    if (fast) {
+                        x[i] = (int32_t)(s << 21) >> 21;
+                        y[i] = (int32_t)(s << 5) >> 21;
+                    } else {
+                        x[i] = (int16_t)s;
+                        y[i] = (int16_t)(s >> 16);
+                    }
+                }
+                int32_t n1 = nclip(x[0], y[0], x[1], y[1], x[2], y[2]);
+                int32_t n2 = tri ? 0 : nclip(x[1], y[1], x[2], y[2], x[3], y[3]);
+                if (mirror) {
+                    n1 = -n1;
+                    n2 = -n2;
+                }
+                if (s_verify && (n1 > 64 || n1 < -64)) {
+                    /* the two tests must agree where the screen one is reliable */
+                    st.sign_checked++;
+                    if ((d1 > 0) != (n1 > 0))
+                        st.sign_bad++;
+                }
+                if (s_nclip)
+                    visible = n1 > 0 || n2 < 0;
+            }
         }
         if (!visible) {
             st.culled++;
@@ -1072,6 +1090,32 @@ static void layer_end(void)
     s_layer = NULL;
 }
 
+static Batch *s_last_drawn;
+static int s_last_ofs[2];
+
+/* THPS_R3D_DUMP=1: with each THPS_SHOT, the faces of the layer drawn last, as text (debugging):
+ * a header line "h ofx ofy hither ofs_x ofs_y", then per face "F bucket cls src nv" and its
+ * vertices "x y z u v rgb". */
+void R3d_DumpLast(const char *path)
+{
+    Batch *b = s_last_drawn;
+    FILE *fp;
+    if (!b || !b->sorted || !(fp = fopen(path, "w")))
+        return;
+    fprintf(fp, "%g %g %g %g %d %d\n", b->h, b->ofx, b->ofy, b->hither, s_last_ofs[0],
+            s_last_ofs[1]);
+    for (int i = 0; i < b->nf; i++) {
+        const Face *f = &b->sf[i];
+        fprintf(fp, "F %d %d %08x %d\n", f->bucket, f->cls, f->src, f->nv);
+        for (int k = 0; k < f->nv; k++) {
+            const PC_GlVert *v = &b->sv[f->first + (uint32_t)k];
+            fprintf(fp, "%.4f %.4f %.4f %g %g %02x%02x%02x\n", v->x, v->y, v->z, v->u, v->v, v->r,
+                    v->g, v->b);
+        }
+    }
+    fclose(fp);
+}
+
 static void layer_start(uint32_t id)
 {
     Batch *b = &s_b[id & 15];
@@ -1079,6 +1123,7 @@ static void layer_start(uint32_t id)
         layer_end();
     if ((id & 15) >= NBATCH || !b->valid || b->gen != id >> 4)
         return;
+    s_last_drawn = b;
     if (!b->sorted)
         sort_batch(b);
     for (int i = 0; i < b->npages; i++)
@@ -1094,6 +1139,8 @@ static void layer_start(uint32_t id)
     lp.ofx = b->ofx;
     lp.ofy = b->ofy;
     lp.hither = b->hither;
+    s_last_ofs[0] = lp.ofs_x;
+    s_last_ofs[1] = lp.ofs_y;
     PC_GlLayerBegin(&lp, b->sv, b->nv);
     b->next = 0;
     s_layer = b;
@@ -1176,6 +1223,7 @@ void R3d_Init(int gl)
     s_verify = getenv("THPS_R3D_VERIFY") && atoi(getenv("THPS_R3D_VERIFY"));
     s_neardrop = getenv("THPS_R3D_NEARDROP") && atoi(getenv("THPS_R3D_NEARDROP"));
     s_retailfade = getenv("THPS_R3D_RETAILFADE") && atoi(getenv("THPS_R3D_RETAILFADE"));
+    s_nclip = getenv("THPS_R3D_NCLIP") && atoi(getenv("THPS_R3D_NCLIP"));
     if (s_native)
         PC_GtePreciseEnable(1);
     fprintf(stderr, "[r3d] 3D: %s\n", s_native ? "native" : "PS1 (THPS_RENDER3D=psx)");
