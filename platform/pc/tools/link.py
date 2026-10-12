@@ -4,7 +4,8 @@ Generated into build/pc/gen/:
   psx_syms.ld    every `psx_<addr>` symbol the objects use, as an absolute address
   hle_table.c    pc_hle_funcs: runtime functions that implement a Psy-Q entry point
   game_table.c   pc_game_funcs: the decompiled functions (pcfn_<addr>)
-  recomp.c       translated MIPS for every function without C or HLE (mips2c.py)
+  recomp.c       translated MIPS (build.py --mips only; else recomp_none.c: empty tables)
+  image.bin/.s   the retail image's data, code cleared (embed_image.py), linked into thps.exe
   stubs.c        pc_stub_funcs: everything else that is a known function entry
   thunks.s       virtual-dispatch thunks and destructor-call adapters
   names.c        PC_SymbolName for logs
@@ -53,7 +54,7 @@ def jal_targets(img):
     return out
 
 
-def link(ctx, metas, out, toolbin):
+def link(ctx, metas, out, toolbin, mips=False):
     gcc = os.path.join(toolbin, "gcc.exe")
     nm = os.path.join(toolbin, "nm.exe")
     gen = os.path.join(out, "gen")
@@ -117,10 +118,12 @@ def link(ctx, metas, out, toolbin):
         for a in m.get("defines", {}):
             game[int(a, 16)] = "pcfn_%08x" % int(a, 16)
 
-    # ---- 3. translate the rest from MIPS ----------------------------------------------------
-    # Every game function is translated too (by its known size), so any of them can run as
-    # retail MIPS instead of decompiled C for A/B debugging (THPS_MIPS, see pc_main.c). Calls to
-    # game functions from translated code go through the runtime table, which honours that choice.
+    # ---- 3. translate MIPS (build.py --mips only) ---------------------------------------------
+    # A debugging build: every game function is translated too (by its known size), so any of
+    # them can run as retail MIPS instead of C for A/B debugging (THPS_MIPS, see pc_main.c), and
+    # so are the hand-written assembly and library functions, for THPS_SNAP and the tests. Calls
+    # to game functions from translated code go through the runtime table, which honours that
+    # choice. The normal build has no MIPS at all: anything without C is a stub.
     entries, sizes = {}, {}
     for a, (size, mangled, _) in ctx.functions.items():
         if not mangled.startswith("D_"):
@@ -152,11 +155,14 @@ def link(ctx, metas, out, toolbin):
     write_if_changed(nat_file, "".join("0x%08x\n" % a for a in sorted(native)))
     write_if_changed(disp_file, "".join("0x%08x\n" % a for a in sorted(set(game) | set(override))))
     nsplit = 8
-    recomp_cs = [os.path.join(gen, "recomp_%d.c" % k) for k in range(nsplit)]
     stamp = os.path.join(gen, "recomp.stamp")
-    if not os.path.exists(stamp) or any(os.path.getmtime(stamp) < os.path.getmtime(p) for p in
-                                        (ent_file, nat_file, disp_file,
-                                         os.path.join(HERE, "mips2c.py"))):
+    if not mips:
+        write_if_changed(os.path.join(gen, "recomp_none.c"),
+                         "#include \"pc_runtime.h\"\nconst PcFunc pc_recomp_funcs[] = {{0, 0}};\n"
+                         "const PcFunc pc_recomp_game_funcs[] = {{0, 0}};\n")
+    elif not os.path.exists(stamp) or any(os.path.getmtime(stamp) < os.path.getmtime(p) for p in
+                                          (ent_file, nat_file, disp_file,
+                                           os.path.join(HERE, "mips2c.py"))):
         r = subprocess.run([sys.executable, os.path.join(HERE, "mips2c.py"), "--exe", EXE,
                             "--entries", ent_file, "--native", nat_file, "--dispatch", disp_file,
                             "--split", str(nsplit), "-o", os.path.join(gen, "recomp.c")],
@@ -166,7 +172,7 @@ def link(ctx, metas, out, toolbin):
         if r.returncode:
             raise SystemExit("mips2c failed")
         open(stamp, "w").write("")
-    recomp_addrs = {e for e in entries if e not in native}
+    recomp_addrs = {e for e in entries if e not in native} if mips else set()
 
     # ---- 4. tables, stubs, thunks, names ----------------------------------------------------
     referenced = set()
@@ -353,12 +359,27 @@ def link(ctx, metas, out, toolbin):
                          "-Wno-maybe-uninitialized"]
     jobs = [(os.path.join(gen, n), os.path.join(gen, n[:-2] + ".o"))
             for n in ["game_table.c", "hle_table.c", "stubs.c", "names.c"] +
-            ["recomp_%d.c" % k for k in range(nsplit)]]
+            (["recomp_%d.c" % k for k in range(nsplit)] if mips else ["recomp_none.c"])]
     with cf.ThreadPoolExecutor() as ex:
         gen_objs = list(ex.map(lambda j: cc(j[0], j[1], gflags), jobs))
     th_o = os.path.join(gen, "thunks.o")
     run([gcc, "-m32", "-c", os.path.join(gen, "thunks.s"), "-o", th_o])
     gen_objs.append(th_o)
+
+    # the retail image's data (its code cleared), copied to 0x80010000 at startup (pc_main.c)
+    img_bin = os.path.join(gen, "image.bin")
+    if not os.path.exists(img_bin) or any(os.path.getmtime(img_bin) < os.path.getmtime(p) for p in
+                                          (EXE, os.path.join(HERE, "embed_image.py"),
+                                           os.path.join(ROOT, "decomp", "functions.tsv"))):
+        sys.stdout.write(run([sys.executable, os.path.join(HERE, "embed_image.py"), EXE,
+                              img_bin]))
+    write_if_changed(os.path.join(gen, "image.s"),
+                     "\t.section .rdata,\"dr\"\n\t.p2align 4\n\t.globl _pc_image\n_pc_image:\n"
+                     "\t.incbin \"image.bin\"\n\t.globl _pc_image_end\n_pc_image_end:\n")
+    img_o = os.path.join(gen, "image.o")
+    if not os.path.exists(img_o) or os.path.getmtime(img_o) < os.path.getmtime(img_bin):
+        run([gcc, "-m32", "-c", os.path.join(gen, "image.s"), "-o", img_o], cwd=gen)
+    gen_objs.append(img_o)
 
     game_objs = [os.path.join(out, "obj", os.path.splitext(m["src"])[0] + ".o") for m in metas]
     rsp = os.path.join(gen, "objs.rsp")
@@ -371,6 +392,7 @@ def link(ctx, metas, out, toolbin):
     run([gcc, "-m32", "-g", "@" + rsp, "-o", exe, "-mconsole",
          "-Wl,--large-address-aware", "-Wl,--disable-dynamicbase", "-Wl,--image-base=0x400000",
          "-Wl," + os.path.join(gen, "psx_syms.ld").replace("\\", "/")] + libs)
-    print("linked %s: %d decompiled, %d HLE, %d translated, %d stubs" % (
-        exe, len(game), len(allh), len(recomp_addrs), len(stubs)))
+    print("linked %s: %d decompiled, %d HLE, %d translated, %d stubs%s" % (
+        exe, len(game), len(allh), len(recomp_addrs), len(stubs),
+        "" if mips else " (no MIPS: build.py --mips translates the retail code for debugging)"))
     return 0

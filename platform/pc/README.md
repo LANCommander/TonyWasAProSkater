@@ -11,24 +11,28 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
 
 - The executable is a **32-bit, large-address-aware** Windows program. At startup it maps PS1
   main RAM at `0x80000000` (2 MB) and the scratchpad at `0x1f800000` (1 KB), then copies the
-  retail `SLUS_008.60` image (code + data) to `0x80010000`. Every pointer in the retail data is
-  therefore a valid native pointer, and struct layouts are unchanged (int, long and pointers are
-  all 4 bytes).
+  game's data to `0x80010000`: the retail image as the build found it in `SLUS_008.60`, with all
+  its code cleared (`tools/embed_image.py`; only data is left), embedded in `thps.exe`. So the
+  port doesn't need `SLUS_008.60` to run. Every pointer in the retail data is a valid native
+  pointer, and struct layouts are unchanged (int, long and pointers are all 4 bytes).
 - **Globals.** Each decompiled TU is compiled natively, then its symbols are rewritten to the
-  absolute PS1 addresses recorded in its `.syms.json`. Data lives in the retail image, not in
-  the Windows executable.
+  absolute PS1 addresses recorded in its `.syms.json`. Data lives in the retail image (in PS1 RAM), not in
+  the TUs' own sections.
 - **Functions.** Every function keeps its PS1 address as its identity. At startup a 5-byte
   `jmp` to the native code is written over the start of each function's (now unused) MIPS
   code. So `&Func`, vtable entries and callback tables in the retail data all work as native
   function pointers.
-- **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` modules and the pure parts of the Psy-Q
-  libraries) is translated to C by `tools/mips2c.py`. The output runs on a register file, with
-  memory at the same addresses and GTE instructions going to the software GTE. Every game
-  function now has C instead: the hand-written ones are C interpretations listed in
-  `decomp/reimpl.tsv` (built like decompiled C), each checked against the retail code by a test
-  in `tests/` that runs the original MIPS in a small reference interpreter (`tests/mips_ref.c`).
+- **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` renderer and maths, 0x800858ac-
+  0x8008b900, and a few game helpers) is C interpretations in `decomp/src/m3dasm/` and elsewhere,
+  listed in `decomp/reimpl.tsv` (built like decompiled C); the Psy-Q library code the game uses is
+  the port's own C (the HLE files below; `src/hle_libgte.c` for the GTE maths). Each is checked
+  against the retail code by a test in `tests/` that runs the original MIPS in a small reference
+  interpreter (`tests/mips_ref.c`); see "Checking C against the retail code" below.
   `reimpl.tsv` also holds byte-exact C for the few compiler-generated C++ functions a native
-  build can't take from their matching source. What is still translated is Psy-Q library code.
+  build can't take from their matching source. No retail code runs in the port: functions with
+  no C are stubs that log a call (none is called in play). For debugging, `build.py --mips`
+  also translates the retail MIPS to C (`tools/mips2c.py`: a register file, memory at the same
+  addresses, GTE instructions on the software GTE), which `THPS_MIPS` and `THPS_SNAP` use.
 - **C++ classes.** To stay byte-exact, the matching decomp wrote many class members as C (raw
   `this + offset` access, explicit vptr stores and base-class calls). The port's copies are real
   C++ classes with the same logic (`reimpl.tsv` rows marked `cxx`; `decomp/tools/port_cxx.py`).
@@ -62,14 +66,16 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 Needs MSYS2 with the `mingw32` (i686) toolchain and SDL2
 (`pacman -S mingw-w64-i686-gcc mingw-w64-i686-SDL2`), Python 3, and your own copies of:
 
-- `extern/thps1_retail/SLUS_008.60` (the USA executable), and
-- `extern/thps1_disc/thps1.bin`, a raw MODE2/2352 image of the USA disc
-  (`chdman extractcd -i "Tony Hawk's Pro Skater (USA).chd" -o thps1.cue -ob thps1.bin`), needed
-  for the first startup only.
+- `extern/thps1_retail/SLUS_008.60` (the USA executable), for the build only: its data goes into
+  `thps.exe`, and the build takes function layouts from it; and
+- a disc for the first startup, which the game data is extracted from: `extern/thps1_disc/thps1.bin`,
+  a raw MODE2/2352 image of the USA disc (`chdman extractcd -i "Tony Hawk's Pro Skater (USA).chd"
+  -o thps1.cue -ob thps1.bin`), or the Dreamcast disc (below). `thps.exe` looks for it next to
+  itself (`thps1.bin`) or in `extern/` (development layout), or takes `THPS_DISC`.
 
 ```
 python tools/psyq_sigmatch.py          # once: names the Psy-Q library functions (build/psyq_names.tsv)
-python platform/pc/tools/build.py      # -> build/pc/thps.exe
+python platform/pc/tools/build.py      # -> build/pc/thps.exe (--mips: plus translated retail code, for debugging)
 build/pc/thps.exe
 ```
 
@@ -129,8 +135,20 @@ timed to the audio; any button skips, as on the PS1); the songs' 96x64 thumbnail
 shown. Its sound banks (`.kat`: the same sounds as 8/16-bit PCM at 22 kHz instead of 4-bit ADPCM
 at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.c`): each sound is a PCM sample
 the SPU plays in place of a stand-in in sound RAM, tuned to the PS1 banks' pitch. The Dreamcast
-logos (Crave, Treyarch, Sofdec) are not played. The executable is still the PS1's `SLUS_008.60`.
-Needs the OpenGL renderer.
+logos (Crave, Treyarch, Sofdec) are not played. Needs the OpenGL renderer.
+
+## Checking C against the retail code
+
+The C that replaced hand-written assembly and library code is checked against the original MIPS
+on real game states. A `build.py --mips` build records snapshots at function entries
+(`THPS_SNAP=80086f40:8:500,...`: RAM, scratchpad, GTE registers, arguments and the native stack
+the arguments point into; `src/pc_snap.c`). `tools/build_test_asm.py --run` builds
+`build/pc/test_asm.exe` from every `reimpl.tsv` row marked `test_asm` and `src/hle_libgte.c`, and
+replays each snapshot (default: all under `build/pc/snaps`) through the retail MIPS in
+`tests/mips_ref.c` (COP2 on the software GTE) and through the C: both must leave the same RAM,
+scratchpad, native stack, GTE registers and return value. Paths the game rarely takes are covered
+by snapshots edited to take them. Exceptions (scratch words only the retail code's register saves
+use, pointers the port keeps in KSEG0) are listed in the sources as `test_asm:` comments.
 
 ## Saves
 
@@ -271,7 +289,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 
 | variable | effect |
 |---|---|
-| `THPS_EXE`, `THPS_DISC` | paths to `SLUS_008.60` and the disc image (else found next to the exe or in `extern/`); a `.gdi` is the Dreamcast disc |
+| `THPS_DISC` | the disc image for the first-startup extraction (else found next to the exe or in `extern/`); a `.gdi` is the Dreamcast disc |
 | `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
 | `THPS_SAVE_DIR` | the memory card folder (default `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`) |
 | `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |
@@ -299,7 +317,8 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_MOVIES=0` | skip every movie |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
 | `THPS_DETERMINISTIC=1` | virtual clock: identical runs every time (use with `THPS_INPUT` for bisecting) |
-| `THPS_MIPS=all,!lo-hi,addr` | run those game functions as translated retail MIPS instead of decompiled C (A/B debugging) |
+| `THPS_MIPS=all,!lo-hi,addr` | `build.py --mips` builds: run those functions (game code and the rewritten assembly) as translated retail MIPS instead of C (A/B debugging) |
+| `THPS_SNAP=addr[:n[:every]],...` / `THPS_SNAPDIR` | `--mips` builds: record the machine state at those functions' entries for the differential tests (`src/pc_snap.c`, below) |
 | `THPS_POKE=addr:value,...` | store those words every frame (`0x800d1708:1` = level select cheat: every level unlocked) |
 | `THPS_WATCH=addr` | hardware write watchpoint on a 4-byte word: logs value, native EIP and callers |
 | `THPS_COUNT=addr,...` | log per-frame call counts of those functions |
@@ -329,7 +348,8 @@ conversion into the slices the game uploads), and the player's busy-waits wait a
 CD stream instead (PC branch, `PC_MovieWait`). The same decoder shows the songs' 96x64 video on
 the levels' TV screens (the credits screen shows them the same way). Not done yet: SPU reverb,
 exact ADSR curves, 64-bit build. Running every game function as translated MIPS
-(`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase.
+(`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase (the translation
+also loses level polygons in `THPS_RENDER3D=psx` mode, which the C renderer doesn't).
 
 Port glue worth knowing about (see the tools for details):
 - C++ follows the egcs ABI where the retail code depends on it: vtable layout, `delete` through
@@ -347,4 +367,4 @@ The port layer (`platform/pc/`) is GPL-2.0: parts of it are adapted from the Van
 port (`HalmyLyseas/VandalHearts-PcPort`, GPL-2.0), credited in each file that uses them.
 `include/pl_mpeg/pl_mpeg.h` is Dominic Szablewski's PL_MPEG (MIT, see its header). The
 decompiled game code and all game data remain © Activision / Neversoft. Nothing copyrighted is
-committed; the build reads your own `SLUS_008.60` and disc files.
+committed; the build reads your own `SLUS_008.60`, and the game your own disc.

@@ -113,16 +113,20 @@ void PC_RenderTrace(const char *what, uint32_t ret) {
 typedef uint32_t (*Fn12)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,
                          uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 extern const PcFunc pc_recomp_funcs[], pc_recomp_game_funcs[];
-/* The translated retail version of a function (for wrappers that call the original). */
-Fn12 PC_Recomp(uint32_t addr) {
+/* The implementation an override wraps: the function's C (decompiled, rewritten from assembly or
+ * HLE'd), else (build.py --mips) its translated retail code. */
+Fn12 PC_Impl(uint32_t addr) {
     const PcFunc *t;
+    for (t = pc_game_funcs; t->addr; t++)
+        if (t->addr == addr)
+            return (Fn12)t->fn;
     for (t = pc_recomp_funcs; t->addr; t++)
         if (t->addr == addr)
             return (Fn12)t->fn;
     for (t = pc_recomp_game_funcs; t->addr; t++)
         if (t->addr == addr)
             return (Fn12)t->fn;
-    PC_Fatal("no translated code for %08x", addr);
+    PC_Fatal("no implementation of %08x", addr);
     return NULL;
 }
 
@@ -135,7 +139,7 @@ uint32_t hleov_800858ac(uint32_t list, uint32_t flags) {
     static int on = -1;
     uint32_t r, p, n = 0, culled = 0, before = 0;
     if (!f)
-        f = PC_Recomp(0x800858ac);
+        f = PC_Impl(0x800858ac);
     if (on < 0)
         on = getenv("THPS_TRACE_CULL") && atoi(getenv("THPS_TRACE_CULL"));
     if (on)
@@ -188,7 +192,7 @@ void hleov_80078b04(uint32_t self) {
     static Fn12 f;
     static uint32_t last;
     if (!f)
-        f = PC_Recomp(0x80078b04);
+        f = PC_Impl(0x80078b04);
     if (getenv("THPS_TRACE_CULL") && pc_heartbeat != last && (pc_heartbeat % 50) == 1) {
         uint32_t tri = *(uint32_t *)PSX_PTR(self + 0x420);
         last = pc_heartbeat;

@@ -1,6 +1,6 @@
 /* Native 3D renderer for the world and models; see pc_render3d.h for the outline.
  *
- * Geometry. The retail vertex transforms (M3DASM, translated MIPS) keep running: callers use their
+ * Geometry. The retail vertex transforms (M3DASM, as C in decomp/src/m3dasm) keep running: callers use their
  * results (outcodes, culling), and shadows and collision read the projected-vertex cache they
  * fill. Each one is wrapped so that the GTE also hands over every vertex it transforms unrounded
  * (PC_GteCaptureBegin); those are stored in a float copy of the cache, slot for slot, following
@@ -49,7 +49,7 @@ extern volatile uint32_t pc_heartbeat;
 
 typedef uint32_t (*Fn12)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,
                          uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
-Fn12 PC_Recomp(uint32_t addr);
+Fn12 PC_Impl(uint32_t addr); /* pc_overrides.c */
 void PC_RenderTrace(const char *what, uint32_t ret);
 
 #define M32(a) (*(volatile uint32_t *)PSX_PTR(a))
@@ -229,7 +229,7 @@ static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uin
 {
     static Fn12 fn[T_COUNT];
     if (!fn[kind])
-        fn[kind] = PC_Recomp(addr);
+        fn[kind] = PC_Impl(addr);
     if (!s_native)
         return fn[kind](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
 
@@ -960,7 +960,7 @@ static uint32_t process(uint32_t addr, int fast, uint32_t a0, uint32_t a1, uint3
 {
     static Fn12 fn[2];
     if (!fn[fast])
-        fn[fast] = PC_Recomp(addr);
+        fn[fast] = PC_Impl(addr);
     if (!fast)
         PC_RenderTrace("P", 0);
     if (!s_native)
@@ -1017,7 +1017,7 @@ uint32_t hleov_80089ddc(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
 {
     static Fn12 f;
     if (!f)
-        f = PC_Recomp(0x80089ddc);
+        f = PC_Impl(0x80089ddc);
     if (s_native)
         return 0;
     return f(a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the native Windows port of THPS1 (see platform/pc/README.md).
 
-    python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link]
+    python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link] [--mips]
 
 Pipeline for every decompiled TU (decomp/matched.tsv, plus the near-miss sources for functions
 that aren't byte-exact yet, and decomp/reimpl.tsv: hand-written assembly reimplemented in C):
@@ -39,6 +39,7 @@ sys.path.insert(0, HERE)
 import portsrc  # noqa: E402
 
 GAME_CODE_END = 0x800858AC
+CODE_END = 0x8009D0E0  # hand-written assembly rewritten in C (reimpl.tsv) lies past the game code
 
 COMMON_FLAGS = [
     "-m32", "-mabi=sysv", "-mno-ms-bitfields", "-malign-double", "-O1", "-g",
@@ -164,6 +165,10 @@ class Ctx:
         self.fn_by_name = {}
         for a, (sz, mangled, dem) in self.functions.items():
             self.fn_by_name.setdefault(mangled, a)
+        # hand-written assembly rewritten in C: callable by its label from other rewrites
+        for p in read_tsv(os.path.join(DECOMP, "reimpl.tsv")):
+            if len(p) > 4 and int(p[1], 16) >= GAME_CODE_END:
+                self.fn_by_name.setdefault(p[4], int(p[1], 16))
         self.fn_by_sig = {}
         self.fn_by_qual = {}
         for a, (sz, mangled, dem) in self.functions.items():
@@ -580,7 +585,7 @@ class Resolver:
                     addr = primary
                 else:
                     addr = self.ctx.fn_by_name.get(name)
-            if addr is not None and addr < GAME_CODE_END:
+            if addr is not None and addr < CODE_END:
                 if re.search(r"C1E", name):
                     # egcs constructors return `this` and C callers use it; g++'s return void.
                     # link.py wraps the native constructor at the retail address.
@@ -709,6 +714,8 @@ def main():
     ap.add_argument("--clean", action="store_true")
     ap.add_argument("--only", default=None)
     ap.add_argument("--no-link", action="store_true")
+    ap.add_argument("--mips", action="store_true",
+                    help="also translate the retail MIPS (THPS_MIPS / THPS_SNAP debugging)")
     a = ap.parse_args()
     os.environ["PATH"] = TOOLBIN + os.pathsep + os.environ["PATH"]
     if a.clean and os.path.isdir(os.path.join(OUT, "obj")):
@@ -743,7 +750,7 @@ def main():
     if a.no_link or errs:
         return 1 if errs else 0
     import link  # noqa: E402
-    return link.link(ctx, metas, OUT, TOOLBIN)
+    return link.link(ctx, metas, OUT, TOOLBIN, mips=a.mips)
 
 
 if __name__ == "__main__":

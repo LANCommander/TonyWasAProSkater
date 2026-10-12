@@ -1,7 +1,8 @@
 /* A small, independent R3000 interpreter for differential tests: it runs functions straight from
  * the retail executable's bytes, so C reimplementations of hand-written assembly can be compared
  * with the original code. Integer ISA with branch and load delay slots, the scratchpad, and of the
- * GTE only LZCS/LZCR (the leading-bit counter hand-written code uses); no COP0.
+ * GTE only LZCS/LZCR (the leading-bit counter hand-written code uses), or with -DMREF_GTE all of
+ * COP2 on the port's software GTE (pc_gte.c); no COP0.
  * Deliberately shares nothing with tools/mips2c.py, so it checks the translator too. */
 #ifndef MIPS_REF_H
 #define MIPS_REF_H
@@ -17,6 +18,10 @@ typedef struct {
     uint8_t *ram;   /* 2 MB at 0x80000000 (KUSEG 0x00000000 and KSEG1 0xa0000000 mirror it) */
     uint8_t scratch[MREF_SCRATCH_SIZE]; /* 1 KB at 0x1f800000 */
     int fault;      /* set by MRef_Call when the code did something the PS1 would bus-error on */
+    uint8_t *ext;   /* optional: ext_size bytes at ext_base (outside PS1 memory), e.g. a native */
+    uint32_t ext_base, ext_size; /* stack the test's arguments point into */
+    int unaligned_ok; /* unaligned word/halfword accesses work (as in the port's translated code)
+                         instead of faulting */
 } MRef;
 
 /* Load a PS-X EXE into a fresh machine. Returns 0 on failure (missing file, bad header). */
@@ -31,5 +36,8 @@ uint8_t *MRef_Ptr(MRef *m, uint32_t addr);
  * ends the call with m->fault set; an unsupported instruction or a runaway call aborts the test
  * program. */
 uint32_t MRef_Call(MRef *m, uint32_t addr, uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3);
+/* The same with up to 12 argument words (the fifth on go to the stack at sp+16) and the stack
+ * pointer to start from. */
+uint32_t MRef_CallArgs(MRef *m, uint32_t addr, const uint32_t *args, int nargs, uint32_t sp);
 
 #endif

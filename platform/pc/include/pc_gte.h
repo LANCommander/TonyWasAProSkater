@@ -25,6 +25,11 @@ void PC_GteCommand(uint32_t op);
 /* Reset all registers to zero (power-on state). */
 void PC_GteReset(void);
 
+/* The whole register state as an opaque blob (differential tests, snapshots). */
+int PC_GteStateSize(void);
+void PC_GteSaveState(void *buf);
+void PC_GteLoadState(const void *buf);
+
 /* Precise projections, for the OpenGL renderer. The GTE rounds every projected vertex to a whole
  * pixel (SXY) and the GPU gets nothing else, which makes geometry wobble and textures warp. When
  * enabled, RTPS/RTPT also record the unrounded screen position and the view depth, keyed by the

@@ -418,7 +418,7 @@ static int ManifestIsDreamcast(void) {
     return dc;
 }
 
-/* A .gdi: THPS_DISC, else next to thps.exe or SLUS_008.60 (or in a folder there), or at the top
+/* A .gdi: THPS_DISC, else next to thps.exe (or in a folder there), or at the top
  * of the repository (development layout). */
 static int FindGdiIn(const char *dir, char *out, int n, int depth) {
     char pat[MAX_PATH];
@@ -792,7 +792,7 @@ void PC_AssetsInit(void) {
         if (!FindGdi(path, sizeof path))
             PC_Fatal("The game data has to be extracted from your disc first, and no disc image "
                      "was found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro Skater "
-                     "(USA) for the PlayStation next to SLUS_008.60 as thps1.bin, or the .gdi "
+                     "(USA) for the PlayStation next to thps.exe as thps1.bin, or the .gdi "
                      "and track files of the Dreamcast version next to thps.exe; or set "
                      "THPS_DISC to either.");
         s_dc = 1;

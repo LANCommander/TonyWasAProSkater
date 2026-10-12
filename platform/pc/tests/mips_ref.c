@@ -1,5 +1,8 @@
 /* R3000 reference interpreter for differential tests (see mips_ref.h). */
 #include "mips_ref.h"
+#ifdef MREF_GTE
+#include "pc_gte.h"
+#endif
 
 #include <setjmp.h>
 #include <stdio.h>
@@ -27,6 +30,8 @@ static void Fault(MRef *m) {
 
 uint8_t *MRef_Ptr(MRef *m, uint32_t addr) {
     uint32_t phys = addr & 0x1fffffffu;
+    if (m->ext && addr - m->ext_base < m->ext_size)
+        return m->ext + (addr - m->ext_base);
     if (phys < MREF_RAM_SIZE)
         return m->ram + phys;
     if (phys - 0x1f800000u < MREF_SCRATCH_SIZE)
@@ -78,21 +83,30 @@ void MRef_Free(MRef *m) {
 
 static uint32_t Rd32(MRef *m, uint32_t a) {
     uint32_t v;
-    if (a & 3)
+    if ((a & 3) && !m->unaligned_ok)
         Fault(m);
     memcpy(&v, MRef_Ptr(m, a), 4);
     return v;
 }
 
 static void Wr32(MRef *m, uint32_t a, uint32_t v) {
-    if (a & 3)
+    if ((a & 3) && !m->unaligned_ok)
         Fault(m);
     memcpy(MRef_Ptr(m, a), &v, 4);
 }
 
 uint32_t MRef_Call(MRef *m, uint32_t addr, uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3) {
+    uint32_t args[4];
+    args[0] = a0;
+    args[1] = a1;
+    args[2] = a2;
+    args[3] = a3;
+    return MRef_CallArgs(m, addr, args, 4, 0x801ffff0u);
+}
+
+uint32_t MRef_CallArgs(MRef *m, uint32_t addr, const uint32_t *args, int nargs, uint32_t sp) {
     uint32_t next_pc = addr + 4;
-    int ld_reg = 0, steps = 0;
+    int ld_reg = 0, steps = 0, i;
     uint32_t ld_val = 0;
     jmp_buf jb;
 
@@ -103,11 +117,14 @@ uint32_t MRef_Call(MRef *m, uint32_t addr, uint32_t a0, uint32_t a1, uint32_t a2
     }
     trap = &jb;
 
-    m->r[4] = a0;
-    m->r[5] = a1;
-    m->r[6] = a2;
-    m->r[7] = a3;
-    m->r[29] = 0x801ffff0u;
+    sp = (sp - 16 - 4 * (nargs > 4 ? nargs - 4 : 0)) & ~7u;
+    for (i = 0; i < nargs; i++) {
+        if (i < 4)
+            m->r[4 + i] = args[i];
+        else
+            Wr32(m, sp + 4 * i, args[i]);
+    }
+    m->r[29] = sp;
     m->r[31] = RETURN_ADDR;
     m->pc = addr;
 
@@ -227,7 +244,7 @@ uint32_t MRef_Call(MRef *m, uint32_t addr, uint32_t a0, uint32_t a1, uint32_t a2
         case 0x21:
         case 0x25: {
             uint16_t h;
-            if (ea & 1)
+            if ((ea & 1) && !m->unaligned_ok)
                 Fault(m);
             memcpy(&h, MRef_Ptr(m, ea), 2);
             new_ld = rt;
@@ -250,7 +267,7 @@ uint32_t MRef_Call(MRef *m, uint32_t addr, uint32_t a0, uint32_t a1, uint32_t a2
         case 0x28: *MRef_Ptr(m, ea) = (uint8_t)t; break;
         case 0x29: {
             uint16_t h = (uint16_t)t;
-            if (ea & 1)
+            if ((ea & 1) && !m->unaligned_ok)
                 Fault(m);
             memcpy(MRef_Ptr(m, ea), &h, 2);
             break;
@@ -266,6 +283,25 @@ uint32_t MRef_Call(MRef *m, uint32_t addr, uint32_t a0, uint32_t a1, uint32_t a2
             Wr32(m, ea & ~3u, word);
             break;
         }
+#ifdef MREF_GTE
+        /* COP2 on the port's software GTE (pc_gte.c). mfc2/cfc2 land an instruction late, like
+         * loads; the GTE's own pipeline delays aren't modelled (the code waits them out). */
+        case 0x12:
+            if (rs & 0x10)
+                PC_GteCommand(w & 0x1ffffffu);
+            else if (rs == 0x04)
+                PC_GteSetData((int)rd, t);
+            else if (rs == 0x06)
+                PC_GteSetCtrl((int)rd, t);
+            else if (rs == 0x00 || rs == 0x02) {
+                new_ld = rt;
+                new_val = rs ? PC_GteGetCtrl((int)rd) : PC_GteGetData((int)rd);
+            } else
+                Die(m, "unsupported COP2 instruction", w);
+            break;
+        case 0x32: PC_GteSetData((int)rt, Rd32(m, ea)); break;
+        case 0x3a: Wr32(m, ea, PC_GteGetData((int)rt)); break;
+#else
         case 0x12:
             /* COP2: only moves to LZCS (data 30) and from LZCR (data 31). mfc2 lands an
              * instruction late, like a load. */
@@ -278,6 +314,7 @@ uint32_t MRef_Call(MRef *m, uint32_t addr, uint32_t a0, uint32_t a1, uint32_t a2
                 Die(m, "unsupported COP2 instruction", w);
             }
             break;
+#endif
         default: Die(m, "unsupported instruction", w);
         }
 

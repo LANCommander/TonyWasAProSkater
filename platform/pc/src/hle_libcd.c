@@ -199,7 +199,7 @@ void PC_CdSetNoDisc(int on) { s_noDisc = on; }
 
 int PC_CdFindImage(char *path, int n) {
     const char *dir = PC_DataDir();
-    const char *fmts[] = {"%s\\thps1.bin", "%s\\..\\thps1_disc\\thps1.bin",
+    const char *fmts[] = {"%s\\thps1.bin", "%s\\..\\..\\extern\\thps1_disc\\thps1.bin",
                           "%s\\Tony Hawk's Pro Skater (USA).bin", "%s\\game\\thps1.bin"};
     const char *e = getenv("THPS_DISC");
     int i;
@@ -226,7 +226,7 @@ int PC_CdOpen(void) {
     if (!PC_CdFindImage(path, sizeof path))
         PC_Fatal("The game data has to be extracted from your disc first, and no disc image was "
                  "found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro Skater (USA) next "
-                 "to SLUS_008.60 as thps1.bin, or set THPS_DISC.");
+                 "to thps.exe as thps1.bin, or set THPS_DISC.");
     s_disc = fopen(path, "rb");
     if (!s_disc)
         PC_Fatal("cannot open %s", path);

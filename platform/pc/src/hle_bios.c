@@ -248,3 +248,46 @@ void PC_Syscall(void) {
         pc_r.r[2] = 0;
     }
 }
+
+/* ---- libapi entry points the game calls directly ---------------------------------------------
+ * In the library each is a three-instruction stub that jumps into the BIOS table. */
+
+static u32 BiosCall4(u32 vec, u32 fn, u32 a0, u32 a1, u32 a2, u32 a3) {
+    u32 save[4], r;
+    int i;
+    for (i = 0; i < 4; i++)
+        save[i] = pc_r.r[4 + i];
+    pc_r.r[4] = a0;
+    pc_r.r[5] = a1;
+    pc_r.r[6] = a2;
+    pc_r.r[7] = a3;
+    r = PC_BiosCall(vec, fn);
+    for (i = 0; i < 4; i++)
+        pc_r.r[4 + i] = save[i];
+    return r;
+}
+
+u32 hle_8008eab8(u32 cls, u32 spec, u32 mode, u32 func) { /* OpenEvent */
+    return BiosCall4(0xb0, 0x08, cls, spec, mode, func);
+}
+
+u32 hle_8008eb08(u32 event) { /* TestEvent */
+    return BiosCall4(0xb0, 0x0b, event, 0, 0, 0);
+}
+
+u32 hle_8008ea48(u32 event) { /* EnableEvent */
+    return BiosCall4(0xb0, 0x0c, event, 0, 0, 0);
+}
+
+/* __main (libsn): runs the static constructors listed after the linker's ctor table, once. */
+#define CTORS_DONE 0x800ce490u
+#define CTOR_TABLE 0x800d101cu
+#define CTOR_COUNT 19
+void hle_80092044(void) {
+    int i;
+    if (*(u32 *)PSX_PTR(CTORS_DONE))
+        return;
+    *(u32 *)PSX_PTR(CTORS_DONE) = 1;
+    for (i = 0; i < CTOR_COUNT; i++)
+        ((void (*)(void))PSX_PTR(*(u32 *)PSX_PTR(CTOR_TABLE + 4 * i)))();
+}

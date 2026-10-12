@@ -920,3 +920,18 @@ void PC_GteReset(void)
 {
 	memset(&g, 0, sizeof g);
 }
+
+int PC_GteStateSize(void)
+{
+	return (int)sizeof g;
+}
+
+void PC_GteSaveState(void *buf)
+{
+	memcpy(buf, &g, sizeof g);
+}
+
+void PC_GteLoadState(const void *buf)
+{
+	memcpy(&g, buf, sizeof g);
+}

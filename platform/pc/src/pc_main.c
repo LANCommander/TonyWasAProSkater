@@ -1,4 +1,4 @@
-/* Boot: map PS1 memory at its own addresses, load the retail image, point every PS1 function
+/* Boot: map PS1 memory at its own addresses, copy in the game's data, point every PS1 function
  * address at its native implementation, then run the game's main(). See platform/pc/README.md. */
 #include <windows.h>
 #include <shlobj.h>
@@ -463,46 +463,18 @@ const char *PC_UserDir(void) {
     return dir;
 }
 
-/* The retail executable: THPS_EXE, else SLUS_008.60 next to the exe, in ./game, or the repo's
- * extern/thps1_retail (development layout). */
-static void LoadExecutable(void) {
-    char exeDir[MAX_PATH], path[MAX_PATH], *slash;
-    const char *cands[] = {"%s\\SLUS_008.60", "%s\\game\\SLUS_008.60",
-                           "%s\\..\\..\\extern\\thps1_retail\\SLUS_008.60"};
-    FILE *f;
-    uint8_t hdr[0x800];
-    uint32_t taddr, tsize;
-    int i, found = 0;
-    GetModuleFileNameA(NULL, exeDir, sizeof exeDir);
-    slash = strrchr(exeDir, '\\');
-    if (slash)
-        *slash = 0;
-    if (getenv("THPS_EXE")) {
-        snprintf(path, sizeof path, "%s", getenv("THPS_EXE"));
-        found = FileExists(path);
-    }
-    for (i = 0; !found && i < 3; i++) {
-        snprintf(path, sizeof path, cands[i], exeDir);
-        found = FileExists(path);
-    }
-    if (!found)
-        PC_Fatal("SLUS_008.60 not found. Put the retail executable from your Tony Hawk's Pro "
-                 "Skater (USA) disc next to thps.exe, or set THPS_EXE.");
-    snprintf(s_dataDir, sizeof s_dataDir, "%s", path);
+/* The retail image's data (initialised globals, tables, strings, vtables), embedded in thps.exe
+ * by the build with its code cleared (tools/embed_image.py), goes to its PS1 address. The game
+ * directory (PC_DataDir) is the one thps.exe is in. */
+extern const uint8_t pc_image[], pc_image_end[];
+
+static void LoadImage0(void) {
+    char *slash;
+    GetModuleFileNameA(NULL, s_dataDir, sizeof s_dataDir);
     slash = strrchr(s_dataDir, '\\');
     if (slash)
         *slash = 0;
-    f = fopen(path, "rb");
-    if (!f || fread(hdr, 1, sizeof hdr, f) != sizeof hdr || memcmp(hdr, "PS-X EXE", 8))
-        PC_Fatal("%s is not a PS-X executable", path);
-    memcpy(&taddr, hdr + 0x18, 4);
-    memcpy(&tsize, hdr + 0x1c, 4);
-    if (taddr != PSX_EXE_BASE || tsize != 0xcd000)
-        PC_Fatal("%s is not the THPS1 USA executable (SLUS-00860)", path);
-    if (fread(PSX_PTR(taddr), 1, tsize, f) != tsize)
-        PC_Fatal("%s is truncated", path);
-    fclose(f);
-    PC_Log("loaded %s", path);
+    memcpy(PSX_PTR(PSX_EXE_BASE), pc_image, (size_t)(pc_image_end - pc_image));
 }
 
 /* What the retail entry point (__SN_ENTRY_POINT) does before main: clear .bss and hand the
@@ -807,6 +779,8 @@ static DWORD WINAPI Watchdog(LPVOID arg) {
     return 0;
 }
 
+void PC_SnapInstall(void); /* pc_snap.c */
+
 /* ---- entry ---------------------------------------------------------------------------------- */
 
 int main(int argc, char **argv) {
@@ -818,9 +792,10 @@ int main(int argc, char **argv) {
                     FALSE, DUPLICATE_SAME_ACCESS);
     CreateThread(NULL, 0, Watchdog, NULL, 0, NULL);
     MapPsxMemory();
-    LoadExecutable();
+    LoadImage0();
     BuildFunctionTable();
     InstallTrampolines();
+    PC_SnapInstall();
     PC_GteReset();
     PC_HleInit();
     Crt0();
