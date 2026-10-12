@@ -5,7 +5,8 @@
  * What is modelled: PS-ADPCM blocks (28 samples per 16 bytes, loop/end flags), pitch stepping with
  * linear interpolation, per-voice L/R volume, the ADSR envelope as linear ramps, key on/off, and
  * the master volume, and the CD audio input (decoded XA from hle_libcd.c's stream, at the CD
- * volume and CdMix levels, added after the master volume). Not modelled yet: reverb, sweep
+ * volume and CdMix levels, added after the master volume). Voices can also play PCM samples
+ * (the Dreamcast's sound banks): see PC_SpuPcmAdd. Not modelled yet: reverb, sweep
  * volume, exponential ADSR curves, noise. Rates and timings are approximate, not bit-exact.
  *
  * The mixer runs on SDL's audio thread. Every game-side call that touches voice state takes the
@@ -88,6 +89,25 @@ typedef struct {
 
 enum { ENV_OFF, ENV_ATTACK, ENV_DECAY, ENV_SUSTAIN, ENV_RELEASE };
 
+/* PCM samples. The Dreamcast's samples are the PS1's sounds at a higher rate, and the PS1's
+ * banks tune them (VAB centre note and fine tune) to play one semitone below the rate the
+ * Dreamcast files give: comparing the two versions' lengths of the same sound, across banks,
+ * rates and centre notes, gives 0.94-0.95 for nearly all. So the rate is scaled by that. */
+#define PC_SPU_PCM_TUNE 0.943874     /* 2^(-1/12) */
+#define PCM_MAX 1024
+#define PCM_MAGIC "DCPC"
+
+typedef struct {
+    int16_t *data;
+    uint32_t frames;
+    unsigned mul;           /* SPU_PITCH_ONE-based step per output frame at pitch 0x1000 */
+    int loop;
+    uint32_t loopStart, loopEnd;
+} PcmSample;
+
+static PcmSample s_pcm[PCM_MAX];
+static int s_npcm;
+
 typedef struct {
     int playing;            /* keyed (or releasing) and not finished */
     int env_phase, env_ctr;
@@ -106,6 +126,9 @@ typedef struct {
     /* playback position: phase is the fraction (0..SPU_PITCH_ONE) between prev and cur */
     unsigned phase;
     int prev, cur;
+    /* or a PCM sample, at frame pcmPos */
+    const PcmSample *pcm;
+    uint32_t pcmPos;
 } Voice;
 
 static uint8_t s_ram[PC_SPU_RAM_SIZE];
@@ -127,6 +150,7 @@ static int s_traceFrames;
 #define CD_PREBUFFER 8192u
 static int16_t s_cdBuf[CD_FIFO_FRAMES * 2];
 static unsigned s_cdRead, s_cdCount;      /* oldest frame, frames queued */
+static uint64_t s_cdConsumed;             /* frames taken from the queue, ever */
 static unsigned s_cdRate = 37800;
 static unsigned s_cdPhase;                /* 16.16 position between cdPrev and cdCur */
 static int s_cdPrimed;
@@ -209,6 +233,17 @@ static int DecodeBlock(Voice *v) {
 }
 
 static int NextSample(Voice *v, int *out) {
+    if (v->pcm) {
+        const PcmSample *p = v->pcm;
+        uint32_t end = p->loop && p->loopEnd ? p->loopEnd : p->frames;
+        if (v->pcmPos >= end) {
+            if (!p->loop || p->loopStart >= end)
+                return 0;
+            v->pcmPos = p->loopStart;
+        }
+        *out = p->data[v->pcmPos++];
+        return 1;
+    }
     if (v->idx >= 28 && !DecodeBlock(v))
         return 0;
     *out = v->dec[v->idx++];
@@ -226,9 +261,20 @@ static void KeyOn(Voice *v, int n) {
     v->h1 = v->h2 = 0;
     v->phase = 0;
     v->prev = v->cur = 0;
+    v->pcm = NULL;
+    v->pcmPos = 0;
+    {
+        /* a PCM sample's stand-in */
+        const uint8_t *b = &s_ram[v->start & (PC_SPU_RAM_SIZE - 1) & ~15u];
+        int id;
+        memcpy(&id, b + 6, 4);
+        if (!memcmp(b + 2, PCM_MAGIC, 4) && id >= 0 && id < s_npcm)
+            v->pcm = &s_pcm[id];
+    }
     if (s_trace)
-        PC_Log("spu: key on voice %d: addr %05x loop %05x pitch %04x vol %d/%d", n, v->start,
-               v->loop, v->pitch, v->volL, v->volR);
+        PC_Log("spu: key on voice %d: addr %05x loop %05x pitch %04x vol %d/%d pcm %d", n,
+               v->start, v->loop, v->pitch, v->volL, v->volR,
+               v->pcm ? (int)(v->pcm - s_pcm) : -1);
 }
 
 static void KeyOff(Voice *v, int n) {
@@ -364,6 +410,7 @@ static void CdSample(int *outL, int *outR) {
         s_cdCur[1] = s_cdBuf[s_cdRead * 2 + 1];
         s_cdRead = (s_cdRead + 1) % CD_FIFO_FRAMES;
         s_cdCount--;
+        s_cdConsumed++;
     }
     if (!s_cdMix || s_cdMuted)
         return;
@@ -392,7 +439,7 @@ static void Mix(void *userdata, Uint8 *stream, int len) {
             if (!v->playing)
                 continue;
             EnvStep(v);
-            v->phase += v->pitch;
+            v->phase += v->pcm ? (v->pitch * v->pcm->mul) >> 12 : v->pitch;
             while (v->phase >= SPU_PITCH_ONE && v->playing) {
                 int nx;
                 v->phase -= SPU_PITCH_ONE;
@@ -637,6 +684,7 @@ void PC_SpuCdQueue(const int16_t *stereo, int frames, int rate) {
         if (s_cdCount == CD_FIFO_FRAMES) {  /* overrun (game running fast): drop the oldest */
             s_cdRead = (s_cdRead + 1) % CD_FIFO_FRAMES;
             s_cdCount--;
+            s_cdConsumed++;
         }
         w = (s_cdRead + s_cdCount) % CD_FIFO_FRAMES;
         s_cdBuf[w * 2] = stereo[i * 2];
@@ -646,8 +694,25 @@ void PC_SpuCdQueue(const int16_t *stereo, int frames, int rate) {
     Unlock();
 }
 
+unsigned PC_SpuCdQueued(void) {
+    unsigned n;
+    Lock();
+    n = s_cdCount;
+    Unlock();
+    return n;
+}
+
+uint64_t PC_SpuCdConsumed(void) {
+    uint64_t n;
+    Lock();
+    n = s_cdConsumed;
+    Unlock();
+    return n;
+}
+
 void PC_SpuCdFlush(void) {
     Lock();
+    s_cdConsumed += s_cdCount;   /* dropped frames count as gone by */
     s_cdRead = s_cdCount = 0;
     s_cdPhase = 0;
     s_cdPrimed = 0;
@@ -681,6 +746,41 @@ void SpuSetKey(int on, uint32_t voices) {
             KeyOff(&s_v[n], n);
     }
     Unlock();
+}
+
+int PC_SpuPcmAdd(const int16_t *pcm, uint32_t frames, int rate, int loop, uint32_t loopStart,
+                 uint32_t loopEnd) {
+    PcmSample *p;
+    int id;
+    Lock();
+    if (s_npcm == PCM_MAX) {
+        Unlock();
+        return -1;
+    }
+    id = s_npcm;
+    p = &s_pcm[id];
+    p->data = malloc((frames ? frames : 1) * sizeof *p->data);
+    memcpy(p->data, pcm, frames * sizeof *p->data);
+    p->frames = frames;
+    p->mul = (unsigned)(rate * PC_SPU_PCM_TUNE / SPU_RATE * 4096.0 + 0.5);
+    p->loop = loop;
+    p->loopStart = loopStart;
+    p->loopEnd = loopEnd > frames ? frames : loopEnd;
+    s_npcm++;
+    Unlock();
+    return id;
+}
+
+int PC_SpuPcmLooped(int id) { return id >= 0 && id < s_npcm && s_pcm[id].loop; }
+
+/* Block 0 carries the marker and the id (as ADPCM, shift 12: next to silence), block 1 ends the
+ * sample. */
+void PC_SpuPcmStub(int id, uint8_t out[PC_SPU_PCM_STUB]) {
+    memset(out, 0, PC_SPU_PCM_STUB);
+    out[0] = 12;
+    memcpy(out + 2, PCM_MAGIC, 4);
+    memcpy(out + 6, &id, 4);
+    out[16 + 1] = 1;
 }
 
 uint16_t SsPitchFromNote(int note, int fine, int cn, int cf) {

@@ -74,6 +74,10 @@ extern "C" {
 	void FUN_8008f4d4(int, int, int);
 }
 
+#ifdef PC_PORT
+#include "pc_movie.h"
+#endif
+
 void GameFMV_PlayMovie(int track) {
 	DISPENV disp;
 	short old_screen_w;
@@ -165,6 +169,28 @@ void GameFMV_PlayMovie(int track) {
 	Pad[0].MenuAccept.Triggered = 0;
 #ifdef PC_PORT
 	Pad[0].MenuBack.Triggered = 0;
+#endif
+
+#ifdef PC_PORT
+	/* a Dreamcast film: its audio streams as an STR's would, the pictures come from
+	   pc_movie.c in 24-bit at (0, 256) */
+	if (PC_MovieOpen()) {
+		FUN_800914fc(&disp, 0, 256, 480, 240);
+		disp.isrgb24 = 1;
+		disp.disp.w = 320;
+		FUN_8008eebc(0);
+		FUN_8008ca0c(&disp);
+
+		while (PC_MovieFrame()) {
+			FUN_80070ff4();
+
+			if (Pad[0].Pause.Triggered || Pad[0].MenuAccept.Triggered || Pad[0].MenuBack.Triggered)
+				break;
+		}
+
+		PC_MovieClose();
+		goto end;
+	}
 #endif
 
 	while (!strNextVlc(1))

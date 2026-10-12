@@ -33,6 +33,7 @@
 #include "pc_gdrom.h"
 #include "pc_hle.h"
 #include "pc_runtime.h"
+#include "pc_sfd.h"
 
 #define MOVIE_DETAILS 0x800a63e8u /* movieDetails[26], 32 bytes each */
 #define MOVIE_COUNT 26
@@ -67,6 +68,7 @@ static const struct {
 };
 
 static char s_root[MAX_PATH];
+static int s_dc;   /* Data/ holds the Dreamcast version's files */
 
 static int Exists(const char *p) {
     DWORD a = GetFileAttributesA(p);
@@ -208,10 +210,12 @@ static void ExtractStrFiles(const StrFile *e, int n) {
     }
 }
 
-/* The default playlist: the songs in the order the game cycles them. Left alone once it exists,
- * so the player's edits stick. */
+static void FilmName(const char *str, char *out, int n);
+
+/* The default playlist: the songs in the order the game cycles them (the Dreamcast's films of
+ * them with its files). Left alone once it exists, so the player's edits stick. */
 static void WritePlaylist(const StrFile *e, int n) {
-    char path[MAX_PATH], song[MAX_PATH], part[MAX_PATH];
+    char path[MAX_PATH], song[MAX_PATH], part[MAX_PATH], film[80];
     FILE *f;
     int i, k;
     PC_AssetsPath(path, sizeof path, "Music\\Playlist.m3u");
@@ -227,6 +231,14 @@ static void WritePlaylist(const StrFile *e, int n) {
         for (k = 0; k < (int)(sizeof s_credits / sizeof *s_credits); k++)
             if (!_stricmp(s_credits[k].file, e[i].name))
                 title = s_credits[k].title;
+        if (s_dc) {
+            char rel[96];
+            FilmName(e[i].name, film, sizeof film);
+            snprintf(rel, sizeof rel, "Music\\%s", film);
+            PC_AssetsPath(song, sizeof song, rel);
+            fprintf(f, "#EXTINF:%d,%s\n%s\n", PC_SfdAudioSeconds(song), title, film);
+            continue;
+        }
         StrPath(&e[i], song, sizeof song);
         fprintf(f, "#EXTINF:%d,%s\n%s\n", (int)(FileSize(song) / 2352 / STREAM_RATE), title,
                 e[i].name);
@@ -389,7 +401,6 @@ static void ExtractWadFiles(void) {
 #define STATS_SIZE 0x154
 #define STATS_COUNT 14
 
-static int s_dc;   /* Data/ holds the Dreamcast version's files */
 
 int PC_AssetsDreamcast(void) { return s_dc; }
 
@@ -739,6 +750,37 @@ int PC_AssetsFind(const char *discName, char *path, int n) {
     return 1;
 }
 
+/* The Dreamcast's names for the PS1's films where they differ (the PS1's are 8.3 names). */
+static const struct {
+    const char *str, *sfd;
+} s_films[] = {
+    {"ATVILOGO", "activision"}, {"LOGO", "never"}, {"BURNQUIS", "burnquist"},
+};
+
+/* "SUICIDE.STR" -> "suicide.sfd" */
+static void FilmName(const char *str, char *out, int n) {
+    char base[64], *dot;
+    int k;
+    snprintf(base, sizeof base, "%s", str);
+    if ((dot = strrchr(base, '.')))
+        *dot = 0;
+    for (k = 0; k < (int)(sizeof s_films / sizeof *s_films); k++)
+        if (!_stricmp(base, s_films[k].str))
+            snprintf(base, sizeof base, "%s", s_films[k].sfd);
+    for (k = 0; base[k]; k++)
+        base[k] = (char)tolower((unsigned char)base[k]);
+    snprintf(out, n, "%s.sfd", base);
+}
+
+int PC_AssetsFindFilm(const char *discName, char *path, int n) {
+    char base[MAX_PATH], film[80];
+    BaseName(discName, base, sizeof base);
+    if (PC_AssetsFind(base, path, n))
+        return 1;
+    FilmName(base, film, sizeof film);
+    return PC_AssetsFind(film, path, n);
+}
+
 void PC_AssetsInit(void) {
     StrFile e[MOVIE_COUNT];
     char path[MAX_PATH];
@@ -757,6 +799,7 @@ void PC_AssetsInit(void) {
     }
     if (s_dc) {
         ExtractDreamcast(e, n);
+        WritePlaylist(e, n);
         PC_CdSetNoDisc(1);
         pc_ram_top = PSX_RAM_BASE + PSX_RAM_MAPPED;
     } else {

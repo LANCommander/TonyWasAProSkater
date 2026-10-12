@@ -14,7 +14,14 @@
  * (PC_CdStreamVBlank). With XA enabled (mode bit 0x40) audio sectors go through the XA decoder to
  * the SPU's CD input. STR video chunks are assembled into whole frames in the ring the game set
  * with StSetRing, for StGetNext/StFreeRing. A full ring drops a frame instead of stalling the
- * drive, so the music never waits on the game. */
+ * drive, so the music never waits on the game.
+ *
+ * The Dreamcast version's films (.sfd, pc_sfd.h) mount the same way, as many positions as the
+ * file has 2352-byte blocks. Streaming one with XA on plays its ADX audio through the same CD
+ * input, kept a little ahead of the mixer instead of paced by sectors; the position advances
+ * through the file as it is read. Its video is not streamed (the movie player reads it itself:
+ * pc_movie.c), so a song's end is not seen by the game's frame counter: the end of its audio
+ * stops the stream and tells pc_music.c, which loops the song as the end frame would. */
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +30,7 @@
 #include "pc_assets.h"
 #include "pc_hle.h"
 #include "pc_runtime.h"
+#include "pc_sfd.h"
 #include "pc_spu.h"
 #include "pc_xa.h"
 
@@ -120,6 +128,9 @@ typedef struct {
     char path[MAX_PATH]; /* full path */
     FILE *f;
     uint32_t lba, sectors;
+    int isSfd;           /* a Dreamcast film: ADX audio streams from it (pc_sfd.h) */
+    PcSfd *sfd;          /* opened on first stream */
+    uint32_t sfdLoc;     /* the position the last stream left the drive at */
 } Mount;
 
 static Mount s_mounts[MAX_MOUNTS];
@@ -156,6 +167,10 @@ int PC_CdMountFile(const char *path, uint32_t *lba, uint32_t *sectors) {
         return 0;
     }
     snprintf(m->path, sizeof m->path, "%s", full);
+    {
+        size_t n = strlen(full);
+        m->isSfd = n > 4 && !_stricmp(full + n - 4, ".sfd");
+    }
     m->lba = s_mountNext;
     m->sectors = (uint32_t)(size / 2352);
     s_mountNext += (m->sectors + MOUNT_ALIGN) / MOUNT_ALIGN * MOUNT_ALIGN;
@@ -230,8 +245,15 @@ int PC_CdReadDiscSectors(uint32_t lba, uint32_t n, void *dst) {
     return fread(dst, 2352, n, s_disc) == n;
 }
 
+const char *PC_CdMountPath(uint32_t lba) {
+    Mount *m = MountAt(lba);
+    return m ? m->path : NULL;
+}
+
 int PC_CdReadRawSector(uint32_t lba, void *dst) {
     Mount *m = MountAt(lba);
+    if (m && m->isSfd)
+        return 0;   /* no sectors: only its audio streams (StreamSfd) */
     if (m) {
         _fseeki64(m->f, (long long)(lba - m->lba) * 2352, SEEK_SET);
         return fread(dst, 1, 2352, m->f) == 2352;
@@ -328,7 +350,7 @@ CdlFILE *CdSearchFile(CdlFILE *fp, const char *name) {
     char path[MAX_PATH];
     uint32_t lba, size;
     const char *base;
-    if (PC_AssetsFind(name, path, sizeof path) && PC_CdMountFile(path, &lba, &size)) {
+    if (PC_AssetsFindFilm(name, path, sizeof path) && PC_CdMountFile(path, &lba, &size)) {
         size *= 2048; /* ISO sizes count user data */
     } else if (!PC_CdFindDiscFile(name, &lba, &size)) {
         PC_Log("CdSearchFile(%s): not found", name);
@@ -555,12 +577,65 @@ static void StreamData(const uint8_t *u) {
     }
 }
 
+/* ---- streaming a Dreamcast film ------------------------------------------------------------ */
+
+#define SFD_AHEAD 12288     /* frames kept queued for the mixer (its prebuffer is 8192) */
+#define SFD_CHUNK 1024
+
+static Mount *s_sfdStream;      /* the film whose audio plays */
+static uint64_t s_sfdHeardFrom; /* the mixer's frame count at which its first frame plays */
+static int s_sfdRate;
+
+static void StreamSfd(Mount *m) {
+    static int16_t pcm[SFD_CHUNK * 2];
+    uint64_t pos;
+    if (!m->sfd && !(m->sfd = PC_SfdOpen(m->path))) {
+        PC_Log("cannot read %s", m->path);
+        StreamStop();
+        return;
+    }
+    if (s_loc != m->sfdLoc || s_sfdStream != m) {
+        /* the game moved the head (the start of a song or a movie): read from there */
+        PC_SfdSeek(m->sfd, (long long)(s_loc - m->lba) * 2352);
+        s_sfdStream = m;
+        s_sfdHeardFrom = PC_SpuCdConsumed() + PC_SpuCdQueued();
+        s_sfdRate = 0;
+        PC_Trace("film %s from position %u", m->path, s_loc - m->lba);
+    }
+    while (s_streamXa && PC_SpuCdQueued() < SFD_AHEAD) {
+        int rate, n = PC_SfdAudio(m->sfd, pcm, SFD_CHUNK, &rate);
+        if (!n) {
+            PC_Trace("film %s: end of its audio", m->path);
+            StreamStop();
+            m->sfdLoc = s_loc = m->lba + m->sectors;
+            PC_MusicStreamEnded();
+            return;
+        }
+        s_sfdRate = rate;
+        PC_SpuCdQueue(pcm, n, rate);
+    }
+    pos = (uint64_t)PC_SfdTell(m->sfd) / 2352;
+    m->sfdLoc = s_loc = m->lba + (pos < m->sectors ? (uint32_t)pos : m->sectors - 1);
+}
+
+double PC_CdFilmTime(uint32_t lba) {
+    uint64_t now = PC_SpuCdConsumed();
+    if (!s_sfdStream || MountAt(lba) != s_sfdStream || !s_sfdRate || now < s_sfdHeardFrom)
+        return 0.0;
+    return (double)(now - s_sfdHeardFrom) / s_sfdRate;
+}
+
 /* Called once per vblank: read the sectors the drive would have read since the last one. */
 void PC_CdStreamVBlank(void) {
     static uint8_t raw[2352];
     static int16_t pcm[PC_XA_MAX_FRAMES * 2];
+    Mount *m;
     if (!s_streaming)
         return;
+    if ((m = MountAt(s_loc)) && m->isSfd) {
+        StreamSfd(m);
+        return;
+    }
     s_streamAcc += (s_mode & CdlModeSpeed) ? 150 : 75;
     while (s_streamAcc >= 60) {
         s_streamAcc -= 60;

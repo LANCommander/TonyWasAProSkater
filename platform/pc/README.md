@@ -117,9 +117,20 @@ extracted unchanged. The images it redrew at a higher resolution are shown at th
 layout gives them, with all their pixels (`PC_ImageLayoutSize`): the 640x480 front-end screens
 load as they are instead of line-doubled, and the HORSE loading screen (640x240 on a 512-wide
 screen) and the pause logo (320x88 for the PS1's 256x44) are drawn scaled into the display
-surfaces (`PC_GpuLoadImageHiRes`, `SlicedImage::drawScaled`). Not used yet: its music
-and movies (`.sfd`, MPEG-1 with ADX audio: no music or movies play) and sound banks (`.kat`: sound
-effects are silent). The executable is still the PS1's `SLUS_008.60`. Needs the OpenGL renderer.
+surfaces (`PC_GpuLoadImageHiRes`, `SlicedImage::drawScaled`).
+
+Its songs and movies are Sofdec films (`.sfd`: MPEG-1 video, CRI ADX audio; `src/pc_sfd.c`
+demultiplexes them and decodes the ADX). They mount at CD positions like the STR files
+(`ATVILOGO.STR` is `activision.sfd`, `LOGO.STR` `never.sfd`), so the game's own streaming code
+plays the 44.1 kHz stereo audio through the CD input; the playlist lists the `.sfd` songs, and a
+song starts over at the end of its audio as the PS1's does at its end frame. The full-screen
+movies play (`src/pc_movie.c`: pl_mpeg decodes the 320x240 video into the 24-bit movie screen,
+timed to the audio; any button skips, as on the PS1); the songs' 96x64 thumbnail video is not
+shown. Its sound banks (`.kat`: the same sounds as 8/16-bit PCM at 22 kHz instead of 4-bit ADPCM
+at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.c`): each sound is a PCM sample
+the SPU plays in place of a stand-in in sound RAM, tuned to the PS1 banks' pitch. The Dreamcast
+logos (Crave, Treyarch, Sofdec) are not played. The executable is still the PS1's `SLUS_008.60`.
+Needs the OpenGL renderer.
 
 ## Saves
 
@@ -285,7 +296,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_KEYS=frame:Key+Key,...` | scripted keyboard (Settings.ini key names, held from that frame; `frame:` releases), read through the bindings |
 | `THPS_TRACE=1` | log CD, BIOS and debug-print activity, and player 1's actions as they change |
 | `THPS_FAST=1` | don't throttle to 60 Hz |
-| `THPS_MOVIES=1` | run the original FMV code (movies are skipped by default) |
+| `THPS_MOVIES=0` / `1` | skip every movie / run the original FMV code for all (by default the Dreamcast's films play and STR movies are skipped) |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
 | `THPS_DETERMINISTIC=1` | virtual clock: identical runs every time (use with `THPS_INPUT` for bisecting) |
 | `THPS_MIPS=all,!lo-hi,addr` | run those game functions as translated retail MIPS instead of decompiled C (A/B debugging) |
@@ -310,8 +321,9 @@ SPU (sound RAM, 24 ADPCM voices, ADSR, master volume, CD audio input) and mixes 
 device. The songs are XA audio inside the soundtrack STR files; `src/hle_libcd.c` streams them like
 the drive does (from the extracted files, which it mounts at CD positions past the end of the
 image) and `src/pc_xa.c` decodes them. `src/pc_music.c` picks the next song from
-`Data/Music/Playlist.m3u` instead of the game's fixed rotation. Not done yet: SPU reverb, exact ADSR curves, FMV
-video (MDEC; full-screen movies are skipped), memory card (always "no card"), 64-bit build.
+`Data/Music/Playlist.m3u` instead of the game's fixed rotation. With the Dreamcast's data the
+music, movies and sound effects come from its films and sound banks (see above). Not done yet:
+SPU reverb, exact ADSR curves, PS1 FMV video (MDEC; STR movies are skipped), 64-bit build.
 Running every game function
 as translated MIPS (`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase.
 
@@ -328,6 +340,7 @@ that still compile to the same bytes. `node decomp/tools/check_all.mjs` must sta
 ## License
 
 The port layer (`platform/pc/`) is GPL-2.0: parts of it are adapted from the Vandal Hearts PC
-port (`HalmyLyseas/VandalHearts-PcPort`, GPL-2.0), credited in each file that uses them. The
+port (`HalmyLyseas/VandalHearts-PcPort`, GPL-2.0), credited in each file that uses them.
+`include/pl_mpeg/pl_mpeg.h` is Dominic Szablewski's PL_MPEG (MIT, see its header). The
 decompiled game code and all game data remain © Activision / Neversoft. Nothing copyrighted is
 committed; the build reads your own `SLUS_008.60` and disc files.

@@ -8,7 +8,11 @@
  *
  * A playlist entry is a file of raw STR sectors (relative to Data/Music, or absolute). Files the
  * movie table knows take its settings (video size, end frame, volume); any other file plays with
- * the settings of the table's first song and loops at its last video frame. */
+ * the settings of the table's first song and loops at its last video frame.
+ *
+ * Entries can also be Dreamcast films (.sfd, pc_sfd.h): "goldfing.sfd" takes GOLDFING.STR's
+ * settings. Their audio plays through the same CD stream (hle_libcd.c), which reports the end of
+ * a song's audio here, and the song starts over as the PS1's does at its end frame. */
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +44,8 @@ typedef struct {
 #define GameFMV_Is24Bit (*(uint8_t *)PSX_PTR(0x800d167c))
 #define GameFMV_MusicScale (*(int32_t *)PSX_PTR(0x800d1680))
 #define GameFMV_StartSector (*(int32_t *)PSX_PTR(0x800d165c))
+#define GameFMV_IsMovie (*(int32_t *)PSX_PTR(0x800d162c))
+#define GameFMV_RewindSwitch (*(int32_t *)PSX_PTR(0x800d1630))
 
 static char *s_songs[MAX_SONGS];
 static int s_nsongs, s_next, s_loaded;
@@ -73,21 +79,29 @@ static void LoadPlaylist(void) {
 
 static const MovieDetails *Entry(int i) { return PSX_PTR(MOVIE_DETAILS + i * sizeof(MovieDetails)); }
 
-/* The movie-table entry for a file name, or -1. */
+static int IsSfd(const char *name) {
+    size_t n = strlen(name);
+    return n > 4 && !_stricmp(name + n - 4, ".sfd");
+}
+
+/* The movie-table entry for a file name, or -1. A film matches the STR of the same name. */
 static int FindEntry(const char *song) {
     const char *base = song, *p;
     char name[64];
-    int i;
+    int i, len;
     for (p = song; *p; p++)
         if (*p == '\\' || *p == '/')
             base = p + 1;
+    len = (int)strlen(base) - (IsSfd(base) ? 4 : 0);
     for (i = 0; i < MOVIE_COUNT; i++) {
         const char *n = Entry(i)->name ? PSX_PTR(Entry(i)->name) : "", *semi;
         while (*n == '\\')
             n++;
         semi = strchr(n, ';');
         snprintf(name, sizeof name, "%.*s", semi ? (int)(semi - n) : (int)strlen(n), n);
-        if (!_stricmp(name, base))
+        if (IsSfd(base) && strrchr(name, '.'))
+            *strrchr(name, '.') = 0;
+        if ((int)strlen(name) == len && !_strnicmp(name, base, (size_t)len))
             return i;
     }
     return -1;
@@ -136,7 +150,8 @@ static int NextSong(void) {
                 return 0;
             m = Entry(i);
             GameFMV_CurrentTrack = (uint8_t)i;
-            GameFMV_EndFrame = LastFrame(lba, sectors);
+            /* a film's song loops at the end of its audio (PC_MusicStreamEnded) */
+            GameFMV_EndFrame = IsSfd(song) ? 0x7fffffff : LastFrame(lba, sectors);
             GameFMV_MusicScale = 128;
         } else {
             m = Entry(entry);
@@ -154,6 +169,11 @@ static int NextSong(void) {
         return 1;
     }
     return 0;
+}
+
+void PC_MusicStreamEnded(void) {
+    if (GameFMV_Active && !GameFMV_IsMovie)
+        GameFMV_RewindSwitch = 1;
 }
 
 void hleov_80023168(int track) {

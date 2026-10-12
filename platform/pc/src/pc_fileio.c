@@ -13,14 +13,15 @@
  *
  * Dreamcast model/level files (version 6 .psx) are loaded without their texture images, which
  * stay on the PC side (pc_dctex.h): the game allocates and receives the smaller image. The
- * Dreamcast has no PS1 sound banks (its own are .kat files the port doesn't play yet): with its
- * files, a .vab the game asks for is a silent one, and an image it redrew larger carries the size
- * the PS1 game lays it out at (PC_BmpLayoutSize). */
+ * Dreamcast has no PS1 sound banks: with its files, a .vab the game asks for is made from its
+ * .kat of the same name (pc_dcsound.h), or is a silent one if there is none, and an image it
+ * redrew larger carries the size the PS1 game lays it out at (PC_BmpLayoutSize). */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "pc_assets.h"
+#include "pc_dcsound.h"
 #include "pc_dctex.h"
 #include "pc_hle.h"
 #include "pc_runtime.h"
@@ -170,8 +171,13 @@ int hleov_8004c8a4(const char *name) { /* FileIO_Open */
         if (!PC_AssetsDreamcast() || n < 4 || _stricmp(name + n - 4, ".vab"))
             PC_Fatal("The game asked for %s, which is not in the Data folder. Delete "
                      "Data\\Manifest.txt to extract the game files from the disc again.", name);
-        snprintf(s_path, sizeof s_path, "%s (silent)", name);
-        SilentVab();
+        free(s_image);
+        if ((s_image = PC_DcSoundVab(name, &s_size))) {
+            snprintf(s_path, sizeof s_path, "%s (from its .kat)", name);
+        } else {
+            snprintf(s_path, sizeof s_path, "%s (silent)", name);
+            SilentVab();
+        }
     } else {
         FILE *f = fopen(s_path, "rb");
         if (!f)

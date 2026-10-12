@@ -15,8 +15,9 @@
  * plain file contents.
  *
  * Or the files come from the Dreamcast version's disc (a .gdi), into the same folders: models
- * and levels as version 6 .psx (pc_dctex.h), sound banks as .kat, films as .sfd (MPEG-1 + ADX,
- * which the port doesn't play yet), images unchanged (some at higher resolutions). */
+ * and levels as version 6 .psx (pc_dctex.h), sound banks as .kat (pc_dcsound.h), films as .sfd
+ * (MPEG-1 + ADX: pc_sfd.h; Playlist.m3u then lists them), images unchanged (some at higher
+ * resolutions). */
 #ifndef PC_ASSETS_H
 #define PC_ASSETS_H
 
@@ -46,6 +47,9 @@ void PC_AssetsPath(char *out, int n, const char *rel);
 /* The file under Data/ with this name, in any folder ("\\SUICIDE.STR;1", "skware.psx"): 1 and
  * its path, or 0. */
 int PC_AssetsFind(const char *discName, char *path, int n);
+/* The same for a movie or song ("\\HAWK.STR;1"): the STR, else the Dreamcast's film of it
+ * ("hawk.sfd"; ATVILOGO is activision.sfd, LOGO never.sfd, BURNQUIS burnquist.sfd). */
+int PC_AssetsFindFilm(const char *discName, char *path, int n);
 
 #ifdef __cplusplus
 }

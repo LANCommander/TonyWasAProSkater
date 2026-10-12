@@ -3,22 +3,23 @@
 #include <stdlib.h>
 
 #include "pc_hle.h"
+#include "pc_movie.h"
 #include "pc_runtime.h"
 
 void PC_Backtrace(const char *why);
 
-/* GameFMV_PlayMovie(int): STR movie playback needs CD streaming + MDEC, not implemented yet.
- * Skipping a movie is what happens when the player presses a button through it. Set
- * THPS_MOVIES=1 to run the original code anyway. */
+/* GameFMV_PlayMovie(int): the Dreamcast's films play (pc_movie.h); PS1 STR movies need the MDEC,
+ * not implemented yet, so they are skipped, which is what happens when the player presses a
+ * button through one. THPS_MOVIES=0 skips every movie, THPS_MOVIES=1 runs the original code
+ * for all of them. */
 void hleov_80022c1c(int track) {
-    static void (*orig)(int);
-    if (getenv("THPS_MOVIES") && atoi(getenv("THPS_MOVIES"))) {
-        extern void pcfn_80022c1c(int);
+    extern void pcfn_80022c1c(int);
+    const char *e = getenv("THPS_MOVIES");
+    if (e ? atoi(e) != 0 : PC_MovieAvailable(track)) {
         pcfn_80022c1c(track);
         return;
     }
     PC_Log("movie %d skipped", track);
-    (void)orig;
 }
 
 /* THPS_TRACE_PSX=1: log PSX model processing (debugging the spooler). */

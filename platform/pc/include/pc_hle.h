@@ -58,10 +58,20 @@ int PC_CdReadRawSector(uint32_t lba, void *dst2352);    /* whole raw sector */
 int PC_CdReadDiscSectors(uint32_t lba, uint32_t n, void *dst);
 int PC_CdFindDiscFile(const char *name, uint32_t *lba, uint32_t *size);
 /* Make a file of raw 2352-byte sectors (an extracted STR) readable as if it were on the disc,
- * at an LBA past the end of the image. Mounting the same file again gives the same LBA. */
+ * at an LBA past the end of the image. Mounting the same file again gives the same LBA. A
+ * Dreamcast film (.sfd) mounts as well: streaming it plays its audio (it has no sectors). */
 int PC_CdMountFile(const char *path, uint32_t *lba, uint32_t *sectors);
+/* The file mounted at lba, or NULL. */
+const char *PC_CdMountPath(uint32_t lba);
 /* Once per vblank: advance a CD stream (CdRead2/CdlReadS) by the sectors read since the last. */
 void PC_CdStreamVBlank(void);
+/* Seconds of the film mounted at lba that have been heard since its stream started from the
+ * top (0 before the mixer gets to it, or if it isn't the film streaming). */
+double PC_CdFilmTime(uint32_t lba);
+
+/* The soundtrack (pc_music.c): a Dreamcast song's audio ran out (hle_libcd.c), so the song
+ * starts over, as a PS1 song does at its end frame. */
+void PC_MusicStreamEnded(void);
 
 #ifdef __cplusplus
 }
