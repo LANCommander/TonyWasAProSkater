@@ -16,6 +16,11 @@ void Mem_Delete(void *);
 
 extern void *pBMR;
 
+#ifdef PC_PORT
+#include "pc_assets.h"
+#include "pc_gpu.h"
+#endif
+
 void DownloadBMP16(char *pData) {
 	int w;
 	int h;
@@ -28,6 +33,13 @@ void DownloadBMP16(char *pData) {
 	char *data;
 	char *in;
 	char *out;
+#ifdef PC_PORT
+	/* a Dreamcast image bigger than the screen it fills (pc_assets.h): kept whole */
+	int lw = 0;
+	int lh = 0;
+	int hires = PC_BmpLayoutSize(pData, &lw, &lh) &&
+	            (lw != *(ushort *)(pData + 18) || lh != *(ushort *)(pData + 22));
+#endif
 
 	if (pBMR) {
 		Mem_Delete(pBMR);
@@ -131,6 +143,11 @@ void DownloadBMP16(char *pData) {
 	r.y = 0;
 	r.w = w;
 	r.h = h;
+#ifdef PC_PORT
+	if (hires)
+		PC_GpuLoadImageHiRes(0, 0, lw, lh, (ushort *)data, w, h);
+	else
+#endif
 	LoadImage(&r, (u_long *)data);
 	DrawSync(0);
 	Mem_Delete(data);

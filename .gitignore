@@ -3,6 +3,8 @@
 *.bin
 *.cue
 *.chd
+*.gdi
+*.raw
 *.iso
 *.exe
 *.sym

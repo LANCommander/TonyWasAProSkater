@@ -76,6 +76,12 @@ void PC_GpuVBlank(void);
 /* Nonzero when THPS_HEADLESS=1 suppressed the window. */
 int PC_GpuIsHeadless(void);
 
+/* LoadImage of an image bigger than its VRAM area: src (16-bit, sw x sh) fills x, y, w, h. With
+ * OpenGL it is drawn there through a texture of its own, so a display surface shows all of its
+ * pixels (the area counts as drawn: reads see it scaled to the area); else it is scaled to the
+ * area (nearest texel) and loaded. For the Dreamcast's higher-resolution images. */
+void PC_GpuLoadImageHiRes(int x, int y, int w, int h, const uint16_t *src, int sw, int sh);
+
 #ifdef __cplusplus
 }
 #endif

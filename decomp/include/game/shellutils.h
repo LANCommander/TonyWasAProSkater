@@ -49,6 +49,11 @@ class SlicedImage : public CClass {
 	void unpack();                                              /* 0x80062d00 */
 	void removeFromMemory();                                    /* 0x80062de8 */
 	void draw(int x, int y, int otFront, int r, int g, int b, int semiTrans, int drawNow); /* 0x80062e20 */
+#ifdef PC_PORT
+	/* draw, scaled to w x h pixels (the size a Sprite is laid out at; platform/pc) */
+	void drawScaled(int x, int y, int w, int h, int otFront, int r, int g, int b, int semiTrans,
+	                int drawNow);
+#endif
 	void rotateDraw(int x, int y);                              /* 0x80063474 */
 	void removeBlack();                                         /* 0x800637d0 */
 };

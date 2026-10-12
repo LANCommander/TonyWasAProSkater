@@ -67,6 +67,12 @@ void M3dInit_ParsePSX(int Region) {
 		}
 	}
 
+#ifdef PC_PORT
+	/* a Dreamcast (version 6) file keeps its faces' Texture pointers and 16-bit texture
+	   coordinates; the renderer reads them (platform/pc/include/pc_dctex.h) */
+	int DcFile = (PSXRegion[Region].pPSX[0] & 0xffff) == 6;
+#endif
+
 	NumStitchVertices = 0;
 	Fastable = 1;
 	NumParts = 0;
@@ -139,7 +145,11 @@ void M3dInit_ParsePSX(int Region) {
 			if (!(pFace[0] & 0x800))
 				pFace[2] &= 0xffffff;
 
+#ifdef PC_PORT
+			if ((pFace[0] & 3) == 3 && !DcFile) {
+#else
 			if ((pFace[0] & 3) == 3) {
+#endif
 				pTex = (Texture *)pFace[4];
 				clut = pTex->clut;
 				tpage = pTex->tpage;

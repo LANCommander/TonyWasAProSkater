@@ -14,13 +14,23 @@
  * everything is there the disc image is not opened at all.
  *
  * At runtime the game finds files by name (PC_AssetsFind): every file under Data/ is indexed by
- * its file name, whatever folder it is in. */
+ * its file name, whatever folder it is in.
+ *
+ * The Dreamcast disc (a .gdi dump; Treyarch's port) can be the source instead of the PS1 one:
+ * its files are loose on the disc and go to the same folders. Its models and levels are version
+ * 6 .psx files with 16-bit textures (pc_dctex.h), its soundtrack and movies .sfd files, its sound
+ * banks .kat files. All are extracted unchanged; the images it redrew larger are shown at the
+ * PS1 layout's size with all their pixels (PC_ImageLayoutSize). The first line of Manifest.txt
+ * says which disc the files came from; with the Dreamcast's, the game gets more RAM (its files are bigger), never opens a PS1
+ * disc image, and the skaters' front-end models (the Dreamcast has none) are their full ones. */
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 
 #include "pc_assets.h"
+#include "pc_gdrom.h"
 #include "pc_hle.h"
 #include "pc_runtime.h"
 
@@ -372,6 +382,300 @@ static void ExtractWadFiles(void) {
     Commit(f, part, path);
 }
 
+/* ---- the Dreamcast disc --------------------------------------------------------------------- */
+
+#define DC_MANIFEST_TAG "source: dreamcast"
+#define STATS 0x800a44fc  /* Stats[]: skaters (SStats, 0x154 bytes): PSXName, PSXName2, FrontName */
+#define STATS_SIZE 0x154
+#define STATS_COUNT 14
+
+static int s_dc;   /* Data/ holds the Dreamcast version's files */
+
+int PC_AssetsDreamcast(void) { return s_dc; }
+
+/* Manifest.txt says the files came from the Dreamcast disc */
+static int ManifestIsDreamcast(void) {
+    char path[MAX_PATH], line[256];
+    FILE *f;
+    int dc = 0;
+    PC_AssetsPath(path, sizeof path, "Manifest.txt");
+    f = fopen(path, "r");
+    if (f) {
+        dc = fgets(line, sizeof line, f) && strstr(line, DC_MANIFEST_TAG);
+        fclose(f);
+    }
+    return dc;
+}
+
+/* A .gdi: THPS_DISC, else next to thps.exe or SLUS_008.60 (or in a folder there), or at the top
+ * of the repository (development layout). */
+static int FindGdiIn(const char *dir, char *out, int n, int depth) {
+    char pat[MAX_PATH];
+    WIN32_FIND_DATAA fd;
+    HANDLE h;
+    snprintf(pat, sizeof pat, "%s\\*.gdi", dir);
+    h = FindFirstFileA(pat, &fd);
+    if (h != INVALID_HANDLE_VALUE) {
+        snprintf(out, n, "%s\\%s", dir, fd.cFileName);
+        FindClose(h);
+        return 1;
+    }
+    if (!depth)
+        return 0;
+    snprintf(pat, sizeof pat, "%s\\*", dir);
+    h = FindFirstFileA(pat, &fd);
+    if (h == INVALID_HANDLE_VALUE)
+        return 0;
+    do {
+        char sub[MAX_PATH];
+        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fd.cFileName[0] == '.' ||
+            !_stricmp(fd.cFileName, "Data"))
+            continue;
+        snprintf(sub, sizeof sub, "%s\\%s", dir, fd.cFileName);
+        if (FindGdiIn(sub, out, n, depth - 1)) {
+            FindClose(h);
+            return 1;
+        }
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+    return 0;
+}
+
+static int FindGdi(char *out, int n) {
+    char exeDir[MAX_PATH], dir[MAX_PATH], *slash;
+    const char *e = getenv("THPS_DISC");
+    if (e) {
+        size_t len = strlen(e);
+        snprintf(out, n, "%s", e);
+        return len >= 4 && !_stricmp(e + len - 4, ".gdi") && Exists(out);
+    }
+    GetModuleFileNameA(NULL, exeDir, sizeof exeDir);
+    slash = strrchr(exeDir, '\\');
+    if (slash)
+        *slash = 0;
+    if (FindGdiIn(exeDir, out, n, 1) || FindGdiIn(PC_DataDir(), out, n, 1))
+        return 1;
+    snprintf(dir, sizeof dir, "%s\\..\\..", exeDir);
+    return FindGdiIn(dir, out, n, 1);
+}
+
+typedef struct {
+    char name[64];
+    uint32_t lba, size;
+    char rel[96];
+} DcFile;
+
+typedef struct {
+    DcFile *f;
+    int n, cap;
+} DcList;
+
+static void DcAdd(const char *name, uint32_t lba, uint32_t size, void *ctx) {
+    DcList *l = ctx;
+    if (strchr(name, '/') || strlen(name) >= sizeof l->f->name)
+        return;   /* the game's files are all in the root */
+    if (l->n == l->cap) {
+        l->cap = l->cap ? l->cap * 2 : 1024;
+        l->f = realloc(l->f, sizeof *l->f * l->cap);
+    }
+    snprintf(l->f[l->n].name, sizeof l->f->name, "%s", name);
+    l->f[l->n].lba = lba;
+    l->f[l->n].size = size;
+    l->f[l->n].rel[0] = 0;
+    l->n++;
+}
+
+/* Folders as for the PS1 files; .kat sound banks with the .vab ones, .pvr images with the .bmp
+ * ones, .sfd films in Music (the songs the movie table lists) or Movies. */
+static const struct {
+    const char *ext, *dir;
+} s_dcFolders[] = {
+    {"psx", "Models"}, {"bmp", "Textures"}, {"pvr", "Textures"}, {"trg", "Scripts"},
+    {"kat", "Sounds"}, {"fnt", "Fonts"},    {"pre", "Packs"},    {"rec", "Demos"},
+    {"txt", "Text"},
+};
+
+/* Not game data: the Dreamcast executable, boot files and leftovers. */
+static const char *const s_dcSkip[] = {"1ST_READ.BIN", "IP.BIN", "TEST.BIN", "SIZES.FOO",
+                                       "VSSVER.SCC", "AUDIO64.DRV", "SKVANS_T.PSX"};
+
+static void DcPlace(DcFile *f, const StrFile *str, int nstr, char codes[][16], int ncodes) {
+    char lower[64], base[64];
+    const char *ext = strrchr(f->name, '.'), *dir = "Misc";
+    int k;
+    for (k = 0; k < (int)(sizeof s_dcSkip / sizeof *s_dcSkip); k++)
+        if (!_stricmp(f->name, s_dcSkip[k]))
+            return;
+    for (k = 0; f->name[k] && k < (int)sizeof lower - 1; k++)
+        lower[k] = (char)tolower((unsigned char)f->name[k]);
+    lower[k] = 0;
+    ext = ext ? ext + 1 : "";
+    for (k = 0; k < (int)(sizeof s_dcFolders / sizeof *s_dcFolders); k++)
+        if (!_stricmp(ext, s_dcFolders[k].ext))
+            dir = s_dcFolders[k].dir;
+    if (!_stricmp(ext, "psx") && !strncmp(lower, "sk", 2))
+        for (k = 0; k < ncodes; k++) {
+            /* sk<code>.psx, sk<code>_*.psx, sk<code>l2/o2.psx: the level's */
+            size_t cl = strlen(codes[k]);
+            const char *rest = lower + 2 + cl;
+            if (!strncmp(lower + 2, codes[k], cl) &&
+                (*rest == '.' || *rest == '_' || !strncmp(rest, "l2.", 3) ||
+                 !strncmp(rest, "o2.", 3)))
+                dir = "Levels";
+        }
+    if (!_stricmp(ext, "sfd")) {
+        dir = "Movies";
+        snprintf(base, sizeof base, "%.*s.STR", (int)(strrchr(f->name, '.') - f->name), f->name);
+        for (k = 0; k < nstr; k++)
+            if (str[k].music && !_stricmp(str[k].name, base))
+                dir = "Music";
+    }
+    snprintf(f->rel, sizeof f->rel, "%s\\%s", dir, lower);
+}
+
+/* ---- images drawn at another size ---------------------------------------------------------- */
+
+/* The images the Dreamcast redrew at a higher resolution, with the size the PS1 game lays them out
+ * at (its own images' sizes; the front-end screens are line-doubled to 640x480 when loaded). They
+ * are extracted as they are and shown at that size with all their pixels (pc_assets.h). */
+static const struct {
+    const char *name;
+    int w, h;          /* the PS1 image */
+    int doubled;       /* loaded line-doubled (DownloadBMP16x2) */
+} s_layout[] = {
+    {"title_h.bmp", 640, 240, 1},  {"main_h.bmp", 640, 240, 1},   {"options.bmp", 640, 240, 1},
+    {"opt_ctr.bmp", 640, 240, 1},  {"opt_snd.bmp", 640, 240, 1},  {"selectp.bmp", 640, 240, 1},
+    {"select_c.bmp", 640, 240, 1}, {"select2p.bmp", 640, 240, 1}, {"select_b.bmp", 640, 240, 1},
+    {"select2b.bmp", 640, 240, 1}, {"load_hor.bmp", 512, 240, 0}, {"paused.bmp", 256, 44, 0},
+};
+
+int PC_ImageLayoutSize(const char *name, int w, int h, int *lw, int *lh) {
+    char base[MAX_PATH];
+    int k;
+    if (!s_dc)
+        return 0;
+    BaseName(name, base, sizeof base);
+    for (k = 0; k < (int)(sizeof s_layout / sizeof *s_layout); k++)
+        if (!_stricmp(base, s_layout[k].name)) {
+            if (w == s_layout[k].w && h == s_layout[k].h)
+                return 0;   /* the PS1's size */
+            *lw = s_layout[k].w;
+            *lh = s_layout[k].h << s_layout[k].doubled;
+            return 1;
+        }
+    return 0;
+}
+
+static void ExtractDreamcast(const StrFile *str, int nstr) {
+    DcList l = {0};
+    char gdi[MAX_PATH], path[MAX_PATH], part[MAX_PATH], dir[64], codes[MAX_LEVELS][16];
+    uint8_t *buf = NULL;
+    size_t cap = 0;
+    int i, k, ncodes = 0, missing = 0, done = 0;
+    FILE *f;
+    if (WadComplete())
+        return;
+    if (!FindGdi(gdi, sizeof gdi))
+        PC_Fatal("The Dreamcast disc image is gone, and some files are missing from the Data "
+                 "folder. Put the .gdi of Tony Hawk's Pro Skater (Dreamcast) and its track files "
+                 "next to thps.exe, or set THPS_DISC to the .gdi.");
+    if (!PC_GdOpen(gdi))
+        PC_Fatal("%s is not a Dreamcast disc image of Tony Hawk's Pro Skater", gdi);
+    PC_GdList(DcAdd, &l);
+    for (i = 0; i < l.n; i++) {
+        char lower[64];
+        for (k = 0; l.f[i].name[k] && k < 63; k++)
+            lower[k] = (char)tolower((unsigned char)l.f[i].name[k]);
+        lower[k] = 0;
+        if (ncodes < MAX_LEVELS && LevelCode(lower, codes[ncodes], sizeof codes[0]))
+            ncodes++;
+    }
+    for (i = 0; i < l.n; i++)
+        DcPlace(&l.f[i], str, nstr, codes, ncodes);
+    for (i = k = 0; i < l.n; i++)
+        if (l.f[i].rel[0]) {
+            if (!strcmp(l.f[i].rel, "Models\\skmedals.psx") || !strcmp(l.f[i].rel, "Models\\hawk.psx"))
+                k++;
+            PC_AssetsPath(path, sizeof path, l.f[i].rel);
+            missing += !Exists(path);
+        }
+    if (k != 2)
+        PC_Fatal("%s is not Tony Hawk's Pro Skater for the Dreamcast", gdi);
+    PC_Log("extracting %d game files from the Dreamcast disc %s to %s", missing, gdi, Root());
+    for (i = 0; i < l.n; i++) {
+        DcFile *e = &l.f[i];
+        uint32_t size = e->size;
+        if (!e->rel[0])
+            continue;
+        PC_AssetsPath(path, sizeof path, e->rel);
+        if (Exists(path))
+            continue;
+        snprintf(dir, sizeof dir, "%.*s", (int)(strchr(e->rel, '\\') - e->rel), e->rel);
+        MakeDirs(dir);
+        if (++done % 50 == 0 || done == missing)
+            PC_Log("  [%d/%d] %s", done, missing, e->rel);
+        f = Create(path, part, sizeof part);
+        if (size > (8u << 20)) {
+            /* the films: in pieces */
+            uint32_t o;
+            if (cap < (1u << 20)) {
+                cap = 1u << 20;
+                buf = realloc(buf, cap);
+            }
+            for (o = 0; o < size; o += 1u << 20) {
+                uint32_t n = size - o < (1u << 20) ? size - o : (1u << 20);
+                if (!PC_GdRead(e->lba + o / 2048, n, buf))
+                    PC_Fatal("cannot read %s from %s", e->name, gdi);
+                if (fwrite(buf, 1, n, f) != n)
+                    PC_Fatal("cannot write %s (disk full?)", part);
+            }
+            Commit(f, part, path);
+            continue;
+        }
+        if (cap < size + 2048) {
+            cap = size + 2048;
+            buf = realloc(buf, cap);
+        }
+        if (!PC_GdRead(e->lba, size, buf))
+            PC_Fatal("cannot read %s from %s", e->name, gdi);
+        if (fwrite(buf, 1, size, f) != size)
+            PC_Fatal("cannot write %s (disk full?)", part);
+        Commit(f, part, path);
+    }
+    free(buf);
+    PC_GdClose();
+    PC_AssetsPath(path, sizeof path, "Manifest.txt");
+    f = Create(path, part, sizeof part);
+    fputs("# Game files extracted from the Dreamcast disc (" DC_MANIFEST_TAG "; deleting this "
+          "re-checks them on the next start)\n", f);
+    for (i = 0; i < l.n; i++)
+        if (l.f[i].rel[0])
+            fprintf(f, "%s\n", l.f[i].rel);
+    Commit(f, part, path);
+    free(l.f);
+}
+
+/* After indexing, with the Dreamcast's files: each skater's front-end model is its full model
+ * where there is no front-end one (the Dreamcast's skater table leaves those names empty and
+ * the select screen shows the full model; only Muska has one). */
+static void DreamcastFixups(void) {
+    char name[64], path[MAX_PATH];
+    int i;
+    for (i = 0; i < STATS_COUNT; i++) {
+        uint32_t e = STATS + i * STATS_SIZE, full, front;
+        memcpy(&full, PSX_PTR(e), 4);
+        memcpy(&front, PSX_PTR(e + 8), 4);
+        if (full < PSX_EXE_BASE || full >= PSX_RAM_BASE + PSX_RAM_SIZE || front < PSX_EXE_BASE ||
+            front >= PSX_RAM_BASE + PSX_RAM_SIZE || !*(const char *)PSX_PTR(front))
+            continue;
+        snprintf(name, sizeof name, "%.50s.psx", (const char *)PSX_PTR(front));
+        if (PC_AssetsFind(name, path, sizeof path))
+            continue;
+        PC_Trace("dc: %s has no front-end model: using %s", name, (const char *)PSX_PTR(full));
+        memcpy(PSX_PTR(e + 8), &full, 4);
+    }
+}
+
 /* ---- index: file name -> path -------------------------------------------------------------- */
 
 typedef struct {
@@ -437,9 +741,32 @@ int PC_AssetsFind(const char *discName, char *path, int n) {
 
 void PC_AssetsInit(void) {
     StrFile e[MOVIE_COUNT];
+    char path[MAX_PATH];
     int n = ListStrFiles(e);
-    ExtractStrFiles(e, n);
-    ExtractWadFiles();
-    WritePlaylist(e, n);
+    /* the disc the files come from: what Manifest.txt says, else (first startup) the PS1 image
+     * if there is one, else a Dreamcast .gdi */
+    s_dc = ManifestIsDreamcast();
+    if (!s_dc && !WadComplete() && !PC_CdFindImage(path, sizeof path)) {
+        if (!FindGdi(path, sizeof path))
+            PC_Fatal("The game data has to be extracted from your disc first, and no disc image "
+                     "was found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro Skater "
+                     "(USA) for the PlayStation next to SLUS_008.60 as thps1.bin, or the .gdi "
+                     "and track files of the Dreamcast version next to thps.exe; or set "
+                     "THPS_DISC to either.");
+        s_dc = 1;
+    }
+    if (s_dc) {
+        ExtractDreamcast(e, n);
+        PC_CdSetNoDisc(1);
+        pc_ram_top = PSX_RAM_BASE + PSX_RAM_MAPPED;
+    } else {
+        ExtractStrFiles(e, n);
+        ExtractWadFiles();
+        WritePlaylist(e, n);
+    }
     BuildIndex();
+    if (s_dc) {
+        DreamcastFixups();
+        PC_Log("using the Dreamcast version's files");
+    }
 }

@@ -11,8 +11,11 @@
  * (which faces are visible, their colours: the same GTE colour commands with the same fog value,
  * the same ordering-table bucket) and drops what only the PS1 needed: screen-space subdivision,
  * near-plane clipping by subdivision (OpenGL clips), packets. Faces crossing the water surface of
- * an item that tests it are clipped against the plane in view space. Calls this doesn't handle
- * yet (fade-to-colour) run the retail code, whose packets are drawn as before.
+ * an item that tests it are clipped against the plane in view space. Fade-to-colour mode (fog
+ * toward a colour instead of the far colour) is drawn as retail draws it: the face additive over
+ * a flat polygon of the fade colour; only its subtractive variant still runs the retail code,
+ * whose packets are drawn as before. Dreamcast (version 6) faces keep 16-bit texture coordinates
+ * and an HD texture (pc_dctex.h).
  *
  * Drawing. Each M3d_RenderSetup starts a batch and links a marker packet at the far end of its
  * ordering table layer. When PC_GpuDrawChain reaches the marker, the batch's faces are sorted by
@@ -26,13 +29,15 @@
  *
  * THPS_R3DSTATS=1 prints counts once a second, THPS_R3D_VERIFY=1 checks the float vertices against
  * the integers retail computed, THPS_R3D_NEARDROP=1 drops faces crossing the near plane that
- * retail dropped (those without the subdivision flag). */
+ * retail dropped (those without the subdivision flag), THPS_R3D_RETAILFADE=1 leaves calls in
+ * fade-to-colour mode to retail (A/B of the native version; not for Dreamcast models). */
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "pc_dctex.h"
 #include "pc_gpu.h"
 #include "pc_gpu_gl.h"
 #include "pc_gte.h"
@@ -83,10 +88,10 @@ void PC_RenderTrace(const char *what, uint32_t ret);
 #define GTE_DPCS 0x0780010u
 #define GTE_DPCL 0x0680029u
 
-static int s_native, s_verify, s_stats, s_neardrop;
+static int s_native, s_verify, s_stats, s_neardrop, s_retailfade;
 
 static struct {
-    uint32_t faces, culled, badtag, layers, draws, calls, water, fb_fade, fb_nolayer;
+    uint32_t faces, culled, badtag, layers, draws, calls, water, fade, fb_fade, fb_nolayer;
     uint32_t water_checked, water_bad;
     uint32_t vchecked[8], vbad[8], sign_checked, sign_bad, near;} st;
 
@@ -337,6 +342,7 @@ typedef struct {
     uint8_t cls, nv;
     uint32_t first;
     float zmin, zmax;   /* view depth range of its corners */
+    uint16_t hd;        /* its HD texture (pc_dctex.h), 0 if none */
 } Face;
 
 typedef struct {
@@ -404,7 +410,7 @@ static PC_GlVert *alloc_verts(Batch *b, int n)
     return v;
 }
 
-static void add_face(Batch *b, int bucket, int cls, int nv, uint32_t first)
+static void add_face(Batch *b, int bucket, int cls, int nv, uint32_t first, uint16_t hd)
 {
     float zmin = 1e30f, zmax = -1e30f;
     for (int i = 0; i < nv; i++) {
@@ -424,6 +430,7 @@ static void add_face(Batch *b, int bucket, int cls, int nv, uint32_t first)
     f->first = first;
     f->zmin = zmin;
     f->zmax = zmax;
+    f->hd = hd;
 }
 
 static void add_page(Batch *b, uint16_t tpage, uint16_t clut)
@@ -500,7 +507,7 @@ typedef struct {
     float x, y, z, r, g, b, u, v, d;
 } Corner;
 
-static void corner(Corner *o, const Shadow *s, uint32_t rgb, uint32_t uv)
+static void corner(Corner *o, const Shadow *s, uint32_t rgb, float u, float v)
 {
     o->x = s->x;
     o->y = s->y;
@@ -508,9 +515,42 @@ static void corner(Corner *o, const Shadow *s, uint32_t rgb, uint32_t uv)
     o->r = (float)(rgb & 0xff);
     o->g = (float)((rgb >> 8) & 0xff);
     o->b = (float)((rgb >> 16) & 0xff);
-    o->u = (float)(uv & 0xff);
-    o->v = (float)((uv >> 8) & 0xff);
+    o->u = u;
+    o->v = v;
     o->d = 0;
+}
+
+/* A Dreamcast face (version 6 file, pc_dctex.h): word 4 is its Texture, and u0..u3, v0..v3 are
+ * 16-bit (words 5-8, 512 = one repeat). Sets the clut and tpage words and the corners'
+ * coordinates: for an HD texture (*hd = its handle) in 256ths of a repeat, for a PS1 one in its
+ * texels (without tiling). 0 if the texture has no image: the face is drawn untextured. */
+static int dc_face(uint32_t a0, uint32_t tex, uint32_t f, uint32_t *uvw, uint16_t *hd, float *uf,
+                   float *vf)
+{
+    uint16_t clut = M16(tex + 2), tpage = M16(tex + 6);
+    int ru = M16(a0 + 20), rv = M16(a0 + 28);
+    for (int i = 0; i < 4; i++) {
+        /* from corner 0, so the 16-bit values wrapping around (scrolling) don't tear a face */
+        uf[i] = (float)((ru & 511) + (int16_t)(M16(a0 + 20 + 2 * i) - ru)) * 0.5f;
+        vf[i] = (float)((rv & 511) + (int16_t)(M16(a0 + 28 + 2 * i) - rv)) * 0.5f;
+    }
+    if (PC_HD_IS_TPAGE(tpage)) {
+        if (!clut)
+            return 0;
+        *hd = clut;
+    } else {
+        const uint8_t *t = PSX_PTR(tex);
+        for (int i = 0; i < 4; i++) {
+            float u = uf[i] / 256, v = vf[i] / 256;
+            u = u < 0 ? 0 : u > 1 ? 1 : u;
+            v = v < 0 ? 0 : v > 1 ? 1 : v;
+            uf[i] = t[0] + u * (t[10] - t[0]);
+            vf[i] = t[1] + v * (t[11] - t[1]);
+        }
+    }
+    uvw[0] = (uint32_t)clut << 16;
+    uvw[1] = (uint32_t)(tpage | (f & 0x180) >> 2) << 16;
+    return 1;
 }
 
 static void put_vert(PC_GlVert *o, const Corner *c, uint16_t clut, uint16_t info, const uint8_t *tw,
@@ -610,6 +650,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
     int push1 = S16(SCR(S_PUSHBACK)), push2 = S16(SCR(S_PUSHBACK2));
     uint32_t ctab = M32(G_COLOURTABLE);
     int sky = !fast && s_last_kind == T_BG;
+    int32_t fade = (int32_t)M32(SCR(S_FADECOLOUR));
     int wxl = 0, wxr = 0, wpad = fast ? viewport_pad(&wxl, &wxr) : 0;
 
     for (int k = 0; k < n; k++) {
@@ -720,6 +761,13 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
         if (d > 0)
             fog = dpqshift < 0 ? d >> -dpqshift : d << dpqshift;
         PC_GteSetData(8, (uint32_t)fog);
+        /* fade-to-colour mode (the front end): beyond the fog distance a face is added onto a
+         * flat polygon of the fade colour, which takes the share the fog would (below) */
+        if (fade >= 0 && d > 0) {
+            f |= 0x1c0;
+            f ^= 0x100;
+            st.fade++;
+        }
 
         /* colours: the GTE commands retail uses */
         uint32_t c = M32(a0 + 8), col[4];
@@ -765,7 +813,13 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
         /* texture */
         int tex = f & 1, env = !fast && !tex && !gouraud && (f & 2);
         uint32_t uvw[3] = { 0, 0, 0 };
-        if (tex) {
+        uint16_t hd = 0;
+        int dc = 0;            /* a Dreamcast face: coordinates in uf, vf */
+        float uf[4], vf[4];
+        if (tex && (M32(a0 + 16) & 0x80000000u)) {
+            dc = 1;
+            tex = dc_face(a0, M32(a0 + 16), f, uvw, &hd, uf, vf);
+        } else if (tex) {
             uvw[0] = M32(a0 + 16);
             uvw[1] = M32(a0 + 20) | (f & 0x180) << 14;
             uvw[2] = M32(a0 + 24);
@@ -780,7 +834,9 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
         int abr = textured ? (tpage >> 5) & 3 : (int)(f >> 7) & 3;
         int semi = (f & 0x40) != 0;
         uint16_t info = PC_GL_I_VIEW | (uint16_t)(abr << 5);
-        if (textured) {
+        if (hd) {
+            info |= PC_HD_TPAGE | PC_GL_I_TEXTURED;
+        } else if (textured) {
             int depth = (tpage >> 7) & 3;
             info |= (uint16_t)((tpage & 15) | ((tpage >> 4) & 1) << 4 | (depth > 2 ? 2 : depth) << 7 |
                                PC_GL_I_TEXTURED);
@@ -791,7 +847,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
         if (sky)
             info |= PC_GL_I_SKY;
         uint8_t tw[4] = { 0xff, 0xff, 0, 0 };
-        if (f & 0x20) {
+        if ((f & 0x20) && !dc) {
             uint32_t w = M32(a0 + 28);
             uint32_t mx = w & 31, my = (w >> 5) & 31, ox = (w >> 10) & 31, oy = (w >> 15) & 31;
             tw[0] = (uint8_t)~(mx * 8);
@@ -799,15 +855,22 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
             tw[2] = (uint8_t)((ox & mx) * 8);
             tw[3] = (uint8_t)((oy & my) * 8);
         }
-        uint32_t uv[4] = { uvw[0], uvw[1], uvw[2], uvw[2] >> 16 };
+        if (!dc) {
+            uint32_t uv[4] = { uvw[0], uvw[1], uvw[2], uvw[2] >> 16 };
+            for (int i = 0; i < 4; i++) {
+                uf[i] = (float)(uv[i] & 0xff);
+                vf[i] = (float)((uv[i] >> 8) & 0xff);
+            }
+        }
         /* the face's texels: at higher resolutions and with exact interpolation, its edges would
-         * otherwise pick up the texels next to them (dark seams between skater parts) */
+         * otherwise pick up the texels next to them (dark seams between skater parts). HD
+         * textures are filtered and may tile: no limit. */
         uint8_t uvr[4] = { 0, 0, 255, 255 };
-        if (textured) {
+        if (textured && !hd) {
             uvr[0] = uvr[1] = 255;
             uvr[2] = uvr[3] = 0;
             for (int i = 0; i < nvtx; i++) {
-                uint8_t u = (uint8_t)uv[i], v = (uint8_t)(uv[i] >> 8);
+                uint8_t u = (uint8_t)uf[i], v = (uint8_t)vf[i];
                 if (u < uvr[0]) uvr[0] = u;
                 if (v < uvr[1]) uvr[1] = v;
                 if (u > uvr[2]) uvr[2] = u;
@@ -826,7 +889,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
 
         Corner cn[4];
         for (int i = 0; i < nvtx; i++)
-            corner(&cn[i], sh[i], gouraud ? col[i] : col[0], uv[i]);
+            corner(&cn[i], sh[i], gouraud ? col[i] : col[0], uf[i], vf[i]);
         uint32_t first = (uint32_t)b->nv;
         int nv;
         if (!wet) {
@@ -864,8 +927,30 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
             }
             st.water++;
         }
-        add_face(b, bucket, semi ? (abr == 2 ? 2 : 1) : 0, nv, first);
+        add_face(b, bucket, semi ? (abr == 2 ? 2 : 1) : 0, nv, first, hd);
         st.faces++;
+        if (fade >= 0 && fog) {
+            /* fade-to-colour: the flat polygon under the face (added after it, so drawn first,
+             * as retail links it) in the fade colour with the fog's share, DPCS(fade, 1 - fog) */
+            static const uint8_t tw0[4] = { 0xff, 0xff, 0, 0 }, uvr0[4] = { 0, 0, 255, 255 };
+            PC_GteSetData(8, (uint32_t)(4096 - fog));
+            uint32_t oc = dpcs((uint32_t)fade), ofirst = (uint32_t)b->nv;
+            PC_GlVert *o = alloc_verts(b, nv);
+            for (int i = 0; i < nv; i++) {
+                Corner c;
+                const PC_GlVert *src = &b->v[first + (uint32_t)i];
+                memset(&c, 0, sizeof c);
+                c.x = src->x;
+                c.y = src->y;
+                c.z = src->z;
+                c.r = (float)(oc & 0xff);
+                c.g = (float)((oc >> 8) & 0xff);
+                c.b = (float)((oc >> 16) & 0xff);
+                put_vert(&o[i], &c, 0, (uint16_t)(PC_GL_I_VIEW | (sky ? PC_GL_I_SKY : 0)), tw0,
+                         uvr0);
+            }
+            add_face(b, bucket, 0, nv, ofirst, 0);
+        }
         probe(sl, fast, f, near ? "near" : "drawn", (uint32_t)bucket, col[0], (uint32_t)zmax);
     }
 }
@@ -896,7 +981,9 @@ static uint32_t process(uint32_t addr, int fast, uint32_t a0, uint32_t a1, uint3
         water.keep_below = (M32(G_WATERCLIP) & 0xffff) == 0;
         wp = &water;
     }
-    if ((int32_t)M32(SCR(S_FADECOLOUR)) >= 0) {
+    if ((int32_t)M32(SCR(S_FADECOLOUR)) >= 0 &&
+        (s_retailfade || (M32(SCR(S_FADECOLOUR)) & 0x02000000u))) {
+        /* fade-to-colour with a subtractive polygon: retail's code */
         st.fb_fade++;
         return fn[fast](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
     }
@@ -952,10 +1039,17 @@ static void draw_upto(uint32_t bucket)
 {
     Batch *b = s_layer;
     int i = b->next;
+    if (i < b->nf && b->sf[i].bucket >= bucket) {
+        /* the drawing area and offset as the GPU has them here */
+        int ox, oy, clip[4], wide = PC_GpuDrawState(&ox, &oy, clip);
+        PC_GlLayerArea(ox, oy, clip, wide);
+    }
     while (i < b->nf && b->sf[i].bucket >= bucket) {
         int cls = b->sf[i].cls, first = (int)b->sf[i].first, count = 0, j = i;
+        uint16_t hd = b->sf[i].hd;
         float front = 1e30f;   /* nearest z of the opaque faces in this draw */
-        while (j < b->nf && b->sf[j].bucket >= bucket && b->sf[j].cls == cls) {
+        while (j < b->nf && b->sf[j].bucket >= bucket && b->sf[j].cls == cls &&
+               b->sf[j].hd == hd) {
             const Face *f = &b->sf[j];
             if (front < f->zmax - (f->zmax / 256 + 2))
                 break;
@@ -964,7 +1058,7 @@ static void draw_upto(uint32_t bucket)
             count += f->nv;
             j++;
         }
-        PC_GlLayerDraw(first, count, cls);
+        PC_GlLayerDraw(first, count, cls, hd);
         st.draws++;
         i = j;
     }
@@ -1051,8 +1145,8 @@ static void stats_tick(void)
         return;
     frame = pc_heartbeat;
     fprintf(stderr, "[r3d] %u faces (%u back faces culled, %u stale vertices, %u clipped by water) "
-                    "in %u calls, %u layers, %u draws; retail: %u fade, %u no layer\n",
-            st.faces, st.culled, st.badtag, st.water, st.calls, st.layers, st.draws, st.fb_fade,
+                    "in %u calls, %u layers, %u draws, %u faded; retail: %u fade, %u no layer\n",
+            st.faces, st.culled, st.badtag, st.water, st.calls, st.layers, st.draws, st.fade, st.fb_fade,
             st.fb_nolayer);
     if (s_verify)
         fprintf(stderr, "[r3d] near-plane faces: %u\n", st.near);
@@ -1081,6 +1175,7 @@ void R3d_Init(int gl)
     s_stats = getenv("THPS_R3DSTATS") && atoi(getenv("THPS_R3DSTATS"));
     s_verify = getenv("THPS_R3D_VERIFY") && atoi(getenv("THPS_R3D_VERIFY"));
     s_neardrop = getenv("THPS_R3D_NEARDROP") && atoi(getenv("THPS_R3D_NEARDROP"));
+    s_retailfade = getenv("THPS_R3D_RETAILFADE") && atoi(getenv("THPS_R3D_RETAILFADE"));
     if (s_native)
         PC_GtePreciseEnable(1);
     fprintf(stderr, "[r3d] 3D: %s\n", s_native ? "native" : "PS1 (THPS_RENDER3D=psx)");

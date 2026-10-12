@@ -5,6 +5,10 @@
 
 int Load8BitBMP(char *, char **, int *, int *, ushort *);
 
+#ifdef PC_PORT
+#include "pc_assets.h"
+#endif
+
 Sprite::Sprite(char *pName, int packed, int maxw, int maxh) {
 	ushort clut;
 	char *pData;
@@ -16,6 +20,19 @@ Sprite::Sprite(char *pName, int packed, int maxw, int maxh) {
 	m_bpp = 8;
 	m_w = w;
 	m_h = h;
+
+#ifdef PC_PORT
+	/* an image the Dreamcast redrew larger (pc_assets.h): laid out at the PS1's size, drawn
+	   scaled to it with all its pixels (draw, drawFaded) */
+	{
+		int lw, lh;
+
+		if (PC_ImageLayoutSize(pName, w, h, &lw, &lh)) {
+			m_w = lw;
+			m_h = lh;
+		}
+	}
+#endif
 
 	if (!(maxw * 2 < w))
 		maxw = 0;

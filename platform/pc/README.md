@@ -102,6 +102,25 @@ virtual CD positions for the streaming code. Missing files are extracted again o
 back). Playlist entries are relative to `Data/Music` or absolute; an STR the game doesn't know
 plays with its first song's settings.
 
+### The Dreamcast version's data
+
+The first extraction can come from the **Dreamcast** disc instead (Treyarch's port; a `.gdi`
+dump with its track files next to `thps.exe`, or `THPS_DISC=<file>.gdi`; a PS1 image is used
+first if both are there). Its files are loose on the disc (`src/pc_gdrom.c` reads the GD-ROM's
+ISO 9660 area) and go to the same folders; `Manifest.txt`'s first line records the source. The
+models and levels are version 6 `.psx` files: the same format with 16-bit PowerVR textures up to
+256x256 (filtered, tiling, with alpha) and remodelled skaters. They are loaded without their
+texture images, which stay on the PC (`src/pc_dctex.c`) and are drawn by the native 3D renderer;
+see `include/pc_dctex.h`. With these files the game gets 8 MB of RAM (they are bigger than the
+PS1's) and each skater's front-end model is the full one (the Dreamcast has none). Every file is
+extracted unchanged. The images it redrew at a higher resolution are shown at the size the PS1
+layout gives them, with all their pixels (`PC_ImageLayoutSize`): the 640x480 front-end screens
+load as they are instead of line-doubled, and the HORSE loading screen (640x240 on a 512-wide
+screen) and the pause logo (320x88 for the PS1's 256x44) are drawn scaled into the display
+surfaces (`PC_GpuLoadImageHiRes`, `SlicedImage::drawScaled`). Not used yet: its music
+and movies (`.sfd`, MPEG-1 with ADX audio: no music or movies play) and sound banks (`.kat`: sound
+effects are silent). The executable is still the PS1's `SLUS_008.60`. Needs the OpenGL renderer.
+
 ## Saves
 
 The memory card is a folder: `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Saves`
@@ -241,7 +260,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 
 | variable | effect |
 |---|---|
-| `THPS_EXE`, `THPS_DISC` | paths to `SLUS_008.60` and the disc image (else found next to the exe or in `extern/`) |
+| `THPS_EXE`, `THPS_DISC` | paths to `SLUS_008.60` and the disc image (else found next to the exe or in `extern/`); a `.gdi` is the Dreamcast disc |
 | `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
 | `THPS_SAVE_DIR` | the memory card folder (default `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Saves`) |
 | `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |
@@ -257,6 +276,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_R3D_VERIFY=1` | check the native renderer's float vertices and back-face tests against retail's integers |
 | `THPS_R3D_NEARDROP=1` | drop faces crossing the near plane that the PS1 dropped (default: OpenGL clips them) |
 | `THPS_R3D_PROBE=f,x,y` | log the 3D faces covering screen point x,y on frame f |
+| `THPS_R3D_RETAILFADE=1` | leave fade-to-colour mode (Downhill Jam, Streets, the front end) to the retail code (A/B; not for Dreamcast models) |
 | `THPS_FILTER=1` | bilinear scaling to the window instead of nearest-neighbour |
 | `THPS_GLSTATS=1` | once a second: draw calls, VRAM readbacks and uploads, and how many polygons had precise vertices |
 | `THPS_FRAMES=n` | exit after n frames |
@@ -269,6 +289,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
 | `THPS_DETERMINISTIC=1` | virtual clock: identical runs every time (use with `THPS_INPUT` for bisecting) |
 | `THPS_MIPS=all,!lo-hi,addr` | run those game functions as translated retail MIPS instead of decompiled C (A/B debugging) |
+| `THPS_POKE=addr:value,...` | store those words every frame (`0x800d1708:1` = level select cheat: every level unlocked) |
 | `THPS_WATCH=addr` | hardware write watchpoint on a 4-byte word: logs value, native EIP and callers |
 | `THPS_COUNT=addr,...` | log per-frame call counts of those functions |
 | `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log VRAM transfers and drawing-environment changes / polygon counts per frame |

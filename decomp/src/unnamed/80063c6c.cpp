@@ -3,5 +3,9 @@
 #include "game/shellutils.h"
 
 void Sprite::drawFaded(int x, int y, int otFront, int r, int g, int b) {
+#ifdef PC_PORT
+	m_image->drawScaled(x, y, m_w, m_h, otFront, r, g, b, 1, 0);
+#else
 	m_image->draw(x, y, otFront, r, g, b, 1, 0);
+#endif
 }

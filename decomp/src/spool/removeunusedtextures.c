@@ -21,12 +21,26 @@ STexture *NextTexture(void);
 void Pack_Unpack(short, short);
 void RemoveTextureEntry(STexture *);
 
+#ifdef PC_PORT
+#include "pc_dctex.h"
+#endif
+
 void Spool_RemoveUnusedTextures(void) {
 	STexture *t;
 
 	GotoStartOfTextureList();
 
 	while ((t = NextTexture())) {
+#ifdef PC_PORT
+		/* a Dreamcast texture (pc_dctex.h): no palette or VRAM area; clut = handle at 2, tpage
+		   at 6 */
+		if ((t->u.flags & 0xf0000) && !t->u.usage &&
+		    PC_HD_IS_TPAGE(*(unsigned short *)((char *)t + 6))) {
+			PC_HdTexRef(*(unsigned short *)((char *)t + 2), -1);
+			RemoveTextureEntry(t);
+			continue;
+		}
+#endif
 		if ((t->u.flags & 0xf0000) && !t->u.usage) {
 			t->pal->refs--;
 			Pack_Unpack(t->px, t->py);

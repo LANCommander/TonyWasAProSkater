@@ -77,7 +77,13 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 		return 1;
 
 	if (f->Flags & 1) {
+#ifdef PC_PORT
+		/* a Dreamcast face keeps its Texture pointer (pc_dctex.h); the shards use the whole
+		   texture */
+		if ((f->Flags & 2) && (uint)f->pTexture < 0x80000000)
+#else
 		if (f->Flags & 2)
+#endif
 			pTexture = (Texture *)&f->pTexture;
 		else
 			pTexture = f->pTexture;

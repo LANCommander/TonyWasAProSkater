@@ -25,6 +25,10 @@ extern "C" {
 	ushort FUN_8008f72c(int, int, int, int);
 }
 
+#ifdef PC_PORT
+#include "pc_dctex.h"
+#endif
+
 void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 	uint *pPSX;
 	uint *pStuff;
@@ -68,6 +72,40 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 
 		if (pTextureEntry->Checksum == 0x68b7b136)
 			Flags |= 1;
+
+#ifdef PC_PORT
+		/* a Dreamcast texture (version 6 file, platform/pc/include/pc_dctex.h): its image is on
+		   the PC side, drawn by OpenGL. The entry gets the handle as its CLUT and a colour depth
+		   3 page; its coordinates span the whole image (256 = one repeat) */
+		if (NumColours == 65536) {
+			ushort h = PC_HdTexFind(pTextureEntry->Checksum);
+
+			PC_HdTexRef(h, 1);
+			pTextureEntry->pPalette = 0;
+			pTextureEntry->clut = h;
+			pTextureEntry->tpage = PC_HD_TPAGE;
+			pTextureEntry->x = 0;
+			pTextureEntry->y = 0;
+			pTextureEntry->u0 = 0;
+			pTextureEntry->v0 = 0;
+			pTextureEntry->u1 = 255;
+			pTextureEntry->v1 = 0;
+			pTextureEntry->u2 = 0;
+			pTextureEntry->v2 = 255;
+			pTextureEntry->u3 = 255;
+			pTextureEntry->v3 = 255;
+			pTextureEntry->TexWin = 0;
+
+			{
+				uint f = *(uint *)&pTextureEntry->Usage;
+
+				f &= 0xfff0ffff;
+				f |= 0x10000;
+				*(uint *)&pTextureEntry->Usage = f;
+			}
+			continue;
+		}
+#endif
 
 		{
 			tag_S_Pal *pPal;

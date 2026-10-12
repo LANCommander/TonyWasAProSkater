@@ -12,7 +12,11 @@
  *
  * The extracted STR files keep every raw 2352-byte sector, so the XA audio survives and the files
  * play in tools that understand PlayStation STR (ffmpeg, jPSXdec). The CD.WAD files are the
- * plain file contents. */
+ * plain file contents.
+ *
+ * Or the files come from the Dreamcast version's disc (a .gdi), into the same folders: models
+ * and levels as version 6 .psx (pc_dctex.h), sound banks as .kat, films as .sfd (MPEG-1 + ADX,
+ * which the port doesn't play yet), images unchanged (some at higher resolutions). */
 #ifndef PC_ASSETS_H
 #define PC_ASSETS_H
 
@@ -23,6 +27,17 @@ extern "C" {
 /* Extract whatever is missing from Data/. Needs the retail executable loaded (its movie table
  * lists the files) and, if anything is missing, the disc image. */
 void PC_AssetsInit(void);
+
+/* 1 if Data/ holds the Dreamcast version's files (extracted from its disc; pc_assets.c). */
+int PC_AssetsDreamcast(void);
+
+/* An image the Dreamcast redrew larger (name, its size w x h): 1 and the size the PS1 game lays
+ * it out at, in VRAM pixels (the front-end screens, line-doubled on the PS1: 640x480). Loaders
+ * show it at that size with all its pixels: the screens load without line-doubling, others are
+ * drawn scaled (PC_GpuLoadImageHiRes, Sprite). 0 for any other image or the PS1's data. */
+int PC_ImageLayoutSize(const char *name, int w, int h, int *lw, int *lh);
+/* The same for a loaded .bmp (FileIO marks it in memory; pc_fileio.c). */
+int PC_BmpLayoutSize(const void *bmp, int *lw, int *lh);
 
 /* `rel` ("Music\\Playlist.m3u") under the Data directory (THPS_DATA_DIR, else Data next to
  * thps.exe). */

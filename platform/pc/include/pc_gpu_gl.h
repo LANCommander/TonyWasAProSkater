@@ -62,6 +62,9 @@ void PC_GlRect(const PC_GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_
 void PC_GlLine(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b);
 /* GP0(02h) / ClearImage: exact rectangle, no drawing area, offset or mask; rgb24 = 0x00BBGGRR. */
 void PC_GlFill(int x, int y, int w, int h, uint32_t rgb24);
+/* An image (16-bit VRAM pixels, sw x sh) filling the VRAM area x, y, w, h: drawn there from a
+ * texture of its own, filtered, so a display surface keeps its resolution (PC_GpuLoadImageHiRes). */
+void PC_GlHiResImage(int x, int y, int w, int h, const uint16_t *src, int sw, int sh);
 
 /* ---- Native 3D layers (pc_render3d.c) ----
  * A vertex as the shader takes it. Emulated primitives use x, y in VRAM coordinates and z as
@@ -69,7 +72,9 @@ void PC_GlFill(int x, int y, int w, int h, uint32_t rgb24);
  * that the layer's projection maps to the screen, with a depth buffer. info = texture page bits
  * 0-3 (x/64) and 4 (y/256), blend mode 5-6, colour depth 7-8, then the flags below; clut is the
  * GPU's CLUT halfword; tw = texture window and_x, and_y, or_x, or_y; uvr = the texels the
- * face's texture coordinates span (u min, v min, u max, v max), which its samples stay inside. */
+ * face's texture coordinates span (u min, v min, u max, v max), which its samples stay inside.
+ * Colour depth 3 (info 0x180) with PC_GL_I_TEXTURED: an HD texture (pc_dctex.h), clut = its
+ * handle, u, v in 256ths of one repeat. */
 typedef struct {
     float x, y, z;
     uint8_t r, g, b, a;
@@ -97,8 +102,15 @@ typedef struct {
  * PC_GlLayerEnd, primitives drawn the usual way are depth-tested against it when the GTE
  * projected them. cls of a draw: 0 opaque (writes depth), 1 semi-transparent, 2 subtractive. */
 void PC_GlLayerBegin(const PC_GlLayerParams *lp, const PC_GlVert *v, int nv);
-void PC_GlLayerDraw(int first, int count, int cls);
+/* The drawing offset and area the next draws use (the GPU's at that point of the ordering table;
+ * a screen can set a smaller area for its 3D after the layer started). */
+void PC_GlLayerArea(int ofs_x, int ofs_y, const int clip[4], int wide);
+/* hd: the HD texture the draw's faces use (pc_dctex.h), 0 if none */
+void PC_GlLayerDraw(int first, int count, int cls, uint16_t hd);
 void PC_GlLayerEnd(void);
+/* An HD texture (pc_dctex.h) is no longer used: its OpenGL texture goes. */
+void PC_GlHdForget(uint16_t handle);
+
 /* Make a texture page / CLUT current before a layer draws with it (tpage, clut: GPU halfwords). */
 void PC_GlLayerSyncTexture(uint16_t tpage, uint16_t clut);
 

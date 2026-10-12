@@ -18,6 +18,7 @@
 #include <SDL.h>
 
 #include "pc_gpu.h"
+#include "pc_dctex.h"
 #include "pc_gpu_gl.h"
 #include "pc_gte.h"
 #include "pc_render3d.h"
@@ -44,6 +45,9 @@ typedef PC_GlVert GVert;
 #define I_DEPTH    PC_GL_I_DEPTH
 #define I_VIEW     PC_GL_I_VIEW
 #define I_SKY      PC_GL_I_SKY
+#define I_HD       0x0180   /* colour depth 3: an HD texture (pc_dctex.h), clut = its handle */
+
+#define MAX_HD 8192
 
 #define MAX_VERTS (64 * 1024)
 
@@ -103,7 +107,10 @@ static int s_bbox[4];                  /* area the pending batch draws on (inclu
  * is active, emulated primitives with a precise depth are depth-tested against it. */
 static int s_layer;
 static int s_lclip[4];
+static int s_lmark[4];                 /* the union of the areas the layer drew in */
 static GLuint s_vao3, s_vbo3;
+static GLuint s_hd[MAX_HD];           /* HD textures by handle (pc_dctex.h), made when first drawn */
+static uint16_t s_bhd;                 /* the pending batch's HD texture */
 
 /* ---------------------------------------------------------------------------------------------
  * GL objects */
@@ -358,6 +365,7 @@ int PC_GlInit(int fixed_scale, int out_w, int out_h)
     s_copy_u_map = glGetUniformLocation(s_copy_prog, "u_map");
     glUseProgram(s_draw_prog);
     glUniform1i(glGetUniformLocation(s_draw_prog, "u_vram"), 0);
+    glUniform1i(glGetUniformLocation(s_draw_prog, "u_hd"), 1);
     glUseProgram(s_copy_prog);
     glUniform1i(glGetUniformLocation(s_copy_prog, "u_vram"), 0);
     glUseProgram(s_present_prog);
@@ -599,6 +607,108 @@ static void prepare(void)
 }
 
 /* ---------------------------------------------------------------------------------------------
+ * HD textures (pc_dctex.h) */
+
+/* Bind an HD texture to unit 1 (made from its image the first time), then make unit 0 active. */
+static void flush(void);
+
+static void hd_bind(uint16_t h)
+{
+    glActiveTexture(GL_TEXTURE1);
+    if (h < MAX_HD && !s_hd[h]) {
+        int w = 1, ht = 1;
+        uint8_t *rgba = NULL;
+        static const uint8_t missing[4] = { 255, 0, 255, 255 };
+        glGenTextures(1, &s_hd[h]);
+        glBindTexture(GL_TEXTURE_2D, s_hd[h]);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        if (PC_HdTexDecode(h, &w, &ht, &rgba)) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, ht, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+            free(rgba);
+        } else {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, missing);
+        }
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, h < MAX_HD ? s_hd[h] : 0);
+    }
+    glActiveTexture(GL_TEXTURE0);
+}
+
+/* PC_GlHiResImage's texture has the last handle (pc_dctex.c leaves it free). */
+#define HIRES_SLOT (MAX_HD - 1)
+
+static GVert *begin_prim(const PC_GlPrim *p, int nverts, int bx0, int by0, int bx1, int by1);
+static uint16_t prim_info(const PC_GlPrim *p);
+static void put(GVert *o, const PC_GlPrim *p, uint16_t info, float x, float y, uint8_t r,
+                uint8_t g, uint8_t b, int u, int v);
+
+void PC_GlHiResImage(int x, int y, int w, int h, const uint16_t *src, int sw, int sh)
+{
+    uint8_t *rgba = malloc((size_t)sw * sh * 4);
+    for (int i = 0; i < sw * sh; i++) {
+        uint16_t p = src[i];
+        rgba[i * 4] = (uint8_t)((p & 31) * 255 / 31);
+        rgba[i * 4 + 1] = (uint8_t)((p >> 5 & 31) * 255 / 31);
+        rgba[i * 4 + 2] = (uint8_t)((p >> 10 & 31) * 255 / 31);
+        rgba[i * 4 + 3] = 255;   /* every pixel is written, as by LoadImage */
+    }
+    flush();
+    if (!s_hd[HIRES_SLOT])
+        glGenTextures(1, &s_hd[HIRES_SLOT]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, s_hd[HIRES_SLOT]);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, sw, sh, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glActiveTexture(GL_TEXTURE0);
+    free(rgba);
+
+    /* a raw textured rectangle over the area, its texture spanning 0..256 */
+    PC_GlPrim p;
+    memset(&p, 0, sizeof p);
+    p.textured = 1;
+    p.raw = 1;
+    p.depth = 3;
+    p.clut_x = (HIRES_SLOT & 63) * 16;
+    p.clut_y = HIRES_SLOT >> 6;
+    p.tw_and_x = p.tw_and_y = 0xff;
+    p.clip_l = x;
+    p.clip_t = y;
+    p.clip_r = x + w - 1;
+    p.clip_b = y + h - 1;
+    GVert *o = begin_prim(&p, 6, x, y, x + w - 1, y + h - 1);
+    if (o) {
+        uint16_t info = prim_info(&p);
+        put(&o[0], &p, info, (float)x, (float)y, 128, 128, 128, 0, 0);
+        put(&o[1], &p, info, (float)(x + w), (float)y, 128, 128, 128, 256, 0);
+        put(&o[2], &p, info, (float)x, (float)(y + h), 128, 128, 128, 0, 256);
+        o[3] = o[1];
+        put(&o[4], &p, info, (float)(x + w), (float)(y + h), 128, 128, 128, 256, 256);
+        o[5] = o[2];
+    }
+    flush();
+}
+
+void PC_GlHdForget(uint16_t h)
+{
+    if (!s_active || h >= MAX_HD || !s_hd[h])
+        return;
+    if (s_nv && s_bhd == h)
+        flush();
+    glDeleteTextures(1, &s_hd[h]);
+    s_hd[h] = 0;
+}
+
+/* ---------------------------------------------------------------------------------------------
  * Batches */
 
 static void set_blend(int pass)
@@ -627,6 +737,8 @@ static void flush(void)
     int y1 = s_bbox[3] > s_bclip[3] ? s_bclip[3] : s_bbox[3];
 
     glUseProgram(s_draw_prog);
+    if (s_bhd)
+        hd_bind(s_bhd);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, s_atlas);
     glBindVertexArray(s_vao);
@@ -721,12 +833,15 @@ static GVert *begin_prim(const PC_GlPrim *p, int nverts, int bx0, int by0, int b
         fprintf(stderr, "[gl] mask-bit test is not implemented (drawing ignores it)\n");
     }
     int sub = p->semi && p->abr == 2;
-    if (s_nv && (sub != s_batch_sub || p->wide != s_bwide || s_nv + nverts > MAX_VERTS ||
+    uint16_t hd = p->textured && p->depth == 3 ? (uint16_t)((p->clut_x / 16) | (p->clut_y << 6)) : 0;
+    if (s_nv && (sub != s_batch_sub || hd != s_bhd || p->wide != s_bwide ||
+                 s_nv + nverts > MAX_VERTS ||
                  s_bclip[0] != p->clip_l || s_bclip[1] != p->clip_t ||
                  s_bclip[2] != p->clip_r || s_bclip[3] != p->clip_b))
         flush();
     if (!s_nv) {
         s_batch_sub = sub;
+        s_bhd = hd;
         s_bwide = p->wide;
         s_bclip[0] = p->clip_l;
         s_bclip[1] = p->clip_t;
@@ -750,7 +865,7 @@ static GVert *begin_prim(const PC_GlPrim *p, int nverts, int bx0, int by0, int b
 static uint16_t prim_info(const PC_GlPrim *p)
 {
     uint16_t info = (uint16_t)(((p->tp_x / 64) & 15) | ((p->tp_y / 256) & 1) << 4 |
-                               (p->abr & 3) << 5 | (p->depth > 2 ? 2 : p->depth) << 7);
+                               (p->abr & 3) << 5 | (p->depth & 3) << 7);
     if (p->textured) info |= I_TEXTURED;
     if (p->raw) info |= I_RAW;
     if (p->semi) info |= I_SEMI;
@@ -801,7 +916,7 @@ static void put_v(GVert *o, const PC_GlPrim *p, uint16_t info, const PC_GlVertex
 void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b,
                    const PC_GlVertex *c)
 {
-    if (p->textured)
+    if (p->textured && p->depth != 3)
         sync_texture(p, MIN3(a->u, b->u, c->u), MIN3(a->v, b->v, c->v), MAX3(a->u, b->u, c->u),
                      MAX3(a->v, b->v, c->v));
     int precise = a->w > 0 && b->w > 0 && c->w > 0;
@@ -850,7 +965,7 @@ void PC_GlRect(const PC_GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_
     /* the texel at pixel x+i is u0+i, or u0-i when flipped (the shader rounds, see there) */
     int ul = u0, ur = flip_x ? u0 - w : u0 + w;
     int vt = v0, vb = flip_y ? v0 - h : v0 + h;
-    if (p->textured) {
+    if (p->textured && p->depth != 3) {
         int umin = flip_x ? u0 - w + 1 : u0, vmin = flip_y ? v0 - h + 1 : v0;
         sync_texture(p, umin & 255, vmin & 255, (umin & 255) + w - 1, (vmin & 255) + h - 1);
     }
@@ -963,18 +1078,44 @@ static int layer_targets(Target **ts)
     return draw_targets(s_lwide, s_lclip[0], s_lclip[1], s_lclip[2], s_lclip[3], ts);
 }
 
+static void layer_area(int ofs_x, int ofs_y, const int clip[4], int wide)
+{
+    s_lp.ofs_x = ofs_x;
+    s_lp.ofs_y = ofs_y;
+    s_lwide = wide > 0 && wide <= s_nsurf ? wide : 0;
+    s_lclip[0] = clip[0] < 0 && !s_lwide ? 0 : clip[0];
+    s_lclip[1] = clip[1] < 0 ? 0 : clip[1];
+    s_lclip[2] = clip[2] > VRAM_W - 1 && !s_lwide ? VRAM_W - 1 : clip[2];
+    s_lclip[3] = clip[3] > VRAM_H - 1 ? VRAM_H - 1 : clip[3];
+}
+
+void PC_GlLayerArea(int ofs_x, int ofs_y, const int clip[4], int wide)
+{
+    if (!s_layer)
+        return;
+    layer_area(ofs_x, ofs_y, clip, wide);
+    if (s_lclip[2] < s_lclip[0] || s_lclip[3] < s_lclip[1])
+        return;
+    for (int i = 0; i < 2; i++) {
+        if (s_lclip[i] < s_lmark[i])
+            s_lmark[i] = s_lclip[i];
+        if (s_lclip[i + 2] > s_lmark[i + 2])
+            s_lmark[i + 2] = s_lclip[i + 2];
+    }
+}
+
 void PC_GlLayerBegin(const PC_GlLayerParams *lp, const PC_GlVert *v, int nv)
 {
     flush();
     prepare();
     s_lp = *lp;
-    s_lwide = lp->wide > 0 && lp->wide <= s_nsurf ? lp->wide : 0;
-    s_lclip[0] = lp->clip_l < 0 && !s_lwide ? 0 : lp->clip_l;
-    s_lclip[1] = lp->clip_t < 0 ? 0 : lp->clip_t;
-    s_lclip[2] = lp->clip_r > VRAM_W - 1 && !s_lwide ? VRAM_W - 1 : lp->clip_r;
-    s_lclip[3] = lp->clip_b > VRAM_H - 1 ? VRAM_H - 1 : lp->clip_b;
+    {
+        int clip[4] = { lp->clip_l, lp->clip_t, lp->clip_r, lp->clip_b };
+        layer_area(lp->ofs_x, lp->ofs_y, clip, lp->wide);
+    }
     if (s_lclip[2] < s_lclip[0] || s_lclip[3] < s_lclip[1])
         return;
+    memcpy(s_lmark, s_lclip, sizeof s_lmark);
     glBindVertexArray(s_vao3);
     glBindBuffer(GL_ARRAY_BUFFER, s_vbo3);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)nv * sizeof(GVert), v, GL_STREAM_DRAW);
@@ -983,21 +1124,23 @@ void PC_GlLayerBegin(const PC_GlLayerParams *lp, const PC_GlVert *v, int nv)
     Target *ts[MAX_SURFACES + 1];
     int nt = layer_targets(ts);
     for (int i = 0; i < nt; i++) {
+        /* all of it: the drawing area can change while the layer draws (PC_GlLayerArea) */
         use_target(ts[i]);
-        if (scissor(ts[i], s_lclip[0], s_lclip[1], s_lclip[2], s_lclip[3], s_lwide))
-            glClear(GL_DEPTH_BUFFER_BIT);
+        glDisable(GL_SCISSOR_TEST);
+        glClear(GL_DEPTH_BUFFER_BIT);
     }
-    glDisable(GL_SCISSOR_TEST);
     s_layer = 1;
 }
 
-void PC_GlLayerDraw(int first, int count, int cls)
+void PC_GlLayerDraw(int first, int count, int cls, uint16_t hd)
 {
     if (!s_layer || count <= 0)
         return;
     flush();        /* emulated primitives submitted before these are behind them */
     prepare();
     glUseProgram(s_draw_prog);
+    if (hd)
+        hd_bind(hd);
     glUniform4f(s_draw_u_proj, s_lp.ofs_x + s_lp.ofx, s_lp.ofs_y + s_lp.ofy, s_lp.h, s_lp.hither);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, s_atlas);
@@ -1046,7 +1189,7 @@ void PC_GlLayerEnd(void)
         return;
     flush();
     s_layer = 0;
-    mark_drawn(s_lwide, s_lclip[0], s_lclip[1], s_lclip[2], s_lclip[3]);
+    mark_drawn(s_lwide, s_lmark[0], s_lmark[1], s_lmark[2], s_lmark[3]);
 }
 
 /* ---------------------------------------------------------------------------------------------

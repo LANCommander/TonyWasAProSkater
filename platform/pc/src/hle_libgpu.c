@@ -186,6 +186,21 @@ int LoadImage(RECT *rect, u_long *p)
     return 0;
 }
 
+void PC_GpuLoadImageHiRes(int x, int y, int w, int h, const uint16_t *src, int sw, int sh)
+{
+    if (PC_GlActive()) {
+        PC_GlHiResImage(x, y, w, h, src, sw, sh);
+        return;
+    }
+    uint16_t *pix = malloc((size_t)w * h * 2 + 2);
+    for (int j = 0; j < h; j++)
+        for (int i = 0; i < w; i++)
+            pix[j * w + i] = src[(j * sh / h) * sw + i * sw / w];
+    RECT r = { (short)x, (short)y, (short)w, (short)h };
+    LoadImage(&r, (u_long *)pix);
+    free(pix);
+}
+
 int StoreImage(RECT *rect, u_long *p)
 {
     if (!rect_ok(rect) || !p)

@@ -10,6 +10,10 @@ extern "C" {
 
 #define PSX_RAM_BASE 0x80000000u
 #define PSX_RAM_SIZE 0x00200000u
+/* RAM mapped at PSX_RAM_BASE: the PS1's 2 MB, and above it memory the game gets only with the
+ * Dreamcast data (its files are bigger): pc_ram_top is the end of what the game uses. */
+#define PSX_RAM_MAPPED 0x00800000u
+extern uint32_t pc_ram_top;
 #define PSX_SCRATCH_BASE 0x1f800000u
 #define PSX_EXE_BASE 0x80010000u
 

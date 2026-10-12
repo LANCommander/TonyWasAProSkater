@@ -23,6 +23,14 @@ extern "C" {
 }
 
 void SlicedImage::draw(int x, int y, int otFront, int r, int g, int b, int semiTrans, int drawNow) {
+	drawScaled(x, y, 0, 0, otFront, r, g, b, semiTrans, drawNow);
+}
+
+/* w x h: the size on screen (0 = the image's own; a Sprite of an image the Dreamcast redrew
+   larger is laid out at the PS1's size, platform/pc/include/pc_assets.h). Slice edges are placed
+   from their offsets in the image, so scaled slices still meet. */
+void SlicedImage::drawScaled(int x, int y, int w, int h, int otFront, int r, int g, int b,
+                             int semiTrans, int drawNow) {
 	int slice = 0;
 	int shift = bpp == 8;
 	u_long *ot;
@@ -35,8 +43,28 @@ void SlicedImage::draw(int x, int y, int otFront, int r, int g, int b, int semiT
 	else
 		ot = &pDoubleBuffer->OT3D[OT_entry];
 
+	/* the image's size in pixels: its first row and column of slices */
+	int iw = 0;
+	int ih = 0;
+
+	for (int j = 0; j < num_slices_x; j++)
+		iw += sliceTab[j].w << shift;
+
+	for (int i = 0; i < num_slices_y; i++)
+		ih += sliceTab[i * num_slices_x].h;
+
+	if (w <= 0 || h <= 0 || !iw || !ih) {
+		w = iw;
+		h = ih;
+	}
+
+	int oy = 0;
+
 	for (int i = 0; i < num_slices_y; i++) {
-		int sx = x;
+		int ox = 0;
+		int sh = sliceTab[i * num_slices_x].h;
+		int y0 = y + oy * h / ih;
+		int y1 = y + (oy + sh) * h / ih;
 
 		for (int j = 0; j < num_slices_x; j++) {
 			RECT *pSlice = &sliceTab[slice];
@@ -56,14 +84,17 @@ void SlicedImage::draw(int x, int y, int otFront, int r, int g, int b, int semiT
 				p->b0 = b;
 			}
 
-			p->x0 = sx;
-			p->y0 = y;
-			p->x1 = sx + (pSlice->w << shift);
-			p->y1 = y;
-			p->x2 = sx;
-			p->y2 = pSlice->h + y;
-			p->x3 = sx + (pSlice->w << shift);
-			p->y3 = pSlice->h + y;
+			int x0 = x + ox * w / iw;
+			int x1 = x + (ox + (pSlice->w << shift)) * w / iw;
+
+			p->x0 = x0;
+			p->y0 = y0;
+			p->x1 = x1;
+			p->y1 = y0;
+			p->x2 = x0;
+			p->y2 = y1;
+			p->x3 = x1;
+			p->y3 = y1;
 			p->u0 = (pSlice->x & 63) << shift;
 			p->v0 = pSlice->y;
 			p->u1 = ((pSlice->x & 63) << shift) + (pSlice->w << shift);
@@ -95,9 +126,9 @@ void SlicedImage::draw(int x, int y, int otFront, int r, int g, int b, int semiT
 				OT_entry--;
 
 			slice++;
-			sx += pSlice->w << shift;
+			ox += pSlice->w << shift;
 		}
 
-		y += sliceTab[i * num_slices_x].h;
+		oy += sh;
 	}
 }

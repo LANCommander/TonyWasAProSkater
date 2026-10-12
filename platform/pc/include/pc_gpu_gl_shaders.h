@@ -13,7 +13,11 @@
  * so colour is tested a little in front of the true depth (u_dpass 0) and the true depth is
  * written in a second, depth-only pass (u_dpass 1): a later surface wins a tie, and anything
  * further than the tolerance stays hidden. Emulated primitives with a view depth (0x2000) are
- * tested the same way; the rest have depth 0 and always pass. 0x8000 (sky) is at depth 1. */
+ * tested the same way; the rest have depth 0 and always pass. 0x8000 (sky) is at depth 1.
+ *
+ * Colour depth 3 (info bits 7-8; the PS1 game never uses it) is an HD texture (pc_dctex.h), bound
+ * to u_hd: 256 texture units = one repeat, filtered, its alpha (1555/4444 images) blending on top
+ * of the PS1's semi-transparency. */
 #ifndef PC_GPU_GL_SHADERS_H
 #define PC_GPU_GL_SHADERS_H
 
@@ -67,6 +71,7 @@ static const char *gl_draw_fs =
     "flat in uvec4 v_uvr;\n"
     "in float v_z;\n"
     "uniform usampler2D u_vram;\n"
+    "uniform sampler2D u_hd;\n"
     "uniform vec2 u_uvfix;\n"
     "uniform int u_pass;\n"
     "uniform int u_dpass;\n"
@@ -74,9 +79,14 @@ static const char *gl_draw_fs =
     "layout(location = 0, index = 1) out vec4 o_blend;\n"
     "uint vram(int x, int y) { return texelFetch(u_vram, ivec2(x & 1023, y & 511), 0).r; }\n"
     "void main() {\n"
-    /* texture coordinates at the pixel's corner, rounded to the nearest texel like the PS1 */
-    "    vec2 uv = v_uv - u_uvfix.x * dFdx(v_uv) - u_uvfix.y * dFdy(v_uv) + 0.5;\n"
+    /* texture coordinates at the pixel's corner, rounded to the nearest texel like the PS1. On an
+     * emulated primitive drawn smaller than its texture (a Dreamcast image laid out at the PS1's
+     * size) the move would reach past its first texel: at most half a texel, which is what it
+     * is at 1:1 */
     "    uint info = v_tex.y;\n"
+    "    vec2 fix = u_uvfix.x * dFdx(v_uv) + u_uvfix.y * dFdy(v_uv);\n"
+    "    if ((info & 0x4000u) == 0u) fix = clamp(fix, -0.5, 0.5);\n"
+    "    vec2 uv = v_uv - fix + 0.5;\n"
     /* native faces stay inside their own texels (emulated rects and sprites rely on wrapping) */
     "    if ((info & 0x4000u) != 0u) uv = clamp(uv, vec2(v_uvr.xy), vec2(v_uvr.zw) + 0.999);\n"
     "    bool semi = (info & 0x800u) != 0u;\n"
@@ -84,7 +94,15 @@ static const char *gl_draw_fs =
     "    float mask = (info & 0x1000u) != 0u ? 1.0 : 0.0;\n"
     "    vec3 c = v_color;\n"
     "    bool blend = semi;\n"
-    "    if ((info & 0x200u) != 0u) {\n"
+    "    float hd_a = 1.0;\n"
+    /* derivatives outside the branch: a 2x2 pixel quad can span primitives of both kinds */
+    "    vec2 hd_uv = v_uv / 256.0, hd_dx = dFdx(hd_uv), hd_dy = dFdy(hd_uv);\n"
+    "    if ((info & 0x380u) == 0x380u) {\n"
+    "        vec4 t = textureGrad(u_hd, hd_uv, hd_dx, hd_dy);\n"
+    "        if (t.a < 0.03) discard;\n"
+    "        c = (info & 0x400u) != 0u ? t.rgb : min(t.rgb * v_color * (255.0 / 128.0), vec3(1.0));\n"
+    "        hd_a = t.a;\n"
+    "    } else if ((info & 0x200u) != 0u) {\n"
     "        int u = (int(floor(uv.x)) & 255 & int(v_twin.x)) | int(v_twin.z);\n"
     "        int v = (int(floor(uv.y)) & 255 & int(v_twin.y)) | int(v_twin.w);\n"
     "        int tpx = int(info & 15u) * 64, tpy = int((info >> 4) & 1u) * 256;\n"
@@ -114,6 +132,8 @@ static const char *gl_draw_fs =
     "        else if (abr == 3) { c *= 0.25; keep = 1.0; }\n"
     "        else keep = 1.0;\n"
     "    }\n"
+    "    c *= hd_a;\n"
+    "    keep = hd_a * keep + 1.0 - hd_a;\n"
     "    o_color = vec4(c, mask);\n"
     "    o_blend = vec4(0.0, 0.0, 0.0, 1.0 - keep);\n"
     "    if ((info & 0x8000u) != 0u) gl_FragDepth = 1.0;\n"

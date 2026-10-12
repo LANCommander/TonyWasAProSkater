@@ -364,26 +364,21 @@ void pc_delete_mark(void *p) {
 
 /* ---- memory map ----------------------------------------------------------------------------- */
 
+uint32_t pc_ram_top = PSX_RAM_BASE + PSX_RAM_SIZE;
+
 static void MapPsxMemory(void) {
     HANDLE sec = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE, 0,
-                                    PSX_RAM_SIZE, NULL);
+                                    PSX_RAM_MAPPED, NULL);
     void *kseg0, *kseg1, *scratch;
     if (!sec)
         PC_Fatal("CreateFileMapping failed (%lu)", GetLastError());
-    kseg0 = MapViewOfFileEx(sec, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, PSX_RAM_SIZE,
+    /* 8 MB: the PS1's 2 MB, then what the game gets with the Dreamcast data (pc_ram_top). With
+     * the PS1 data nothing above 2 MB is used: the stack top the executable was linked with (an
+     * 8 MB dev-kit address) is moved down by Crt0. */
+    kseg0 = MapViewOfFileEx(sec, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, PSX_RAM_MAPPED,
                             PSX_PTR(PSX_RAM_BASE));
-    kseg1 = MapViewOfFileEx(sec, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, PSX_RAM_SIZE,
+    kseg1 = MapViewOfFileEx(sec, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, PSX_RAM_MAPPED,
                             PSX_PTR(0xa0000000u));
-    {
-        /* main RAM repeats every 2 MB up to 8 MB (games built with an 8 MB dev-kit stack top
-         * put their stack at 0x807fxxxx and rely on it) */
-        int m;
-        for (m = 1; m < 4; m++)
-            if (!MapViewOfFileEx(sec, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, PSX_RAM_SIZE,
-                                 PSX_PTR(PSX_RAM_BASE + m * PSX_RAM_SIZE)))
-                PC_Log("note: no RAM mirror at %08x (%lu)", PSX_RAM_BASE + m * PSX_RAM_SIZE,
-                       GetLastError());
-    }
     {
         /* KUSEG: the game strips bit 31 off some buffer pointers (primitive buffers), so main RAM
          * is also needed at 0x00010000-0x001fffff. The first 64 KB can't be mapped on Windows;
@@ -421,7 +416,7 @@ static void MapPsxMemory(void) {
                            PAGE_READWRITE);
     if (scratch != PSX_PTR(PSX_SCRATCH_BASE))
         PC_Fatal("cannot map the scratchpad at 0x1f800000 (%lu)", GetLastError());
-    memset(PSX_PTR(PSX_RAM_BASE), 0, PSX_RAM_SIZE);
+    memset(PSX_PTR(PSX_RAM_BASE), 0, PSX_RAM_MAPPED);
 }
 
 static int FileExists(const char *p) {
@@ -500,8 +495,10 @@ static void LoadExecutable(void) {
 /* What the retail entry point (__SN_ENTRY_POINT) does before main: clear .bss and hand the
  * memory between .bss and the stack to the heap. */
 static void Crt0(void) {
-    /* the linker's stack top is an 8 MB dev-kit address; on a 2 MB console it is mirrored */
-    u32 stackTop = (((MEM32(EXE_STACK_TOP_VAR) - 1) & (PSX_RAM_SIZE - 1)) + 1) | 0x80000000u;
+    /* the linker's stack top is an 8 MB dev-kit address; on a 2 MB console it is mirrored: the
+     * stack goes at the top of the RAM the game uses */
+    u32 ram = pc_ram_top - PSX_RAM_BASE;
+    u32 stackTop = (((MEM32(EXE_STACK_TOP_VAR) - 1) & (ram - 1)) + 1) | 0x80000000u;
     u32 stackSize = MEM32(EXE_STACK_SIZE_VAR);
     u32 sp = (stackTop - 8) | 0x80000000u;
     u32 heap = EXE_BSS_END;

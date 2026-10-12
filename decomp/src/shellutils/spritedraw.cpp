@@ -5,7 +5,11 @@
 
 void Sprite::draw(int x, int y, int otFront, int r, int g, int b) {
 	if (m_packed)
+#ifdef PC_PORT
+		m_image->drawScaled(x, y, m_w, m_h, otFront, r, g, b, 0, 0);
+#else
 		m_image->draw(x, y, otFront, r, g, b, 0, 0);
+#endif
 	else
 		m_image->rotateDraw(x, y);
 }

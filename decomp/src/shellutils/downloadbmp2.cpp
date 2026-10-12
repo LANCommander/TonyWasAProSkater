@@ -17,6 +17,10 @@ void Mem_Delete(void *);
 
 extern void *pBMR;
 
+#ifdef PC_PORT
+#include "pc_assets.h"
+#endif
+
 void DownloadBMP16x2(char *pData) {
 	int w;
 	int h;
@@ -29,6 +33,20 @@ void DownloadBMP16x2(char *pData) {
 	char *data;
 	char *in;
 	char *out;
+
+#ifdef PC_PORT
+	/* a Dreamcast screen, already 640x480 (pc_assets.h): loaded as it is, not line-doubled
+	   (DownloadBMP16, 0x80061a10) */
+	{
+		int lw, lh;
+
+		if (PC_BmpLayoutSize(pData, &lw, &lh) && lh == *(ushort *)(pData + 22)) {
+			((void (*)(char *))0x80061a10)(pData);
+			FUN_8008eebc(0);
+			return;
+		}
+	}
+#endif
 
 	if (pBMR) {
 		Mem_Delete(pBMR);

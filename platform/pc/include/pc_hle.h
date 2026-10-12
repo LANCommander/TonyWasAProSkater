@@ -48,6 +48,10 @@ void PC_InputPoll(void);
 
 /* CD image. Sector reads see the disc image plus the mounted files. */
 int PC_CdOpen(void);
+/* The PS1 disc image's path, if there is one (no error otherwise): 1 and the path. */
+int PC_CdFindImage(char *path, int n);
+/* No PS1 disc image is used (the data came from the Dreamcast disc): disc reads fail. */
+void PC_CdSetNoDisc(int on);
 int PC_CdReadSector(uint32_t lba, void *dst2048);       /* mode 2 form 1 user data */
 int PC_CdReadRawSector(uint32_t lba, void *dst2352);    /* whole raw sector */
 /* The disc image only: n raw sectors from lba, and ISO 9660 lookup (size in bytes). */

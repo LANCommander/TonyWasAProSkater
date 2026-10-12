@@ -178,23 +178,37 @@ static int FileExists(const char *p) {
     return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-int PC_CdOpen(void) {
-    char path[MAX_PATH];
+static int s_noDisc;
+
+void PC_CdSetNoDisc(int on) { s_noDisc = on; }
+
+int PC_CdFindImage(char *path, int n) {
     const char *dir = PC_DataDir();
     const char *fmts[] = {"%s\\thps1.bin", "%s\\..\\thps1_disc\\thps1.bin",
                           "%s\\Tony Hawk's Pro Skater (USA).bin", "%s\\game\\thps1.bin"};
-    int i, found = 0;
+    const char *e = getenv("THPS_DISC");
+    int i;
+    if (e) {
+        size_t len = strlen(e);
+        snprintf(path, n, "%s", e);
+        /* a .gdi is the Dreamcast disc (pc_assets.c) */
+        return len < 4 || _stricmp(e + len - 4, ".gdi") ? FileExists(path) : 0;
+    }
+    for (i = 0; i < 4; i++) {
+        snprintf(path, n, fmts[i], dir);
+        if (FileExists(path))
+            return 1;
+    }
+    return 0;
+}
+
+int PC_CdOpen(void) {
+    char path[MAX_PATH];
     if (s_disc)
         return 1;
-    if (getenv("THPS_DISC")) {
-        snprintf(path, sizeof path, "%s", getenv("THPS_DISC"));
-        found = FileExists(path);
-    }
-    for (i = 0; !found && i < 4; i++) {
-        snprintf(path, sizeof path, fmts[i], dir);
-        found = FileExists(path);
-    }
-    if (!found)
+    if (s_noDisc)
+        return 0;
+    if (!PC_CdFindImage(path, sizeof path))
         PC_Fatal("The game data has to be extracted from your disc first, and no disc image was "
                  "found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro Skater (USA) next "
                  "to SLUS_008.60 as thps1.bin, or set THPS_DISC.");

@@ -19,6 +19,91 @@ int BasePhase;
 int uWibble(STexWibVertInfo *pTexWibVertInfo);
 int vWibble(STexWibVertInfo *pTexWibVertInfo);
 
+#ifdef PC_PORT
+/* Dreamcast (version 6) files, platform/pc/include/pc_dctex.h: the face info's u and v are 0, and
+   the scroll and wibble move the face's own 16-bit coordinates (u0..u3, v0..v3 in words 5-8), so
+   those are kept from the first call after the file loaded. The offsets are in PS1 texels (8.8);
+   a PS1 texel is taken as 8 units (512 = one repeat of a texture 64 texels wide, the usual
+   size). */
+#include <stdlib.h>
+#include <string.h>
+
+struct SDcWibBase {
+	uint *pData;
+	uint *pPSX;
+	int NumFaces;
+	ushort *pUV;
+};
+
+static SDcWibBase DcWibBase[64];
+
+static void M3d_PreprocessWibblyTexturesDc(int Region, uint *pData, uint *pPSX) {
+	SDcWibBase *b = &DcWibBase[Region & 63];
+	int total = 0;
+	int n;
+	uint *p;
+
+	for (p = pData; *p; p = (uint *)((STexWibFaceInfo *)(p + 4) + p[3]))
+		total += p[3];
+
+	if (b->pData != pData || b->pPSX != pPSX || b->NumFaces != total) {
+		free(b->pUV);
+		b->pData = pData;
+		b->pPSX = pPSX;
+		b->NumFaces = total;
+		b->pUV = (ushort *)malloc(total * 16 + 16);
+		n = 0;
+
+		for (p = pData; *p; p = (uint *)((STexWibFaceInfo *)(p + 4) + p[3])) {
+			Item *pItem = (Item *)((char *)pPSX + *p);
+			SModel *pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
+			uint *pFace = (uint *)(&pModel->Vertices[pModel->NumVertices] + pModel->NumNormals);
+			int i;
+
+			for (i = 0; i < (int)p[3]; i++, n++) {
+				memcpy(b->pUV + n * 8, (char *)pFace + 20, 16);
+				pFace = (uint *)((char *)pFace + (((ushort *)pFace)[1] & 0xfffc));
+			}
+		}
+	}
+
+	n = 0;
+
+	for (p = pData; *p; p = (uint *)((STexWibFaceInfo *)(p + 4) + p[3])) {
+		Item *pItem = (Item *)((char *)pPSX + *p);
+		STexWibFaceInfo *pInfo = (STexWibFaceInfo *)(p + 4);
+		int NumFaces = p[3];
+		int i;
+
+		if (pItem->Flags & 0x8000) {
+			n += NumFaces;
+			continue;
+		}
+
+		SModel *pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
+		uint *pFace = (uint *)(&pModel->Vertices[pModel->NumVertices] + pModel->NumNormals);
+		int uScroll = (XblanksNow * ((short *)p)[2]) >> 4;
+		int vScroll = (XblanksNow * ((short *)p)[3]) >> 4;
+
+		BasePhase = (XblanksNow * (int)p[2]) >> 10;
+
+		for (i = 0; i < NumFaces; i++, n++, pInfo++) {
+			STexWibVertInfo *v[4] = { &pInfo->p0, &pInfo->p1, &pInfo->p2, &pInfo->p3 };
+			ushort *uv = (ushort *)((char *)pFace + 20);
+			const ushort *base = b->pUV + n * 8;
+			int k;
+
+			for (k = 0; k < 4; k++) {
+				uv[k] = base[k] + ((uScroll + uWibble(v[k])) >> 5);
+				uv[4 + k] = base[4 + k] + ((vScroll + vWibble(v[k])) >> 5);
+			}
+
+			pFace = (uint *)((char *)pFace + (((ushort *)pFace)[1] & 0xfffc));
+		}
+	}
+}
+#endif
+
 void M3d_PreprocessWibblyTextures(int Region) {
 	uint *pData;
 	uint *pPSX;
@@ -52,6 +137,13 @@ void M3d_PreprocessWibblyTextures(int Region) {
 		return;
 
 	pPSX = PSXRegion[Region].pPSX;
+
+#ifdef PC_PORT
+	if ((pPSX[0] & 0xffff) == 6) {
+		M3d_PreprocessWibblyTexturesDc(Region, pData, pPSX);
+		return;
+	}
+#endif
 
 	while (*pData) {
 		pItem = (Item *)((char *)pPSX + *pData);
