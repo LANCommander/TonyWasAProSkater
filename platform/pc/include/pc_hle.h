@@ -30,6 +30,18 @@ int PC_TickVBlank(void);
 /* Total vblanks since boot. */
 uint32_t PC_VBlankCount(void);
 
+/* Memory card files (hle_libcard.c): the BIOS file API on "bu00:", also reached through the
+ * B0 table. dir points at a libapi struct DIRENTRY. */
+int hle_open(const char *path, int mode);
+int hle_lseek(int fd, int offset, int whence);
+int hle_read(int fd, void *buf, int n);
+int hle_write(int fd, const void *buf, int n);
+int hle_close(int fd);
+int hle_erase(const char *path);
+int hle_format(const char *path);
+void *hle_firstfile(const char *path, void *dir);
+void *hle_nextfile(void *dir);
+
 /* Input: fill a libpad receive buffer (34 bytes) for a port. */
 void PC_InputInit(void);
 void PC_InputPoll(void);

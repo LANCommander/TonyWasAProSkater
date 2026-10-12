@@ -86,7 +86,7 @@ void hleov_800478f4(int n) {
 
 /* THPS_TRACE_RENDER=1: per-frame counts for the environment renderer (debugging). */
 extern volatile uint32_t pc_heartbeat;
-static void RenderTrace(const char *what, uint32_t ret) {
+void PC_RenderTrace(const char *what, uint32_t ret) {
     static uint32_t frame = ~0u, calls[2], culled;
     static int on = -1;
     if (on < 0)
@@ -113,7 +113,7 @@ typedef uint32_t (*Fn12)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint3
                          uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 extern const PcFunc pc_recomp_funcs[], pc_recomp_game_funcs[];
 /* The translated retail version of a function (for wrappers that call the original). */
-static Fn12 Recomp(uint32_t addr) {
+Fn12 PC_Recomp(uint32_t addr) {
     const PcFunc *t;
     for (t = pc_recomp_funcs; t->addr; t++)
         if (t->addr == addr)
@@ -125,23 +125,8 @@ static Fn12 Recomp(uint32_t addr) {
     return NULL;
 }
 
-uint32_t hleov_80085d28(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3) {
-    static Fn12 f;
-    uint32_t r;
-    if (!f)
-        f = Recomp(0x80085d28);
-    r = f(a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
-    RenderTrace("T", r);
-    return r;
-}
-
-uint32_t hleov_80086f40(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3) {
-    static Fn12 f;
-    if (!f)
-        f = Recomp(0x80086f40);
-    RenderTrace("P", 0);
-    return f(a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
-}
+/* The vertex transforms and ProcessPolys (0x80085d28, 0x80086f40 ...) are wrapped by the native
+ * 3D renderer, pc_render3d.c. */
 
 /* M3dAsm_BoundingSpherePreprocessing(list, flags): THPS_TRACE_CULL=1 logs how many items it culls. */
 uint32_t hleov_800858ac(uint32_t list, uint32_t flags) {
@@ -149,7 +134,7 @@ uint32_t hleov_800858ac(uint32_t list, uint32_t flags) {
     static int on = -1;
     uint32_t r, p, n = 0, culled = 0, before = 0;
     if (!f)
-        f = Recomp(0x800858ac);
+        f = PC_Recomp(0x800858ac);
     if (on < 0)
         on = getenv("THPS_TRACE_CULL") && atoi(getenv("THPS_TRACE_CULL"));
     if (on)
@@ -202,7 +187,7 @@ void hleov_80078b04(uint32_t self) {
     static Fn12 f;
     static uint32_t last;
     if (!f)
-        f = Recomp(0x80078b04);
+        f = PC_Recomp(0x80078b04);
     if (getenv("THPS_TRACE_CULL") && pc_heartbeat != last && (pc_heartbeat % 50) == 1) {
         uint32_t tri = *(uint32_t *)PSX_PTR(self + 0x420);
         last = pc_heartbeat;

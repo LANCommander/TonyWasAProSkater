@@ -1,6 +1,7 @@
-/* Software PS1 GPU: 1024x512 16-bit VRAM driven by real GP0/GP1 command words, plus presentation of
- * the display area in an SDL2 window. The libgpu HLE (src/hle_libgpu.c) and anything else that talks
- * to the GPU goes through this interface. */
+/* PS1 GPU: 1024x512 16-bit VRAM driven by real GP0/GP1 command words, plus presentation of the
+ * display area in an SDL2 window. Drawing goes to the OpenGL backend (pc_gpu_gl.h) when it is
+ * active, else to the software rasteriser. The libgpu HLE (src/hle_libgpu.c) and anything else
+ * that talks to the GPU goes through this interface. */
 #ifndef PC_GPU_H
 #define PC_GPU_H
 
@@ -27,6 +28,8 @@ uint32_t PC_GpuReadStat(void);
  * 0xffffff). Packet addresses are PS1 main-RAM addresses; in this process main RAM is mapped at
  * 0x80000000, so a link n is read at (0x80000000 | n). */
 void PC_GpuDrawChain(const uint32_t *first);
+/* The current drawing offset and drawing area (inclusive), for the native 3D renderer. */
+void PC_GpuDrawState(int *ofs_x, int *ofs_y, int clip[4]);
 
 /* Direct VRAM access (1024x512 halfwords, row-major), for transfers and debugging. */
 uint16_t *PC_GpuVram(void);

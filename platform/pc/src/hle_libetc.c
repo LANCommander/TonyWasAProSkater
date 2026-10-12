@@ -143,8 +143,12 @@ static void WaitVBlank(void) {
 }
 
 int VSync(int mode) {
-    if (mode < 0)
+    if (mode < 0) {
+        /* the vblank counter: games spin on it (the career auto-load waits a second after
+         * loading), so a vblank that is due happens here */
+        PC_TickVBlank();
         return (int)s_vblanks;
+    }
     if (mode == 1) {
         PC_TickVBlank();
         return 0; /* horizontal lines since the last vblank */

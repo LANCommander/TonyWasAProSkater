@@ -102,6 +102,48 @@ virtual CD positions for the streaming code. Missing files are extracted again o
 back). Playlist entries are relative to `Data/Music` or absolute; an STR the game doesn't know
 plays with its first song's settings.
 
+## Saves
+
+The memory card is a folder: `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Saves`
+(`src/hle_libcard.c`). The game's own card code runs unchanged and sees a formatted card in slot 1;
+each card file (career saves `BASLUS-00860THPSG..`, replays `..THPSV..`) is one `.mcs` file there,
+the single-save format MemcardRex and the emulators import and export, so saves can be moved
+between the port, an emulator and a real card. Like a real card it holds 15 blocks (a career save
+takes 1, a replay 3 or 6); files that don't fit are ignored. The career saved most recently is
+loaded at startup, as on the PS1.
+
+## Graphics
+
+`src/pc_gpu.c` is the PS1 GPU: it takes the GP0/GP1 words the game sends (ordering tables,
+`LoadImage`, `PutDrawEnv`...) and keeps VRAM. It draws through OpenGL 3.3 (`src/pc_gpu_gl.c`):
+polygons, sprites, lines and fills go to a render target at a multiple of the PS1 resolution
+(`THPS_GL_SCALE`, default the window scale), and a shader does the PS1's CLUT texture lookup,
+texture windows, colour modulation and the four semi-transparency modes. Textures come from a
+16-bit copy of VRAM. VRAM is tracked in 16x16 cells, so the two sides stay in sync when the game
+reads back what it drew (the HUD saves the background under a sprite with `StoreImage`) or draws
+into an area the CPU wrote. There's no dithering: the picture is never reduced to 15 bits for display.
+The PS1 rounds every projected vertex to a whole pixel, has no perspective-correct texturing and
+no depth buffer, which is where its wobbling geometry, seams and warping textures come from. With
+OpenGL, the world and models (everything THPS1's hand-written M3DASM renderer draws: level,
+skaters, cars, sky) are drawn natively by `src/pc_render3d.c`: the retail vertex transforms still
+run, but their view-space vertices are kept unrounded, and ProcessPolys is replaced by a face walk
+that keeps retail's visibility, colours (the same GTE colour commands) and ordering-table position,
+then draws with a projection, a depth buffer and OpenGL's near-plane clipping instead of
+subdivision. The faces are drawn while the GPU walks the ordering table, so everything still sent
+as GPU packets (particles, shadows, 3D text, the HUD) keeps its place in the PS1's painter order;
+of those, the ones the GTE projected are depth-tested against the world. Those packets use the
+precise-vertex lookup: the GTE (`src/pc_gte.c`) also records each projection unrounded, with its
+depth, keyed by the screen coordinates the game puts in its GPU packets, and the GPU looks a
+polygon's vertices up again and draws it at sub-pixel positions with perspective-correct textures
+(THPS1's polygon subdivision re-projects and nudges vertices, which the lookup allows for, see
+`PC_GtePrecisePolygon`). Faces the native renderer doesn't handle yet (water clipping and the
+fade-to-colour mode of some levels) still go through the retail code and that lookup.
+`THPS_RENDER3D=psx` draws all 3D the PS1 way. With that and the lookup turned off
+(`THPS_RENDER3D=psx THPS_GL_PRECISE=0 THPS_GL_PERSPECTIVE=0`), OpenGL at 1x samples the same
+points the PS1 rasteriser does, and the result matches the software renderer almost pixel for
+pixel. That renderer (a Mednafen-style rasteriser) is still there for comparison and for when
+OpenGL is unavailable: `THPS_RENDERER=sw`.
+
 The build compiles every TU in `decomp/matched.tsv` (and the near-miss sources in
 `decomp/nearmiss.tsv`), translates the remaining MIPS with `tools/mips2c.py`, generates the glue in
 `build/pc/gen/` and links. `build/pc/build_report.txt` lists compile errors and unresolved symbols.
@@ -115,10 +157,22 @@ Backspace = Select, Q/W/E/R = L1/R1/L2/R2. Game controllers work through SDL.
 |---|---|
 | `THPS_EXE`, `THPS_DISC` | paths to `SLUS_008.60` and the disc image (else found next to the exe or in `extern/`) |
 | `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
+| `THPS_SAVE_DIR` | the memory card folder (default `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Saves`) |
 | `THPS_SCALE=n` | window scale (default 3) |
-| `THPS_HEADLESS=1` | no window (for automated runs) |
+| `THPS_HEADLESS=1` | no window (for automated runs; uses the software renderer unless `THPS_RENDERER=gl`) |
+| `THPS_RENDERER=gl\|sw` | OpenGL (default) or the software rasteriser |
+| `THPS_GL_SCALE=n` | OpenGL internal resolution, n times the PS1's (default: the window scale) |
+| `THPS_GL_PRECISE=0` | OpenGL: draw 3D polygons at the PS1's whole-pixel positions (default: sub-pixel, from the GTE) |
+| `THPS_GL_PERSPECTIVE=0` | OpenGL: affine texturing like the PS1 (default: perspective-correct) |
+| `THPS_RENDER3D=psx` | OpenGL: draw the world and models through the PS1 path (default `native`, see Graphics) |
+| `THPS_R3DSTATS=1` | once a second: native 3D faces, culled faces, draws, and calls left to the retail code |
+| `THPS_R3D_VERIFY=1` | check the native renderer's float vertices and back-face tests against retail's integers |
+| `THPS_R3D_NEARDROP=1` | drop faces crossing the near plane that the PS1 dropped (default: OpenGL clips them) |
+| `THPS_R3D_PROBE=f,x,y` | log the 3D faces covering screen point x,y on frame f |
+| `THPS_FILTER=1` | bilinear scaling to the window instead of nearest-neighbour |
+| `THPS_GLSTATS=1` | once a second: draw calls, VRAM readbacks and uploads, and how many polygons had precise vertices |
 | `THPS_FRAMES=n` | exit after n frames |
-| `THPS_SHOT=f1,f2` / `THPS_SHOTDIR` | dump the display and VRAM as BMPs at those frames |
+| `THPS_SHOT=f1,f2` / `THPS_SHOTDIR` | dump the display and VRAM as BMPs at those frames (with OpenGL above 1x, also `frameNNNNN_gl.bmp` at full resolution) |
 | `THPS_INPUT=frame:mask,...` | scripted pad input (PS1 button mask, pressed = 1, held from that frame) |
 | `THPS_TRACE=1` | log CD, BIOS and debug-print activity |
 | `THPS_FAST=1` | don't throttle to 60 Hz |

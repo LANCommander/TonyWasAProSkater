@@ -1,0 +1,32 @@
+/* Native 3D renderer for the world and models (src/pc_render3d.c).
+ *
+ * THPS1 draws its 3D with hand-written assembly (M3DASM): vertex transforms that project through
+ * the GTE into a cache, then ProcessPolys, which lights, culls and subdivides each face and links
+ * GPU packets into the ordering table. With THPS_RENDER3D=native (the default with OpenGL) the
+ * transforms still run, but their view-space vertices are kept unrounded, and ProcessPolys is
+ * replaced: faces are drawn by OpenGL from those vertices with a projection and a depth buffer,
+ * at the place in the ordering table the PS1 would have drawn them. THPS_RENDER3D=psx keeps the
+ * PS1 path. */
+#ifndef PC_RENDER3D_H
+#define PC_RENDER3D_H
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* After the OpenGL backend started: gl = 1 enables the native renderer (unless THPS_RENDER3D=psx). */
+void R3d_Init(int gl);
+int R3d_Native(void);
+
+/* PC_GpuDrawChain, for each packet before its words go to the GPU: 1 if it was a layer marker
+ * (its words are not GPU commands). R3d_ChainEnd at the end of the chain. */
+int R3d_ChainPacket(const uint32_t *p, uint32_t len);
+void R3d_ChainEnd(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

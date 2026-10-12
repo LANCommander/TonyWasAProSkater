@@ -174,7 +174,7 @@ u32 PC_BiosCall(u32 vec, u32 fn) {
         case 0x49: return 0; /* GPU_cw: handled by the libgpu HLE */
         case 0x72: return 0; /* CdRemove */
         case 0x9f: return 0; /* SetMem */
-        case 0xab: return 1; /* _card_info: answered via events (hle_card.c) */
+        case 0xab: return 1; /* _card_info: answered via events (hle_libcard.c) */
         case 0xac: return 1; /* _card_load */
         }
     } else if (vec == 0xb0) {
@@ -193,16 +193,18 @@ u32 PC_BiosCall(u32 vec, u32 fn) {
         case 0x18: return 0; /* ResetEntryInt */
         case 0x19: return 0; /* HookEntryInt */
         case 0x20: { Event *e = Ev(a0); if (e) e->ready = 0; return 1; } /* UnDeliverEvent */
-        case 0x32: return 0xffffffffu; /* open: no host files / memory card through the BIOS */
-        case 0x33: return 0xffffffffu; /* lseek */
-        case 0x34: return 0xffffffffu; /* read */
-        case 0x35: return 0xffffffffu; /* write */
-        case 0x36: return 0; /* close */
+        /* file I/O: the memory card (hle_libcard.c) */
+        case 0x32: return (u32)hle_open(PSX_PTR(a0), (int)a1);
+        case 0x33: return (u32)hle_lseek((int)a0, (int)a1, (int)a2);
+        case 0x34: return (u32)hle_read((int)a0, PSX_PTR(a1), (int)a2);
+        case 0x35: return (u32)hle_write((int)a0, PSX_PTR(a1), (int)a2);
+        case 0x36: return (u32)hle_close((int)a0);
         case 0x3d: return 0; /* putchar */
         case 0x3f: fputs(PSX_PTR(a0), stdout); fflush(stdout); return 0; /* puts */
-        case 0x42: return 0; /* firstfile: no files */
-        case 0x43: return 0; /* nextfile */
-        case 0x45: return 0; /* erase */
+        case 0x41: return (u32)hle_format(PSX_PTR(a0));
+        case 0x42: return (u32)(uintptr_t)hle_firstfile(PSX_PTR(a0), PSX_PTR(a1));
+        case 0x43: return (u32)(uintptr_t)hle_nextfile(PSX_PTR(a0));
+        case 0x45: return (u32)hle_erase(PSX_PTR(a0));
         case 0x4a: return 1; /* InitCARD */
         case 0x4b: return 1; /* StartCARD */
         case 0x4c: return 1; /* StopCARD */

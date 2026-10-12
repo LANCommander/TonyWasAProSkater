@@ -3,6 +3,7 @@
  * checked against 32 bits. Division is the hardware's UNR (Newton-Raphson) reciprocal. */
 #include "pc_gte.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +52,8 @@ static Gte g;
 enum {
 	F_MAC1_POS = 1u << 30,
 	F_MAC1_NEG = 1u << 27,
+	F_IR1 = 1u << 24,
+	F_IR2 = 1u << 23,
 	F_IR0 = 1u << 12,
 	F_SY2 = 1u << 13,
 	F_SX2 = 1u << 14,
@@ -270,6 +273,190 @@ static void color_ir_products(int64_t *m)
 	m[2] = ((int64_t)g.rgbc[2] * g.ir[3]) * 16;
 }
 
+/* ---- precise projections (see pc_gte.h) ------------------------------------------------------ */
+
+#define PRECISE_SLOTS (1 << 16)
+#define PRECISE_PROBE 8
+#define PRECISE_CANDS 4
+#define PRECISE_MAX_AGE 6 /* vblanks; a 30 fps frame is projected and then drawn within about 4 */
+
+/* Every distinct projection that rounded to one SXY word in one vblank (usually one). */
+typedef struct {
+	uint32_t key, gen; /* gen: pc_heartbeat + 1 when recorded, 0: never used */
+	int n;
+	float x[PRECISE_CANDS], y[PRECISE_CANDS], z[PRECISE_CANDS];
+} Precise;
+
+static Precise s_precise[PRECISE_SLOTS];
+static int precise_on;
+
+static float (*s_capture)[3];
+static int s_capture_n, s_capture_max;
+
+void PC_GteCaptureBegin(float (*buf)[3], int max)
+{
+	s_capture = buf;
+	s_capture_n = 0;
+	s_capture_max = max;
+}
+
+int PC_GteCaptureEnd(void)
+{
+	s_capture = NULL;
+	return s_capture_n;
+}
+
+void PC_GtePreciseEnable(int on)
+{
+	precise_on = on;
+}
+
+static double precise_zscale = 1.0;
+
+void PC_GtePreciseZScale(float s)
+{
+	precise_zscale = s;
+}
+
+/* Only the 11 bits per coordinate the GPU reads: renderers reuse the others (THPS1's world
+ * renderer keeps off-screen flags in bits 14 and 30 of the words it caches). */
+static inline uint32_t precise_key(uint32_t sxy)
+{
+	return sxy & 0x07FF07FFu;
+}
+
+static inline uint32_t precise_hash(uint32_t key)
+{
+	return (key * 0x9E3779B1u) >> 16;
+}
+
+/* The projection RTPS/RTPT just pushed, unrounded: acc = MAC1-3 before the shift. */
+static void precise_record(const int64_t *acc, int shift)
+{
+	/* The hardware is less exact than this (SZ is truncated before the divide: several pixels
+	 * off near the camera), so the results can't be compared; its flags say whether it projected
+	 * at all rather than clamping SXY or IR1/IR2 or overflowing the divide. */
+	if (s_sat_ring[2] || (g.flag & (F_IR1 | F_IR2 | F_DIV)) || acc[2] <= 0)
+		return;
+	double z = (double)acc[2] / 4096.0;
+	if (z > 0xFFFF)
+		return;
+	double scale = (double)g.h / z / (double)(1 << shift); /* IR = MAC >> shift, SZ = MAC3 >> 12 */
+	double cx = g.ofx / 65536.0, cy = g.ofy / 65536.0;
+	double x = (double)acc[0] * scale + cx;
+	double y = (double)acc[1] * scale + cy;
+	z *= precise_zscale;
+
+	uint32_t gen = pc_heartbeat + 1;
+	uint32_t key = precise_key((uint16_t)g.sx[2] | (uint32_t)(uint16_t)g.sy[2] << 16);
+	uint32_t h = precise_hash(key);
+	Precise *slot = NULL;
+	for (int i = 0; i < PRECISE_PROBE; i++) {
+		Precise *e = &s_precise[(h + i) & (PRECISE_SLOTS - 1)];
+		if (e->gen && e->key == key) {
+			if (e->gen != gen) {
+				slot = e;
+				break;
+			}
+			/* The same point projected again from a less exact copy (THPS1's subdivision
+			 * re-projects 16-bit view-space positions) is close in depth and off in proportion
+			 * to the distance from the centre; the first projection is kept. */
+			for (int c = 0; c < e->n; c++) {
+				double dz = fabs(e->z[c] - z) / e->z[c] + 1.0 / 128;
+				if (fabs(e->z[c] - z) <= 1.0 + e->z[c] / 64 &&
+				    fabs(e->x[c] - x) <= 0.25 + fabs(x - cx) * dz &&
+				    fabs(e->y[c] - y) <= 0.25 + fabs(y - cy) * dz)
+					return;
+			}
+			if (e->n < PRECISE_CANDS) {
+				e->x[e->n] = (float)x;
+				e->y[e->n] = (float)y;
+				e->z[e->n] = (float)z;
+				e->n++;
+			}
+			return;
+		}
+		if (!slot || e->gen < slot->gen)
+			slot = e; /* else the oldest in the window */
+	}
+	slot->key = key;
+	slot->gen = gen;
+	slot->n = 1;
+	slot->x[0] = (float)x;
+	slot->y[0] = (float)y;
+	slot->z[0] = (float)z;
+}
+
+static const Precise *precise_find(uint32_t key)
+{
+	uint32_t h = precise_hash(key);
+	for (int i = 0; i < PRECISE_PROBE; i++) {
+		const Precise *e = &s_precise[(h + i) & (PRECISE_SLOTS - 1)];
+		if (e->gen && e->key == key)
+			return pc_heartbeat + 1 - e->gen <= PRECISE_MAX_AGE ? e : NULL;
+	}
+	return NULL;
+}
+
+/* Candidates for one SXY word, into x/y/z (up to 9 * PRECISE_CANDS). THPS1's polygon subdivision
+ * moves the vertices on a grid's edges a pixel outwards so that the grid overlaps its neighbours
+ * (0x80087ee8), so a word nobody projected falls back to the projections one pixel around it,
+ * moved the same way. */
+static int precise_candidates(uint32_t sxy, float *x, float *y, float *z)
+{
+	uint32_t key = precise_key(sxy);
+	int kx = (int)(key << 21) >> 21, ky = (int)(key >> 16 << 21) >> 21, n = 0, dx = 0, dy = 0;
+	const Precise *e = precise_find(key);
+	for (int d = -1; d < 9; d++) {
+		if (d >= 0) {
+			dx = d % 3 - 1;
+			dy = d / 3 - 1;
+			if (!dx && !dy)
+				continue;
+			e = precise_find(precise_key((uint16_t)(kx + dx) | (uint32_t)(uint16_t)(ky + dy) << 16));
+		}
+		for (int c = 0; e && c < e->n; c++) {
+			x[n] = e->x[c] - dx;
+			y[n] = e->y[c] - dy;
+			z[n] = e->z[c];
+			n++;
+		}
+		if (d < 0 && n)
+			return n;
+	}
+	return n;
+}
+
+int PC_GtePrecisePolygon(const uint32_t *sxy, int n, float *x, float *y, float *z)
+{
+	float cx[4][9 * PRECISE_CANDS], cy[4][9 * PRECISE_CANDS], cz[4][9 * PRECISE_CANDS];
+	int nc[4], known = 0;
+	double zsum = 0;
+	for (int i = 0; i < n; i++) {
+		nc[i] = precise_candidates(sxy[i], cx[i], cy[i], cz[i]);
+		if (!nc[i])
+			return 0;
+		if (nc[i] == 1) {
+			zsum += cz[i][0];
+			known++;
+		}
+	}
+	/* where several vertices rounded to the same pixel, the one at the polygon's depth */
+	if (known < n && !known)
+		return 0;
+	double zref = known ? zsum / known : 0;
+	for (int i = 0; i < n; i++) {
+		int best = 0;
+		for (int c = 1; c < nc[i]; c++)
+			if (fabs(cz[i][c] - zref) < fabs(cz[i][best] - zref))
+				best = c;
+		x[i] = cx[i][best];
+		y[i] = cy[i][best];
+		z[i] = cz[i][best];
+	}
+	return 1;
+}
+
 /* ---- commands -------------------------------------------------------------------------------- */
 
 static void cmd_rtp(int idx, int shift, int lm, int last)
@@ -303,6 +490,14 @@ static void cmd_rtp(int idx, int shift, int lm, int last)
 	mac0_check(x);
 	mac0_check(y);
 	push_sxy(x >> 16, y >> 16);
+	if (precise_on)
+		precise_record(acc, shift);
+	if (s_capture && s_capture_n < s_capture_max) {
+		float *c = s_capture[s_capture_n++];
+		c[0] = (float)((double)acc[0] / 4096.0);
+		c[1] = (float)((double)acc[1] / 4096.0);
+		c[2] = (float)((double)acc[2] / 4096.0);
+	}
 
 	if (last) {
 		int64_t dq = (int64_t)n * g.dqa + g.dqb;

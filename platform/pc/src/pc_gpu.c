@@ -11,6 +11,9 @@
 #include <string.h>
 
 #include "pc_gpu.h"
+#include "pc_gpu_gl.h"
+#include "pc_gte.h"
+#include "pc_render3d.h"
 
 extern volatile uint32_t pc_heartbeat;
 
@@ -616,6 +619,84 @@ static void vtx_from_words(Vtx *v, uint32_t xy, uint32_t col)
     v->u = v->v = 0;
 }
 
+/* The OpenGL backend (pc_gpu_gl.c) gets the primitive with the state it needs. */
+static void gl_prim(PC_GlPrim *o, const Prim *p)
+{
+    o->textured = p->textured;
+    o->raw = p->raw;
+    o->semi = p->semi;
+    o->abr = p->abr;
+    o->depth = p->depth;
+    o->tp_x = p->tp_x;
+    o->tp_y = p->tp_y;
+    o->clut_x = p->clut_x;
+    o->clut_y = p->clut_y;
+    o->tw_and_x = gs.tw_and_x;
+    o->tw_and_y = gs.tw_and_y;
+    o->tw_or_x = gs.tw_or_x;
+    o->tw_or_y = gs.tw_or_y;
+    o->mask_set = gs.mask_set;
+    o->mask_check = gs.mask_check;
+    o->clip_l = gs.clip_l;
+    o->clip_t = gs.clip_t;
+    o->clip_r = gs.clip_r;
+    o->clip_b = gs.clip_b;
+}
+
+static void gl_vertex(PC_GlVertex *o, const Vtx *v)
+{
+    o->x = v->x;
+    o->y = v->y;
+    o->r = v->r;
+    o->g = v->g;
+    o->b = v->b;
+    o->u = v->u;
+    o->v = v->v;
+    o->px = o->py = o->w = 0;
+}
+
+/* Precise positions and depths from the GTE (pc_gte.h) for a polygon's vertices, by the SXY words
+ * in its packet. All or nothing: a polygon that isn't entirely GTE-projected (2D, or vertices
+ * the game computed itself) is drawn exactly as before. */
+static void gl_precise(PC_GlVertex *gv, const uint32_t *xy, int n)
+{
+    static int stats = -1;
+    static uint32_t frame, hit, miss;
+    float x[4], y[4], z[4];
+    int ok = PC_GtePrecisePolygon(xy, n, x, y, z);
+    if (stats < 0)
+        stats = getenv("THPS_GLSTATS") && atoi(getenv("THPS_GLSTATS"));
+    if (stats) {
+        if (pc_heartbeat - frame >= 60) {
+            fprintf(stderr, "[gl] precise vertices: %u polygons, %u without\n", hit, miss);
+            frame = pc_heartbeat;
+            hit = miss = 0;
+        }
+        if (ok) hit++; else miss++;
+    }
+    if (!ok)
+        return;
+    for (int i = 0; i < n; i++) {
+        gv[i].px = x[i] + gs.ofs_x;
+        gv[i].py = y[i] + gs.ofs_y;
+        gv[i].w = z[i];
+    }
+}
+
+static void line_out(const Prim *p, int gouraud, const Vtx *a, const Vtx *b)
+{
+    if (PC_GlActive()) {
+        PC_GlPrim gp;
+        PC_GlVertex ga, gb;
+        gl_prim(&gp, p);
+        gl_vertex(&ga, a);
+        gl_vertex(&gb, b);
+        PC_GlLine(&gp, &ga, &gb);
+        return;
+    }
+    draw_line(p, gouraud, a, b);
+}
+
 static int dither_on(void)
 {
     return ((gs.drawmode >> 9) & 1) && !s_dither_force_off;
@@ -630,10 +711,12 @@ static void cmd_polygon(const uint32_t *w)
     uint32_t col = w[0];
     uint16_t clut = 0;
     Vtx v[4];
+    uint32_t xy[4];
 
     for (int i = 0; i < n; i++) {
         if (i > 0 && gouraud)
             col = w[k++];
+        xy[i] = w[k];
         vtx_from_words(&v[i], w[k++], col);
         if (tex) {
             uint32_t uv = w[k++];
@@ -713,6 +796,19 @@ static void cmd_polygon(const uint32_t *w)
                 pc_heartbeat, quad, tex, semi, p.abr, raw, v[0].x, v[0].y, v[0].r, v[0].g, v[0].b,
                 v[1].x, v[1].y, v[1].r, v[1].g, v[1].b, v[2].x, v[2].y, v[2].r, v[2].g, v[2].b,
                 quad ? " +quad" : "");
+    if (PC_GlActive()) {
+        PC_GlPrim gp;
+        PC_GlVertex gv[4];
+        gl_prim(&gp, &p);
+        for (int i = 0; i < n; i++)
+            gl_vertex(&gv[i], &v[i]);
+        gl_precise(gv, xy, n);
+        if (!tri_too_big(&v[0], &v[1], &v[2]))
+            PC_GlTriangle(&gp, &gv[0], &gv[1], &gv[2]);
+        if (quad && !tri_too_big(&v[1], &v[2], &v[3]))
+            PC_GlTriangle(&gp, &gv[1], &gv[2], &gv[3]);
+        return;
+    }
     draw_triangle(&p, shaded, &v[0], &v[1], &v[2]);
     if (quad)
         draw_triangle(&p, shaded, &v[1], &v[2], &v[3]);
@@ -736,7 +832,7 @@ static void cmd_line(const uint32_t *w)
         vtx_from_words(&b, w[3], w[2]);
     else
         vtx_from_words(&b, w[2], w[0]);
-    draw_line(&p, gouraud, &a, &b);
+    line_out(&p, gouraud, &a, &b);
 
     if (op & 8) {
         gs.mode = MODE_POLYLINE;
@@ -772,7 +868,7 @@ static void polyline_word(uint32_t word)
     a.b = (uint8_t)(gs.pl_col >> 16);
     a.u = a.v = 0;
     vtx_from_words(&b, word, newcol);
-    draw_line(&p, gouraud, &a, &b);
+    line_out(&p, gouraud, &a, &b);
     gs.pl_x = sext11(word);
     gs.pl_y = sext11(word >> 16);
     gs.pl_col = newcol;
@@ -811,6 +907,13 @@ static void cmd_rect(const uint32_t *w)
     unsigned r = w[0] & 0xff, g = (w[0] >> 8) & 0xff, b = (w[0] >> 16) & 0xff;
     int flip_x = (gs.drawmode >> 12) & 1, flip_y = (gs.drawmode >> 13) & 1;
 
+    if (PC_GlActive()) {
+        PC_GlPrim gp;
+        gl_prim(&gp, &p);
+        PC_GlRect(&gp, x, y, width, height, (uint8_t)r, (uint8_t)g, (uint8_t)b, (int)u0, (int)v0,
+                  flip_x, flip_y);
+        return;
+    }
     for (int oy = 0; oy < height; oy++) {
         int py = y + oy;
         if (py < gs.clip_t || py > gs.clip_b)
@@ -836,6 +939,10 @@ static void cmd_fill(const uint32_t *w)
     uint16_t c = rgb24_to_15(w[0]);
     int x = (int)(w[1] & 0x3f0), y = (int)((w[1] >> 16) & 0x1ff);
     int width = (int)(((w[2] & 0x3ff) + 0xf) & ~0xfu), height = (int)((w[2] >> 16) & 0x1ff);
+    if (PC_GlActive()) {
+        PC_GlFill(x, y, width, height, w[0]);
+        return;
+    }
     for (int j = 0; j < height; j++)
         for (int i = 0; i < width; i++)
             VRAM(x + i, y + j) = c;
@@ -849,6 +956,8 @@ static void cmd_copy(const uint32_t *w)
     int width = (int)(((w[3] & 0xffff) - 1) & 0x3ff) + 1;
     int height = (int)((((w[3] >> 16) & 0xffff) - 1) & 0x1ff) + 1;
     uint16_t or_mask = gs.mask_set ? 0x8000 : 0;
+    PC_GlSyncRead(sx, sy, width, height);
+    PC_GlBeforeWrite(dx, dy, width, height);
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++)
             row[i] = VRAM(sx + i, sy + j);
@@ -859,6 +968,7 @@ static void cmd_copy(const uint32_t *w)
             *d = row[i] | or_mask;
         }
     }
+    PC_GlWritten(dx, dy, width, height);
 }
 
 static void xfer_rect(const uint32_t *w, int *x, int *y, int *width, int *height)
@@ -875,6 +985,14 @@ static void cmd_to_vram(const uint32_t *w)
     gs.xfer_n = gs.xfer_w * gs.xfer_h;
     gs.xfer_i = 0;
     gs.mode = MODE_TO_VRAM;
+    PC_GlBeforeWrite(gs.xfer_x, gs.xfer_y, gs.xfer_w, gs.xfer_h);
+}
+
+/* A CPU->VRAM transfer ended (or was cut short): its pixels are newer than the GL copy. */
+static void xfer_done(void)
+{
+    gs.mode = MODE_CMD;
+    PC_GlWritten(gs.xfer_x, gs.xfer_y, gs.xfer_w, gs.xfer_h);
 }
 
 static inline void xfer_put(uint16_t px)
@@ -893,6 +1011,7 @@ static void cmd_from_vram(const uint32_t *w)
     xfer_rect(w, &gs.rd_x, &gs.rd_y, &gs.rd_w, &gs.rd_h);
     gs.rd_n = gs.rd_w * gs.rd_h;
     gs.rd_i = 0;
+    PC_GlSyncRead(gs.rd_x, gs.rd_y, gs.rd_w, gs.rd_h);
 }
 
 static void set_drawmode(uint32_t v)
@@ -1033,7 +1152,7 @@ void PC_GpuWriteGP0(uint32_t word)
         xfer_put((uint16_t)word);
         xfer_put((uint16_t)(word >> 16));
         if (gs.xfer_i >= gs.xfer_n)
-            gs.mode = MODE_CMD;
+            xfer_done();
         return;
     }
     if (gs.mode == MODE_POLYLINE) {
@@ -1090,6 +1209,8 @@ uint32_t PC_GpuReadData(void)
 static void gp1_reset_cmdbuf(void)
 {
     gs.fifo_n = 0;
+    if (gs.mode == MODE_TO_VRAM)
+        xfer_done();
     gs.mode = MODE_CMD;
     gs.xfer_n = gs.xfer_i = 0;
 }
@@ -1198,7 +1319,25 @@ void PC_GpuVBlank(void)
 /* ---------------------------------------------------------------------------------------------
  * DMA linked list */
 
+static void draw_chain(const uint32_t *first);
+
 void PC_GpuDrawChain(const uint32_t *first)
+{
+    draw_chain(first);
+    R3d_ChainEnd();
+}
+
+void PC_GpuDrawState(int *ofs_x, int *ofs_y, int clip[4])
+{
+    *ofs_x = gs.ofs_x;
+    *ofs_y = gs.ofs_y;
+    clip[0] = gs.clip_l;
+    clip[1] = gs.clip_t;
+    clip[2] = gs.clip_r;
+    clip[3] = gs.clip_b;
+}
+
+static void draw_chain(const uint32_t *first)
 {
     static int warned, warned_len;
     const uint32_t *p = first, *slow = first;
@@ -1210,8 +1349,10 @@ void PC_GpuDrawChain(const uint32_t *first)
             fprintf(stderr, "[gpu] DrawChain: packet at %08x has %u words (tag %08x)\n",
                     (unsigned)(uintptr_t)p, len, tag);
         }
-        for (uint32_t i = 1; i <= len; i++)
-            PC_GpuWriteGP0(p[i]);
+        /* the native 3D renderer's layer markers, and where its layers are in the OT */
+        if (!R3d_ChainPacket(p, len))
+            for (uint32_t i = 1; i <= len; i++)
+                PC_GpuWriteGP0(p[i]);
         uint32_t next = tag & 0xffffff;
         if (next & 0x800000)
             return;
@@ -1241,6 +1382,7 @@ void PC_GpuReset(void)
 {
     init_tables();
     memset(s_vram, 0, sizeof s_vram);
+    PC_GlWritten(0, 0, VRAM_W, VRAM_H);
     gp1_reset();
     gs.field = 0;
 }
@@ -1253,6 +1395,11 @@ void PC_GpuFillRect(int x, int y, int w, int h, uint32_t rgb24)
     if (y < 0) y = 0;
     if (x1 > VRAM_W) x1 = VRAM_W;
     if (y1 > VRAM_H) y1 = VRAM_H;
+    if (PC_GlActive()) {
+        if (x1 > x && y1 > y)
+            PC_GlFill(x, y, x1 - x, y1 - y, rgb24);
+        return;
+    }
     for (int j = y; j < y1; j++)
         for (int i = x; i < x1; i++)
             s_vram[j * VRAM_W + i] = c;
@@ -1304,6 +1451,7 @@ void PC_GpuDisplayToARGB(uint32_t *dst, int pitch, int maxw, int maxh, int *ow, 
     PC_GpuDisplay d;
     PC_GpuGetDisplay(&d);
     int w = d.w < maxw ? d.w : maxw, h = d.h < maxh ? d.h : maxh;
+    PC_GlSyncRead(d.x, d.y, d.rgb24 ? (w * 3 + 1) / 2 : w, h);
     for (int y = 0; y < h; y++) {
         uint32_t *o = dst + (size_t)y * pitch;
         int vy = (d.y + y) & (VRAM_H - 1);
