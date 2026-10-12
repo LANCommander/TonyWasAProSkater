@@ -17,6 +17,11 @@ extern "C" {
 	int close(int);
 }
 
+#ifdef PC_PORT
+#include "pc_saves.h"
+extern "C" char SaveGameName[];
+#endif
+
 int FUN_800144a8(int FileType) {
 	SCardHead Head;
 	char *FName;
@@ -35,6 +40,12 @@ int FUN_800144a8(int FileType) {
 		Front_SetSJISName__FPc((char *)&Head + 30);
 
 	SetSJISChecksum(Head.Title, FName + 22);
+
+#ifdef PC_PORT
+	/* PC: saves are found by name, not by the title's 10-bit hash (pc_saves.h) */
+	(void)fd;
+	return PC_SaveExists(FileType == 0 ? PC_SAVE_CAREER : PC_SAVE_REPLAY, SaveGameName);
+#endif
 
 	if (SyncToGoodState() == 1)
 		return 0;

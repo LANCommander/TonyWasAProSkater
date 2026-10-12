@@ -44,8 +44,9 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
   calls dispatch through the retail vtable, and compiles with `-funsigned-char` (plain `char` is
   unsigned on the PS1). `tools/header_check.py`, `tools/layouts.py` and `tools/tu_diff.py` check
   header layouts and that a refactor doesn't change what a TU links to.
-- **Hardware libraries** (GPU, CD, SPU, pad, memory card, BIOS) are high-level reimplementations
-  ("HLE") of the Psy-Q entry points, in `src/`.
+- **Hardware libraries** (GPU, CD, SPU, pad, BIOS) are high-level reimplementations
+  ("HLE") of the Psy-Q entry points, in `src/`. The memory card isn't one: saves are files
+  (see Saves).
 
 ## Calling convention
 
@@ -152,13 +153,16 @@ use, pointers the port keeps in KSEG0) are listed in the sources as `test_asm:` 
 
 ## Saves
 
-The memory card is a folder: `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`
-(`src/hle_libcard.c`). The game's own card code runs unchanged and sees a formatted card in slot 1;
-each card file (career saves `BASLUS-00860THPSG..`, replays `..THPSV..`) is one `.mcs` file there,
-the single-save format MemcardRex and the emulators import and export, so saves can be moved
-between the port, an emulator and a real card. Like a real card it holds 15 blocks (a career save
-takes 1, a replay 3 or 6); files that don't fit are ignored. The career saved most recently is
-loaded at startup, as on the PS1.
+There's no memory card. Each career and each replay is its own file, named after the name the
+player gives it, in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`:
+`Careers\<name>.career` and `Replays\<name>.replay` (`src/pc_saves.c`). The game's save and load
+screens are its own; its card layer (`decomp/src/card`, PC branches) reads and writes these files
+and is always ready, so there's no card check, formatting, block count or "do not remove" text.
+A file is the game's save data without the PS1 card header (icon, Shift-JIS title), behind a
+16-byte header. The load screens list up to 15 saves of each type, newest first. The career saved
+most recently is loaded at startup, as on the PS1, without the "loading from memory card" pause.
+PS1 saves in `.mcs` form (MemcardRex, emulators) put in the `Saves` folder are converted the next
+time the game lists saves (at startup, or on a save or load screen) and renamed `.mcs.imported`.
 
 ## Graphics
 
@@ -291,7 +295,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 |---|---|
 | `THPS_DISC` | the disc image for the first-startup extraction (else found next to the exe or in `extern/`); a `.gdi` is the Dreamcast disc |
 | `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
-| `THPS_SAVE_DIR` | the memory card folder (default `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`) |
+| `THPS_SAVE_DIR` | the saves folder (default `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`) |
 | `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |
 | `THPS_WINDOW=WxH` | a window of that size (drawing area), whatever Settings.ini says; headless too |
 | `THPS_WIDESCREEN=0\|1` | widescreen off or on, whatever Settings.ini says |

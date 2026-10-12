@@ -101,10 +101,12 @@ void Front_MemCardDisplay(void) {
 		case 15:
 		case 16:
 			FUN_80011214();
+#ifndef PC_PORT /* PC: no card to check (pc_saves.h) */
 			Mess_DrawText(s2, 90, GameText.f200, 0, 0, 256, 0);
 			RGBRed();
 			Mess_DrawText(s2, 140, GameText.f1f8, 0, 0, 256, 0);
 			Mess_DrawText(s2, 166, GameText.f1fc, 0, 0, 256, 0);
+#endif
 			break;
 		case 9:
 		case 17:
@@ -132,9 +134,11 @@ void Front_MemCardDisplay(void) {
 			if ((TTime / 10) & 1)
 				Mess_DrawText(s2, 110, GameText_1f4[0], 0, 0, 256, 0);
 
+#ifndef PC_PORT
 			RGBRed();
 			Mess_DrawText(s2, 140, GameText.f1f8, 0, 0, 256, 0);
 			Mess_DrawText(s2, 166, GameText.f1fc, 0, 0, 256, 0);
+#endif
 			break;
 		case 13:
 			FUN_80011214();
@@ -173,9 +177,11 @@ void Front_MemCardDisplay(void) {
 		case 4:
 			FUN_80011214();
 			Mess_DrawText(s2, 110, GameText.f234, 0, 0, 256, 0);
+#ifndef PC_PORT
 			RGBRed();
 			Mess_DrawText(s2, 140, GameText.f1f8, 0, 0, 256, 0);
 			Mess_DrawText(s2, 166, GameText.f1fc, 0, 0, 256, 0);
+#endif
 			break;
 		case 7:
 			FUN_80011214();
@@ -244,13 +250,19 @@ void Front_MemCardDisplay(void) {
 		case 21:
 			FUN_80011214();
 			Mess_DrawText(s2, 110, s_loading_video_file, 0, 0, 256, 0);
+#ifndef PC_PORT
 			RGBRed();
 			Mess_DrawText(s2, 140, GameText.f1f8, 0, 0, 256, 0);
 			Mess_DrawText(s2, 166, GameText.f1fc, 0, 0, 256, 0);
+#endif
 			break;
 		case 22:
 			RGBRed();
+#ifdef PC_PORT
+			Mess_DrawText(s2, 110, "load failed", 0, 0, 256, 0);
+#else
 			Mess_DrawText(s2, 110, GameText.f244, 0, 0, 256, 0);
+#endif
 
 			if (MCResolution == 512)
 				Front_PrintCentredPrompt(GameText.f180);

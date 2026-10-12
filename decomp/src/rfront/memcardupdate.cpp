@@ -54,6 +54,10 @@ extern "C" {
 	char *FUN_8008e904(char *, char *);
 }
 
+#ifdef PC_PORT
+#include "pc_saves.h"
+#endif
+
 VerticalMenu *pVertMenu;
 int VideoToDisk, GHasCareerLoaded, GLoadedCareerIsSaved, CursorPos, SizeUp;
 int NumVertMenuItems, VertMenuTopIndex, VertMenuTopChanged, MCState, CheckingCardPause;
@@ -84,6 +88,11 @@ int Front_MemCardUpdate() {
 
 	switch (MCState) {
 		case 0:
+#ifdef PC_PORT
+			/* PC: no card to check (the saves are files, pc_saves.h) */
+			MCState = 1;
+			break;
+#endif
 			if (CheckingCardPause) {
 				if (--CheckingCardPause == 0)
 					MCState = 1;
@@ -100,7 +109,15 @@ int Front_MemCardUpdate() {
 
 			switch (CardStatus) {
 				case 1:
+#ifdef PC_PORT
+					/* PC: the saves of the type being saved (FUN_8001571c looks through the
+					   careers); there's always room */
+					PC_SaveListDir(GSaveAction == 1 ? PC_SAVE_CAREER : PC_SAVE_REPLAY, SLOT_DIR,
+					               (int32_t *)FileType);
+					SaveFreeBlocks = 15;
+#else
 					SaveFreeBlocks = Card_GetDirAndFreeBlocks(0, 0);
+#endif
 
 					if (GSaveAction == 1) {
 						SaveNeedBlocks = 1;
@@ -475,6 +492,10 @@ int Front_MemCardUpdate() {
 
 			break;
 		case 15:
+#ifdef PC_PORT
+			MCState = 16;
+			break;
+#endif
 			if (CheckingCardPause) {
 				if (--CheckingCardPause == 0)
 					MCState = 16;
@@ -490,7 +511,9 @@ int Front_MemCardUpdate() {
 					int Vids;
 					int Offset;
 
+#ifndef PC_PORT
 					SaveFreeBlocks = Card_GetDirAndFreeBlocks(0, 0);
+#endif
 					WantedFileType = 1;
 					Offset = 26;
 
@@ -498,6 +521,12 @@ int Front_MemCardUpdate() {
 						WantedFileType = 0;
 						Offset = 28;
 					}
+
+#ifdef PC_PORT
+					/* PC: only the saves of the type being loaded, so there can be 15 of each */
+					PC_SaveListDir(WantedFileType, SLOT_DIR, (int32_t *)FileType);
+					SaveFreeBlocks = 15;
+#endif
 
 					Vids = 0;
 

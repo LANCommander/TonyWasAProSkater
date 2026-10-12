@@ -1,6 +1,6 @@
 /* Libraries that are inert in this port: host-PC file I/O (LIBSN) and SPU
  * reverb (the SPU itself is in pc_spu.c). Each returns what the game expects from a
- * working-but-idle device. The memory card is in hle_libcard.c. */
+ * working-but-idle device. Saves are in pc_saves.c. */
 #include <stdint.h>
 #include <string.h>
 

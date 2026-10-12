@@ -28,6 +28,10 @@ void Mem_Delete(int);
 void FUN_800103a4(void);
 void Options_SetPreferences(void);
 
+#ifdef PC_PORT
+#include "pc_saves.h"
+#endif
+
 int FUN_800154f4(void) {
 	struct B buf;
 	int i, r, s2, s4, p;
@@ -38,8 +42,13 @@ int FUN_800154f4(void) {
 	Career_Init();
 
 	if (SyncToGoodState() == 0) {
+#ifdef PC_PORT
+		/* PC: the careers in the Saves folder (pc_saves.h), with no "memory card" messages */
+		PC_SaveListDir(PC_SAVE_CAREER, SLOT_DIR, (int32_t *)FileType);
+#else
 		FUN_80061270(0);
 		Card_GetDirAndFreeBlocks(0, 0);
+#endif
 
 		s4 = -1;
 		s2 = 0;
@@ -51,10 +60,12 @@ int FUN_800154f4(void) {
 				Card_SetSelectedFile(&SLOT_DIR[i]);
 
 				if (Card_Load(0, p, 0) == 0) {
+#ifndef PC_PORT
 					if (s2 == 0)
 						s2 = FUN_8008eebc(-1);
 
 					FUN_80061270(1);
+#endif
 
 					GHasCareerLoaded = 1;
 					GLoadedCareerIsSaved = 0;

@@ -10,9 +10,19 @@ int FUN_8008e934(int);
 void Pause__Fi(int);
 int Card_CheckStatus(int, int);
 
+#ifdef PC_PORT
+#include "pc_saves.h"
+#endif
+
 int Card_ReadFileHeader(char *name, short *out) {
 	char buf[32];
 	int i, fd, n;
+
+#ifdef PC_PORT
+	/* PC: the header of a listed save is just its name (pc_saves.h) */
+	PC_SaveCardHeader(out, PC_SaveListType(), name);
+	return 0;
+#endif
 
 	FUN_8008b900(buf, s_bu00_s, name);
 

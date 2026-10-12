@@ -16,6 +16,15 @@ int Card_CheckStatus(int a, int b) {
 	int s0 = a * 16 + b;
 	int ev;
 
+#ifdef PC_PORT
+	/* PC: no memory card, the saves are files (pc_saves.h); always ready. */
+	CardStatusMode = 0;
+	CardLoadFlag = 1;
+	CardStatusTemp = 1;
+	CardStatus = 1;
+	return CardStatus;
+#endif
+
 	switch (CardStatusMode) {
 		case 0:
 			FUN_8008e914(s0);

@@ -8,6 +8,15 @@ int Card_CheckStatus(int, int);
 int SyncToGoodState(void) {
 	int n = 200;
 
+#ifdef PC_PORT
+	/* PC: no memory card to wait for (see Card_CheckStatus) */
+	CardStatusMode = 0;
+	CardLoadFlag = 1;
+	CardStatusTemp = 1;
+	CardStatus = 1;
+	return 0;
+#endif
+
 	CardStatusMode = 0;
 	CardLoadFlag = 0;
 

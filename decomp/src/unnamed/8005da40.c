@@ -88,8 +88,10 @@ void FUN_8005da40(void) {
 		Mess_SetTextJustify(0);
 		Mess_SetScale(255);
 		Mess_SetRGB(150, 100, 25, 0);
+#ifndef PC_PORT /* PC: a saved replay is a file, read at once (pc_saves.h) */
 		Mess_DrawText(256, 110, s_Loading_Memory_Card_Data, 1, 0, 256, 0);
 		Mess_DrawText(256, 130, s_Loading_Memory_Card_Data + 32, 1, 0, 256, 0);
+#endif
 		FUN_8006b26c();
 		Mess_UnloadFont();
 	}

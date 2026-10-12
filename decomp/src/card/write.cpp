@@ -38,6 +38,11 @@ extern "C" {
 	int close(int);
 }
 
+#ifdef PC_PORT
+#include "pc_saves.h"
+extern "C" char SaveGameName[];
+#endif
+
 int Card_Write(EFileType FileType, int NumBlocks) {
 	int fd;
 	int i;
@@ -118,6 +123,32 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 		case 2:
 			break;
 	}
+
+#ifdef PC_PORT
+	/* PC: a file named after the save (pc_saves.h), holding what follows the card header in each
+	   buffer. Front_SetSJISName above has tidied SaveGameName. */
+	{
+		PCSaveChunk Chunks[4];
+		int n = 0;
+
+		(void)i;
+		(void)fd;
+		Chunks[n].p = (char *)pHeaderBuf + 512;
+		Chunks[n++].n = HeaderSize - 512;
+		Chunks[n].p = pDataBuf;
+		Chunks[n++].n = DataSize;
+
+		if (pHeaderBuf2) {
+			Chunks[n].p = (char *)pHeaderBuf2 + 512;
+			Chunks[n++].n = HeaderSize2 - 512;
+			Chunks[n].p = pDataBuf2;
+			Chunks[n++].n = DataSize2;
+		}
+
+		return !PC_SaveWrite(FileType == THPS_SAVE_FILE ? PC_SAVE_CAREER : PC_SAVE_REPLAY,
+		                     SaveGameName, n, Chunks);
+	}
+#endif
 
 	for (i = 0; i < 16; i++) {
 		if (CardStatus != 2 || CardStatusTemp != 2) {

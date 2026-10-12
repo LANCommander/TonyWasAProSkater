@@ -185,7 +185,11 @@ void PlayAway(void) {
 			Mess_SetTextJustify__FUc(0);
 			Mess_SetScale__Fi(255);
 			Mess_SetRGB__FUcUcUci(150, 100, 25, 0);
+#ifdef PC_PORT
+			Mess_DrawText__FiiPCciUiib(256, 110, (char *)"load failed", 1, 0, 256, 0);
+#else
 			Mess_DrawText__FiiPCciUiib(256, 110, s_memory_card_error, 1, 0, 256, 0);
+#endif
 			Mess_DrawText__FiiPCciUiib(256, 130, s_press_x_to_continue, 1, 0, 256, 0);
 			FUN_8006b26c();
 			Pad_ClearTriggers(&Pad[0]);
