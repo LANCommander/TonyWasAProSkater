@@ -656,15 +656,20 @@ static void gl_vertex(PC_GlVertex *o, const Vtx *v)
     o->px = o->py = o->w = 0;
 }
 
+/* Set while draw_chain is past the ordering table's 2D entries (is_2d_entry). */
+static int s_chain_2d;
+
 /* Precise positions and depths from the GTE (pc_gte.h) for a polygon's vertices, by the SXY words
  * in its packet. All or nothing: a polygon that isn't entirely GTE-projected (2D, or vertices
- * the game computed itself) is drawn exactly as before. */
+ * the game computed itself) is drawn exactly as before. The lookup goes by value, so a 2D quad
+ * over dense geometry can find a projection within a pixel of every corner (and be drawn with
+ * their unrelated depths: warped HUD text); the 2D entries' polygons are never looked up. */
 static void gl_precise(PC_GlVertex *gv, const uint32_t *xy, int n)
 {
     static int stats = -1;
     static uint32_t frame, hit, miss;
     float x[4], y[4], z[4];
-    int ok = PC_GtePrecisePolygon(xy, n, x, y, z);
+    int ok = !s_chain_2d && PC_GtePrecisePolygon(xy, n, x, y, z);
     if (stats < 0)
         stats = getenv("THPS_GLSTATS") && atoi(getenv("THPS_GLSTATS"));
     if (stats) {
@@ -1325,7 +1330,22 @@ static void draw_chain(const uint32_t *first);
 void PC_GpuDrawChain(const uint32_t *first)
 {
     draw_chain(first);
+    s_chain_2d = 0;
     R3d_ChainEnd();
+}
+
+/* THPS1's display buffers (DoubleBuffer[2], SDoubleBuffer) end their ordering table with the
+ * entries OT (+0x88) and OT2D (+0x84), drawn last: the HUD, panels and text. */
+#define DOUBLEBUFFER     0x800a891cu
+#define DOUBLEBUFFER_SZ  0x80acu
+
+static int is_2d_entry(const uint32_t *p)
+{
+    uint32_t a = (uint32_t)(uintptr_t)p;
+    for (uint32_t b = DOUBLEBUFFER; b < DOUBLEBUFFER + 2 * DOUBLEBUFFER_SZ; b += DOUBLEBUFFER_SZ)
+        if (a == b + 0x84 || a == b + 0x88)
+            return 1;
+    return 0;
 }
 
 int PC_GpuDrawState(int *ofs_x, int *ofs_y, int clip[4])
@@ -1351,6 +1371,8 @@ static void draw_chain(const uint32_t *first)
             fprintf(stderr, "[gpu] DrawChain: packet at %08x has %u words (tag %08x)\n",
                     (unsigned)(uintptr_t)p, len, tag);
         }
+        if (len == 0 && is_2d_entry(p))
+            s_chain_2d = 1;
         /* the native 3D renderer's layer markers, and where its layers are in the OT */
         if (!R3d_ChainPacket(p, len))
             for (uint32_t i = 1; i <= len; i++)
