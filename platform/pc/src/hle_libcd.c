@@ -672,6 +672,9 @@ void StUnSetRing(void) {
 
 void StSetStream(int mode, int start, int end, uint32_t f1, uint32_t f2) {
     (void)mode; (void)start; (void)end; (void)f1; (void)f2;
+    /* a new stream takes frames again: a run quit from the pause menu stops the FMV while
+     * it is masked (the pump's StSetMask(1)), and nothing else unmasks it */
+    s_stMask = 0;
     ClearFrames();
 }
 
