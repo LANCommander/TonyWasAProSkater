@@ -335,16 +335,29 @@ static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uin
     for (int i = 0; i < n; i++) {
         uint32_t v = a0 + (uint32_t)i * 8, dst = out + (uint32_t)i * 8;
         if (kind == T_BLOCK && (M16(v + 6) & 0x10)) {
-            /* always-facing (billboard) vertices from here on: screen positions around another
-             * vertex, so they are put back into view space at that vertex's depth */
+            /* always-facing (billboard) vertices from here on: an offset of the given size from
+             * a centre vertex, perpendicular to the screen direction toward a second vertex, x
+             * stretched by 10485/4096, at the centre's depth. Worked out again from the float
+             * vertices, as retail's whole-pixel screen positions make billboards jitter. */
             float h = (float)(PC_GteGetCtrl(26) & 0xffff);
             float ofx = (float)(int32_t)PC_GteGetCtrl(24) / 65536.0f;
             float ofy = (float)(int32_t)PC_GteGetCtrl(25) / 65536.0f;
             for (; i < n; i++) {
                 v = a0 + (uint32_t)i * 8;
                 dst = out + (uint32_t)i * 8;
-                Shadow *base = shadow_at(pv + (M32(v) & 0xffff));
-                float z = base ? base->z : (float)S16(dst + 4);
+                Shadow *c = shadow_at(pv + (M32(v) & 0xffff));
+                Shadow *t = shadow_at(pv + (M32(v) >> 16));
+                if (c && t && c->z >= 1 && t->z >= 1) {
+                    float dx = t->x / t->z - c->x / c->z, dy = c->y / c->z - t->y / t->z;
+                    float len = sqrtf(dx * dx + dy * dy);
+                    if (len > 1e-6f) {
+                        float size = (float)(int16_t)M32(v + 4) / len;
+                        set_shadow(dst, c->x + dy * size * (10485.0f / 4096), c->y + dx * size,
+                                   c->z);
+                        continue;
+                    }
+                }
+                float z = c ? c->z : (float)S16(dst + 4);
                 set_shadow(dst, ((int16_t)M16(dst) - ofx) * z / h, ((int16_t)M16(dst + 2) - ofy) * z / h,
                            z);
             }
