@@ -198,24 +198,24 @@ int Front_MemCardUpdate() {
 				}
 			}
 
-			if (Pad[0].Left.Triggered || Pad[1].Left.Triggered) {
+			if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
 				SizeUp = 16;
 				SFX_PlayX__FUisi(5, 0x2000, 0);
 
-				Pad[0].Left.Triggered = 0;
-				Pad[1].Left.Triggered = 0;
+				Pad[0].MenuLeft.Triggered = 0;
+				Pad[1].MenuLeft.Triggered = 0;
 				CursorPos--;
 
 				if (CursorPos < 0)
 					CursorPos = 9;
 			}
 
-			if (Pad[0].Right.Triggered || Pad[1].Right.Triggered) {
+			if (Pad[0].MenuRight.Triggered || Pad[1].MenuRight.Triggered) {
 				SizeUp = 16;
 				SFX_PlayX__FUisi(5, 0x2000, 0);
 
-				Pad[0].Right.Triggered = 0;
-				Pad[1].Right.Triggered = 0;
+				Pad[0].MenuRight.Triggered = 0;
+				Pad[1].MenuRight.Triggered = 0;
 				CursorPos++;
 
 				if (CursorPos >= 10)
@@ -581,9 +581,9 @@ int Front_MemCardUpdate() {
 		case 20:
 			VertMenuTopChanged = 0;
 
-			if (Pad[0].Up.Triggered || Pad[1].Up.Triggered) {
-				Pad[0].Up.Triggered = 0;
-				Pad[1].Up.Triggered = 0;
+			if (Pad[0].MenuUp.Triggered || Pad[1].MenuUp.Triggered) {
+				Pad[0].MenuUp.Triggered = 0;
+				Pad[1].MenuUp.Triggered = 0;
 
 				if (pVertMenu->getSelected() > 0) {
 					pVertMenu->up();
@@ -593,9 +593,9 @@ int Front_MemCardUpdate() {
 				}
 			}
 
-			if (Pad[0].Down.Triggered || Pad[1].Down.Triggered) {
-				Pad[0].Down.Triggered = 0;
-				Pad[1].Down.Triggered = 0;
+			if (Pad[0].MenuDown.Triggered || Pad[1].MenuDown.Triggered) {
+				Pad[0].MenuDown.Triggered = 0;
+				Pad[1].MenuDown.Triggered = 0;
 
 				if (VertMenuTopIndex < NumVertMenuItems - 5) {
 					VertMenuTopIndex++;

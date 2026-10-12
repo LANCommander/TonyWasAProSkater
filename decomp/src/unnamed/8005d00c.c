@@ -1,5 +1,6 @@
 /* FUN_8005d00c (0x8005d00c) */
 #include "names.h"
+#include "game/padbuttons.h"
 /* Front-end screen setup (next to FUN_8005cba0): loads the level's two pictures, builds the three
    sprites and draws the got-tape markers. buf is an unused 40-byte local kept for the frame size. */
 typedef struct {
@@ -92,8 +93,8 @@ void FUN_8005d00c(void) {
 
 	FUN_8006b26c();
 
-	Pad[0xe1] = 0;
-	Pad[0x24d] = 0;
+	Pad[PAD_MENU_START + PAD_TRIGGERED] = 0;
+	Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] = 0;
 	DAT_800d1cec = 0;
 	DAT_800d1d14 = 0;
 	Pack_DefragmentFully();

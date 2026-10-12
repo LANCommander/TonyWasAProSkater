@@ -559,7 +559,7 @@ void CBruce::DoPhysics() {
 					m840 = 4;
 					mAnimSpeed = 0x10000;
 
-					if (mManIsCrouched && mpPad->Square.Pressed)
+					if (mManIsCrouched && mpPad->Flip.Pressed)
 						Debug_RunAnim3(8, 0, 26, 19, 8490);
 					else {
 						mManIsCrouched = 0;

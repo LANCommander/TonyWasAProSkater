@@ -1,5 +1,6 @@
 /* FUN_8005d28c (0x8005d28c) */
 #include "names.h"
+#include "game/padbuttons.h"
 extern char s_loadingv_bmp[];
 extern char s_Bckgrnd2_bmp[];
 extern char Pad[];
@@ -36,8 +37,8 @@ void FUN_8005d28c(void) {
 	}
 
 	DAT_800d1d0c = p;
-	Pad[225] = 0;
-	Pad[589] = 0;
+	Pad[PAD_MENU_START + PAD_TRIGGERED] = 0;
+	Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] = 0;
 	DAT_800d1cec = 0;
 	DAT_800d1d14 = 0;
 	Pack_DefragmentFully();

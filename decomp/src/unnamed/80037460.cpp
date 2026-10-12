@@ -33,7 +33,7 @@ void CBruce::DoHandPlantPhysics() {
 		int Hold = m248;
 
 		if (Hold >= 0) {
-			if (mpPad->Triangle.Pressed) {
+			if (mpPad->Grind.Pressed) {
 				mFrame = PingPong(20, 22, 15);
 				FUN_8002f438(this, 20);
 

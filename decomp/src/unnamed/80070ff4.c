@@ -32,6 +32,58 @@ void Pad_Button(SButton *, int);
 void ReadControllers(void);
 int FUN_80070f18(int, int, int, int);
 
+#ifdef PC_PORT
+/* Pad_Update on PC: every button slot of SControl is one action, and each frame it is fed straight
+   from that action's bindings (platform/pc/src/pc_input.c). There is no PS1 button word and no
+   analog stick: the pads report as digital (Type 0x41), or 0 when nothing is connected. */
+#include "pc_input.h"
+
+/* SControl's 20 button slots in order (game/padbuttons.h), and the action filling each */
+static const signed char s_slotAction[20] = {
+	PC_ACT_GRIND,     PC_ACT_FLIP,       PC_ACT_GRAB,        PC_ACT_OLLIE,
+	PC_ACT_SPIN_LEFT, PC_ACT_TAP_SPIN_LEFT, PC_ACT_SPIN_RIGHT, PC_ACT_TAP_SPIN_RIGHT,
+	PC_ACT_LEFT,      PC_ACT_RIGHT,      PC_ACT_UP,          PC_ACT_DOWN,
+	PC_ACT_MENU_UP,   PC_ACT_MENU_DOWN,  PC_ACT_PAUSE,       PC_ACT_CAMERA,
+	PC_ACT_MENU_LEFT, PC_ACT_MENU_RIGHT, PC_ACT_MENU_ACCEPT, PC_ACT_MENU_BACK,
+};
+
+int FUN_80070ff4(void) {
+	int i, j, any = 0;
+
+	for (i = 0; i < 2; i++) {
+		if (Pad[i].t158 != 0) {
+			if (--Pad[i].t158 == 0)
+				Pad_ActuatorOff(i & 255, 0);
+		}
+
+		if (Pad[i].t15a != 0) {
+			if (--Pad[i].t15a == 0)
+				Pad_ActuatorOff(i & 255, 1);
+		}
+	}
+
+	PC_InputUpdate();
+
+	for (j = 0; j < 2; j++) {
+		SButton *q = (SButton *)&Pad[j];
+
+		Pad[j].f14c = PC_InputPlayerConnected(j) ? 0x41 : 0;
+		Pad[j].a148 = Pad[j].a149 = Pad[j].a14a = Pad[j].a14b = 0;
+
+		for (i = 0; i < 20; i++) {
+			int down = PC_InputActionDown(j, s_slotAction[i]);
+
+			any |= down;
+			Pad_Button(q + i, down);
+		}
+	}
+
+	if (!any)
+		Pad_IdleTime = Pad_IdleTime + 1;
+
+	return 0;
+}
+#else
 #define B Pad
 #define R theControllers
 
@@ -161,3 +213,4 @@ int FUN_80070ff4(void) {
 
 	return 0;
 }
+#endif

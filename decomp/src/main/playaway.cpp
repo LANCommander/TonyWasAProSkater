@@ -191,8 +191,8 @@ void PlayAway(void) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
-			while (!Pad[0].X.Triggered && !Pad[1].X.Triggered &&
-			       !Pad[0].Start.Triggered && !Pad[1].Start.Triggered)
+			while (!Pad[0].MenuAccept.Triggered && !Pad[1].MenuAccept.Triggered &&
+			       !Pad[0].MenuStart.Triggered && !Pad[1].MenuStart.Triggered)
 				FUN_80070ff4();
 
 			EndCode = 9;
@@ -419,21 +419,21 @@ void PlayAway(void) {
 
 		if (GState == 1 && !GamePaused) {
 			if (!GSkater->mPhysicsState) {
-				uchar c = Pad[0].Circle.Pressed;
+				uchar c = Pad[0].Grab.Pressed;
 
 				Pad_ClearAllOne(0);
 
 				Pad[0].Down.Pressed = 1;
-				Pad[0].Circle.Pressed = c;
+				Pad[0].Grab.Pressed = c;
 			}
 
 			if (GNumberOfPlayers == 2 && !DAT_800d17cc->mPhysicsState) {
-				uchar c = Pad[1].Circle.Pressed;
+				uchar c = Pad[1].Grab.Pressed;
 
 				Pad_ClearAllOne(1);
 
 				Pad[1].Down.Pressed = 1;
-				Pad[1].Circle.Pressed = c;
+				Pad[1].Grab.Pressed = c;
 			}
 		}
 

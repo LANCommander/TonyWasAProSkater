@@ -188,7 +188,7 @@ void CBruce::DoOnGroundPhysics() {
 	if (!m720 && !mTapTurn && m1FC && !mNoSpin) {
 		if (!TurnAngle) {
 			AlignToFallLine(40);
-		} else if (mpPad->Square.Pressed || mpPad->Circle.Pressed) {
+		} else if (mpPad->Flip.Pressed || mpPad->Grab.Pressed) {
 			m1FC = m1FC - 1;
 		} else {
 			m1FC = m1FC - 3;

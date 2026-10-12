@@ -851,9 +851,9 @@ extern "C" int FUN_80056754(void) {
 		FUN_8006b374();
 
 		for (p = 0; p < 2; p++) {
-			if (Pad[p].Start.Triggered || Pad[p].X.Triggered) {
-				Pad[p].Start.Triggered = 0;
-				Pad[p].X.Triggered = 0;
+			if (Pad[p].MenuStart.Triggered || Pad[p].MenuAccept.Triggered) {
+				Pad[p].MenuStart.Triggered = 0;
+				Pad[p].MenuAccept.Triggered = 0;
 
 				if (state[p] != 1 && DAT_800d231c[p] &&
 				    (DAT_800d2304[0] != DAT_800d2304[1] || state[1 - p] != 1)) {
@@ -864,8 +864,8 @@ extern "C" int FUN_80056754(void) {
 				}
 			}
 
-			if (Pad[p].Triangle.Triggered) {
-				Pad[p].Triangle.Triggered = 0;
+			if (Pad[p].MenuBack.Triggered) {
+				Pad[p].MenuBack.Triggered = 0;
 
 				if (state[p] != 1) {
 					if (state[1 - p] != 1) {

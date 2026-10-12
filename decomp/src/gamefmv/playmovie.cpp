@@ -161,8 +161,11 @@ void GameFMV_PlayMovie(int track) {
 	strInit__Fv();
 	FUN_80070ff4();
 
-	Pad[0].Start.Triggered = 0;
-	Pad[0].X.Triggered = 0;
+	Pad[0].Pause.Triggered = 0;
+	Pad[0].MenuAccept.Triggered = 0;
+#ifdef PC_PORT
+	Pad[0].MenuBack.Triggered = 0;
+#endif
 
 	while (!strNextVlc(1))
 		;
@@ -222,11 +225,15 @@ void GameFMV_PlayMovie(int track) {
 
 		FUN_80070ff4();
 
-		if (Pad[0].Start.Triggered)
+		if (Pad[0].Pause.Triggered)
 			break;
 
-		if (Pad[0].X.Triggered)
+		if (Pad[0].MenuAccept.Triggered)
 			break;
+#ifdef PC_PORT
+		if (Pad[0].MenuBack.Triggered)
+			break;
+#endif
 	}
 end:
 	Pad_ClearTriggers(Pad);

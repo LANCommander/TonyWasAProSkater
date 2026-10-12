@@ -19,18 +19,18 @@ PadBuffer::PadBuffer(int pad) {
 		mWhich_pad = 0;
 
 	if (mWhich_pad < 2) {
-		Pad[mWhich_pad].Left.Pressed = 0;
-		Pad[mWhich_pad].Right.Pressed = 0;
-		Pad[mWhich_pad].Up.Pressed = 0;
-		Pad[mWhich_pad].Down.Pressed = 0;
+		Pad[mWhich_pad].MenuLeft.Pressed = 0;
+		Pad[mWhich_pad].MenuRight.Pressed = 0;
+		Pad[mWhich_pad].MenuUp.Pressed = 0;
+		Pad[mWhich_pad].MenuDown.Pressed = 0;
 	} else {
-		Pad[0].Left.Pressed = 0;
-		Pad[0].Right.Pressed = 0;
-		Pad[0].Up.Pressed = 0;
-		Pad[0].Down.Pressed = 0;
-		Pad[1].Left.Pressed = 0;
-		Pad[1].Right.Pressed = 0;
-		Pad[1].Up.Pressed = 0;
-		Pad[1].Down.Pressed = 0;
+		Pad[0].MenuLeft.Pressed = 0;
+		Pad[0].MenuRight.Pressed = 0;
+		Pad[0].MenuUp.Pressed = 0;
+		Pad[0].MenuDown.Pressed = 0;
+		Pad[1].MenuLeft.Pressed = 0;
+		Pad[1].MenuRight.Pressed = 0;
+		Pad[1].MenuUp.Pressed = 0;
+		Pad[1].MenuDown.Pressed = 0;
 	}
 }

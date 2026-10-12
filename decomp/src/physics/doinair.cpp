@@ -172,7 +172,7 @@ void CBruce::DoInAirPhysics() {
 
 	if (line_info.pItem) {
 		if ((!Face_Skateable || (Face_Air && Face_Visible)) && Face_WallRide && !mInAir &&
-		    (mpPad->Triangle.Pressed || mpPad->Triangle.ReleasedTime < 20)) {
+		    (mpPad->Grind.Pressed || mpPad->Grind.ReleasedTime < 20)) {
 			CVector UnitVel;
 			CVector FaceNormal;
 			int VelNormal;

@@ -49,14 +49,14 @@ void FUN_8005eb78(VerticalMenu *menu) {
 	int sel;
 
 	if (pl == 1 && !Pad[1].Type) {
-		Pad[1].Triangle.Triggered = 1;
+		Pad[1].MenuBack.Triggered = 1;
 		return;
 	}
 
 	Pad_ClearTriggers(&Pad[1 - pl]);
 
-	if (Pad[pl].Start.Triggered || Pad[pl].X.Triggered ||
-	    Pad[pl].Up.Triggered || Pad[pl].Down.Triggered) {
+	if (Pad[pl].MenuStart.Triggered || Pad[pl].MenuAccept.Triggered ||
+	    Pad[pl].MenuUp.Triggered || Pad[pl].MenuDown.Triggered) {
 		switch (DAT_800d2350) {
 			case 0:
 				if (DAT_800bf260[pl].Function[2] == DAT_800bf260[pl].Function[0])
@@ -124,8 +124,8 @@ void FUN_8005eb78(VerticalMenu *menu) {
 		FUN_8005eb28(pl);
 	}
 
-	if (Pad[pl].Left.Triggered || Pad[pl].Right.Triggered) {
-		left = Pad[pl].Left.Triggered;
+	if (Pad[pl].MenuLeft.Triggered || Pad[pl].MenuRight.Triggered) {
+		left = Pad[pl].MenuLeft.Triggered;
 		Pad_ClearTriggers(&Pad[0]);
 		Pad_ClearTriggers(&Pad[1]);
 
@@ -222,7 +222,7 @@ void FUN_8005eb78(VerticalMenu *menu) {
 		}
 	}
 
-	if (Pad[pl].Start.Triggered || Pad[pl].X.Triggered) {
+	if (Pad[pl].MenuStart.Triggered || Pad[pl].MenuAccept.Triggered) {
 		if (menu->getSelected() != 7) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);

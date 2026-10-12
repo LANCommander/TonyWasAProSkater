@@ -431,10 +431,39 @@ def fix_cast_lvalues(src):
             m.group(1), m.group(2), m.group(2), m.group(1), m.group(2)), src)
 
 
+def strip_virtual_bodies(src):
+    """Drop the in-class bodies of virtual member functions (not destructors): `virtual void AI() {}`
+    becomes `virtual void AI();`. Once `virtual` is gone, g++ would inline such a body at every
+    call and never dispatch; as a declaration the call goes through the retail vtable (thunk)."""
+    clean = _strip_comments(src)
+    edits = []
+    for m in _CLASS_RE.finditer(clean):
+        brace = m.end() - 1
+        try:
+            end = _match_paren(clean, brace, "{", "}") - 1
+        except ValueError:
+            continue
+        for v in re.finditer(r"\bvirtual\b", clean[brace + 1:end]):
+            i = brace + 1 + v.start()
+            lp = clean.find("(", i)
+            semi = clean.find(";", i)
+            if lp < 0 or lp > end or (0 <= semi < lp) or "~" in clean[i:lp]:
+                continue
+            k = _skip_ws_comments(clean, _match_paren(clean, lp))
+            while k < end and clean[k] not in "{;":  # const, throw(), ...
+                k += 1
+            if k < end and clean[k] == "{":
+                edits.append((k, _match_paren(clean, k, "{", "}")))
+    for a, b in sorted(edits, reverse=True):
+        src = src[:a] + ";" + src[b:]
+    return src
+
+
 def transform_cxx(src, vtables, tukey="tu"):
     """vtables: {class name: retail vtable address}. Returns (new source, class info dict for the
     build: {class: {"vptr_root": root class, "slots": [...], "has_delete": bool}})."""
     src = re.sub(r"^[ \t]*#[ \t]*pragma[ \t]+(interface|implementation)\b[^\n*]*$", "", src, flags=re.M)
+    src = strip_virtual_bodies(src)
     classes, order = parse_classes(src)
     clean = _strip_comments(src)
     info = {}
@@ -511,9 +540,11 @@ def transform_cxx(src, vtables, tukey="tu"):
                 edits.append((k + 1, store))
     for pos, text in sorted(edits, key=lambda e: -e[0]):
         src = src[:pos] + text + src[pos:]
-    # virtual off; pure virtuals become plain declarations
+    # virtual off; pure virtuals become plain declarations (only after `virtual`: a statement like
+    # `SCRATCH_S(0x2d4) = 0;` has the same shape)
+    src = re.sub(r"\bvirtual\b([^;{}]*\))\s*(const\s*)?=\s*0\s*;",
+                 lambda m: "%s %s;" % (m.group(1), m.group(2) or ""), src)
     src = re.sub(r"\bvirtual\b", "", src)
-    src = re.sub(r"\)\s*(const\s*)?=\s*0\s*;", lambda m: ") %s;" % (m.group(1) or ""), src)
     # the vptr offset of each root class, for the build's virtual-dispatch thunks
     roots = sorted({v["root"] for v in info.values()})
     if roots:

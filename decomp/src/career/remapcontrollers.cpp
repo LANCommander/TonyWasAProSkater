@@ -7,28 +7,30 @@ extern SControl Pad[2];
 extern SCareer GCareer;
 
 void Options_RemapControllers() {
+#ifndef PC_PORT /* on PC the bindings already say what every key does: no remap */
 	int padNum;
 
 	for (padNum = 0; padNum < 2; padNum++) {
-		SButton *b = &Pad[padNum].Triangle;
+		SButton *b = &Pad[padNum].Grind;
 		int *f = GCareer.Options.ControllerFunction[padNum];
 		int i;
 
 		for (i = 0; i < 4; i++) {
 			switch (f[i]) {
 				case 0:
-					Pad[padNum].pTriangle = b + i;
+					Pad[padNum].pGrind = b + i;
 					break;
 				case 1:
-					Pad[padNum].pSquare = b + i;
+					Pad[padNum].pFlip = b + i;
 					break;
 				case 2:
-					Pad[padNum].pCircle = b + i;
+					Pad[padNum].pGrab = b + i;
 					break;
 				case 3:
-					Pad[padNum].pX = b + i;
+					Pad[padNum].pOllie = b + i;
 					break;
 			}
 		}
 	}
+#endif
 }

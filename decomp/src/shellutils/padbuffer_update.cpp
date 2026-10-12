@@ -12,28 +12,28 @@ void PadBuffer::update() {
 		current = 0;
 
 		if (mWhich_pad < 2) {
-			if (Pad[mWhich_pad].Left.Pressed)
+			if (Pad[mWhich_pad].MenuLeft.Pressed)
 				current = 1;
 
-			if (Pad[mWhich_pad].Right.Pressed)
+			if (Pad[mWhich_pad].MenuRight.Pressed)
 				current = 2;
 
-			if (Pad[mWhich_pad].Up.Pressed)
+			if (Pad[mWhich_pad].MenuUp.Pressed)
 				current = 3;
 
-			if (Pad[mWhich_pad].Down.Pressed)
+			if (Pad[mWhich_pad].MenuDown.Pressed)
 				current = 4;
 		} else {
-			if (Pad[0].Left.Pressed || Pad[1].Left.Pressed)
+			if (Pad[0].MenuLeft.Pressed || Pad[1].MenuLeft.Pressed)
 				current = 1;
 
-			if (Pad[0].Right.Pressed || Pad[1].Right.Pressed)
+			if (Pad[0].MenuRight.Pressed || Pad[1].MenuRight.Pressed)
 				current = 2;
 
-			if (Pad[0].Up.Pressed || Pad[1].Up.Pressed)
+			if (Pad[0].MenuUp.Pressed || Pad[1].MenuUp.Pressed)
 				current = 3;
 
-			if (Pad[0].Down.Pressed || Pad[1].Down.Pressed)
+			if (Pad[0].MenuDown.Pressed || Pad[1].MenuDown.Pressed)
 				current = 4;
 		}
 
@@ -48,14 +48,14 @@ void PadBuffer::update() {
 		}
 	} else {
 		if (mWhich_pad < 2) {
-			if (!Pad[mWhich_pad].Left.Pressed && !Pad[mWhich_pad].Right.Pressed &&
-			    !Pad[mWhich_pad].Up.Pressed && !Pad[mWhich_pad].Down.Pressed)
+			if (!Pad[mWhich_pad].MenuLeft.Pressed && !Pad[mWhich_pad].MenuRight.Pressed &&
+			    !Pad[mWhich_pad].MenuUp.Pressed && !Pad[mWhich_pad].MenuDown.Pressed)
 				down = 0;
 		} else {
-			if (!Pad[0].Left.Pressed && !Pad[0].Right.Pressed &&
-			    !Pad[0].Up.Pressed && !Pad[0].Down.Pressed &&
-			    !Pad[1].Left.Pressed && !Pad[1].Right.Pressed &&
-			    !Pad[1].Up.Pressed && !Pad[1].Down.Pressed)
+			if (!Pad[0].MenuLeft.Pressed && !Pad[0].MenuRight.Pressed &&
+			    !Pad[0].MenuUp.Pressed && !Pad[0].MenuDown.Pressed &&
+			    !Pad[1].MenuLeft.Pressed && !Pad[1].MenuRight.Pressed &&
+			    !Pad[1].MenuUp.Pressed && !Pad[1].MenuDown.Pressed)
 				down = 0;
 		}
 	}

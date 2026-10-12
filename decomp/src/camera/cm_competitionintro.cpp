@@ -115,7 +115,7 @@ void CCamera::CM_CompetitionIntro() {
 	mPos.vx = mCompIntroEndPos.vx + offset.vx;
 	mPos.vy = mCompIntroEndPos.vy + offset.vy;
 	mPos.vz = mCompIntroEndPos.vz + offset.vz;
-	activated = Pad[0].X.Pressed || Pad[1].X.Pressed;
+	activated = Pad[0].MenuAccept.Pressed || Pad[1].MenuAccept.Pressed;
 
 	if (activated)
 		mSpeedUpIntro = 1;

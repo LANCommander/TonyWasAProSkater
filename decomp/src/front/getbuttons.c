@@ -1,5 +1,9 @@
 /* Front_GetButtons__FRiN30 (0x80019e94) */
+/* The front end's buttons this frame, each consumed: a = activate (menu accept, or Start on the
+   PS1), b = go back (cleared when a is set), c = any button, d = Start/pause (and GStart1/2 say
+   which pad pressed it). */
 #include "names.h"
+#include "game/padbuttons.h"
 typedef struct {
 	unsigned char b[0x16c];
 } SControl;
@@ -9,115 +13,122 @@ extern int Cheat_ScreenShots, GameFrozen;
 
 int GStart1, GStart2;
 
+#define TRIG(pad, button) Pad[pad].b[(button) + PAD_TRIGGERED]
+
 void Front_GetButtons(int *a, int *b, int *c, int *d) {
 	int v, w, e;
 
 	if (Cheat_ScreenShots == 0 || GameFrozen == 0) {
 		v = 0;
 
-		if (Pad[0].b[0xe1] || Pad[1].b[0xe1])
+		if (TRIG(0, PAD_PAUSE) || TRIG(1, PAD_PAUSE))
 			v = 1;
 
 		*d = v;
-		e = Pad[0].b[0xe1];
+		e = TRIG(0, PAD_PAUSE);
 		GStart1 = e;
 
 		if (!e)
-			GStart2 = Pad[1].b[0xe1];
+			GStart2 = TRIG(1, PAD_PAUSE);
 		else
 			GStart2 = 0;
 
-		Pad[0].b[0xe1] = 0;
-		Pad[1].b[0xe1] = 0;
+		TRIG(0, PAD_PAUSE) = 0;
+		TRIG(1, PAD_PAUSE) = 0;
 	} else {
 		*d = 0;
 	}
 
 	v = 0;
 
-	if (Pad[0].b[0x31] || Pad[1].b[0x31] || *d)
+#ifdef PC_PORT
+	/* Pause is bound on its own on PC (often to the same key as Back), so it doesn't activate */
+	if (TRIG(0, PAD_MENU_ACCEPT) || TRIG(1, PAD_MENU_ACCEPT))
+#else
+	if (TRIG(0, PAD_MENU_ACCEPT) || TRIG(1, PAD_MENU_ACCEPT) || *d)
+#endif
 		v = 1;
 
 	*a = v;
-	Pad[0].b[0x31] = 0;
-	Pad[1].b[0x31] = 0;
+	TRIG(0, PAD_MENU_ACCEPT) = 0;
+	TRIG(1, PAD_MENU_ACCEPT) = 0;
 	w = 0;
 
-	if (Pad[0].b[1] || Pad[1].b[1])
+	if (TRIG(0, PAD_MENU_BACK) || TRIG(1, PAD_MENU_BACK))
 		w = 1;
 
 	*b = w;
-	Pad[0].b[1] = 0;
-	Pad[1].b[1] = 0;
+	TRIG(0, PAD_MENU_BACK) = 0;
+	TRIG(1, PAD_MENU_BACK) = 0;
 	*c = *b | *a;
 
-	if (Pad[0].b[0x11]) {
-		Pad[0].b[0x11] = 0;
+	if (TRIG(0, PAD_FLIP)) {
+		TRIG(0, PAD_FLIP) = 0;
 		*c = 1;
 	}
 
-	if (Pad[0].b[0x21]) {
-		Pad[0].b[0x21] = 0;
+	if (TRIG(0, PAD_GRAB)) {
+		TRIG(0, PAD_GRAB) = 0;
 		*c = 1;
 	}
 
-	if (Pad[0].b[0xf1]) {
-		Pad[0].b[0xf1] = 0;
+	if (TRIG(0, PAD_CAMERA)) {
+		TRIG(0, PAD_CAMERA) = 0;
 		*c = 1;
 	}
 
-	if (Pad[0].b[0x41]) {
-		Pad[0].b[0x41] = 0;
+	if (TRIG(0, PAD_SPIN_LEFT)) {
+		TRIG(0, PAD_SPIN_LEFT) = 0;
 		*c = 1;
 	}
 
-	if (Pad[0].b[0x51]) {
-		Pad[0].b[0x51] = 0;
+	if (TRIG(0, PAD_TAP_SPIN_LEFT)) {
+		TRIG(0, PAD_TAP_SPIN_LEFT) = 0;
 		*c = 1;
 	}
 
-	if (Pad[0].b[0x61]) {
-		Pad[0].b[0x61] = 0;
+	if (TRIG(0, PAD_SPIN_RIGHT)) {
+		TRIG(0, PAD_SPIN_RIGHT) = 0;
 		*c = 1;
 	}
 
-	if (Pad[0].b[0x71]) {
-		Pad[0].b[0x71] = 0;
+	if (TRIG(0, PAD_TAP_SPIN_RIGHT)) {
+		TRIG(0, PAD_TAP_SPIN_RIGHT) = 0;
 		*c = 1;
 	}
 
-	if (Pad[1].b[0x11]) {
-		Pad[1].b[0x11] = 0;
+	if (TRIG(1, PAD_FLIP)) {
+		TRIG(1, PAD_FLIP) = 0;
 		*c = 1;
 	}
 
-	if (Pad[1].b[0x21]) {
-		Pad[1].b[0x21] = 0;
+	if (TRIG(1, PAD_GRAB)) {
+		TRIG(1, PAD_GRAB) = 0;
 		*c = 1;
 	}
 
-	if (Pad[1].b[0xf1]) {
-		Pad[1].b[0xf1] = 0;
+	if (TRIG(1, PAD_CAMERA)) {
+		TRIG(1, PAD_CAMERA) = 0;
 		*c = 1;
 	}
 
-	if (Pad[1].b[0x41]) {
-		Pad[1].b[0x41] = 0;
+	if (TRIG(1, PAD_SPIN_LEFT)) {
+		TRIG(1, PAD_SPIN_LEFT) = 0;
 		*c = 1;
 	}
 
-	if (Pad[1].b[0x51]) {
-		Pad[1].b[0x51] = 0;
+	if (TRIG(1, PAD_TAP_SPIN_LEFT)) {
+		TRIG(1, PAD_TAP_SPIN_LEFT) = 0;
 		*c = 1;
 	}
 
-	if (Pad[1].b[0x61]) {
-		Pad[1].b[0x61] = 0;
+	if (TRIG(1, PAD_SPIN_RIGHT)) {
+		TRIG(1, PAD_SPIN_RIGHT) = 0;
 		*c = 1;
 	}
 
-	if (Pad[1].b[0x71]) {
-		Pad[1].b[0x71] = 0;
+	if (TRIG(1, PAD_TAP_SPIN_RIGHT)) {
+		TRIG(1, PAD_TAP_SPIN_RIGHT) = 0;
 		*c = 1;
 	}
 

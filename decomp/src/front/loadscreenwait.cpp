@@ -83,15 +83,15 @@ extern "C" void FUN_8005d3dc(void) {
 			BackOut = 1;
 			break;
 		}
-		if (Pad[0].Start.Triggered || Pad[1].Start.Triggered ||
-		    Pad[0].X.Triggered || Pad[1].X.Triggered || GAutoTest) {
+		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
+		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered || GAutoTest) {
 			SFX_PlayX(6, 8192, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 			GameFade = 64;
 			break;
 		}
-		if (Pad[0].Triangle.Triggered || Pad[1].Triangle.Triggered) {
+		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
 			SFX_PlayX(2, 8192, 0);
 			Pause(20);
 			Pad_ClearTriggers(&Pad[0]);

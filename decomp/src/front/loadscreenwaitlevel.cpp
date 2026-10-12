@@ -74,8 +74,8 @@ extern "C" void FUN_8005d73c(void) {
 			BackOut = 1;
 			break;
 		}
-		if (Pad[0].Start.Triggered || Pad[1].Start.Triggered ||
-		    Pad[0].X.Triggered || Pad[1].X.Triggered) {
+		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
+		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered) {
 			SFX_PlayX(6, 8192, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
@@ -83,11 +83,11 @@ extern "C" void FUN_8005d73c(void) {
 			DAT_800d1d80 = 1;
 			break;
 		}
-		if (Pad[0].Triangle.Triggered || Pad[1].Triangle.Triggered) {
+		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
 			SFX_PlayX(2, 8192, 0);
 			Pause(20);
-			Pad[0].Triangle.Triggered = 0;
-			Pad[1].Triangle.Triggered = 0;
+			Pad[0].MenuBack.Triggered = 0;
+			Pad[1].MenuBack.Triggered = 0;
 			DAT_800d1ce8 = 0;
 			BackOut = 1;
 		}

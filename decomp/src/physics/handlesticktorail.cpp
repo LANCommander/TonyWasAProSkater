@@ -266,10 +266,10 @@ void CBruce::HandleStickToRail() {
 	int RailTrick;
 	int Flags;
 
-	if (!mpPad->Triangle.Pressed)
+	if (!mpPad->Grind.Pressed)
 		m310 = 0;
 
-	if (!mpPad->Triangle.Pressed || mInAir || (mPhysicsState == 2 && mVel.vy > 0) || m314)
+	if (!mpPad->Grind.Pressed || mInAir || (mPhysicsState == 2 && mVel.vy > 0) || m314)
 		goto NoRail;
 
 	if (m70C > 0 && --m70C > 0) {

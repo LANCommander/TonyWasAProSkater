@@ -18,12 +18,12 @@ void FUN_8005c68c(void) {
 
 		DAT_800d1ca0 = 0;
 		DAT_800d1cb8 = 1;
-	} else if (Pad[0].Start.Pressed && Pad[0].Select.Pressed) {
+	} else if (Pad[0].Pause.Pressed && Pad[0].Camera.Pressed) {
 		DAT_800d2348--;
-		Pad[0].Start.Triggered = 0;
-	} else if (Pad[1].Start.Pressed && Pad[1].Select.Pressed) {
+		Pad[0].Pause.Triggered = 0;
+	} else if (Pad[1].Pause.Pressed && Pad[1].Camera.Pressed) {
 		DAT_800d2348--;
-		Pad[1].Start.Triggered = 0;
+		Pad[1].Pause.Triggered = 0;
 	} else {
 		DAT_800d2348 = 110;
 	}

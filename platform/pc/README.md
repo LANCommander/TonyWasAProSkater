@@ -148,10 +148,53 @@ The build compiles every TU in `decomp/matched.tsv` (and the near-miss sources i
 `decomp/nearmiss.tsv`), translates the remaining MIPS with `tools/mips2c.py`, generates the glue in
 `build/pc/gen/` and links. `build/pc/build_report.txt` lists compile errors and unresolved symbols.
 
-## Running and debugging
+## Controls
 
-Keyboard: arrows = D-pad, Z/Space = Cross, X = Circle, A = Square, S = Triangle, Enter = Start,
-Backspace = Select, Q/W/E/R = L1/R1/L2/R2. Game controllers work through SDL.
+Keys and gamepad buttons are bound to game actions (`src/pc_input.c`). Each action takes two keys
+and two gamepad buttons, kept in `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Settings.ini`
+(written with the defaults on the first startup). The keyboard plays player 1; each player has
+their own gamepad bindings (`[Skate Gamepad]`/`[Menu Gamepad]` for player 1, `... Gamepad 2` for
+player 2).
+
+**Options > Player 1/2 Controls** is the rebinding screen (it replaces the PS1's face-button
+remap; `decomp/src/front/controlleroptions.cpp`, PC branch). The top row switches between the
+keyboard and gamepad bindings (player 2: gamepad only), then come Autokick and Vibration, every
+Skate and Menu action with its two bindings, Reset to Default (the device shown) and Back. Left
+and right pick the binding, Accept waits for the new key or button (5 seconds), Delete or X on
+the gamepad clears it. Taking an input another action of the same set already has swaps the two,
+so nothing is left unbound by accident. Changes are saved when the screen is left. The screen
+draws its own list over `options.bmp`; it puts that area of the background back each frame from
+`pc_hires_before_draw`, a hook in the hi-res frame end that runs after the wait for the next field
+(restored any earlier, the background would be shown without its text).
+
+The game reads the actions themselves. Its per-player button block (`SControl`,
+`decomp/include/game/pad.h`) names its buttons after what they do while skating (`Ollie`,
+`Grind`...), and the menus read `MenuAccept`, `MenuBack` and `MenuUp`..`MenuRight`. On the PS1
+those menu names are aliases of the pad's own buttons (X, Triangle, the D-pad), so the matching
+build is unchanged; on PC they are separate slots (the ones the PS1 never filled), and
+`Pad_Update` (`decomp/src/unnamed/80070ff4.c`) fills every slot from its action's bindings. So
+the same key can do one thing while skating and another in the menus. On PC, the front end's
+"press Start" prompts take Menu Accept, and Pause also resumes from the pause menu.
+
+| action | keyboard | gamepad (XInput) | PS1 button |
+|---|---|---|---|
+| Up / Down / Left / Right | W A S D, arrows | D-pad, left stick | D-pad |
+| Ollie | Space, Keypad 2 | A | X |
+| Flip | J, Keypad 4 | X | Square |
+| Grab | L, Keypad 6 | B | Circle |
+| Grind | I, Keypad 8 | Y | Triangle |
+| SpinLeft / SpinRight (held) | Q / E, Keypad 7 / 9 | LB / RB | L1 / R1 |
+| TapSpinLeft / TapSpinRight (180 per tap) | Z / C, Keypad 1 / 3 | LT / RT | L2 / R2 |
+| Camera | Tab, Keypad 5 | Back | Select |
+| Pause | Escape, P | Start | Start |
+| Menu Up / Down / Left / Right | arrows, W A S D | D-pad, left stick | D-pad |
+| Menu Accept | Return, Space | A | X (and Start) |
+| Menu Back | Escape, Backspace | B | Triangle |
+
+The pause-menu cheat codes are entered with the Skate controls (hold SpinLeft). The front end's
+button legend (PS1 symbols for Select, Accept and Back) is part of its background images.
+
+## Running and debugging
 
 | variable | effect |
 |---|---|
@@ -173,8 +216,9 @@ Backspace = Select, Q/W/E/R = L1/R1/L2/R2. Game controllers work through SDL.
 | `THPS_GLSTATS=1` | once a second: draw calls, VRAM readbacks and uploads, and how many polygons had precise vertices |
 | `THPS_FRAMES=n` | exit after n frames |
 | `THPS_SHOT=f1,f2` / `THPS_SHOTDIR` | dump the display and VRAM as BMPs at those frames (with OpenGL above 1x, also `frameNNNNN_gl.bmp` at full resolution) |
-| `THPS_INPUT=frame:mask,...` | scripted pad input (PS1 button mask, pressed = 1, held from that frame) |
-| `THPS_TRACE=1` | log CD, BIOS and debug-print activity |
+| `THPS_INPUT=frame:mask,...` | scripted pad input for player 1 (PS1 button mask, pressed = 1, held from that frame; X is both Ollie and Menu Accept, Triangle Grind and Menu Back, Start is Pause) |
+| `THPS_KEYS=frame:Key+Key,...` | scripted keyboard (Settings.ini key names, held from that frame; `frame:` releases), read through the bindings |
+| `THPS_TRACE=1` | log CD, BIOS and debug-print activity, and player 1's actions as they change |
 | `THPS_FAST=1` | don't throttle to 60 Hz |
 | `THPS_MOVIES=1` | run the original FMV code (movies are skipped by default) |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |

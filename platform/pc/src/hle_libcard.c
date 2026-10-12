@@ -17,7 +17,6 @@
  * Like a real card it holds 15 blocks of 8 KB: the game's directory table has 15 entries and it
  * counts free blocks for its "not enough space" checks. Files that don't fit are left alone. */
 #include <windows.h>
-#include <shlobj.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,16 +78,11 @@ static int s_findNext;
 static const char *SaveDir(void) {
     static char dir[MAX_PATH];
     if (!dir[0]) {
-        char home[MAX_PATH], *s;
-        if (getenv("THPS_SAVE_DIR")) {
+        char *s;
+        if (getenv("THPS_SAVE_DIR"))
             snprintf(dir, sizeof dir, "%s", getenv("THPS_SAVE_DIR"));
-        } else {
-            if (getenv("USERPROFILE"))
-                snprintf(home, sizeof home, "%s", getenv("USERPROFILE"));
-            else if (SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, home) != S_OK)
-                strcpy(home, ".");
-            snprintf(dir, sizeof dir, "%s\\Neversoft\\Tony Hawk's Pro Skater\\Saves", home);
-        }
+        else
+            snprintf(dir, sizeof dir, "%s\\Saves", PC_UserDir());
         for (s = dir; *s; s++)
             if (*s == '/')
                 *s = '\\';

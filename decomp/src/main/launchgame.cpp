@@ -84,10 +84,10 @@ int LaunchGame() {
 	if (GGame == 7)
 		Horse_Reset();
 DUN:
-	Pad[0].X.Pressed = 1;
-	Pad[0].X.Triggered = 0;
-	Pad[1].X.Pressed = 1;
-	Pad[1].X.Triggered = 0;
+	Pad[0].Ollie.Pressed = 1;
+	Pad[0].Ollie.Triggered = 0;
+	Pad[1].Ollie.Pressed = 1;
+	Pad[1].Ollie.Triggered = 0;
 	CloseCam = 0;
 	ViewportMode = 0;
 

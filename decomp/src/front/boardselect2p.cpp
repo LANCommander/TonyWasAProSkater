@@ -690,7 +690,7 @@ extern "C" int FUN_80051660(int player) {
 					statsDone[p] = 1;
 			}
 
-			if (Pad[p].Start.Triggered || Pad[p].X.Triggered) {
+			if (Pad[p].MenuStart.Triggered || Pad[p].MenuAccept.Triggered) {
 				Pad_ClearTriggers(&Pad[p]);
 
 				GBoardStats[p].s[0] = 3;
@@ -742,7 +742,7 @@ extern "C" int FUN_80051660(int player) {
 					result = 1;
 			}
 
-			if (Pad[p].Triangle.Triggered) {
+			if (Pad[p].MenuBack.Triggered) {
 				if (chosen[p] || !chosen[1 - p])
 					SFX_PlayX__FUisi(147, 0x2000, 0);
 

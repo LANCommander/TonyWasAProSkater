@@ -22,10 +22,10 @@ void CMenu::Update() {
 		mEntry[mLine].CurrentScale = mEntry[mLine].LowScale;
 	}
 
-	if (Pad[0].Up.Pressed || Pad[0].Down.Pressed || Pad[1].Up.Pressed ||
-	    Pad[1].Down.Pressed) {
+	if (Pad[0].MenuUp.Pressed || Pad[0].MenuDown.Pressed || Pad[1].MenuUp.Pressed ||
+	    Pad[1].MenuDown.Pressed) {
 		if (UpDownAutoRepeatTimer == 0 || (UpDownAutoRepeatTimer >= 16 && (UpDownAutoRepeatTimer & 3) == 0)) {
-			if (Pad[0].Up.Pressed || Pad[1].Up.Pressed) {
+			if (Pad[0].MenuUp.Pressed || Pad[1].MenuUp.Pressed) {
 				mEntry[mLine].TargetScale = mEntry[mLine].LowScale;
 
 				do {
@@ -39,7 +39,7 @@ void CMenu::Update() {
 				SFX_PlayX(6, 8192, 0);
 			}
 
-			if (Pad[0].Down.Pressed || Pad[1].Down.Pressed) {
+			if (Pad[0].MenuDown.Pressed || Pad[1].MenuDown.Pressed) {
 				mEntry[mLine].TargetScale = mEntry[mLine].LowScale;
 
 				do {

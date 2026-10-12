@@ -1,5 +1,6 @@
 /* FUN_8005ffac (0x8005ffac) */
 #include "names.h"
+#include "game/padbuttons.h"
 typedef struct {
 	char p[0x184];
 	int f184;
@@ -35,10 +36,10 @@ int FUN_8005ffac(int a) {
 	s0 = Pad;
 	FUN_800648c0(a, 1, *(int *)(s0 + 0x2b8) == 0);
 
-	if (s0[0x81] || s0[0x1ed] || s0[0x91] || s0[0x1fd]) {
+	if (s0[PAD_MENU_LEFT + PAD_TRIGGERED] || s0[PAD_SIZE + PAD_MENU_LEFT + PAD_TRIGGERED] || s0[PAD_MENU_RIGHT + PAD_TRIGGERED] || s0[PAD_SIZE + PAD_MENU_RIGHT + PAD_TRIGGERED]) {
 		s3 = 0;
 
-		if (Pad[0x81] || Pad[0x1ed])
+		if (Pad[PAD_MENU_LEFT + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_LEFT + PAD_TRIGGERED])
 			s3 = 1;
 
 		Pad_ClearTriggers(Pad);
@@ -68,7 +69,7 @@ int FUN_8005ffac(int a) {
 		}
 	}
 
-	if (Pad[0xe1] || Pad[0x24d] || Pad[0x31] || Pad[0x19d]) {
+	if (Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED]) {
 		t = VerticalMenu_getSelected(a);
 
 		if (t < 5) {

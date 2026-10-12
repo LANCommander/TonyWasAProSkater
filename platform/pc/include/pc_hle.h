@@ -42,10 +42,9 @@ int hle_format(const char *path);
 void *hle_firstfile(const char *path, void *dir);
 void *hle_nextfile(void *dir);
 
-/* Input: fill a libpad receive buffer (34 bytes) for a port. */
+/* Input (pc_input.c, hle_libpad.c): PC_InputPoll fills the libpad receive buffers, once per vblank. */
 void PC_InputInit(void);
 void PC_InputPoll(void);
-void PC_InputFillPadBuffer(int port, uint8_t *buf);
 
 /* CD image. Sector reads see the disc image plus the mounted files. */
 int PC_CdOpen(void);

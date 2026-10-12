@@ -1,4 +1,5 @@
 /* FUN_8005e754 (0x8005e754) */
+#include "game/padbuttons.h"
 typedef struct {
 	int a, b, c, d, e, f;
 } S;
@@ -24,7 +25,7 @@ int FUN_8005e754(int a) {
 
 	FUN_80070ff4();
 
-	if (Pad[0x40] && Pad[0x60])
+	if (Pad[PAD_SPIN_LEFT + PAD_PRESSED] && Pad[PAD_SPIN_RIGHT + PAD_PRESSED])
 		DAT_800d1d2c = 1;
 
 	for (;;) {

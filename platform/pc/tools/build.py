@@ -44,13 +44,20 @@ COMMON_FLAGS = [
     "-m32", "-mabi=sysv", "-mno-ms-bitfields", "-malign-double", "-O1", "-g",
     "-fno-strict-aliasing", "-fwrapv", "-fno-delete-null-pointer-checks", "-fno-builtin",
     "-fno-omit-frame-pointer", "-w", "-DPC_PORT=1",
+    # outgoing args are stored, never pushed, so the only post-call %esp adjustment is the
+    # aggregate-return one caller_pops_sret removes
+    "-maccumulate-outgoing-args",
+    # plain char is unsigned in the PS1 ABI (egcs on MIPS): the decompiled code is verified with it
+    "-funsigned-char",
     "-I", os.path.join(PC, "include", "psyq"), "-I", os.path.join(PC, "include"),
     "-I", os.path.join(DECOMP, "include"),
     "-include", os.path.join(PC, "include", "pc_game.h"),
 ]
 C_FLAGS = ["-std=gnu89", "-fpermissive", "-fcommon"]
+# -fno-lifetime-dse: egcs destructors re-store their class's vptr (portsrc adds the store); g++ would
+# drop stores into an object whose lifetime is ending, and those vptrs are read by the base dtors
 CXX_FLAGS = ["-std=gnu++98", "-fpermissive", "-fno-exceptions", "-fno-rtti",
-             "-fno-threadsafe-statics", "-fno-use-cxa-atexit"]
+             "-fno-threadsafe-statics", "-fno-use-cxa-atexit", "-fno-lifetime-dse"]
 
 
 def tool(name):
@@ -172,6 +179,11 @@ class Ctx:
                     continue
                 seen.setdefault(k, set()).add(int(v, 16))
         self.global_syms = {k: next(iter(v)) for k, v in seen.items() if len(v) == 1}
+        # every class's retail vtable known anywhere (a class used by several TUs has one vtable;
+        # names with two addresses, i.e. two classes of one name, are left to each TU's syms.json)
+        vt = {k: "0x%08x" % v for k, v in self.data_names.items()}
+        vt.update({k: "0x%08x" % v for k, v in self.global_syms.items()})
+        self.vtables = vtables_of(vt)
         allnames = set()
         for tu in self.tus.values():
             allnames.update(k for k in tu["syms"] if not k.startswith("."))
@@ -218,6 +230,70 @@ def vtables_of(syms):
     return out
 
 
+INCLUDE_RE = re.compile(r'^[ \t]*#[ \t]*include[ \t]+"([^"]+)"[^\n]*$', re.M)
+HEADER_DIR = os.path.join(DECOMP, "include")
+
+
+def expand_includes(text, path, seen=None):
+    """Inline the project's own headers (#include "..." found next to the source or in
+    decomp/include), each once per TU, so portsrc sees the classes they declare. #line markers keep
+    compiler messages and debug info pointing at the real files. Returns (text, [header paths])."""
+    seen = set() if seen is None else seen
+    out, pos, line = [], 0, 1
+    for m in INCLUDE_RE.finditer(text):
+        name = m.group(1)
+        cand = [os.path.join(os.path.dirname(path), name), os.path.join(HEADER_DIR, name)]
+        hdr = next((os.path.normpath(c) for c in cand if os.path.isfile(c)), None)
+        if hdr is None:
+            continue
+        out.append(text[pos:m.start()])
+        line += text.count("\n", pos, m.end())  # now the #include's own line number
+        pos = m.end()
+        if hdr not in seen:
+            seen.add(hdr)
+            body, _ = expand_includes(open(hdr, encoding="utf-8").read(), hdr, seen)
+            out.append('#line 1 "%s"\n%s\n#line %d "%s"' % (
+                hdr.replace("\\", "/"), body, line + 1, path.replace("\\", "/")))
+    out.append(text[pos:])
+    return "".join(out), sorted(seen)
+
+
+VDEF = "_pcvdef"
+
+
+def itanium_member(sym):
+    """('Class', 'method') for a mangled `[_]_ZN<len>Class<len>method...E...`, else None."""
+    m = re.match(r"_?_ZN", sym)
+    if not m:
+        return None
+    i, parts = m.end(), []
+    while i < len(sym) and sym[i].isdigit():
+        j = i
+        while sym[j].isdigit():
+            j += 1
+        n = int(sym[i:j])
+        parts.append(sym[j:j + n])
+        i = j + n
+    return (parts[-2], parts[-1]) if len(parts) >= 2 and i < len(sym) and sym[i] == "E" else None
+
+
+def split_virtual_defs(asm, classes):
+    """A TU that defines a virtual member function may also call it virtually (on another object):
+    g++ binds such a call to the local definition, skipping the override the vtable would pick.
+    Rename the definition (label, .globl, debug info) to <name>_pcvdef so the calls stay external
+    and resolve to the virtual-dispatch thunk; plan() maps the renamed definition back."""
+    for name in set(re.findall(r"^(_?_ZN\w+):", asm, re.M)):
+        cm = itanium_member(name)
+        if not cm or cm[0] not in classes or cm[1] not in classes[cm[0]]["slots"]:
+            continue
+        if not re.search(r"^\s*(call|jmp)\s+%s\b" % re.escape(name), asm, re.M):
+            continue
+        asm = re.sub(r"\b%s\b" % re.escape(name), name + VDEF, asm)
+        asm = re.sub(r"^(\s*(?:call|jmp)\s+)%s\b" % re.escape(name + VDEF), r"\g<1>" + name, asm,
+                     flags=re.M)
+    return asm
+
+
 def tukey(tu):
     return re.sub(r"\W", "_", os.path.splitext(tu["src"])[0])
 
@@ -234,19 +310,22 @@ def build_tu(ctx, tu, flags_hash):
     is_cxx = tu["src"].endswith(".cpp")
     obj = base + ".o"
     meta_path = base + ".json"
-    stamp = hashlib.sha1((open(src_path, "rb").read().decode("utf-8", "replace") +
+    text, headers = expand_includes(open(src_path, encoding="utf-8", errors="replace").read(),
+                                    src_path)
+    stamp = hashlib.sha1((text +
                           json.dumps(tu["syms"], sort_keys=True) + flags_hash).encode()).hexdigest()
     if os.path.exists(obj) and os.path.exists(meta_path):
         meta = json.load(open(meta_path))
         if meta.get("stamp") == stamp:
             return meta
-    meta = {"src": tu["src"], "stamp": stamp, "errors": [], "warnings": []}
-    text = open(src_path, encoding="utf-8", errors="replace").read()
+    meta = {"src": tu["src"], "stamp": stamp, "errors": [], "warnings": [], "headers": headers}
     try:
         text = portsrc.fix_cast_lvalues(portsrc.translate_asm(text))
         classes = {}
         if is_cxx:
-            text, classes = portsrc.transform_cxx(text, vtables_of(tu["syms"]), tukey(tu))
+            vtables = dict(ctx.vtables)
+            vtables.update(vtables_of(tu["syms"]))
+            text, classes = portsrc.transform_cxx(text, vtables, tukey(tu))
             text = portsrc.mark_deletes(text)
     except Exception as e:  # noqa: BLE001
         meta["errors"].append("transform: %s" % e)
@@ -265,6 +344,9 @@ def build_tu(ctx, tu, flags_hash):
         json.dump(meta, open(meta_path, "w"))
         return meta
     asm_text = open(asm, encoding="utf-8").read()
+    if is_cxx:
+        asm_text = split_virtual_defs(asm_text, classes)
+    asm_text = caller_pops_sret(asm_text)
     # --- symbol resolution ----------------------------------------------------------------
     res = Resolver(ctx, tu, is_cxx, classes)
     asm_text, relocated = relocate_data_defs(asm_text, res)
@@ -313,6 +395,32 @@ def build_tu(ctx, tu, flags_hash):
         meta["errors"].append("objcopy:\n" + se[-2000:])
     json.dump(meta, open(meta_path, "w"), indent=0)
     return meta
+
+
+SRET_RET_RE = re.compile(r"^(\s*)ret\s+\$4\s*$")
+SRET_FIX_RE = re.compile(r"^\s*subl\s+\$4, %esp\s*$")
+CALL_RE = re.compile(r"^\s*call\s")
+ASM_NOISE_RE = re.compile(r"^\s*(?:[\w.$]+:|\.)")
+
+
+def caller_pops_sret(asm):
+    """egcs/MIPS: the caller owns an aggregate return's hidden pointer, and the decomp declares
+    the same function both as `T f(...)` and as `void f(T *, ...)`. SysV i386 has the callee pop
+    it (`ret $4`, callers re-adjust with `subl $4, %esp`); undo both so the two forms agree.
+    Game code is cdecl-only, so every `ret $4` here is an aggregate return."""
+    out = []
+    after_call = False
+    for line in asm.split("\n"):
+        if after_call and SRET_FIX_RE.match(line):
+            after_call = False
+            continue
+        if CALL_RE.match(line):
+            after_call = True
+        elif not ASM_NOISE_RE.match(line) and line.strip():
+            after_call = False
+        m = SRET_RET_RE.match(line)
+        out.append(m.group(1) + "ret" if m else line)
+    return "\n".join(out)
 
 
 DATA_SECT_RE = re.compile(r"^\s*\.(data|bss|section\s+\.(?:rdata|data|bss)\S*)", re.M)
@@ -425,6 +533,9 @@ class Resolver:
                              "del_wrappers": []}
         dem = demangle_itanium([s[1:] for s in undefined + [d for _, d in defined]
                                 if s.startswith("__Z")]) if self.is_cxx else {}
+        for _, d in defined:  # split_virtual_defs: the definition demangles as its real name
+            if d.endswith(VDEF) and d.startswith("__Z"):
+                dem[d[1:]] = demangle_itanium([d[1:-len(VDEF)]]).get(d[1:-len(VDEF)], d[1:])
         primary = self.tu["addr"]
         primary_name = self.tu.get("name")
         # ---- definitions
@@ -459,8 +570,10 @@ class Resolver:
                     if name.endswith("D1Ev"):
                         continue
                     cls = qual_name(d).split("::")[0]
+                    # D2 (base-object destructor): link.py wraps it at the retail address
                     renames[sym] = "_pcdtor_%08x" % addr
                     info["dtor_defs"].append([addr, cls, self.class_delete_addr(cls)])
+                    info["defines"][hex(addr)] = name
                     continue
             else:
                 if primary_name and name == primary_name:
@@ -506,14 +619,21 @@ class Resolver:
         return renames, info
 
     def class_delete_addr(self, cls):
-        c = self.classes.get(cls)
-        if c and c.get("has_delete"):
-            d = "%s::operatordelete(void*)" % cls
-            for k, a in self.syms.items():
-                if norm_sig(self.ctx.gnu_dem.get(k, k)) == d:
-                    return a
-            if d in self.ctx.fn_by_sig:
-                return self.ctx.fn_by_sig[d][0]
+        """The operator delete a `delete` of `cls` calls: its own or the nearest base class's."""
+        seen = set()
+        while cls and cls not in seen:
+            seen.add(cls)
+            c = self.classes.get(cls)
+            if not c:
+                break
+            if c.get("has_delete"):
+                d = "%s::operatordelete(void*)" % cls
+                for k, a in self.syms.items():
+                    if norm_sig(self.ctx.gnu_dem.get(k, k)) == d:
+                        return a
+                if d in self.ctx.fn_by_sig:
+                    return self.ctx.fn_by_sig[d][0]
+            cls = next((b for b in c.get("bases", []) if b in self.classes), None)
         return self.ctx.psyq.get("__builtin_delete")
 
     def resolve_cxx(self, name, d, info):

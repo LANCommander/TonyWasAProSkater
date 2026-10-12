@@ -206,15 +206,15 @@ void Front_Update() {
 	int AnyButton;
 	int Start;
 
-	if ((!Pad[0].LeftOne.Pressed || Status != STATUS_PAUSEDMENU) &&
+	if ((!Pad[0].SpinLeft.Pressed || Status != STATUS_PAUSEDMENU) &&
 	    Status != STATUS_MEMCARDMENUS)
 		Front_GetButtons(Activated, GoBack, AnyButton, Start);
 
 	if (Status)
 		Card_CheckStatus(0, 0);
 
-	if ((GSoftResetEnabled && Pad[0].Select.Pressed && Pad[0].Start.Pressed) ||
-	    (Pad[1].Select.Pressed && Pad[1].Start.Pressed)) {
+	if ((GSoftResetEnabled && Pad[0].Camera.Pressed && Pad[0].Pause.Pressed) ||
+	    (Pad[1].Camera.Pressed && Pad[1].Pause.Pressed)) {
 		if (!DAT_800d14d8) {
 			DAT_800d14d8 = 1;
 			DAT_800d14dc = Vblanks;
@@ -326,7 +326,7 @@ void Front_Update() {
 			if (!Pad[0].Type || (GNumberOfPlayers == 2 && !Pad[1].Type))
 				Status = STATUS_PADUNPLUGGED;
 
-			if (Pad[0].LeftOne.Pressed) {
+			if (Pad[0].SpinLeft.Pressed) {
 				if (Shell_DoCheatProcessing()) {
 					WobbleAmplitude = 32;
 					WobbleT = 0;
@@ -403,7 +403,12 @@ void Front_Update() {
 				}
 			}
 
+#ifdef PC_PORT
+			/* Pause resumes (on the PS1, Start activated the highlighted entry) */
+			if (GoBack || Start) {
+#else
 			if (GoBack) {
+#endif
 				SoundEffect = 5;
 				SwitchOffPauseMode = 1;
 			}
@@ -801,12 +806,12 @@ void Front_Update() {
 				}
 			}
 
-			if (Pad[0].Left.Triggered || Pad[1].Left.Triggered) {
+			if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
 				SizeUp = 16;
 				SFX_PlayX(5, 8192, 0);
 
-				Pad[0].Left.Triggered = 0;
-				Pad[1].Left.Triggered = 0;
+				Pad[0].MenuLeft.Triggered = 0;
+				Pad[1].MenuLeft.Triggered = 0;
 				GHorseCursorPos--;
 
 				if (GHorseCursorPos < 0)
@@ -816,12 +821,12 @@ void Front_Update() {
 					GHorseCursorPos = 9;
 			}
 
-			if (Pad[0].Right.Triggered || Pad[1].Right.Triggered) {
+			if (Pad[0].MenuRight.Triggered || Pad[1].MenuRight.Triggered) {
 				SizeUp = 16;
 				SFX_PlayX(5, 8192, 0);
 
-				Pad[0].Right.Triggered = 0;
-				Pad[1].Right.Triggered = 0;
+				Pad[0].MenuRight.Triggered = 0;
+				Pad[1].MenuRight.Triggered = 0;
 				GHorseCursorPos++;
 
 				if (GHorseCursorPos > GCareer.Options.HorseLen)
@@ -933,24 +938,24 @@ void Front_Update() {
 						}
 					}
 
-					if (Pad[0].Left.Triggered || Pad[1].Left.Triggered) {
+					if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
 						SizeUp = 16;
 						SFX_PlayX(5, 8192, 0);
 
-						Pad[0].Left.Triggered = 0;
-						Pad[1].Left.Triggered = 0;
+						Pad[0].MenuLeft.Triggered = 0;
+						Pad[1].MenuLeft.Triggered = 0;
 						GHighScoreInitialCursorPos--;
 
 						if (GHighScoreInitialCursorPos < 0)
 							GHighScoreInitialCursorPos = 2;
 					}
 
-					if (Pad[0].Right.Triggered || Pad[1].Right.Triggered) {
+					if (Pad[0].MenuRight.Triggered || Pad[1].MenuRight.Triggered) {
 						SizeUp = 16;
 						SFX_PlayX(5, 8192, 0);
 
-						Pad[0].Right.Triggered = 0;
-						Pad[1].Right.Triggered = 0;
+						Pad[0].MenuRight.Triggered = 0;
+						Pad[1].MenuRight.Triggered = 0;
 						GHighScoreInitialCursorPos++;
 
 						if (GHighScoreInitialCursorPos >= 3)
@@ -1209,9 +1214,9 @@ void Front_Update() {
 			        ? GPreferences.MusicVolume * 0x555
 			        : 0;
 
-			if (Pad[0].Left.Triggered || Pad[1].Left.Triggered) {
-				Pad[0].Left.Triggered = 0;
-				Pad[1].Left.Triggered = 0;
+			if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
+				Pad[0].MenuLeft.Triggered = 0;
+				Pad[1].MenuLeft.Triggered = 0;
 
 				if (pSoundMenu->ChoiceIs(soundBuf)) {
 					if (soundVol > 0)
@@ -1231,9 +1236,9 @@ void Front_Update() {
 				}
 			}
 
-			if (Pad[0].Right.Triggered || Pad[1].Right.Triggered) {
-				Pad[0].Right.Triggered = 0;
-				Pad[1].Right.Triggered = 0;
+			if (Pad[0].MenuRight.Triggered || Pad[1].MenuRight.Triggered) {
+				Pad[0].MenuRight.Triggered = 0;
+				Pad[1].MenuRight.Triggered = 0;
 
 				if (pSoundMenu->ChoiceIs(soundBuf)) {
 					if (soundVol < 10)

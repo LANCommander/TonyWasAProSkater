@@ -1,5 +1,6 @@
 /* FUN_8005cd14 (0x8005cd14) */
 #include "names.h"
+#include "game/padbuttons.h"
 typedef struct {
 	char p[0xc];
 	int fc;
@@ -97,8 +98,8 @@ void FUN_8005cd14(void) {
 		s0 = FUN_80063a5c(s0, 8, FUN_8005ca3c(s_Pressx_bmp), 0, 440, 64, 128);
 
 	DAT_800d1d04 = s0;
-	Pad[0xe1] = 0;
-	Pad[0x24d] = 0;
+	Pad[PAD_MENU_START + PAD_TRIGGERED] = 0;
+	Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] = 0;
 	DAT_800d1cec = 0;
 	DAT_800d1d14 = 0;
 	Pack_DefragmentFully();

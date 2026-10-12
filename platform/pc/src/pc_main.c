@@ -1,6 +1,7 @@
 /* Boot: map PS1 memory at its own addresses, load the retail image, point every PS1 function
  * address at its native implementation, then run the game's main(). See platform/pc/README.md. */
 #include <windows.h>
+#include <shlobj.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -429,6 +430,30 @@ static int FileExists(const char *p) {
 }
 
 const char *PC_DataDir(void) { return s_dataDir; }
+
+void (*pc_hires_before_draw)(void);
+
+const char *PC_UserDir(void) {
+    static char dir[MAX_PATH];
+    if (!dir[0]) {
+        char home[MAX_PATH], *s;
+        if (getenv("USERPROFILE"))
+            snprintf(home, sizeof home, "%s", getenv("USERPROFILE"));
+        else if (SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, home) != S_OK)
+            strcpy(home, ".");
+        snprintf(dir, sizeof dir, "%s\\Neversoft\\Tony Hawk's Pro Skater", home);
+        for (s = dir; *s; s++)
+            if (*s == '/')
+                *s = '\\';
+        for (s = strchr(dir + 3, '\\'); s; s = strchr(s + 1, '\\')) {
+            *s = 0;
+            CreateDirectoryA(dir, NULL);
+            *s = '\\';
+        }
+        CreateDirectoryA(dir, NULL);
+    }
+    return dir;
+}
 
 /* The retail executable: THPS_EXE, else SLUS_008.60 next to the exe, in ./game, or the repo's
  * extern/thps1_retail (development layout). */

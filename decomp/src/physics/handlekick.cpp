@@ -69,7 +69,7 @@ void CBruce::HandleKick() {
 
 	x = Mips_CVecDotProd__FP7CVectorT0(&mFallLine, &mVel2);
 
-	if (mpPad->Square.Pressed || AutoKickEnabled) {
+	if (mpPad->Flip.Pressed || AutoKickEnabled) {
 		if (!mDoingSharpTurn || !mTurning) {
 			if (!m840) {
 				if ((x >= -1228 && mKickSpeed / 2 < Speed) || mManIsCrouched) {
@@ -103,7 +103,7 @@ void CBruce::HandleKick() {
 				}
 
 				if ((unsigned short)(mFrame - 11) < 5) {
-					if (mpPad->Square.Pressed)
+					if (mpPad->Flip.Pressed)
 						KickVal = 8;
 
 					if (Speed < mKickSpeed && mPhysicsState != 2) {
@@ -123,7 +123,7 @@ void CBruce::HandleKick() {
 			return;
 	}
 
-	if (mpPad->Square.Pressed) {
+	if (mpPad->Flip.Pressed) {
 		if (x >= -1228 && !mManIsCrouched && !mPhysicsState) {
 			switch (mAnim) {
 				case 0:
@@ -147,7 +147,7 @@ void CBruce::HandleKick() {
 		int KickVal = 4;
 
 		if ((unsigned short)(mFrame - 11) < 5) {
-			if (mpPad->Square.Pressed)
+			if (mpPad->Flip.Pressed)
 				KickVal = 8;
 
 			if (Speed < mKickSpeed && mPhysicsState != 2) {

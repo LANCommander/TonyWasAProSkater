@@ -29,13 +29,13 @@ int Shell_DoCheatProcessing() {
 		frug(0x776643d1);
 	else if (Pad[0].Left.Triggered)
 		frug(0x93fe1682);
-	else if (Pad[0].Triangle.Triggered)
+	else if (Pad[0].Grind.Triggered)
 		frug(0x31415926);
-	else if (Pad[0].Circle.Triggered)
+	else if (Pad[0].Grab.Triggered)
 		frug(0xdeadbeef);
-	else if (Pad[0].X.Triggered)
+	else if (Pad[0].Ollie.Triggered)
 		frug(0xb87610db);
-	else if (Pad[0].Square.Triggered)
+	else if (Pad[0].Flip.Triggered)
 		frug(0x03185332);
 	else
 		return 0;

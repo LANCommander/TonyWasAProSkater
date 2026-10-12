@@ -621,8 +621,8 @@ extern "C" int FUN_80054510(int player) {
 				statsDone = 1;
 		}
 
-		if (Pad[0].Start.Triggered || Pad[1].Start.Triggered ||
-		    Pad[0].X.Triggered || Pad[1].X.Triggered) {
+		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
+		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
@@ -659,7 +659,7 @@ extern "C" int FUN_80054510(int player) {
 			SFX_PlayX__FUisi(146, 0x2000, 0);
 		}
 
-		if (Pad[0].Triangle.Triggered || Pad[1].Triangle.Triggered) {
+		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
 			SFX_PlayX__FUisi(147, 0x2000, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);

@@ -86,7 +86,7 @@ void CBruce::HandleTricksNew() {
 		return;
 	}
 
-	int Button = mpPad->Circle.Pressed + mpPad->Square.Pressed * 2;
+	int Button = mpPad->Grab.Pressed + mpPad->Flip.Pressed * 2;
 
 	if (Button) {
 		m3A0[m370] = Button;
@@ -288,10 +288,10 @@ void CBruce::HandleTricksNew() {
 	switch (State) {
 		case 0x40000000:
 			if (m368 & 0x4000) {
-				if (mpPad->Circle.Pressed)
+				if (mpPad->Grab.Pressed)
 					m368 |= 0x800;
 
-				if (!mpPad->Circle.Pressed)
+				if (!mpPad->Grab.Pressed)
 					m368 &= ~0x800;
 
 				if (!(m368 & 0x800)) {
@@ -305,10 +305,10 @@ void CBruce::HandleTricksNew() {
 					}
 				}
 			} else {
-				if (mpPad->Square.Pressed)
+				if (mpPad->Flip.Pressed)
 					m368 |= 0x800;
 
-				if (!mpPad->Square.Pressed)
+				if (!mpPad->Flip.Pressed)
 					m368 &= ~0x800;
 
 				if (!(m368 & 0x800)) {
@@ -325,10 +325,10 @@ void CBruce::HandleTricksNew() {
 
 			break;
 		case 0x20000000:
-			if (mpPad->Circle.Pressed)
+			if (mpPad->Grab.Pressed)
 				m368 |= 0x800;
 
-			if (!mpPad->Circle.Pressed)
+			if (!mpPad->Grab.Pressed)
 				m368 &= ~0x800;
 
 			if (!(m368 & 0x800)) {

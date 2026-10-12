@@ -1,5 +1,6 @@
 /* FUN_80024fa4 (0x80024fa4) */
 #include "names.h"
+#include "game/padbuttons.h"
 #ifdef PC_PORT
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,7 +72,7 @@ void FUN_80024fa4(void) {
 			goto L90;
 	}
 
-	if (Pad[240]) {
+	if (Pad[PAD_CAMERA + PAD_PRESSED]) {
 		if (DAT_800d1748) {
 			DAT_800d1748 = 0;
 
@@ -84,8 +85,8 @@ void FUN_80024fa4(void) {
 	} else
 		DAT_800d1748 = 1;
 
-	if (Pad[605]) {
-		Pad[605] = 0;
+	if (Pad[PAD_SIZE + PAD_CAMERA + PAD_TRIGGERED]) {
+		Pad[PAD_SIZE + PAD_CAMERA + PAD_TRIGGERED] = 0;
 
 		if (++ViewportMode >= 4)
 			ViewportMode = 0;

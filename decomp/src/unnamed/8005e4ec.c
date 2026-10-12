@@ -1,5 +1,6 @@
 /* FUN_8005e4ec (0x8005e4ec) */
 #include "names.h"
+#include "game/padbuttons.h"
 struct VT {
 	char pad[8];
 	short off;
@@ -57,8 +58,8 @@ int FUN_8005e4ec(int a, int b, int c) {
 		m->vt->fn2((char *)m + m->vt->off2);
 		FUN_8006b26c();
 
-		if (Pad[0xe1] || Pad[0x24d] || Pad[0x31] ||
-		    Pad[0x19d] || Pad[1] || Pad[0x16d]) {
+		if (Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] ||
+		    Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED] || Pad[PAD_MENU_BACK + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_BACK + PAD_TRIGGERED]) {
 			Pad_ClearTriggers(Pad);
 			Pad_ClearTriggers(Pad + 364);
 			SFX_PlayX(145, 0x2000, 0);

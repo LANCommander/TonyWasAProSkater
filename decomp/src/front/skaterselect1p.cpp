@@ -785,8 +785,8 @@ extern "C" int FUN_80059794() {
 		FUN_8005948c();
 		FUN_8006b2f4();
 
-		if (Pad[0].Start.Triggered || Pad[1].Start.Triggered ||
-		    Pad[0].X.Triggered || Pad[1].X.Triggered) {
+		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
+		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
@@ -805,10 +805,10 @@ extern "C" int FUN_80059794() {
 			goto done;
 		}
 
-		if (Pad[0].Triangle.Triggered || Pad[1].Triangle.Triggered) {
+		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
 			result = -1;
-			Pad[0].Triangle.Triggered = 0;
-			Pad[1].Triangle.Triggered = 0;
+			Pad[0].MenuBack.Triggered = 0;
+			Pad[1].MenuBack.Triggered = 0;
 			SFX_PlayX__FUisi(147, 0x2000, 0);
 			goto done;
 		}

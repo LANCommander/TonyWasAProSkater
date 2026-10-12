@@ -599,8 +599,8 @@ extern "C" void FUN_80066d7c() {
 		if (DAT_800d1cb8)
 			break;
 
-		if (Pad[0].Start.Triggered || Pad[1].Start.Triggered ||
-		    Pad[0].X.Triggered || Pad[1].X.Triggered) {
+		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
+		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
@@ -621,7 +621,7 @@ extern "C" void FUN_80066d7c() {
 			}
 		}
 
-		if (Pad[0].Triangle.Triggered || Pad[1].Triangle.Triggered) {
+		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
 			SFX_PlayX__FUisi(147, 0x2000, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);

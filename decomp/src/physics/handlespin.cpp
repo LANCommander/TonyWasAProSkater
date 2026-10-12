@@ -33,8 +33,8 @@ void CBruce::HandleSpin() {
 
 	if (mPhysicsState == 1 || mPhysicsState == 2) {
 		if (!mNoSpin) {
-			if (mpPad->LeftTwo.Triggered) {
-				mpPad->LeftTwo.Triggered = 0;
+			if (mpPad->TapSpinLeft.Triggered) {
+				mpPad->TapSpinLeft.Triggered = 0;
 
 				if (mTapTurn > 0)
 					mTapTurn = 0;
@@ -42,8 +42,8 @@ void CBruce::HandleSpin() {
 				mTapTurn--;
 			}
 
-			if (mpPad->RightTwo.Triggered) {
-				mpPad->RightTwo.Triggered = 0;
+			if (mpPad->TapSpinRight.Triggered) {
+				mpPad->TapSpinRight.Triggered = 0;
 
 				if (mTapTurn < 0)
 					mTapTurn = 0;
@@ -113,14 +113,14 @@ void CBruce::HandleSpin() {
 			}
 		}
 	} else {
-		if (Pad[0].LeftOne.Pressed || Pad[0].RightOne.Pressed)
+		if (Pad[0].SpinLeft.Pressed || Pad[0].SpinRight.Pressed)
 			DeltaAngle = (TimeScale * 0x64000) >> 8;
 		else
 			DeltaAngle = (TimeScale * 0xa000) >> 8;
 
 		MaxLeanAngle = 0xa0000;
-		LeftPressed = mpPad->Left.Pressed || mpPad->LeftOne.Pressed;
-		RightPressed = mpPad->Right.Pressed || mpPad->RightOne.Pressed;
+		LeftPressed = mpPad->Left.Pressed || mpPad->SpinLeft.Pressed;
+		RightPressed = mpPad->Right.Pressed || mpPad->SpinRight.Pressed;
 
 		if (LeftPressed || RightPressed) {
 			if (mFirstLeftRightPressed > 0 && XFrames - mFirstLeftRightPressed < 8) {
@@ -130,8 +130,8 @@ void CBruce::HandleSpin() {
 		} else
 			mFirstLeftRightPressed = XFrames;
 
-		LeftPressed |= mpPad->LeftOne.Pressed;
-		RightPressed |= mpPad->RightOne.Pressed;
+		LeftPressed |= mpPad->SpinLeft.Pressed;
+		RightPressed |= mpPad->SpinRight.Pressed;
 
 		if (mNoSpin)
 			LeftPressed = RightPressed = 0;
@@ -406,7 +406,7 @@ void CBruce::HandleSpin() {
 
 	mPitchAngle = 0;
 
-	if (mPhysicsState == 1 && !mpPad->Square.Pressed && !mpPad->Circle.Pressed) {
+	if (mPhysicsState == 1 && !mpPad->Flip.Pressed && !mpPad->Grab.Pressed) {
 		if (mpPad->Up.Pressed || mAY < -40)
 			mPitchAngle = -((TimeScale * 20) >> 8);
 

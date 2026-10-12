@@ -314,6 +314,22 @@ def link(ctx, metas, out, toolbin):
                     "\tpopl %esi",
                     "\tpopl %ebx",
                     "\tret"]
+    # destructors defined in C++: the egcs destructor is (this, in_chrg); run the native
+    # base-object destructor (body, then the base classes'), then free if in_chrg bit 0 is set
+    for m in metas:
+        for a, cls, dl in m.get("dtor_defs", []):
+            if ("dtor", a) in done:
+                continue
+            done.add(("dtor", a))
+            asm += ["\t.globl _pcfn_%08x" % a, "_pcfn_%08x:" % a,
+                    "\tpushl 4(%esp)",
+                    "\tcall _pcdtor_%08x" % a,
+                    "\taddl $4, %esp",
+                    "\ttestb $1, 8(%esp)",
+                    "\tjz 1f"]
+            if not dl:
+                raise SystemExit("no operator delete for %s (destructor 0x%08x)" % (cls, a))
+            asm += ["\tmovl $0x%08x, %%eax" % dl, "\tjmp *%eax", "1:", "\tret"]
     # extra names objcopy needed when two symbols in one object map to the same thunk
     aliases = set()
     for m in metas:
@@ -351,7 +367,7 @@ def link(ctx, metas, out, toolbin):
     exe = os.path.join(out, "thps.exe")
     libs = ["-lmingw32", "-lSDL2", "-lm", "-ldinput8", "-ldxguid", "-ldxerr8",
             "-luser32", "-lgdi32", "-lwinmm", "-limm32", "-lole32", "-loleaut32", "-lshell32",
-            "-lsetupapi", "-lversion", "-luuid", "-static"]
+            "-lsetupapi", "-lversion", "-luuid", "-lopengl32", "-static"]
     run([gcc, "-m32", "-g", "@" + rsp, "-o", exe, "-mconsole",
          "-Wl,--large-address-aware", "-Wl,--disable-dynamicbase", "-Wl,--image-base=0x400000",
          "-Wl," + os.path.join(gen, "psx_syms.ld").replace("\\", "/")] + libs)

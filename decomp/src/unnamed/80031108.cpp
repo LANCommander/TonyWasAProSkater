@@ -20,10 +20,10 @@ void CBruce::HandleBailOnLanding(int) {
 	int Bailing = 0;
 
 	if (m368 & 0x2000)
-		Bailing = mpPad->Square.Pressed != 0;
+		Bailing = mpPad->Flip.Pressed != 0;
 
 	if (m368 & 0x4000)
-		Bailing |= mpPad->Circle.Pressed != 0;
+		Bailing |= mpPad->Grab.Pressed != 0;
 
 	Bailing |= m360 == 0;
 

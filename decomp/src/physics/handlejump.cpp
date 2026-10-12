@@ -189,7 +189,7 @@ void CBruce::HandleJump() {
 		mDoingATrick = 0;
 	}
 
-	if (mpPad->X.Pressed && !mInAir) {
+	if (mpPad->Ollie.Pressed && !mInAir) {
 		mJumpStrength++;
 
 		if (mJumpStrength > 15 - (GetStat(0) + GetStat(2)) / 2)

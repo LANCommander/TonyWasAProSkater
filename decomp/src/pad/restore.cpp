@@ -4,6 +4,7 @@
 extern SControl Pad[];
 
 void Pad_Restore(void) {
+#ifndef PC_PORT /* on PC the bindings already say what every key does: no remap */
 	SButton TempButtonTriangle;
 	SButton TempButtonX;
 	SButton TempButtonCircle;
@@ -13,14 +14,15 @@ void Pad_Restore(void) {
 		int i;
 
 		for (i = 0; i < 2; i++) {
-			TempButtonTriangle = *Pad[i].pTriangle;
-			TempButtonCircle = *Pad[i].pCircle;
-			TempButtonSquare = *Pad[i].pSquare;
-			TempButtonX = *Pad[i].pX;
-			Pad[i].Triangle = TempButtonTriangle;
-			Pad[i].Circle = TempButtonCircle;
-			Pad[i].Square = TempButtonSquare;
-			Pad[i].X = TempButtonX;
+			TempButtonTriangle = *Pad[i].pGrind;
+			TempButtonCircle = *Pad[i].pGrab;
+			TempButtonSquare = *Pad[i].pFlip;
+			TempButtonX = *Pad[i].pOllie;
+			Pad[i].Grind = TempButtonTriangle;
+			Pad[i].Grab = TempButtonCircle;
+			Pad[i].Flip = TempButtonSquare;
+			Pad[i].Ollie = TempButtonX;
 		}
 	}
+#endif
 }

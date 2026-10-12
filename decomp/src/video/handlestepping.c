@@ -1,5 +1,7 @@
 /* Video_HandleStepping__Fv (0x8006ac84) */
 #include "names.h"
+#include "game/padbuttons.h"
+
 typedef struct {
 	unsigned char b[0x16c];
 } SControl;
@@ -40,10 +42,10 @@ void Video_HandleStepping(void) {
 	if (Status == 20 || Status == 22 || Status == 21)
 		return;
 
-	if (Pad[0].b[0x11] || (GNumberOfPlayers == 2 && Pad[1].b[0x11])) {
+	if (Pad[0].b[PAD_FLIP + PAD_TRIGGERED] || (GNumberOfPlayers == 2 && Pad[1].b[PAD_FLIP + PAD_TRIGGERED])) {
 		v = GVInfo1.step;
-		Pad[0].b[0x11] = 0;
-		Pad[1].b[0x11] = 0;
+		Pad[0].b[PAD_FLIP + PAD_TRIGGERED] = 0;
+		Pad[1].b[PAD_FLIP + PAD_TRIGGERED] = 0;
 		v ^= 1;
 		GVInfo1.step = v;
 		GameFrozen = v;
@@ -55,7 +57,7 @@ void Video_HandleStepping(void) {
 
 	GameFrozen = 1;
 
-	if (Pad[0].b[0x20] || (GNumberOfPlayers == 2 && Pad[1].b[0x20])) {
+	if (Pad[0].b[PAD_GRAB + PAD_PRESSED] || (GNumberOfPlayers == 2 && Pad[1].b[PAD_GRAB + PAD_PRESSED])) {
 		if (DAT_800d1df0 != 0) {
 			DAT_800d1df0--;
 			return;
@@ -66,7 +68,7 @@ void Video_HandleStepping(void) {
 		return;
 	}
 
-	if (Pad[0].b[0] || (GNumberOfPlayers == 2 && Pad[1].b[0])) {
+	if (Pad[0].b[PAD_GRIND + PAD_PRESSED] || (GNumberOfPlayers == 2 && Pad[1].b[PAD_GRIND + PAD_PRESSED])) {
 		if (DAT_800d1df0 != 0) {
 			DAT_800d1df0--;
 			return;

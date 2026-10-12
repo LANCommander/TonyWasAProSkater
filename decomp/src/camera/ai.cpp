@@ -67,7 +67,7 @@ void CCamera::AI() {
 			mFocusPos = ((mFocus->mPos << 1) + mOldFocusPos) / 3;
 	}
 
-	if (Pad[0].Select.Pressed) {
+	if (Pad[0].Camera.Pressed) {
 		if (DAT_800d2090)
 			DAT_800d208c = 1;
 
@@ -76,14 +76,14 @@ void CCamera::AI() {
 		DAT_800d2090 = 1;
 	}
 
-	if (Cheat_ScreenShots && DAT_800d208c && Pad[0].Select.Pressed) {
-		Pad[1].RightOne.Triggered = 0;
-		Pad[1].RightTwo.Triggered = 0;
+	if (Cheat_ScreenShots && DAT_800d208c && Pad[0].Camera.Pressed) {
+		Pad[1].SpinRight.Triggered = 0;
+		Pad[1].TapSpinRight.Triggered = 0;
 		DAT_800d2084 = 0;
-		Pad[0].LeftTwo.Triggered = 0;
+		Pad[0].TapSpinLeft.Triggered = 0;
 		DAT_800d208c = 0;
-		Pad[0].Select.Triggered = 0;
-		Pad[0].Start.Triggered = 0;
+		Pad[0].Camera.Triggered = 0;
+		Pad[0].Pause.Triggered = 0;
 		Mick_CameraTweak ^= 1;
 		GameFrozen = Mick_CameraTweak;
 
@@ -101,51 +101,51 @@ void CCamera::AI() {
 	}
 
 	if (Mick_CameraTweak) {
-		if (Pad[1].Start.Pressed) {
+		if (Pad[1].Pause.Pressed) {
 			camYOffset = old_camYOffset;
 			camDist = old_camDist;
 			camPitch = old_camPitch;
 			mZoom = DAT_800d2088;
 		}
 
-		if (Pad[0].Square.Pressed)
+		if (Pad[0].Flip.Pressed)
 			mZoom--;
 
-		if (Pad[0].Circle.Pressed)
+		if (Pad[0].Grab.Pressed)
 			mZoom++;
 
-		if (Pad[0].Triangle.Pressed)
+		if (Pad[0].Grind.Pressed)
 			mZoom = 256;
 
-		if (Pad[1].Square.Pressed)
+		if (Pad[1].Flip.Pressed)
 			extra_YRot -= 10;
 
-		if (Pad[1].Circle.Pressed)
+		if (Pad[1].Grab.Pressed)
 			extra_YRot += 10;
 
 		if (Pad[1].Left.Pressed) {
-			if (Pad[1].Select.Pressed)
+			if (Pad[1].Camera.Pressed)
 				camDist -= 32;
 			else
 				camDist -= 8;
 		}
 
 		if (Pad[1].Right.Pressed) {
-			if (Pad[1].Select.Pressed)
+			if (Pad[1].Camera.Pressed)
 				camDist += 32;
 			else
 				camDist += 8;
 		}
 
 		if (Pad[1].Up.Pressed) {
-			if (Pad[1].Select.Pressed)
+			if (Pad[1].Camera.Pressed)
 				camPitch -= 32;
 			else
 				camPitch -= 8;
 		}
 
 		if (Pad[1].Down.Pressed) {
-			if (Pad[1].Select.Pressed)
+			if (Pad[1].Camera.Pressed)
 				camPitch += 32;
 			else
 				camPitch += 8;
@@ -153,15 +153,15 @@ void CCamera::AI() {
 
 		camPitch &= 4095;
 
-		if (Pad[1].LeftOne.Pressed) {
-			if (Pad[1].Select.Pressed)
+		if (Pad[1].SpinLeft.Pressed) {
+			if (Pad[1].Camera.Pressed)
 				camYOffset -= 32;
 			else
 				camYOffset -= 8;
 		}
 
-		if (Pad[1].LeftTwo.Pressed) {
-			if (Pad[1].Select.Pressed)
+		if (Pad[1].TapSpinLeft.Pressed) {
+			if (Pad[1].Camera.Pressed)
 				camYOffset += 32;
 			else
 				camYOffset += 8;

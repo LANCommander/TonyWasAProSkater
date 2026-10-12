@@ -1,5 +1,6 @@
 /* FUN_8005da40 (0x8005da40) */
 #include "names.h"
+#include "game/padbuttons.h"
 struct VT {
 	char pad[8];
 	short off;
@@ -56,9 +57,13 @@ void FUN_8005da40(void) {
 	FUN_80070ff4();
 
 	if (FUN_800718d0())
-		DAT_800c0a79[0] = 1;
+#ifdef PC_PORT
+		Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] = 1;
+#else
+		DAT_800c0a79[0] = 1; /* Pad[0].X.Triggered */
+#endif
 
-	if (Pad[0x31] && DemoTimer == 0) {
+	if (Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] && DemoTimer == 0) {
 		SFX_PlayX(2, 0x2000, 0);
 		Pause__Fi(20);
 		Pad_ClearTriggers(Pad);

@@ -1,5 +1,6 @@
 /* FUN_8007b108 (0x8007b108) */
 #include "names.h"
+#include "game/padbuttons.h"
 typedef struct Q {
 	int *vp;
 	int x, y, z, w;
@@ -45,7 +46,7 @@ void FUN_8007b108(char *a) {
 	s1 = a + 0x360;
 	CamPos_Display(s1, 300, 50, 80, 0, 0);
 
-	if (P[0x1fd]) {
+	if (P[PAD_SIZE + PAD_RIGHT + PAD_TRIGGERED]) {
 		switch (DAT_800d206a) {
 			case 0:
 				DAT_800d206a = 1;
@@ -55,10 +56,10 @@ void FUN_8007b108(char *a) {
 				break;
 		}
 
-		P[0x1fd] = 0;
+		P[PAD_SIZE + PAD_RIGHT + PAD_TRIGGERED] = 0;
 	}
 
-	if (P[0x1ed]) {
+	if (P[PAD_SIZE + PAD_LEFT + PAD_TRIGGERED]) {
 		switch (DAT_800d206a) {
 			case 0:
 				DAT_800d206a = 0;
@@ -68,10 +69,10 @@ void FUN_8007b108(char *a) {
 				break;
 		}
 
-		P[0x1ed] = 0;
+		P[PAD_SIZE + PAD_LEFT + PAD_TRIGGERED] = 0;
 	}
 
-	if (P[0x21d]) {
+	if (P[PAD_SIZE + PAD_DOWN + PAD_TRIGGERED]) {
 		switch (DAT_800d2068) {
 			case 0:
 				DAT_800d2068 = 1;
@@ -102,10 +103,10 @@ void FUN_8007b108(char *a) {
 				break;
 		}
 
-		P[0x21d] = 0;
+		P[PAD_SIZE + PAD_DOWN + PAD_TRIGGERED] = 0;
 	}
 
-	if (P[0x20d]) {
+	if (P[PAD_SIZE + PAD_UP + PAD_TRIGGERED]) {
 		switch (DAT_800d2068) {
 			case 0:
 				DAT_800d2068 = 10;
@@ -136,7 +137,7 @@ void FUN_8007b108(char *a) {
 				break;
 		}
 
-		P[0x20d] = 0;
+		P[PAD_SIZE + PAD_UP + PAD_TRIGGERED] = 0;
 	}
 
 	switch (DAT_800d206a) {
@@ -148,7 +149,7 @@ void FUN_8007b108(char *a) {
 			break;
 	}
 
-	if (P[0x16c]) {
+	if (P[PAD_SIZE + PAD_GRIND + PAD_PRESSED]) {
 		switch (DAT_800d2068) {
 			case 5: {
 				Q *pr;
@@ -171,7 +172,7 @@ void FUN_8007b108(char *a) {
 		}
 	}
 
-	if (P[0x19c]) {
+	if (P[PAD_SIZE + PAD_OLLIE + PAD_PRESSED]) {
 		switch (DAT_800d2068) {
 			case 5: {
 				Q *pr;
@@ -194,7 +195,7 @@ void FUN_8007b108(char *a) {
 		}
 	}
 
-	if (P[0x17c]) {
+	if (P[PAD_SIZE + PAD_FLIP + PAD_PRESSED]) {
 		switch (DAT_800d2068) {
 			case 5: {
 				Q *pr;
@@ -214,7 +215,7 @@ void FUN_8007b108(char *a) {
 		}
 	}
 
-	if (P[0x18c]) {
+	if (P[PAD_SIZE + PAD_GRAB + PAD_PRESSED]) {
 		switch (DAT_800d2068) {
 			case 5: {
 				Q *pr;
@@ -234,7 +235,7 @@ void FUN_8007b108(char *a) {
 		}
 	}
 
-	if (P[0x1cc]) {
+	if (P[PAD_SIZE + PAD_SPIN_RIGHT + PAD_PRESSED]) {
 		switch (DAT_800d2068) {
 			case 5: {
 				Q *pr;
@@ -254,7 +255,7 @@ void FUN_8007b108(char *a) {
 		}
 	}
 
-	if (P[0x1dc]) {
+	if (P[PAD_SIZE + PAD_TAP_SPIN_RIGHT + PAD_PRESSED]) {
 		switch (DAT_800d2068) {
 			case 5: {
 				Q *pr;

@@ -6,6 +6,7 @@
 #define GAME_PAD_H
 
 #include "game/types.h"
+#include "game/padbuttons.h"
 
 /* one button: level + edge, with the frame times of the last press/release/trigger */
 struct SButton {
@@ -18,28 +19,43 @@ struct SButton {
 	/* sizeof(SButton) == 0x10 */
 };
 
-/* one player's pad (the game keeps `SControl Pad[2]`) */
+/* one player's pad (the game keeps `SControl Pad[2]`). The buttons are named after what they do
+   while skating; the comments give the PS1 button behind each one. The menus read the Menu*
+   names: on the PS1 those are the same buttons (the aliases below), on PC they are bound on their
+   own and live in the slots the PS1 never fills (L3/R3 and the unused Crouch..SelectWeapon). */
 struct SControl {
-	SButton Triangle;              /* 0x000 */
-	SButton Square;                /* 0x010 */
-	SButton Circle;                /* 0x020 */
-	SButton X;                     /* 0x030 */
-	SButton LeftOne;               /* 0x040 */
-	SButton LeftTwo;               /* 0x050 */
-	SButton RightOne;              /* 0x060 */
-	SButton RightTwo;              /* 0x070 */
+	SButton Grind;                 /* 0x000 Triangle */
+	SButton Flip;                  /* 0x010 Square */
+	SButton Grab;                  /* 0x020 Circle */
+	SButton Ollie;                 /* 0x030 X */
+	SButton SpinLeft;              /* 0x040 L1: held, rotate left */
+	SButton TapSpinLeft;           /* 0x050 L2: each tap queues a 180 to the left */
+	SButton SpinRight;             /* 0x060 R1 */
+	SButton TapSpinRight;          /* 0x070 R2 */
 	SButton Left;                  /* 0x080 */
 	SButton Right;                 /* 0x090 */
 	SButton Up;                    /* 0x0a0 */
 	SButton Down;                  /* 0x0b0 */
-	SButton AnalogueLeft;          /* 0x0c0 */
-	SButton AnalogueRight;         /* 0x0d0 */
-	SButton Start;                 /* 0x0e0 */
-	SButton Select;                /* 0x0f0 */
-	SButton Crouch;                /* 0x100 */
+#ifdef PC_PORT
+	SButton MenuUp;                /* 0x0c0 */
+	SButton MenuDown;              /* 0x0d0 */
+#else
+	SButton AnalogueLeft;          /* 0x0c0 L3 (never read) */
+	SButton AnalogueRight;         /* 0x0d0 R3 (never read) */
+#endif
+	SButton Pause;                 /* 0x0e0 Start */
+	SButton Camera;                /* 0x0f0 Select: close camera / 2P viewports */
+#ifdef PC_PORT
+	SButton MenuLeft;              /* 0x100 */
+	SButton MenuRight;             /* 0x110 */
+	SButton MenuAccept;            /* 0x120 */
+	SButton MenuBack;              /* 0x130 */
+#else
+	SButton Crouch;                /* 0x100 (never filled) */
 	SButton Jump;                  /* 0x110 */
 	SButton SmartBomb;             /* 0x120 */
 	SButton SelectWeapon;          /* 0x130 */
+#endif
 	uchar AnaloguePotMapping[4];   /* 0x140 */
 	uchar RawAnalogueMoveForwardsBackwards; /* 0x144 */
 	uchar RawAnalogueMoveLeftRight;         /* 0x145 */
@@ -57,14 +73,33 @@ struct SControl {
 	uchar AlignCalled;             /* 0x157 */
 	ushort Motor0Timer;            /* 0x158 */
 	ushort Motor1Timer;            /* 0x15a */
-	SButton *pTriangle;            /* 0x15c */
-	SButton *pSquare;              /* 0x160 */
-	SButton *pCircle;              /* 0x164 */
-	SButton *pX;                   /* 0x168 */
+	SButton *pGrind;               /* 0x15c */
+	SButton *pFlip;                /* 0x160 */
+	SButton *pGrab;                /* 0x164 */
+	SButton *pOllie;               /* 0x168 */
 	/* sizeof(SControl) == 0x16c */
 };
 
-/* the controller-options remap: which game function each of the four face buttons does */
+#ifndef PC_PORT
+/* the PS1 menus read the pad's own buttons */
+#define MenuUp Up
+#define MenuDown Down
+#define MenuLeft Left
+#define MenuRight Right
+#define MenuAccept Ollie
+#define MenuBack Grind
+#endif
+
+/* The front end's Start: its "press Start" prompts, and the "Start or X" tests. On PC that is
+   MenuAccept; Pause is a binding of its own there (often the Back key), so it doesn't accept. */
+#ifdef PC_PORT
+#define MenuStart MenuAccept
+#else
+#define MenuStart Pause
+#endif
+
+/* the controller-options remap: which game function each of the four face buttons does (not used
+   on PC, where the bindings say what every key does) */
 struct SPadMap {
 	int Function[4];               /* 0x00 */
 };
