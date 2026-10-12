@@ -913,6 +913,36 @@ static void put_v(GVert *o, const PC_GlPrim *p, uint16_t info, const PC_GlVertex
 #define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
 #define MAX3(a, b, c) ((a) > (b) ? ((a) > (c) ? (a) : (c)) : ((b) > (c) ? (b) : (c)))
 
+/* The texels the PS1 samples on a triangle with whole-pixel corners: its texture coordinates at
+ * the first and last pixel corners it covers (x0..x1-1, y0..y1-1), rounded, and never past its
+ * vertices'. Scaled up, pixel centres also land between the PS1's last corner and the edge, which
+ * would round onto the texel beyond it: 2D quads give the exclusive u0+w, v0+h there (a font's
+ * neighbouring glyph showed as a line beside scaled text). The half of a rectangle's quad is
+ * measured over the whole rectangle, its other half has the same gradients. */
+static void uv_range(GVert *o, const PC_GlVertex *a, const PC_GlVertex *b, const PC_GlVertex *c,
+                     int x0, int y0, int x1, int y1)
+{
+    double det = (double)(b->x - a->x) * (c->y - a->y) - (double)(c->x - a->x) * (b->y - a->y);
+    if (det == 0.0 || x1 <= x0 || y1 <= y0)
+        return;
+    int uv[2][3] = { { a->u, b->u, c->u }, { a->v, b->v, c->v } };
+    uint8_t r[4];
+    for (int k = 0; k < 2; k++) {
+        const int *t = uv[k];
+        double dx = ((double)(t[1] - t[0]) * (c->y - a->y) - (double)(t[2] - t[0]) * (b->y - a->y)) / det;
+        double dy = ((double)(t[2] - t[0]) * (b->x - a->x) - (double)(t[1] - t[0]) * (c->x - a->x)) / det;
+        double base = t[0] + dx * (x0 - a->x) + dy * (y0 - a->y);
+        double lo = base + (dx < 0 ? dx * (x1 - 1 - x0) : 0) + (dy < 0 ? dy * (y1 - 1 - y0) : 0);
+        double hi = base + (dx > 0 ? dx * (x1 - 1 - x0) : 0) + (dy > 0 ? dy * (y1 - 1 - y0) : 0);
+        int mn = (int)floor(lo + 0.5 - 1e-3), mx = (int)floor(hi + 0.5 + 1e-3);
+        int vmn = MIN3(t[0], t[1], t[2]), vmx = MAX3(t[0], t[1], t[2]);
+        r[k] = (uint8_t)(mn > vmn ? (mn < vmx ? mn : vmx) : vmn);
+        r[k + 2] = (uint8_t)(mx < vmx ? (mx > r[k] ? mx : r[k]) : vmx);
+    }
+    for (int i = 0; i < 3; i++)
+        memcpy(o[i].uvr, r, 4);
+}
+
 void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b,
                    const PC_GlVertex *c)
 {
@@ -955,6 +985,8 @@ void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *
     put_v(&o[0], p, info, a, precise);
     put_v(&o[1], p, info, b, precise);
     put_v(&o[2], p, info, c, precise);
+    if (p->textured && p->depth != 3 && !(precise && s_precise))
+        uv_range(o, a, b, c, bx0, by0, bx1, by1);
 }
 
 void PC_GlRect(const PC_GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b,

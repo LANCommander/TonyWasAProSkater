@@ -88,8 +88,10 @@ static const char *gl_draw_fs =
     "    vec2 fix = u_uvfix.x * dFdx(v_uv) + u_uvfix.y * dFdy(v_uv);\n"
     "    if ((info & 0x4000u) == 0u) fix = clamp(fix, -0.5, 0.5);\n"
     "    vec2 uv = v_uv - fix + 0.5;\n"
-    /* native faces stay inside their own texels (emulated rects and sprites rely on wrapping) */
-    "    if ((info & 0x4000u) != 0u) uv = clamp(uv, vec2(v_uvr.xy), vec2(v_uvr.zw) + 0.999);\n"
+    /* native faces and emulated 2D triangles (uv_range in pc_gpu_gl.c) stay inside the texels
+     * they span; the rest keep the full range unclamped (rects and sprites rely on wrapping) */
+    "    if ((info & 0x4000u) != 0u || v_uvr != uvec4(0u, 0u, 255u, 255u))\n"
+    "        uv = clamp(uv, vec2(v_uvr.xy), vec2(v_uvr.zw) + 0.999);\n"
     "    bool semi = (info & 0x800u) != 0u;\n"
     "    int abr = int((info >> 5) & 3u);\n"
     "    float mask = (info & 0x1000u) != 0u ? 1.0 : 0.0;\n"
