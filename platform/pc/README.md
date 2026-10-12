@@ -216,6 +216,11 @@ the same key can do one thing while skating and another in the menus. On PC, the
 The pause-menu cheat codes are entered with the Skate controls (hold SpinLeft). The front end's
 button legend (PS1 symbols for Select, Accept and Back) is part of its background images.
 
+On PC the main menu (`decomp/src/unnamed/8005e754.c`) ends with **QUIT**, which exits the game
+the same way closing the window does (`PC_RequestQuit`, acted on at the next vblank). Its row id
+7 is also the hidden cheat menu's, which is only reached through a menu path, so the menu only
+quits when 7 was picked by hand.
+
 ## Display
 
 The window is windowed, borderless (fullscreen at the desktop's resolution) or fullscreen (the

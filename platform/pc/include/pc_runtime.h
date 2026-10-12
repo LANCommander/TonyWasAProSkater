@@ -59,6 +59,7 @@ extern void (*pc_hires_before_draw)(void);
 /* Per-frame hooks run from VSync. */
 void PC_PumpEvents(void);
 int PC_QuitRequested(void);
+void PC_RequestQuit(void);
 
 #ifdef __cplusplus
 }

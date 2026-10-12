@@ -521,6 +521,9 @@ void PC_PumpEvents(void) {
 
 int PC_QuitRequested(void) { return s_quit; }
 
+/* Main menu QUIT: exits on the next vblank, like closing the window. */
+void PC_RequestQuit(void) { s_quit = 1; }
+
 void PC_InputUpdate(void) {
     static uint32_t s_lastDown;
     uint8_t down[SDL_NUM_SCANCODES];
