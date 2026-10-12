@@ -698,6 +698,16 @@ int StFreeRing(uint32_t base) {
     return 1;
 }
 
+/* For the movie player's waits: the drive is still streaming, or frames are waiting. */
+int PC_CdStreamBusy(void) {
+    if (s_streaming)
+        return 1;
+    for (int i = 0; i < ST_MAX_FRAMES; i++)
+        if (s_fr[i].state == FR_READY || s_fr[i].state == FR_FILLING)
+            return 1;
+    return 0;
+}
+
 void StSetMask(int mask, int start, int end) {
     (void)start; (void)end;
     s_stMask = mask;

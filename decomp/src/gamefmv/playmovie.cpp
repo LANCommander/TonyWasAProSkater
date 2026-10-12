@@ -193,8 +193,15 @@ void GameFMV_PlayMovie(int track) {
 	}
 #endif
 
+#ifdef PC_PORT
+	/* the CD stream delivers frames on the vblank clock: wait for them */
+	while (!strNextVlc(1))
+		if (!PC_MovieWait())
+			goto end;
+#else
 	while (!strNextVlc(1))
 		;
+#endif
 
 	for (;;) {
 		FUN_800902c0(vlcBuffer[currentVlcBuffer], GameFMV_Is24Bit ? 3 : 2);
@@ -218,6 +225,10 @@ void GameFMV_PlayMovie(int track) {
 					goto end;
 
 				count--;
+#ifdef PC_PORT
+				if (!PC_MovieWait())
+					goto end;
+#endif
 			}
 
 			if (!count)

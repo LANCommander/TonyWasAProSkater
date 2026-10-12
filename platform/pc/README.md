@@ -85,7 +85,7 @@ is not needed (it is only opened again if something is missing).
 | `Data/Textures/` | images (`*.bmp`) |
 | `Data/Sounds/` | sound banks (`*.vab`) |
 | `Data/Fonts/`, `Data/Packs/`, `Data/Demos/`, `Data/Text/`, `Data/Misc/` | fonts, PRE archives, attract-mode replays, credits text, the rest |
-| `Data/Movies/*.STR` | the full-screen movies |
+| `Data/Movies/*.STR` | the full-screen movies (MDEC video, XA audio) |
 | `Data/Music/*.STR` | the soundtrack (XA audio plus the 96x64 video the front end shows) |
 | `Data/Music/Playlist.m3u` | the song order, written once from the game's own table, then yours to edit |
 | `Data/Manifest.txt` | the files that came from `CD.WAD`; written last, so extraction resumes if interrupted |
@@ -296,7 +296,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_KEYS=frame:Key+Key,...` | scripted keyboard (Settings.ini key names, held from that frame; `frame:` releases), read through the bindings |
 | `THPS_TRACE=1` | log CD, BIOS and debug-print activity, and player 1's actions as they change |
 | `THPS_FAST=1` | don't throttle to 60 Hz |
-| `THPS_MOVIES=0` / `1` | skip every movie / run the original FMV code for all (by default the Dreamcast's films play and STR movies are skipped) |
+| `THPS_MOVIES=0` | skip every movie |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
 | `THPS_DETERMINISTIC=1` | virtual clock: identical runs every time (use with `THPS_INPUT` for bisecting) |
 | `THPS_MIPS=all,!lo-hi,addr` | run those game functions as translated retail MIPS instead of decompiled C (A/B debugging) |
@@ -322,10 +322,14 @@ device. The songs are XA audio inside the soundtrack STR files; `src/hle_libcd.c
 the drive does (from the extracted files, which it mounts at CD positions past the end of the
 image) and `src/pc_xa.c` decodes them. `src/pc_music.c` picks the next song from
 `Data/Music/Playlist.m3u` instead of the game's fixed rotation. With the Dreamcast's data the
-music, movies and sound effects come from its films and sound banks (see above). Not done yet:
-SPU reverb, exact ADSR curves, PS1 FMV video (MDEC; STR movies are skipped), 64-bit build.
-Running every game function
-as translated MIPS (`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase.
+music, movies and sound effects come from its films and sound banks (see above). The PS1's
+movies play through the game's own movie player (`GameFMV_PlayMovie`): `src/pc_mdec.c` is the
+MDEC (the game decodes the bitstream itself, `DecDCTvlc3`; this does the inverse DCT and colour
+conversion into the slices the game uploads), and the player's busy-waits wait a vblank for the
+CD stream instead (PC branch, `PC_MovieWait`). The same decoder shows the songs' 96x64 video on
+the levels' TV screens (the credits screen shows them the same way). Not done yet: SPU reverb,
+exact ADSR curves, 64-bit build. Running every game function as translated MIPS
+(`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase.
 
 Port glue worth knowing about (see the tools for details):
 - C++ follows the egcs ABI where the retail code depends on it: vtable layout, `delete` through

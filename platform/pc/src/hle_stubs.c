@@ -1,4 +1,4 @@
-/* Libraries that are inert in this port: host-PC file I/O (LIBSN), the MDEC (no movies), and SPU
+/* Libraries that are inert in this port: host-PC file I/O (LIBSN) and SPU
  * reverb (the SPU itself is in pc_spu.c). Each returns what the game expects from a
  * working-but-idle device. The memory card is in hle_libcard.c. */
 #include <stdint.h>
@@ -24,14 +24,6 @@ int PCread(int fd, void *buf, int len) { (void)fd; (void)buf; (void)len; return 
 int PCwrite(int fd, void *buf, int len) { (void)fd; (void)buf; (void)len; return -1; }
 int PClseek(int fd, int off, int mode) { (void)fd; (void)off; (void)mode; return -1; }
 int PCclose(int fd) { (void)fd; return -1; }
-
-/* ---- MDEC (libpress): movies are skipped ------------------------------------------------------ */
-
-void DecDCTReset(int mode) { (void)mode; }
-void DecDCTin(uint32_t buf, int mode) { (void)buf; (void)mode; }
-void DecDCTout(uint32_t buf, int size) { (void)buf; (void)size; }
-uint32_t DecDCToutCallback(uint32_t func) { (void)func; return 0; }
-int hle_8009033c(int mode) { (void)mode; return 0; } /* DecDCTinSync */
 
 /* ---- misc libapi/libetc entry points the game calls directly ---------------------------------- */
 

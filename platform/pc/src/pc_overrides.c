@@ -8,14 +8,14 @@
 
 void PC_Backtrace(const char *why);
 
-/* GameFMV_PlayMovie(int): the Dreamcast's films play (pc_movie.h); PS1 STR movies need the MDEC,
- * not implemented yet, so they are skipped, which is what happens when the player presses a
- * button through one. THPS_MOVIES=0 skips every movie, THPS_MOVIES=1 runs the original code
- * for all of them. */
+/* GameFMV_PlayMovie(int): the PS1's STR movies play through the game's own player (the MDEC is
+ * pc_mdec.c), the Dreamcast's films through pc_movie.c. A movie whose file isn't there is
+ * skipped, which is what happens when the player presses a button through one; THPS_MOVIES=0
+ * skips every movie. */
 void hleov_80022c1c(int track) {
     extern void pcfn_80022c1c(int);
     const char *e = getenv("THPS_MOVIES");
-    if (e ? atoi(e) != 0 : PC_MovieAvailable(track)) {
+    if ((!e || atoi(e) != 0) && PC_MovieAvailable(track)) {
         pcfn_80022c1c(track);
         return;
     }

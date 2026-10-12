@@ -49,15 +49,16 @@ int PC_MovieAvailable(int track) {
     const uint8_t *d;
     uint32_t name;
     char path[260];
-    size_t n;
     if (track >= 0 || ~track >= MOVIE_COUNT)
         return 0;
     d = PSX_PTR(MOVIE_DETAILS + (uint32_t)~track * 32);
     memcpy(&name, d, 4);
-    if (!name || !PC_AssetsFindFilm(PSX_PTR(name), path, sizeof path))
-        return 0;
-    n = strlen(path);
-    return n > 4 && !_stricmp(path + n - 4, ".sfd");
+    return name && PC_AssetsFindFilm(PSX_PTR(name), path, sizeof path);
+}
+
+int PC_MovieWait(void) {
+    VSync(0);
+    return PC_CdStreamBusy();
 }
 
 static void OnVideo(void *ctx, const uint8_t *p, int n) {

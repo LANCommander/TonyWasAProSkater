@@ -68,6 +68,8 @@ void PC_CdStreamVBlank(void);
 /* Seconds of the film mounted at lba that have been heard since its stream started from the
  * top (0 before the mixer gets to it, or if it isn't the film streaming). */
 double PC_CdFilmTime(uint32_t lba);
+/* The drive is streaming, or STR frames are waiting in the ring (pc_movie.c's waits). */
+int PC_CdStreamBusy(void);
 
 /* The soundtrack (pc_music.c): a Dreamcast song's audio ran out (hle_libcd.c), so the song
  * starts over, as a PS1 song does at its end frame. */
