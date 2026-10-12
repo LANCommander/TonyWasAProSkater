@@ -409,6 +409,245 @@ extern "C" int FUN_8005f6bc(int a) {
 
 	return result;
 }
+
+/* PC: the graphics screen (Options > Graphics, from the options menu FUN_80060274): the window
+   mode (windowed, borderless fullscreen, fullscreen), the resolution, which the game is drawn
+   at, and widescreen (pc_video.h). Left and right change a row; Apply switches the window, then asks whether to
+   keep it: Accept keeps it and saves Settings.ini, Back or KEEP_FRAMES without an answer go back
+   to the old settings (a fullscreen mode the monitor can't show leaves nothing to click on).
+   Drawn like the controls screen above. */
+#include "pc_video.h"
+
+enum { GFX_MODE, GFX_RESOLUTION, GFX_WIDESCREEN, GFX_APPLY, GFX_BACK, GFX_ROWS };
+
+#define KEEP_FRAMES (15 * 60)
+
+static const char *const s_modeLabels[PC_VIDEO_MODES] = {"WINDOWED", "BORDERLESS", "FULLSCREEN"};
+
+/* the resolution a mode uses */
+static int *ResOf(PcVideoSettings *s, int mode) {
+	return mode == PC_VIDEO_WINDOWED ? &s->win_w : &s->full_w;
+}
+
+/* step a mode's resolution through its list (borderless has only the desktop's) */
+static void StepResolution(PcVideoSettings *s, int d) {
+	int n = PC_VideoResolutionCount(s->mode);
+	int *r = ResOf(s, s->mode);
+	int i, at = -1;
+
+	if (s->mode == PC_VIDEO_BORDERLESS || n == 0)
+		return;
+
+	for (i = 0; i < n; i++) {
+		int w, h;
+
+		PC_VideoResolution(s->mode, i, &w, &h);
+
+		if (w == r[0] && h == r[1])
+			at = i;
+	}
+
+	at = at < 0 ? (d > 0 ? 0 : n - 1) : (at + d + n) % n;
+	PC_VideoResolution(s->mode, at, &r[0], &r[1]);
+}
+
+static int SameSettings(const PcVideoSettings *a, const PcVideoSettings *b) {
+	return a->mode == b->mode && a->win_w == b->win_w && a->win_h == b->win_h &&
+	       a->full_w == b->full_w && a->full_h == b->full_h && a->widescreen == b->widescreen;
+}
+
+extern "C" void PC_GraphicsOptions(int a) {
+	PcVideoSettings cur, edit, old;
+	int sel = 0, keep = 0, i;
+	int base_scale = Mess_GetFontScale();
+	int small_scale = base_scale * 3 / 4;
+	(void)a;
+
+	PC_VideoGetSettings(&cur);
+
+	/* fullscreen without a resolution of its own is at the desktop's */
+	if (cur.full_w <= 0 && PC_VideoResolutionCount(PC_VIDEO_BORDERLESS))
+		PC_VideoResolution(PC_VIDEO_BORDERLESS, 0, &cur.full_w, &cur.full_h);
+
+	edit = cur;
+	old = cur;
+
+	FUN_8005c97c(11);
+	FUN_8005ca64();
+	FUN_80061714(FUN_8005ca3c(s_options_bmp));
+	DrawSync(0);
+	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
+	StoreImage(&s_area, s_saved);
+	DrawSync(0);
+	pc_hires_before_draw = RestoreArea;
+
+	Pad_ClearTriggers(&Pad[0]);
+	Pad_ClearTriggers(&Pad[1]);
+	DemoTimer = 1600;
+
+	for (;;) {
+		SControl *p = &Pad[0];
+		char buf[64];
+
+		FUN_8005c780();
+		FUN_8005c934();
+		FUN_80070ff4();
+		FUN_8005c68c();
+
+		if (DAT_800d1cb8)
+			break;
+
+		FUN_800242cc();
+		FUN_8006b240();
+		FUN_80061ea0();
+
+		/* ---- input */
+		if (keep) {
+			if (p->MenuAccept.Triggered) {
+				keep = 0;
+				cur = edit;
+				PC_VideoSave();
+				SFX_PlayX(145, 8192, 0);
+			} else if (p->MenuBack.Triggered || --keep == 0) {
+				keep = 0;
+				PC_VideoApply(&old);
+				edit = old;
+				SFX_PlayX(147, 8192, 0);
+			}
+		} else {
+			int left = p->MenuLeft.Triggered, right = p->MenuRight.Triggered;
+			int d = right - left;
+
+			if (Repeat(&p->MenuUp)) {
+				sel = sel ? sel - 1 : GFX_ROWS - 1;
+				SFX_PlayX(144, 8192, 0);
+			}
+
+			if (Repeat(&p->MenuDown)) {
+				sel = sel == GFX_ROWS - 1 ? 0 : sel + 1;
+				SFX_PlayX(144, 8192, 0);
+			}
+
+			if (p->MenuAccept.Triggered && (sel == GFX_MODE || sel == GFX_RESOLUTION ||
+			                                 sel == GFX_WIDESCREEN))
+				d = 1;
+
+			if (d && sel == GFX_MODE) {
+				edit.mode = (edit.mode + d + PC_VIDEO_MODES) % PC_VIDEO_MODES;
+				SFX_PlayX(144, 8192, 0);
+			} else if (d && sel == GFX_RESOLUTION) {
+				if (edit.mode == PC_VIDEO_BORDERLESS) {
+					SFX_PlayX(147, 8192, 0);
+				} else {
+					StepResolution(&edit, d);
+					SFX_PlayX(144, 8192, 0);
+				}
+			} else if (d && sel == GFX_WIDESCREEN) {
+				edit.widescreen ^= 1;
+				SFX_PlayX(144, 8192, 0);
+			}
+
+			if (p->MenuAccept.Triggered && sel == GFX_APPLY) {
+				if (SameSettings(&edit, &cur)) {
+					SFX_PlayX(147, 8192, 0);
+				} else {
+					old = cur;
+					PC_VideoApply(&edit);
+					keep = KEEP_FRAMES;
+					SFX_PlayX(145, 8192, 0);
+				}
+			}
+
+			if ((p->MenuAccept.Triggered && sel == GFX_BACK) || p->MenuBack.Triggered) {
+				SFX_PlayX(147, 8192, 0);
+				break;
+			}
+		}
+
+		Pad_ClearTriggers(&Pad[0]);
+		Pad_ClearTriggers(&Pad[1]);
+
+		/* ---- draw */
+		Mess_SetFontScale(small_scale);
+
+		for (i = 0; i < GFX_ROWS; i++) {
+			int y = ROW_TOP + (i + (i >= GFX_APPLY)) * ROW_HEIGHT + 7;
+			int on = i == sel && !keep;
+
+			switch (i) {
+				case GFX_MODE:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "DISPLAY MODE");
+					Text(SLOT_X1 - 60, y, 0, s_modeLabels[edit.mode]);
+					break;
+				case GFX_RESOLUTION: {
+					int w, h;
+
+					if (edit.mode == PC_VIDEO_BORDERLESS) {
+						w = h = 0;
+
+						if (PC_VideoResolutionCount(PC_VIDEO_BORDERLESS))
+							PC_VideoResolution(PC_VIDEO_BORDERLESS, 0, &w, &h);
+					} else {
+						w = ResOf(&edit, edit.mode)[0];
+						h = ResOf(&edit, edit.mode)[1];
+					}
+
+					SetColour(on, edit.mode == PC_VIDEO_BORDERLESS);
+					Text(NAME_X, y, 1, "RESOLUTION");
+					FUN_8008b900(buf, (char *)"%d X %d", w, h);
+					Text(SLOT_X1 - 60, y, 0, buf);
+					break;
+				}
+				case GFX_WIDESCREEN:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "WIDESCREEN");
+					Text(SLOT_X1 - 60, y, 0, edit.widescreen ? "ON" : "OFF");
+					break;
+				case GFX_APPLY:
+					SetColour(on, SameSettings(&edit, &cur));
+					Text(NAME_X, y, 1, "APPLY");
+					break;
+				default:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "BACK TO OPTIONS");
+					break;
+			}
+		}
+
+		if (keep) {
+			Mess_SetRGB(182, 132, 36, 0);
+			Text(NAME_X, ROW_TOP + 7 * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
+			FUN_8008b900(buf, (char *)"ACCEPT TO KEEP   BACK TO UNDO   %d", (keep + 59) / 60);
+		} else if (sel == GFX_MODE || (sel == GFX_RESOLUTION && edit.mode != PC_VIDEO_BORDERLESS)) {
+			FUN_8008b900(buf, s_s_s, "LEFT OR RIGHT TO CHANGE", "");
+		} else if (sel == GFX_RESOLUTION) {
+			FUN_8008b900(buf, s_s_s, "BORDERLESS USES THE", "DESKTOP RESOLUTION");
+		} else if (sel == GFX_WIDESCREEN) {
+			FUN_8008b900(buf, s_s_s, "MORE OF THE WORLD AT THE", "SIDES OF WIDE SCREENS");
+		} else if (sel == GFX_APPLY && !SameSettings(&edit, &cur)) {
+			FUN_8008b900(buf, s_s_s, "ACCEPT TO SWITCH", "");
+		} else {
+			buf[0] = 0;
+		}
+
+		Mess_SetRGB(122, 122, 122, 0);
+		Text(370, HINT_Y, 0, buf);
+		Mess_SetFontScale(base_scale);
+		FUN_8006b26c();
+	}
+
+	/* a change not confirmed yet is undone */
+	if (keep)
+		PC_VideoApply(&old);
+
+	pc_hires_before_draw = 0;
+	LoadImage(&s_area, s_saved);
+	DrawSync(0);
+	free(s_saved);
+	Pad_ClearTriggers(&Pad[0]);
+	Pad_ClearTriggers(&Pad[1]);
+}
 #else
 extern "C" int FUN_8005f6bc(int a) {
 	int pl = DAT_800d1d28;

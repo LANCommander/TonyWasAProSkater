@@ -20,6 +20,10 @@
  * of buckets >= b, so everything the GPU still draws keeps its place in the PS1's painter order.
  * The faces write a depth buffer; GTE-projected primitives in the layer are tested against it.
  *
+ * Widescreen (pc_gpu_gl.h): the transforms' outcodes compare screen x with the viewport, so for a
+ * widened (full-width) viewport they are worked out again against the widened one, and so is
+ * their "all off-screen" result that callers skip whole models by.
+ *
  * THPS_R3DSTATS=1 prints counts once a second, THPS_R3D_VERIFY=1 checks the float vertices against
  * the integers retail computed, THPS_R3D_NEARDROP=1 drops faces crossing the near plane that
  * retail dropped (those without the subdivision flag). */
@@ -57,6 +61,8 @@ void PC_RenderTrace(const char *what, uint32_t ret);
 #define G_COLOURTABLE  0x800d219cu   /* pColourTable */
 #define G_CURRENT_OT   0x800d21a0u   /* CurrentOrderingTable */
 #define G_TESTTHEWATER 0x800d21b8u   /* TestTheWater */
+#define G_VIEWPORT     0x800d2178u   /* pCurrentViewport: xR, yB, xL, yT, Hither, Yon... */
+#define G_XRES         0x800d2188u   /* Xres */
 
 /* scratchpad words the renderer shares with its callers */
 #define S_DPQMIN     0x284   /* fog starts here (view z) */
@@ -160,6 +166,58 @@ static void verify_slot(int kind, uint32_t slot, uint32_t rot)
     }
 }
 
+/* ---------------------------------------------------------------------------------------------
+ * Widescreen */
+
+/* The widescreen margin of the current viewport: only a full-width one (one player) has it. */
+static int viewport_pad(int *xl, int *xr)
+{
+    uint32_t vp = M32(G_VIEWPORT);
+    if (!pc_wide_pad || !vp)
+        return 0;
+    *xr = M16(vp);
+    *xl = M16(vp + 4);
+    return *xl == 0 && *xr == M16(G_XRES) ? pc_wide_pad : 0;
+}
+
+/* Item-format cache (screen word, then z and the outcode halfword): outcode bits 0 (right of xR)
+ * and 1 (left of xL), mirrored when behind the camera, and their "not out" copies in bits 8, 9,
+ * against the widened viewport. Returns the transform's result (the AND of the outcodes) to
+ * match. */
+static uint32_t widen_outcodes(uint32_t out, int n, uint32_t r, int pad, int xl, int xr)
+{
+    uint32_t all = 0xffff;
+    xl -= pad;
+    xr += pad;
+    for (int i = 0; i < n; i++) {
+        uint32_t e = out + (uint32_t)i * 8;
+        int sx = S16(e), z = S16(e + 4);
+        uint32_t b = (uint32_t)(sx > xr) | (uint32_t)(sx < xl) << 1;
+        if (z < 0)
+            b ^= 3;
+        uint32_t c = (M16(e + 6) & ~0x0303u) | b | (b ^ 3) << 8;
+        M16(e + 6) = (uint16_t)c;
+        all &= c;
+    }
+    return (r & ~0x0303u) | (all & 0x0303u);
+}
+
+/* Fast-format cache (flags inside the screen word: bit 13 is x's sign, bit 14 "x >= xR"): the
+ * result's x bits again, from the widened viewport. */
+static int fast_x_out(uint32_t w, int pad, int xl, int xr)
+{
+    int sx = (int32_t)(w << 21) >> 21;
+    return sx < xl - pad ? 1 : sx >= xr + pad ? 2 : 0;
+}
+
+static uint32_t widen_fast(uint32_t out, int n, uint32_t r, int pad, int xl, int xr)
+{
+    int all = 3;
+    for (int i = 0; i < n; i++)
+        all &= fast_x_out(M32(out + (uint32_t)i * 8), pad, xl, xr);
+    return (r & ~0x6000u) | (all & 1 ? 0x2000u : 0) | (all & 2 ? 0x4000u : 0);
+}
+
 /* Run a retail vertex transform and keep its vertices unrounded. a0 = vertices, a1 = count. */
 static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uint32_t a2,
                           uint32_t a3)
@@ -228,6 +286,9 @@ static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uin
                 break;   /* billboards have no rotated vertex */
             verify_slot(kind, out + (uint32_t)i * 8, rot + (uint32_t)i * 8);
         }
+    int xl, xr, pad = viewport_pad(&xl, &xr);
+    if (pad && n > 0)
+        r = fast ? widen_fast(out, n, r, pad, xl, xr) : widen_outcodes(out, n, r, pad, xl, xr);
     return r;
 }
 
@@ -549,6 +610,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
     int push1 = S16(SCR(S_PUSHBACK)), push2 = S16(SCR(S_PUSHBACK2));
     uint32_t ctab = M32(G_COLOURTABLE);
     int sky = !fast && s_last_kind == T_BG;
+    int wxl = 0, wxr = 0, wpad = fast ? viewport_pad(&wxl, &wxr) : 0;
 
     for (int k = 0; k < n; k++) {
         uint32_t w0 = M32(face);
@@ -581,8 +643,16 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
             }
         } else {
             uint32_t t7 = M32(sl[0]) & M32(sl[1]) & M32(sl[2]) & M32(sl[3]);
-            if ((int32_t)t7 >= 0 || (t7 & 0x6000e000u))
+            if (wpad) {
+                /* widescreen: x against the widened viewport (y and z as retail) */
+                int xo = 3;
+                for (int i = 0; i < nvtx; i++)
+                    xo &= fast_x_out(M32(sl[i]), wpad, wxl, wxr);
+                if ((int32_t)t7 >= 0 || (t7 & 0x60008000u) || xo)
+                    continue;
+            } else if ((int32_t)t7 >= 0 || (t7 & 0x6000e000u)) {
                 continue;
+            }
         }
 
         const Shadow *sh[4];
@@ -921,7 +991,7 @@ static void layer_start(uint32_t id)
         PC_GlLayerSyncTexture((uint16_t)(b->pages[i] >> 16), (uint16_t)b->pages[i]);
     PC_GlLayerParams lp;
     int clip[4];
-    PC_GpuDrawState(&lp.ofs_x, &lp.ofs_y, clip);
+    lp.wide = PC_GpuDrawState(&lp.ofs_x, &lp.ofs_y, clip);
     lp.clip_l = clip[0];
     lp.clip_t = clip[1];
     lp.clip_r = clip[2];

@@ -1,5 +1,6 @@
-/* GLSL sources for the OpenGL GPU backend (pc_gpu_gl.c). Positions are VRAM coordinates; the
- * render target's row y is VRAM row y (no flip), so readbacks and scissors need no conversion.
+/* GLSL sources for the OpenGL GPU backend (pc_gpu_gl.c). Positions are VRAM coordinates, mapped
+ * onto the render target's VRAM area (u_target: all of VRAM, or a display surface); the target's
+ * rows run the way VRAM's do (no flip), so readbacks and scissors need no conversion.
  *
  * The PS1 decides coverage and evaluates attributes at a pixel's top-left corner, GL at its
  * centre. At 1x the geometry moves by half a pixel (u_shift), which makes GL sample exactly the
@@ -32,17 +33,18 @@ static const char *gl_draw_vs =
     "out float v_z;\n"
     "uniform float u_shift;\n"
     "uniform vec4 u_proj;\n"
+    "uniform vec4 u_target;\n"                    /* the VRAM area drawn on: x, y, w, h */
     "void main() {\n"
+    "    vec2 k = 2.0 / u_target.zw;\n"
     "    if ((a_tex.y & 0x4000u) != 0u) {\n"
     "        vec3 v = a_pos;\n"
-    "        vec2 o = u_proj.xy + u_shift;\n"
-    "        gl_Position = vec4((o.x / 512.0 - 1.0) * v.z + u_proj.z / 512.0 * v.x,\n"
-    "                           (o.y / 256.0 - 1.0) * v.z + u_proj.z / 256.0 * v.y, 0.0, v.z);\n"
+    "        vec2 o = (u_proj.xy + u_shift - u_target.xy) * k - 1.0;\n"
+    "        gl_Position = vec4(o * v.z + u_proj.z * k * v.xy, 0.0, v.z);\n"
     "        gl_ClipDistance[0] = v.z - u_proj.w;\n"
     "        v_z = v.z;\n"
     "    } else {\n"
-    "        vec2 p = a_pos.xy + u_shift;\n"
-    "        gl_Position = vec4(p.x / 512.0 - 1.0, p.y / 256.0 - 1.0, 0.0, 1.0) * a_pos.z;\n"
+    "        vec2 p = (a_pos.xy + u_shift - u_target.xy) * k - 1.0;\n"
+    "        gl_Position = vec4(p, 0.0, 1.0) * a_pos.z;\n"
     "        gl_ClipDistance[0] = 1.0;\n"
     "        v_z = (a_tex.y & 0x2000u) != 0u ? a_pos.z : 0.0;\n"
     "    }\n"
@@ -65,7 +67,7 @@ static const char *gl_draw_fs =
     "flat in uvec4 v_uvr;\n"
     "in float v_z;\n"
     "uniform usampler2D u_vram;\n"
-    "uniform float u_uvfix;\n"
+    "uniform vec2 u_uvfix;\n"
     "uniform int u_pass;\n"
     "uniform int u_dpass;\n"
     "layout(location = 0, index = 0) out vec4 o_color;\n"
@@ -73,7 +75,7 @@ static const char *gl_draw_fs =
     "uint vram(int x, int y) { return texelFetch(u_vram, ivec2(x & 1023, y & 511), 0).r; }\n"
     "void main() {\n"
     /* texture coordinates at the pixel's corner, rounded to the nearest texel like the PS1 */
-    "    vec2 uv = v_uv - u_uvfix * (dFdx(v_uv) + dFdy(v_uv)) + 0.5;\n"
+    "    vec2 uv = v_uv - u_uvfix.x * dFdx(v_uv) - u_uvfix.y * dFdy(v_uv) + 0.5;\n"
     "    uint info = v_tex.y;\n"
     /* native faces stay inside their own texels (emulated rects and sprites rely on wrapping) */
     "    if ((info & 0x4000u) != 0u) uv = clamp(uv, vec2(v_uvr.xy), vec2(v_uvr.zw) + 0.999);\n"
@@ -125,10 +127,11 @@ static const char *gl_draw_fs =
 static const char *gl_copy_fs =
     "#version 330 core\n"
     "uniform usampler2D u_vram;\n"
-    "uniform float u_scale;\n"
+    "uniform vec4 u_map;\n"                         /* the target's VRAM x, y; pixels per texel */
     "out vec4 o_color;\n"
     "void main() {\n"
-    "    uint t = texelFetch(u_vram, ivec2(gl_FragCoord.xy / u_scale), 0).r;\n"
+    "    ivec2 p = ivec2(floor(gl_FragCoord.xy / u_map.zw)) + ivec2(u_map.xy);\n"
+    "    uint t = texelFetch(u_vram, p, 0).r;\n"
     "    o_color = vec4(vec3(float(t & 31u), float((t >> 5) & 31u), float((t >> 10) & 31u)) / 31.0,\n"
     "                   float(t >> 15));\n"
     "}\n";
@@ -136,8 +139,9 @@ static const char *gl_copy_fs =
 static const char *gl_copy_vs =
     "#version 330 core\n"
     "layout(location = 0) in vec2 a_pos;\n"
+    "uniform vec4 u_target;\n"
     "void main() {\n"
-    "    gl_Position = vec4(a_pos.x / 512.0 - 1.0, a_pos.y / 256.0 - 1.0, 0.0, 1.0);\n"
+    "    gl_Position = vec4((a_pos - u_target.xy) * 2.0 / u_target.zw - 1.0, 0.0, 1.0);\n"
     "}\n";
 
 /* The display area to the window. */

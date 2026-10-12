@@ -641,6 +641,7 @@ static void gl_prim(PC_GlPrim *o, const Prim *p)
     o->clip_t = gs.clip_t;
     o->clip_r = gs.clip_r;
     o->clip_b = gs.clip_b;
+    o->wide = PC_GlWideClip(&o->clip_l);   /* widescreen: the screen's margins too */
 }
 
 static void gl_vertex(PC_GlVertex *o, const Vtx *v)
@@ -1327,7 +1328,7 @@ void PC_GpuDrawChain(const uint32_t *first)
     R3d_ChainEnd();
 }
 
-void PC_GpuDrawState(int *ofs_x, int *ofs_y, int clip[4])
+int PC_GpuDrawState(int *ofs_x, int *ofs_y, int clip[4])
 {
     *ofs_x = gs.ofs_x;
     *ofs_y = gs.ofs_y;
@@ -1335,6 +1336,7 @@ void PC_GpuDrawState(int *ofs_x, int *ofs_y, int clip[4])
     clip[1] = gs.clip_t;
     clip[2] = gs.clip_r;
     clip[3] = gs.clip_b;
+    return PC_GlActive() ? PC_GlWideClip(clip) : 0;
 }
 
 static void draw_chain(const uint32_t *first)

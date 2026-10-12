@@ -39,6 +39,21 @@ int PixelAspectX, PixelAspectY;
 int RefMapClut, RefMapTpage, RefMapU0V0;
 SVECTOR WaterNormal;
 
+#ifdef PC_PORT
+/* Widescreen (platform/pc, pc_gpu_gl.h): a full-width view takes in pc_wide_pad more columns on
+   either side at the same zoom (Hor+), so its side planes open up by as much. */
+extern "C" int pc_wide_pad;
+
+static int PC_ViewWidth(SViewport *pVP) {
+	int w = pVP->xR - pVP->xL;
+
+	if (pVP->xL == 0 && pVP->xR == Xres)
+		w += 2 * pc_wide_pad;
+
+	return w;
+}
+#endif
+
 void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot) {
 	RECT Window;
 	DR_AREA *pClipArea;
@@ -92,7 +107,11 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot) {
 	FrustumNormals[3].vz = opp / hyp;
 	FrustumNormals[3].pad = 0;
 
+#ifdef PC_PORT
+	opp = PC_ViewWidth(pVP) << 11;
+#else
 	opp = (pVP->xR - pVP->xL) << 11;
+#endif
 	adj = pVP->Zoom * PixelAspectY;
 	hyp = M3dMaths_SquareRoot0((opp >> 12) * (opp >> 12) + (adj >> 12) * (adj >> 12));
 	FrustumNormals[4].vx = adj / hyp;
@@ -116,7 +135,11 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot) {
 	FrustumNormals[7].vz = (opp << 12) / hyp;
 	FrustumNormals[7].pad = 0;
 
+#ifdef PC_PORT
+	opp = PC_ViewWidth(pVP) >> 1;
+#else
 	opp = (pVP->xR - pVP->xL) >> 1;
+#endif
 	adj = pVP->Zoom;
 	hyp = M3dMaths_SquareRoot0(opp * opp + adj * adj);
 	FrustumNormals[8].vx = (adj << 12) / hyp;

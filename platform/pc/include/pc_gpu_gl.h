@@ -3,10 +3,11 @@
  * pc_gpu.c stays the GPU: it parses every GP0/GP1 word, holds the drawing state and owns the CPU
  * copy of VRAM. With this backend active it hands polygons, rectangles, lines and fills here
  * instead of rasterising them, and does VRAM transfers and copies on its own VRAM as before.
- * The backend draws into a 1024x512 VRAM render target at an integer scale, sampling textures
- * from a 16-bit copy of the CPU VRAM. Both sides are kept coherent in 16x16 cells: drawing
- * marks cells as newer on the GPU, and pc_gpu.c calls PC_GlSyncRead before it reads VRAM (and
- * PC_GlBeforeWrite/PC_GlWritten around writes), which read drawn pixels back or re-upload. */
+ * The backend draws into render targets, sampling textures from a 16-bit copy of the CPU VRAM:
+ * the screen buffers (display surfaces, see PC_GlNoteScreen) at the size the picture is shown
+ * at, any other VRAM area at the PS1's resolution. Both sides are kept coherent in 16x16 cells:
+ * drawing marks cells as newer on the GPU, and pc_gpu.c calls PC_GlSyncRead before it reads VRAM
+ * (and PC_GlBeforeWrite/PC_GlWritten around writes), which read drawn pixels back or re-upload. */
 #ifndef PC_GPU_GL_H
 #define PC_GPU_GL_H
 
@@ -16,11 +17,26 @@
 extern "C" {
 #endif
 
-/* Needs a current GL 3.3 core context. scale = internal resolution multiplier (1 = PS1). */
-int  PC_GlInit(int scale);
+/* Needs a current GL 3.3 core context. out_w*out_h = the window's drawable size (PC_GlPresent
+ * follows it from then on): screens are drawn at the size of their picture in it, or at
+ * fixed_scale times the PS1 resolution when that is > 0 (1: exactly the PS1's pixels). */
+int  PC_GlInit(int fixed_scale, int out_w, int out_h);
 void PC_GlShutdown(void);
 int  PC_GlActive(void);
-int  PC_GlScale(void);
+
+/* A VRAM area the game uses as a whole screen (from PutDispEnv/PutDrawEnv): drawing there goes
+ * to a display surface at the output resolution. Surfaces it overlaps are dropped. */
+void PC_GlNoteScreen(int x, int y, int w, int h);
+
+/* Widescreen (Hor+): with on, and a window wider than 4:3, gameplay's 512x240 screens get
+ * pc_wide_pad columns of margin on either side, drawn only in their display surfaces (the view
+ * frustum and outcodes widen by as much: decomp/src/m3d/rendersetup.cpp, pc_render3d.c). Applies
+ * at the next PC_GlPresent; needs the native 3D renderer. */
+void PC_GlSetWidescreen(int on);
+extern int pc_wide_pad;
+/* A drawing area (inclusive) that is all of a widened surface's VRAM area is widened to take
+ * the margins in: returns that surface's number (> 0) for PC_GlPrim.wide, else 0. */
+int PC_GlWideClip(int clip[4]);
 
 typedef struct {
     int x, y;        /* VRAM position, drawing offset applied */
@@ -35,6 +51,7 @@ typedef struct {
     uint8_t tw_and_x, tw_and_y, tw_or_x, tw_or_y;
     int mask_set, mask_check;
     int clip_l, clip_t, clip_r, clip_b;   /* drawing area, inclusive */
+    int wide;                             /* the area is widened (PC_GlWideClip) */
 } PC_GlPrim;
 
 void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b,
@@ -73,6 +90,7 @@ typedef struct {
     int clip_l, clip_t, clip_r, clip_b;   /* drawing area, inclusive */
     float h, ofx, ofy;                    /* projection: screen = of + h * xy / z (GTE H, OFX, OFY) */
     float hither;                         /* near clip plane (view z) */
+    int wide;                             /* the drawing area is widened (PC_GlWideClip) */
 } PC_GlLayerParams;
 
 /* Start a layer: the vertices it will draw (copied), a depth clear of its drawing area. Until
@@ -93,9 +111,9 @@ void PC_GlWritten(int x, int y, int w, int h);       /* the CPU has written this
  * enabled = 0 shows black. */
 void PC_GlPresent(void *sdl_window, int x, int y, int w, int h, int rgb24, int enabled);
 
-/* The VRAM area x,y w*h at internal resolution, as 0xAARRGGBB rows (w*scale x h*scale pixels,
- * top row first) into a malloc'd buffer; NULL on failure. For debugging dumps. */
-uint32_t *PC_GlReadArea(int x, int y, int w, int h);
+/* The VRAM area x,y w*h as drawn (from its display surface, else at 1x), as 0xAARRGGBB rows
+ * (*out_w x *out_h pixels, top row first) into a malloc'd buffer; NULL on failure. For dumps. */
+uint32_t *PC_GlReadArea(int x, int y, int w, int h, int *out_w, int *out_h);
 
 #ifdef __cplusplus
 }

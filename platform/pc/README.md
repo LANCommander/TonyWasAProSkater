@@ -116,12 +116,34 @@ loaded at startup, as on the PS1.
 
 `src/pc_gpu.c` is the PS1 GPU: it takes the GP0/GP1 words the game sends (ordering tables,
 `LoadImage`, `PutDrawEnv`...) and keeps VRAM. It draws through OpenGL 3.3 (`src/pc_gpu_gl.c`):
-polygons, sprites, lines and fills go to a render target at a multiple of the PS1 resolution
-(`THPS_GL_SCALE`, default the window scale), and a shader does the PS1's CLUT texture lookup,
+polygons, sprites, lines and fills go to render targets, and a shader does the PS1's CLUT texture lookup,
 texture windows, colour modulation and the four semi-transparency modes. Textures come from a
 16-bit copy of VRAM. VRAM is tracked in 16x16 cells, so the two sides stay in sync when the game
 reads back what it drew (the HUD saves the background under a sprite with `StoreImage`) or draws
 into an area the CPU wrote. There's no dithering: the picture is never reduced to 15 bits for display.
+The screen buffers are drawn at the resolution they are shown at: each VRAM area the game uses as
+a whole screen (a `PutDispEnv` display area, or a screen-sized `PutDrawEnv` drawing area: the two
+512x240 gameplay buffers, the 640x480 front end) gets a *display surface*, a render target the size
+of the window's 4:3 picture area, so in a 1024x768 window both are drawn at 1024x768 (in
+1920x1080, at 1440x1080 with black bars, unless widescreen widens gameplay, below). Everything else in VRAM (textures, CLUTs, off-screen
+drawing) stays at the PS1's resolution. A VRAM pixel belongs to the surface covering it, else to
+the 1x target; drawing goes to every target its area touches, and readbacks scale the surface down.
+`THPS_GL_SCALE=n` draws the surfaces at n times the PS1 resolution instead (1: exactly the PS1's
+pixels, for comparisons).
+
+**Widescreen** (Hor+, `[Video] Widescreen = On`, the default): on a window wider than 4:3, the
+gameplay screens (512x240) get margins left and right, `pc_wide_pad` PS1 pixels each (85 at 16:9,
+at most 400), and the view shows that much more of the world at the sides at the same zoom. The
+margins exist only in the display surface: in drawing coordinates they lie at x < 0 and past the
+buffer, where VRAM holds textures, so only primitives drawn with a drawing area that covers the
+whole screen reach them (`pc_gpu.c` widens it, `PC_GlWideClip`, and flags the primitive); every
+other drawing, the uploads and the cell bookkeeping see the surface's VRAM area alone. The game's
+side culling widens to match: the frustum's side planes (`M3d_RenderSetup`, PC branch) and the
+vertex transforms' outcodes, which `pc_render3d.c` works out again against the widened viewport
+(the fast transforms keep theirs inside the screen words, so the face walk tests those itself).
+The HUD and menus keep their 4:3 positions in the middle; full-width flat rectangles and polygons
+(the screen clear, the pause menu's dimming, fades) are stretched over the margins. Needs the
+native 3D renderer; split screen, the front end and movies stay 4:3.
 The PS1 rounds every projected vertex to a whole pixel, has no perspective-correct texturing and
 no depth buffer, which is where its wobbling geometry, seams and warping textures come from. With
 OpenGL, the world and models (everything THPS1's hand-written M3DASM renderer draws: level,
@@ -194,6 +216,22 @@ the same key can do one thing while skating and another in the menus. On PC, the
 The pause-menu cheat codes are entered with the Skate controls (hold SpinLeft). The front end's
 button legend (PS1 symbols for Select, Accept and Back) is part of its background images.
 
+## Display
+
+The window is windowed, borderless (fullscreen at the desktop's resolution) or fullscreen (the
+display switches to the chosen mode, at 60 Hz when the monitor has it), kept in the `[Video]`
+section of `Settings.ini` (`Mode`, `WindowSize`, `FullscreenResolution`, `Widescreen`;
+`src/pc_video.c`). The game
+is drawn at the resolution it is shown at (see Graphics). The window is DPI-aware, so sizes are
+real pixels. Alt+Enter switches between the window and fullscreen; a window resized by hand keeps
+its size.
+
+**Options > Graphics** (`PC_GraphicsOptions` in `decomp/src/front/controlleroptions.cpp`, next to
+the controls screen; the options menu `decomp/src/unnamed/80060274.c` gets the extra row on PC)
+sets the display mode, the resolution and widescreen: left and right step through the display's
+modes (windowed: those that fit on the desktop). Apply switches the window and asks to keep the change;
+Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go back.
+
 ## Running and debugging
 
 | variable | effect |
@@ -201,10 +239,12 @@ button legend (PS1 symbols for Select, Accept and Back) is part of its backgroun
 | `THPS_EXE`, `THPS_DISC` | paths to `SLUS_008.60` and the disc image (else found next to the exe or in `extern/`) |
 | `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
 | `THPS_SAVE_DIR` | the memory card folder (default `%USERPROFILE%\Neversoft\Tony Hawk's Pro Skater\Saves`) |
-| `THPS_SCALE=n` | window scale (default 3) |
+| `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |
+| `THPS_WINDOW=WxH` | a window of that size (drawing area), whatever Settings.ini says; headless too |
+| `THPS_WIDESCREEN=0\|1` | widescreen off or on, whatever Settings.ini says |
 | `THPS_HEADLESS=1` | no window (for automated runs; uses the software renderer unless `THPS_RENDERER=gl`) |
 | `THPS_RENDERER=gl\|sw` | OpenGL (default) or the software rasteriser |
-| `THPS_GL_SCALE=n` | OpenGL internal resolution, n times the PS1's (default: the window scale) |
+| `THPS_GL_SCALE=n` | OpenGL: draw the screens at n times the PS1 resolution (default: the window's resolution) |
 | `THPS_GL_PRECISE=0` | OpenGL: draw 3D polygons at the PS1's whole-pixel positions (default: sub-pixel, from the GTE) |
 | `THPS_GL_PERSPECTIVE=0` | OpenGL: affine texturing like the PS1 (default: perspective-correct) |
 | `THPS_RENDER3D=psx` | OpenGL: draw the world and models through the PS1 path (default `native`, see Graphics) |
@@ -215,7 +255,7 @@ button legend (PS1 symbols for Select, Accept and Back) is part of its backgroun
 | `THPS_FILTER=1` | bilinear scaling to the window instead of nearest-neighbour |
 | `THPS_GLSTATS=1` | once a second: draw calls, VRAM readbacks and uploads, and how many polygons had precise vertices |
 | `THPS_FRAMES=n` | exit after n frames |
-| `THPS_SHOT=f1,f2` / `THPS_SHOTDIR` | dump the display and VRAM as BMPs at those frames (with OpenGL above 1x, also `frameNNNNN_gl.bmp` at full resolution) |
+| `THPS_SHOT=f1,f2` / `THPS_SHOTDIR` | dump the display and VRAM as BMPs at those frames (with OpenGL, also `frameNNNNN_gl.bmp` at the resolution it was drawn at) |
 | `THPS_INPUT=frame:mask,...` | scripted pad input for player 1 (PS1 button mask, pressed = 1, held from that frame; X is both Ollie and Menu Accept, Triangle Grind and Menu Back, Start is Pause) |
 | `THPS_KEYS=frame:Key+Key,...` | scripted keyboard (Settings.ini key names, held from that frame; `frame:` releases), read through the bindings |
 | `THPS_TRACE=1` | log CD, BIOS and debug-print activity, and player 1's actions as they change |

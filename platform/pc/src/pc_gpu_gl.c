@@ -47,14 +47,41 @@ typedef PC_GlVert GVert;
 
 #define MAX_VERTS (64 * 1024)
 
-static int s_active, s_scale = 1;
+/* A render target for a VRAM area: the base target is all of VRAM at the PS1's resolution, a
+ * display surface one screen buffer at the size it is shown at (see PC_GlNoteScreen). Each VRAM
+ * pixel belongs to the surface covering it, else to the base; drawing goes to every target its
+ * area touches, so the base under a surface is never read.
+ *
+ * Widescreen: a gameplay surface also has margins left and right of its VRAM area, in drawing
+ * coordinates beyond the buffer (x < 0, or past it where VRAM holds textures). Only primitives
+ * drawn with the widened drawing area (PC_GlWideClip; PC_GlPrim.wide) reach them; to everything
+ * else, and to the cell bookkeeping, the surface is its VRAM area alone. */
+typedef struct {
+    int x, y, w, h;           /* drawing area: the VRAM area plus the margins */
+    int rx, rw;               /* the VRAM area's columns (its rows are the drawing area's) */
+    int pw, ph;               /* size in pixels */
+    float sx, sy;             /* pixels per VRAM pixel */
+    GLuint tex, depth, fbo;   /* RGBA8 colour, DEPTH32F for the native 3D layers (pc_render3d.c) */
+} Target;
+
+#define MAX_SURFACES 4
+
+static int s_active;
 static GLuint s_draw_prog, s_copy_prog, s_present_prog;
-static GLint s_draw_u_pass, s_draw_u_dpass, s_draw_u_proj, s_copy_u_scale;
+static GLint s_draw_u_pass, s_draw_u_dpass, s_draw_u_proj, s_draw_u_target, s_draw_u_shift,
+    s_draw_u_uvfix, s_copy_u_target, s_copy_u_map;
 static GLuint s_vao, s_vbo, s_copy_vao, s_copy_vbo, s_present_vao, s_present_vbo;
 static GLuint s_atlas;                 /* R16UI 1024x512: textures and CLUTs */
-static GLuint s_fbo, s_fbo_tex;        /* RGBA8 (1024*scale)x(512*scale): drawing */
-static GLuint s_depth_rb;              /* DEPTH32F, same size: native 3D layers (pc_render3d.c) */
-static GLuint s_rb_fbo, s_rb_tex;      /* RGBA8 1024x512: readback at scale > 1 */
+static Target s_base;                  /* 1024x512 */
+static Target s_surf[MAX_SURFACES];    /* display surfaces, oldest first; they never overlap */
+static int s_nsurf;
+static int s_fixed_scale;              /* THPS_GL_SCALE: surfaces at n times the PS1 resolution */
+static int s_out_w, s_out_h;           /* the window's drawable size (pixels) */
+static int s_widescreen;               /* PC_GlSetWidescreen */
+static int s_pad;                      /* widescreen margin of gameplay screens, in PS1 pixels */
+int pc_wide_pad;                       /* s_pad, for the game's view frustum (pc_gpu_gl.h) */
+static GLint s_max_tex;
+static GLuint s_rb_fbo, s_rb_tex;      /* RGBA8 1024x512: readback */
 static GLuint s_disp_tex;              /* RGBA8 1024x512: 24-bit display modes */
 static int s_filter;
 static int s_precise, s_perspective;   /* THPS_GL_PRECISE, THPS_GL_PERSPECTIVE (default on) */
@@ -68,6 +95,7 @@ static struct { int on, draws, readbacks, rb_cells, atlas_ups, fbo_ups, frames; 
 static GVert s_verts[MAX_VERTS];
 static int s_nv;
 static int s_batch_sub;                /* the batch is B-F semi-transparent */
+static int s_bwide;                    /* its drawing area is widened (PC_GlPrim.wide) */
 static int s_bclip[4] = { 0, 0, -1, -1 };
 static int s_bbox[4];                  /* area the pending batch draws on (inclusive) */
 
@@ -141,6 +169,149 @@ static GLuint framebuffer(GLuint tex)
     return f;
 }
 
+static void target_destroy(Target *t)
+{
+    glDeleteFramebuffers(1, &t->fbo);
+    glDeleteRenderbuffers(1, &t->depth);
+    glDeleteTextures(1, &t->tex);
+    memset(t, 0, sizeof *t);
+}
+
+/* VRAM area x,y w*h, with pad columns of margin on either side, drawn at pw*ph pixels. 0 on
+ * failure. */
+static int target_create(Target *t, int x, int y, int w, int h, int pad, int pw, int ph)
+{
+    memset(t, 0, sizeof *t);
+    if (pw < 1 || ph < 1 || pw > s_max_tex || ph > s_max_tex)
+        return 0;
+    t->rx = x;
+    t->rw = w;
+    t->x = x - pad;
+    t->y = y;
+    t->w = w + 2 * pad;
+    t->h = h;
+    w = t->w;
+    t->pw = pw;
+    t->ph = ph;
+    t->sx = (float)pw / (float)w;
+    t->sy = (float)ph / (float)h;
+    t->tex = texture(GL_RGBA8, pw, ph, GL_RGBA, GL_UNSIGNED_BYTE, GL_NEAREST);
+    t->fbo = framebuffer(t->tex);
+    glGenRenderbuffers(1, &t->depth);
+    glBindRenderbuffer(GL_RENDERBUFFER, t->depth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, pw, ph);
+    if (t->fbo) {
+        glBindFramebuffer(GL_FRAMEBUFFER, t->fbo);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, t->depth);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            target_destroy(t);
+            return 0;
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    if (!t->fbo || glGetError() != GL_NO_ERROR) {
+        target_destroy(t);
+        return 0;
+    }
+    return 1;
+}
+
+/* The pixels of a target that VRAM columns (or rows) a..b cover: those whose centres lie inside,
+ * as GL rasterises an edge at a * scale. p1 is exclusive. */
+static void span(float s, int origin, int a, int b, int *p0, int *p1)
+{
+    *p0 = (int)ceilf((float)(a - origin) * s - 0.5f);
+    *p1 = (int)ceilf((float)(b + 1 - origin) * s - 0.5f);
+}
+
+/* Bind a target for drawing (the whole target is the viewport). */
+static void use_target(const Target *t)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, t->fbo);
+    glViewport(0, 0, t->pw, t->ph);
+}
+
+/* Scissor to the area x0,y0..x1,y1 (inclusive) of a target: of its VRAM area, or with wide of
+ * its whole drawing area (margins included); 0 if none of it is there. */
+static int scissor(const Target *t, int x0, int y0, int x1, int y1, int wide)
+{
+    int px0, px1, py0, py1;
+    int l = wide ? t->x : t->rx, r = wide ? t->x + t->w - 1 : t->rx + t->rw - 1;
+    if (x0 < l) x0 = l;
+    if (y0 < t->y) y0 = t->y;
+    if (x1 > r) x1 = r;
+    if (y1 > t->y + t->h - 1) y1 = t->y + t->h - 1;
+    if (x1 < x0 || y1 < y0)
+        return 0;
+    span(t->sx, t->x, x0, x1, &px0, &px1);
+    span(t->sy, t->y, y0, y1, &py0, &py1);
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(px0, py0, px1 - px0, py1 - py0);
+    return px1 > px0 && py1 > py0;
+}
+
+/* The draw program's uniforms for a target. At the PS1's resolution the geometry moves by half a
+ * pixel, scaled up only texture coordinates do (see pc_gpu_gl_shaders.h). At a fractional scale
+ * a pixel centre can lie exactly on a primitive's top or left edge, where the corner is exactly
+ * a texel boundary: stopping 1/64 pixel short keeps it on the primitive's own texel. */
+static void draw_uniforms(const Target *t)
+{
+    int one = t->sx == 1.0f && t->sy == 1.0f;
+    float ex = t->sx == floorf(t->sx) ? 0.0f : 1.0f / 64, ey = t->sy == floorf(t->sy) ? 0.0f : 1.0f / 64;
+    glUniform4f(s_draw_u_target, (float)t->x, (float)t->y, (float)t->w, (float)t->h);
+    glUniform1f(s_draw_u_shift, one ? 0.5f : 0.0f);
+    glUniform2f(s_draw_u_uvfix, one ? 0.0f : 0.5f * t->sx - ex, one ? 0.0f : 0.5f * t->sy - ey);
+}
+
+/* The targets the VRAM area x0,y0..x1,y1 (inclusive) is drawn on: the surfaces whose VRAM areas
+ * it overlaps, and the base unless a single surface holds all of it. Returns how many (base
+ * last). */
+static int targets_for(int x0, int y0, int x1, int y1, Target **out)
+{
+    int n = 0, inside = 0;
+    for (int i = 0; i < s_nsurf; i++) {
+        Target *t = &s_surf[i];
+        if (t->rx > x1 || x0 >= t->rx + t->rw || t->y > y1 || y0 >= t->y + t->h)
+            continue;
+        out[n++] = t;
+        if (x0 >= t->rx && x1 < t->rx + t->rw && y0 >= t->y && y1 < t->y + t->h)
+            inside = 1;
+    }
+    if (!inside)
+        out[n++] = &s_base;
+    return n;
+}
+
+/* The targets of a drawing: a widened one (PC_GlPrim.wide = surface + 1) only its surface. */
+static int draw_targets(int wide, int x0, int y0, int x1, int y1, Target **out)
+{
+    if (wide > 0 && wide <= s_nsurf) {
+        out[0] = &s_surf[wide - 1];
+        return 1;
+    }
+    return targets_for(x0, y0, x1, y1, out);
+}
+
+/* Mark the cells under a drawn area (inclusive, may reach outside VRAM) as newer on the GPU: for
+ * a widened drawing only its surface's VRAM area. */
+static void cell_set(int cx, int cy, int set, int clear);
+static void mark_drawn(int wide, int x0, int y0, int x1, int y1)
+{
+    int l = 0, r = VRAM_W - 1;
+    if (wide > 0 && wide <= s_nsurf) {
+        l = s_surf[wide - 1].rx;
+        r = l + s_surf[wide - 1].rw - 1;
+    }
+    if (x0 < l) x0 = l;
+    if (x1 > r) x1 = r;
+    if (y0 < 0) y0 = 0;
+    if (y1 > VRAM_H - 1) y1 = VRAM_H - 1;
+    for (int cy = y0 / CELL; x0 <= x1 && y0 <= y1 && cy <= y1 / CELL; cy++)
+        for (int cx = x0 / CELL; cx <= x1 / CELL; cx++)
+            cell_set(cx, cy, CPU_STALE, 0);
+}
+
 static void mark_all(int bits);
 
 /* The GVert layout, for the bound VAO and array buffer. */
@@ -160,19 +331,17 @@ static void vert_attribs(void)
     glVertexAttribIPointer(5, 4, GL_UNSIGNED_BYTE, sizeof(GVert), (void *)offsetof(GVert, uvr));
 }
 
-int PC_GlInit(int scale)
+int PC_GlInit(int fixed_scale, int out_w, int out_h)
 {
     if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress)) {
         fprintf(stderr, "[gl] cannot load the OpenGL functions\n");
         return -1;
     }
-    GLint max_tex = 0;
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_tex);
-    if (scale < 1)
-        scale = 1;
-    while (scale > 1 && VRAM_W * scale > max_tex)
-        scale--;
-    s_scale = scale;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &s_max_tex);
+    s_fixed_scale = fixed_scale > 0 ? fixed_scale : 0;
+    s_out_w = out_w > 0 ? out_w : 640;
+    s_out_h = out_h > 0 ? out_h : 480;
+    s_nsurf = 0;
 
     s_draw_prog = program(gl_draw_vs, gl_draw_fs);
     s_copy_prog = program(gl_copy_vs, gl_copy_fs);
@@ -182,14 +351,15 @@ int PC_GlInit(int scale)
     s_draw_u_pass = glGetUniformLocation(s_draw_prog, "u_pass");
     s_draw_u_proj = glGetUniformLocation(s_draw_prog, "u_proj");
     s_draw_u_dpass = glGetUniformLocation(s_draw_prog, "u_dpass");
-    s_copy_u_scale = glGetUniformLocation(s_copy_prog, "u_scale");
+    s_draw_u_target = glGetUniformLocation(s_draw_prog, "u_target");
+    s_draw_u_shift = glGetUniformLocation(s_draw_prog, "u_shift");
+    s_draw_u_uvfix = glGetUniformLocation(s_draw_prog, "u_uvfix");
+    s_copy_u_target = glGetUniformLocation(s_copy_prog, "u_target");
+    s_copy_u_map = glGetUniformLocation(s_copy_prog, "u_map");
     glUseProgram(s_draw_prog);
     glUniform1i(glGetUniformLocation(s_draw_prog, "u_vram"), 0);
-    glUniform1f(glGetUniformLocation(s_draw_prog, "u_shift"), s_scale == 1 ? 0.5f : 0.0f);
-    glUniform1f(glGetUniformLocation(s_draw_prog, "u_uvfix"), s_scale == 1 ? 0.0f : 0.5f * s_scale);
     glUseProgram(s_copy_prog);
     glUniform1i(glGetUniformLocation(s_copy_prog, "u_vram"), 0);
-    glUniform1f(s_copy_u_scale, (float)s_scale);
     glUseProgram(s_present_prog);
     glUniform1i(glGetUniformLocation(s_present_prog, "u_tex"), 0);
     glUseProgram(0);
@@ -227,25 +397,11 @@ int PC_GlInit(int scale)
     const char *f = getenv("THPS_FILTER");
     s_filter = f && f[0] == '1';
     s_atlas = texture(GL_R16UI, VRAM_W, VRAM_H, GL_RED_INTEGER, GL_UNSIGNED_SHORT, GL_NEAREST);
-    s_fbo_tex = texture(GL_RGBA8, VRAM_W * s_scale, VRAM_H * s_scale, GL_RGBA, GL_UNSIGNED_BYTE,
-                        s_filter ? GL_LINEAR : GL_NEAREST);
     s_rb_tex = texture(GL_RGBA8, VRAM_W, VRAM_H, GL_RGBA, GL_UNSIGNED_BYTE, GL_NEAREST);
     s_disp_tex = texture(GL_RGBA8, VRAM_W, VRAM_H, GL_RGBA, GL_UNSIGNED_BYTE,
                          s_filter ? GL_LINEAR : GL_NEAREST);
-    s_fbo = framebuffer(s_fbo_tex);
     s_rb_fbo = framebuffer(s_rb_tex);
-    if (s_fbo) {
-        glGenRenderbuffers(1, &s_depth_rb);
-        glBindRenderbuffer(GL_RENDERBUFFER, s_depth_rb);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, VRAM_W * s_scale,
-                              VRAM_H * s_scale);
-        glBindFramebuffer(GL_FRAMEBUFFER, s_fbo);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, s_depth_rb);
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            s_fbo = 0;
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-    if (!s_fbo || !s_rb_fbo) {
+    if (!target_create(&s_base, 0, 0, VRAM_W, VRAM_H, 0, VRAM_W, VRAM_H) || !s_rb_fbo) {
         fprintf(stderr, "[gl] framebuffer setup failed\n");
         return -1;
     }
@@ -265,8 +421,12 @@ int PC_GlInit(int scale)
     PC_GtePreciseEnable(s_precise || s_perspective);
     s_active = 1;
     R3d_Init(1);
-    fprintf(stderr, "[gl] OpenGL renderer: %s, %dx internal resolution\n",
-            (const char *)glGetString(GL_RENDERER), s_scale);
+    if (s_fixed_scale)
+        fprintf(stderr, "[gl] OpenGL renderer: %s, screens at %dx the PS1 resolution\n",
+                (const char *)glGetString(GL_RENDERER), s_fixed_scale);
+    else
+        fprintf(stderr, "[gl] OpenGL renderer: %s, screens at %dx%d\n",
+                (const char *)glGetString(GL_RENDERER), s_out_w, s_out_h);
     return 0;
 }
 
@@ -280,24 +440,21 @@ void PC_GlShutdown(void)
     glDeleteProgram(s_present_prog);
     GLuint vaos[4] = { s_vao, s_copy_vao, s_present_vao, s_vao3 };
     GLuint bufs[4] = { s_vbo, s_copy_vbo, s_present_vbo, s_vbo3 };
-    GLuint texs[4] = { s_atlas, s_fbo_tex, s_rb_tex, s_disp_tex };
-    GLuint fbos[2] = { s_fbo, s_rb_fbo };
+    GLuint texs[3] = { s_atlas, s_rb_tex, s_disp_tex };
     glDeleteVertexArrays(4, vaos);
     glDeleteBuffers(4, bufs);
-    glDeleteRenderbuffers(1, &s_depth_rb);
-    glDeleteTextures(4, texs);
-    glDeleteFramebuffers(2, fbos);
+    glDeleteTextures(3, texs);
+    glDeleteFramebuffers(1, &s_rb_fbo);
+    for (int i = 0; i < s_nsurf; i++)
+        target_destroy(&s_surf[i]);
+    s_nsurf = 0;
+    target_destroy(&s_base);
     s_active = 0;
 }
 
 int PC_GlActive(void)
 {
     return s_active;
-}
-
-int PC_GlScale(void)
-{
-    return s_scale;
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -413,8 +570,6 @@ static void upload_fbo(void)
             cx = run;
         }
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, s_fbo);
-    glViewport(0, 0, VRAM_W * s_scale, VRAM_H * s_scale);
     glDisable(GL_SCISSOR_TEST);
     glDisable(GL_BLEND);
     glUseProgram(s_copy_prog);
@@ -423,7 +578,17 @@ static void upload_fbo(void)
     glBindVertexArray(s_copy_vao);
     glBindBuffer(GL_ARRAY_BUFFER, s_copy_vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)n * 2 * sizeof(float), quads, GL_STREAM_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, n);
+    /* to every target: what lands outside one is clipped away */
+    for (int i = -1; i < s_nsurf; i++) {
+        const Target *t = i < 0 ? &s_base : &s_surf[i];
+        use_target(t);
+        if (i >= 0)
+            scissor(t, t->rx, t->y, t->rx + t->rw - 1, t->y + t->h - 1, 0);   /* not the margins */
+        glUniform4f(s_copy_u_target, (float)t->x, (float)t->y, (float)t->w, (float)t->h);
+        glUniform4f(s_copy_u_map, (float)t->x, (float)t->y, t->sx, t->sy);
+        glDrawArrays(GL_TRIANGLES, 0, n);
+        glDisable(GL_SCISSOR_TEST);
+    }
 }
 
 /* Make the render target and the atlas reflect every CPU write so far. */
@@ -454,11 +619,13 @@ static void flush(void)
     if (!s_nv)
         return;
     prepare();
-    glBindFramebuffer(GL_FRAMEBUFFER, s_fbo);
-    glViewport(0, 0, VRAM_W * s_scale, VRAM_H * s_scale);
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(s_bclip[0] * s_scale, s_bclip[1] * s_scale, (s_bclip[2] - s_bclip[0] + 1) * s_scale,
-              (s_bclip[3] - s_bclip[1] + 1) * s_scale);
+
+    /* the area drawn on */
+    int x0 = s_bbox[0] < s_bclip[0] ? s_bclip[0] : s_bbox[0];
+    int y0 = s_bbox[1] < s_bclip[1] ? s_bclip[1] : s_bbox[1];
+    int x1 = s_bbox[2] > s_bclip[2] ? s_bclip[2] : s_bbox[2];
+    int y1 = s_bbox[3] > s_bclip[3] ? s_bclip[3] : s_bbox[3];
+
     glUseProgram(s_draw_prog);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, s_atlas);
@@ -472,31 +639,29 @@ static void flush(void)
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);
     }
-    if (s_batch_sub) {
-        set_blend(1);
+    Target *ts[MAX_SURFACES + 1];
+    int nt = x0 <= x1 && y0 <= y1 ? draw_targets(s_bwide, x0, y0, x1, y1, ts) : 0;
+    for (int i = 0; i < nt; i++) {
+        use_target(ts[i]);
+        if (!scissor(ts[i], s_bclip[0], s_bclip[1], s_bclip[2], s_bclip[3], s_bwide))
+            continue;
+        draw_uniforms(ts[i]);
+        if (s_batch_sub) {
+            set_blend(1);
+            glDrawArrays(GL_TRIANGLES, 0, s_nv);
+            set_blend(2);
+        } else {
+            set_blend(0);
+        }
         glDrawArrays(GL_TRIANGLES, 0, s_nv);
-        set_blend(2);
-    } else {
-        set_blend(0);
+        st.draws++;
     }
-    glDrawArrays(GL_TRIANGLES, 0, s_nv);
-    st.draws++;
     glDisable(GL_SCISSOR_TEST);
     glDisable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
 
     /* the drawn area is newer here than in the CPU VRAM */
-    int x0 = s_bbox[0] < s_bclip[0] ? s_bclip[0] : s_bbox[0];
-    int y0 = s_bbox[1] < s_bclip[1] ? s_bclip[1] : s_bbox[1];
-    int x1 = s_bbox[2] > s_bclip[2] ? s_bclip[2] : s_bbox[2];
-    int y1 = s_bbox[3] > s_bclip[3] ? s_bclip[3] : s_bbox[3];
-    if (x0 < 0) x0 = 0;
-    if (y0 < 0) y0 = 0;
-    if (x1 > VRAM_W - 1) x1 = VRAM_W - 1;
-    if (y1 > VRAM_H - 1) y1 = VRAM_H - 1;
-    for (int cy = y0 / CELL; x0 <= x1 && cy <= y1 / CELL; cy++)
-        for (int cx = x0 / CELL; cx <= x1 / CELL; cx++)
-            cell_set(cx, cy, CPU_STALE, 0);
+    mark_drawn(s_bwide, x0, y0, x1, y1);
     s_nv = 0;
 }
 
@@ -556,12 +721,13 @@ static GVert *begin_prim(const PC_GlPrim *p, int nverts, int bx0, int by0, int b
         fprintf(stderr, "[gl] mask-bit test is not implemented (drawing ignores it)\n");
     }
     int sub = p->semi && p->abr == 2;
-    if (s_nv && (sub != s_batch_sub || s_nv + nverts > MAX_VERTS ||
+    if (s_nv && (sub != s_batch_sub || p->wide != s_bwide || s_nv + nverts > MAX_VERTS ||
                  s_bclip[0] != p->clip_l || s_bclip[1] != p->clip_t ||
                  s_bclip[2] != p->clip_r || s_bclip[3] != p->clip_b))
         flush();
     if (!s_nv) {
         s_batch_sub = sub;
+        s_bwide = p->wide;
         s_bclip[0] = p->clip_l;
         s_bclip[1] = p->clip_t;
         s_bclip[2] = p->clip_r;
@@ -639,6 +805,23 @@ void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *
         sync_texture(p, MIN3(a->u, b->u, c->u), MIN3(a->v, b->v, c->v), MAX3(a->u, b->u, c->u),
                      MAX3(a->v, b->v, c->v));
     int precise = a->w > 0 && b->w > 0 && c->w > 0;
+    PC_GlVertex wv[3];
+    if (p->wide > 0 && p->wide <= s_nsurf && !p->textured && !precise) {
+        /* widescreen: a flat 2D polygon across the whole screen (the pause menu's dimming) spans
+         * the margins as well: its corners on the screen's sides move to the margins' */
+        const Target *t = &s_surf[p->wide - 1];
+        int l = t->rx, r = t->rx + t->rw;
+        if (MIN3(a->x, b->x, c->x) <= l && MAX3(a->x, b->x, c->x) >= r) {
+            wv[0] = *a;
+            wv[1] = *b;
+            wv[2] = *c;
+            for (int i = 0; i < 3; i++)
+                wv[i].x = wv[i].x <= l ? t->x : wv[i].x >= r ? t->x + t->w : wv[i].x;
+            a = &wv[0];
+            b = &wv[1];
+            c = &wv[2];
+        }
+    }
     int bx0 = MIN3(a->x, b->x, c->x), by0 = MIN3(a->y, b->y, c->y);
     int bx1 = MAX3(a->x, b->x, c->x), by1 = MAX3(a->y, b->y, c->y);
     if (precise && s_precise) {
@@ -670,6 +853,15 @@ void PC_GlRect(const PC_GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_
     if (p->textured) {
         int umin = flip_x ? u0 - w + 1 : u0, vmin = flip_y ? v0 - h + 1 : v0;
         sync_texture(p, umin & 255, vmin & 255, (umin & 255) + w - 1, (vmin & 255) + h - 1);
+    }
+    if (p->wide > 0 && p->wide <= s_nsurf && !p->textured) {
+        /* widescreen: a flat rectangle across the whole screen (a fade, the pause menu's dimming,
+         * a flash) spans the margins as well */
+        const Target *t = &s_surf[p->wide - 1];
+        if (x <= t->rx && x + w >= t->rx + t->rw) {
+            x = t->x;
+            w = t->w;
+        }
     }
     GVert *o = begin_prim(p, 6, x, y, x + w - 1, y + h - 1);
     if (!o)
@@ -719,8 +911,16 @@ void PC_GlLine(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b)
 
 static void fill_part(int x0, int y0, int x1, int y1)
 {
-    glScissor(x0 * s_scale, y0 * s_scale, (x1 - x0 + 1) * s_scale, (y1 - y0 + 1) * s_scale);
-    glClear(GL_COLOR_BUFFER_BIT);
+    Target *ts[MAX_SURFACES + 1];
+    int nt = targets_for(x0, y0, x1, y1, ts);
+    for (int i = 0; i < nt; i++) {
+        const Target *t = ts[i];
+        int all = t != &s_base && x0 == t->rx && x1 == t->rx + t->rw - 1 && y0 == t->y &&
+                  y1 == t->y + t->h - 1;   /* the whole screen: with the margins */
+        use_target(t);
+        if (scissor(t, all ? t->x : x0, y0, all ? t->x + t->w - 1 : x1, y1, all))
+            glClear(GL_COLOR_BUFFER_BIT);
+    }
     for (int cy = y0 / CELL; cy <= y1 / CELL; cy++)
         for (int cx = x0 / CELL; cx <= x1 / CELL; cx++)
             cell_set(cx, cy, CPU_STALE, 0);
@@ -730,8 +930,6 @@ void PC_GlFill(int x, int y, int w, int h, uint32_t rgb24)
 {
     flush();
     prepare();
-    glBindFramebuffer(GL_FRAMEBUFFER, s_fbo);
-    glEnable(GL_SCISSOR_TEST);
     /* the fill colour is reduced to 15 bits, like everything else in VRAM */
     glClearColor((float)((rgb24 >> 3) & 31) / 31.0f, (float)((rgb24 >> 11) & 31) / 31.0f,
                  (float)((rgb24 >> 19) & 31) / 31.0f, 0.0f);
@@ -758,11 +956,11 @@ void PC_GlLayerSyncTexture(uint16_t tpage, uint16_t clut)
     sync_texture(&p, 0, 0, 255, 255);
 }
 
-static void layer_scissor(void)
+static int s_lwide;   /* the layer's drawing area is widened (PC_GlLayerParams.wide) */
+
+static int layer_targets(Target **ts)
 {
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(s_lclip[0] * s_scale, s_lclip[1] * s_scale, (s_lclip[2] - s_lclip[0] + 1) * s_scale,
-              (s_lclip[3] - s_lclip[1] + 1) * s_scale);
+    return draw_targets(s_lwide, s_lclip[0], s_lclip[1], s_lclip[2], s_lclip[3], ts);
 }
 
 void PC_GlLayerBegin(const PC_GlLayerParams *lp, const PC_GlVert *v, int nv)
@@ -770,20 +968,25 @@ void PC_GlLayerBegin(const PC_GlLayerParams *lp, const PC_GlVert *v, int nv)
     flush();
     prepare();
     s_lp = *lp;
-    s_lclip[0] = lp->clip_l < 0 ? 0 : lp->clip_l;
+    s_lwide = lp->wide > 0 && lp->wide <= s_nsurf ? lp->wide : 0;
+    s_lclip[0] = lp->clip_l < 0 && !s_lwide ? 0 : lp->clip_l;
     s_lclip[1] = lp->clip_t < 0 ? 0 : lp->clip_t;
-    s_lclip[2] = lp->clip_r > VRAM_W - 1 ? VRAM_W - 1 : lp->clip_r;
+    s_lclip[2] = lp->clip_r > VRAM_W - 1 && !s_lwide ? VRAM_W - 1 : lp->clip_r;
     s_lclip[3] = lp->clip_b > VRAM_H - 1 ? VRAM_H - 1 : lp->clip_b;
     if (s_lclip[2] < s_lclip[0] || s_lclip[3] < s_lclip[1])
         return;
     glBindVertexArray(s_vao3);
     glBindBuffer(GL_ARRAY_BUFFER, s_vbo3);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)nv * sizeof(GVert), v, GL_STREAM_DRAW);
-    glBindFramebuffer(GL_FRAMEBUFFER, s_fbo);
-    layer_scissor();
     glDepthMask(GL_TRUE);
     glClearDepth(1.0);
-    glClear(GL_DEPTH_BUFFER_BIT);
+    Target *ts[MAX_SURFACES + 1];
+    int nt = layer_targets(ts);
+    for (int i = 0; i < nt; i++) {
+        use_target(ts[i]);
+        if (scissor(ts[i], s_lclip[0], s_lclip[1], s_lclip[2], s_lclip[3], s_lwide))
+            glClear(GL_DEPTH_BUFFER_BIT);
+    }
     glDisable(GL_SCISSOR_TEST);
     s_layer = 1;
 }
@@ -794,9 +997,6 @@ void PC_GlLayerDraw(int first, int count, int cls)
         return;
     flush();        /* emulated primitives submitted before these are behind them */
     prepare();
-    glBindFramebuffer(GL_FRAMEBUFFER, s_fbo);
-    glViewport(0, 0, VRAM_W * s_scale, VRAM_H * s_scale);
-    layer_scissor();
     glUseProgram(s_draw_prog);
     glUniform4f(s_draw_u_proj, s_lp.ofs_x + s_lp.ofx, s_lp.ofs_y + s_lp.ofy, s_lp.h, s_lp.hither);
     glActiveTexture(GL_TEXTURE0);
@@ -804,26 +1004,34 @@ void PC_GlLayerDraw(int first, int count, int cls)
     glBindVertexArray(s_vao3);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glDepthMask(GL_FALSE);
     glEnable(GL_CLIP_DISTANCE0);
-    glUniform1i(s_draw_u_dpass, 0);
-    if (cls == 2) {
-        set_blend(1);
-        glDrawArrays(GL_TRIANGLES, first, count);
-        set_blend(2);
-    } else {
-        set_blend(0);
-    }
-    glDrawArrays(GL_TRIANGLES, first, count);
-    st.draws++;
-    if (cls == 0) {
-        /* opaque: now the true depth (see the shaders) */
-        glUniform1i(s_draw_u_dpass, 1);
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        glDepthMask(GL_TRUE);
-        glDrawArrays(GL_TRIANGLES, first, count);
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    Target *ts[MAX_SURFACES + 1];
+    int nt = layer_targets(ts);
+    for (int i = 0; i < nt; i++) {
+        use_target(ts[i]);
+        if (!scissor(ts[i], s_lclip[0], s_lclip[1], s_lclip[2], s_lclip[3], s_lwide))
+            continue;
+        draw_uniforms(ts[i]);
+        glDepthMask(GL_FALSE);
         glUniform1i(s_draw_u_dpass, 0);
+        if (cls == 2) {
+            set_blend(1);
+            glDrawArrays(GL_TRIANGLES, first, count);
+            set_blend(2);
+        } else {
+            set_blend(0);
+        }
+        glDrawArrays(GL_TRIANGLES, first, count);
+        st.draws++;
+        if (cls == 0) {
+            /* opaque: now the true depth (see the shaders) */
+            glUniform1i(s_draw_u_dpass, 1);
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            glDepthMask(GL_TRUE);
+            glDrawArrays(GL_TRIANGLES, first, count);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            glUniform1i(s_draw_u_dpass, 0);
+        }
     }
     glDisable(GL_CLIP_DISTANCE0);
     glDisable(GL_DEPTH_TEST);
@@ -838,9 +1046,7 @@ void PC_GlLayerEnd(void)
         return;
     flush();
     s_layer = 0;
-    for (int cy = s_lclip[1] / CELL; cy <= s_lclip[3] / CELL; cy++)
-        for (int cx = s_lclip[0] / CELL; cx <= s_lclip[2] / CELL; cx++)
-            cell_set(cx, cy, CPU_STALE, 0);
+    mark_drawn(s_lwide, s_lclip[0], s_lclip[1], s_lclip[2], s_lclip[3]);
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -870,15 +1076,25 @@ static void readback(int x0, int y0, int x1, int y1)
         return;
     flush();
     int px = cx0 * CELL, py = cy0 * CELL, pw = (cx1 - cx0 + 1) * CELL, ph = (cy1 - cy0 + 1) * CELL;
-    if (s_scale > 1) {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, s_fbo);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, s_rb_fbo);
-        glBlitFramebuffer(px * s_scale, py * s_scale, (px + pw) * s_scale, (py + ph) * s_scale,
-                          px, py, px + pw, py + ph, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, s_rb_fbo);
-    } else {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, s_fbo);
+    /* each pixel from the target it belongs to, at the PS1 resolution: the base, then surfaces */
+    Target *ts[MAX_SURFACES + 1];
+    int nt = targets_for(px, py, px + pw - 1, py + ph - 1, ts);
+    glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, s_rb_fbo);
+    for (int i = nt - 1; i >= 0; i--) {
+        const Target *t = ts[i];
+        int ax0 = px > t->rx ? px : t->rx, ay0 = py > t->y ? py : t->y;
+        int ax1 = px + pw < t->rx + t->rw ? px + pw : t->rx + t->rw;
+        int ay1 = py + ph < t->y + t->h ? py + ph : t->y + t->h;
+        int sx0, sx1, sy0, sy1;
+        if (ax1 <= ax0 || ay1 <= ay0)
+            continue;
+        span(t->sx, t->x, ax0, ax1 - 1, &sx0, &sx1);
+        span(t->sy, t->y, ay0, ay1 - 1, &sy0, &sy1);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, t->fbo);
+        glBlitFramebuffer(sx0, sy0, sx1, sy1, ax0, ay0, ax1, ay1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, s_rb_fbo);
     glPixelStorei(GL_PACK_ALIGNMENT, 4);
     glReadPixels(px, py, pw, ph, GL_RGBA, GL_UNSIGNED_BYTE, buf);
     st.readbacks++;
@@ -950,23 +1166,200 @@ void PC_GlWritten(int x, int y, int w, int h)
     each_part(x, y, w, h, written_part);
 }
 
-uint32_t *PC_GlReadArea(int x, int y, int w, int h)
+/* The display surface holding all of a VRAM area, or NULL. */
+static Target *surface_for(int x, int y, int w, int h)
+{
+    for (int i = 0; i < s_nsurf; i++) {
+        Target *t = &s_surf[i];
+        if (x >= t->rx && y >= t->y && x + w <= t->rx + t->rw && y + h <= t->y + t->h)
+            return t;
+    }
+    return NULL;
+}
+
+/* The VRAM area of a display (x, y, w, h) as shown: a widened surface's margins too. */
+static const Target *shown_area(int *x, int *w, int y, int h)
+{
+    const Target *t = surface_for(*x, y, *w, h);
+    if (!t)
+        return &s_base;
+    if (*x == t->rx && *w == t->rw) {
+        *x = t->x;
+        *w = t->w;
+    }
+    return t;
+}
+
+uint32_t *PC_GlReadArea(int x, int y, int w, int h, int *out_w, int *out_h)
 {
     if (!s_active || w <= 0 || h <= 0 || x < 0 || y < 0 || x + w > VRAM_W || y + h > VRAM_H)
         return NULL;
-    int sw = w * s_scale, sh = h * s_scale;
+    const Target *t = shown_area(&x, &w, y, h);
+    int px0, px1, py0, py1;
+    span(t->sx, t->x, x, x + w - 1, &px0, &px1);
+    span(t->sy, t->y, y, y + h - 1, &py0, &py1);
+    int sw = px1 - px0, sh = py1 - py0;
     uint32_t *out = (uint32_t *)malloc((size_t)sw * sh * 4);
     if (!out)
         return NULL;
     flush();
     prepare();
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, s_fbo);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, t->fbo);
     glPixelStorei(GL_PACK_ALIGNMENT, 4);
-    glReadPixels(x * s_scale, y * s_scale, sw, sh, GL_BGRA, GL_UNSIGNED_BYTE, out);
+    glReadPixels(px0, py0, sw, sh, GL_BGRA, GL_UNSIGNED_BYTE, out);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     for (int i = 0; i < sw * sh; i++)
         out[i] |= 0xff000000u;
+    *out_w = sw;
+    *out_h = sh;
     return out;
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Display surfaces */
+
+static void mark_area(int x0, int y0, int x1, int y1, int set, int clear)
+{
+    for (int cy = y0 / CELL; cy <= y1 / CELL; cy++)
+        for (int cx = x0 / CELL; cx <= x1 / CELL; cx++)
+            cell_set(cx, cy, set, clear);
+}
+
+/* Widescreen margins of a w*h screen: only gameplay's 512x240 buffers have them. */
+static int screen_pad(int w, int h)
+{
+    return w == 512 && h == 240 ? s_pad : 0;
+}
+
+/* The picture of a screen whose drawing area is w wide (its VRAM area rw wide) in the window:
+ * 4:3 widened by the margins, as large as fits. */
+static void picture_rect(int w, int rw, int *r)
+{
+    double a = 4.0 / 3.0 * w / rw;
+    int dw = s_out_w, dh = s_out_h;
+    if (s_out_w > s_out_h * a)
+        dw = (int)(s_out_h * a + 0.5);
+    else
+        dh = (int)(s_out_w / a + 0.5);
+    if (dw > s_out_w)
+        dw = s_out_w;
+    if (dh > s_out_h)
+        dh = s_out_h;
+    r[0] = (s_out_w - dw) / 2;
+    r[1] = (s_out_h - dh) / 2;
+    r[2] = dw;
+    r[3] = dh;
+}
+
+/* Size of a surface for a w*h screen with pad columns of margin, in pixels. */
+static void surface_size(int w, int h, int pad, int *pw, int *ph)
+{
+    if (s_fixed_scale) {
+        *pw = (w + 2 * pad) * s_fixed_scale;
+        *ph = h * s_fixed_scale;
+    } else {
+        int r[4];
+        picture_rect(w + 2 * pad, w, r);
+        *pw = r[2];
+        *ph = r[3];
+    }
+}
+
+/* Give surface i's pixels back to the base (through the CPU VRAM) and drop it. */
+static void surface_retire(int i)
+{
+    Target t = s_surf[i];
+    readback(t.rx, t.y, t.rx + t.rw - 1, t.y + t.h - 1);
+    target_destroy(&s_surf[i]);
+    memmove(&s_surf[i], &s_surf[i + 1], (size_t)(s_nsurf - i - 1) * sizeof(Target));
+    s_nsurf--;
+    mark_area(t.rx, t.y, t.rx + t.rw - 1, t.y + t.h - 1, FBO_STALE, 0);
+}
+
+/* A surface for a VRAM area, filled from the CPU VRAM. */
+static void surface_add(int x, int y, int w, int h)
+{
+    int pw, ph, pad = screen_pad(w, h);
+    if (s_nsurf == MAX_SURFACES)
+        surface_retire(0);
+    readback(x, y, x + w - 1, y + h - 1);   /* what the base drew there */
+    surface_size(w, h, pad, &pw, &ph);
+    if (!target_create(&s_surf[s_nsurf], x, y, w, h, pad, pw, ph)) {
+        fprintf(stderr, "[gl] no %dx%d surface for the screen at %d,%d\n", pw, ph, x, y);
+        return;
+    }
+    s_nsurf++;
+    mark_area(x, y, x + w - 1, y + h - 1, FBO_STALE, 0);
+    if (st.on)
+        fprintf(stderr, "[gl] surface for the screen at %d,%d %dx%d (+%d each side): %dx%d pixels\n",
+                x, y, w, h, pad, pw, ph);
+}
+
+void PC_GlNoteScreen(int x, int y, int w, int h)
+{
+    /* (at 1x the base is the same thing, and the 1x comparisons stay exact) */
+    if (!s_active || s_fixed_scale == 1 || w < 256 || h < 192 || x < 0 || y < 0 ||
+        x + w > VRAM_W || y + h > VRAM_H)
+        return;
+    for (int i = 0; i < s_nsurf; i++)
+        if (s_surf[i].rx == x && s_surf[i].y == y && s_surf[i].rw == w && s_surf[i].h == h)
+            return;
+    flush();
+    for (int i = s_nsurf - 1; i >= 0; i--) {
+        const Target *t = &s_surf[i];
+        if (t->rx < x + w && x < t->rx + t->rw && t->y < y + h && y < t->y + t->h)
+            surface_retire(i);
+    }
+    surface_add(x, y, w, h);
+}
+
+int PC_GlWideClip(int clip[4])
+{
+    for (int i = 0; i < s_nsurf; i++) {
+        const Target *t = &s_surf[i];
+        if (t->w != t->rw && clip[0] == t->rx && clip[2] == t->rx + t->rw - 1 && clip[1] == t->y &&
+            clip[3] == t->y + t->h - 1) {
+            clip[0] = t->x;
+            clip[2] = t->x + t->w - 1;
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
+void PC_GlSetWidescreen(int on)
+{
+    s_widescreen = on;
+}
+
+/* Widescreen margins for a window: gameplay's 512x240 (shown 4:3) widened to the window's shape,
+ * when that is wider than 4:3. Only with the native 3D renderer, which draws the margins. */
+static int wide_pad(int ww, int wh)
+{
+    if (!s_widescreen || !R3d_Native() || ww * 3 <= wh * 4)
+        return 0;
+    int pad = (int)((512.0 * ww / wh * 0.75 - 512.0) / 2 + 0.5);
+    return pad > 400 ? 400 : pad;   /* GPU coordinates end at -1024 and 1023 */
+}
+
+/* The window's size (or the widescreen setting) changed: make the surfaces again to suit. */
+static void set_output_size(int w, int h)
+{
+    int pad = wide_pad(w, h);
+    if (w < 1 || h < 1 || (w == s_out_w && h == s_out_h && pad == s_pad))
+        return;
+    s_out_w = w;
+    s_out_h = h;
+    if (s_fixed_scale && pad == s_pad)
+        return;
+    s_pad = pad;
+    pc_wide_pad = pad;
+    flush();
+    for (int n = s_nsurf; n > 0; n--) {
+        Target t = s_surf[0];
+        surface_retire(0);
+        surface_add(t.x, t.y, t.w, t.h);
+    }
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -979,10 +1372,12 @@ void PC_GlPresent(void *sdl_window, int x, int y, int w, int h, int rgb24, int e
     if (!s_active || !win)
         return;
     flush();
-    prepare();
 
-    int ww, wh;
+    int ww, wh, pic[4];
     SDL_GL_GetDrawableSize(win, &ww, &wh);
+    set_output_size(ww, wh);
+    picture_rect(1, 1, pic);   /* 4:3 (movies) */
+    prepare();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, ww, wh);
     glDisable(GL_SCISSOR_TEST);
@@ -1007,19 +1402,26 @@ void PC_GlPresent(void *sdl_window, int x, int y, int w, int h, int rgb24, int e
             u1 = (float)dw / VRAM_W;
             v1 = (float)dh / VRAM_H;
         } else {
-            glBindTexture(GL_TEXTURE_2D, s_fbo_tex);
-            u0 = (float)x / VRAM_W;
-            v0 = (float)y / VRAM_H;
-            u1 = (float)(x + w) / VRAM_W;
-            v1 = (float)(y + h) / VRAM_H;
+            int rw = w;
+            const Target *t = shown_area(&x, &w, y, h);
+            int px0, px1, py0, py1;
+            picture_rect(w, rw, pic);
+            span(t->sx, t->x, x, x + w - 1, &px0, &px1);
+            span(t->sy, t->y, y, y + h - 1, &py0, &py1);
+            /* a surface the window's size is copied pixel for pixel */
+            int exact = px1 - px0 == pic[2] && py1 - py0 == pic[3];
+            int smooth = s_filter || (t != &s_base && !s_fixed_scale);
+            GLint filter = !exact && smooth ? GL_LINEAR : GL_NEAREST;
+            glBindTexture(GL_TEXTURE_2D, t->tex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+            u0 = (float)px0 / (float)t->pw;
+            v0 = (float)py0 / (float)t->ph;
+            u1 = (float)px1 / (float)t->pw;
+            v1 = (float)py1 / (float)t->ph;
         }
         /* 4:3, letterboxed; VRAM row 0 is the top of the picture */
-        int dw = ww, dh = wh;
-        if (ww * 3 > wh * 4)
-            dw = wh * 4 / 3;
-        else
-            dh = ww * 3 / 4;
-        glViewport((ww - dw) / 2, (wh - dh) / 2, dw, dh);
+        glViewport(pic[0], wh - pic[1] - pic[3], pic[2], pic[3]);
         float q[16] = { -1, 1, u0, v0, 1, 1, u1, v0, -1, -1, u0, v1, 1, -1, u1, v1 };
         glUseProgram(s_present_prog);
         glBindVertexArray(s_present_vao);

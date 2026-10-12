@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <libgpu.h>
 #include "pc_gpu.h"
+#include "pc_gpu_gl.h"
 #include "pc_hle.h"
 
 #define LINK(p) ((u_long)(uintptr_t)(p) & 0xffffffu)
@@ -357,6 +358,8 @@ DRAWENV *PutDrawEnv(DRAWENV *env)
 {
     SetDrawEnv(&env->dr_env, env);
     env->dr_env.tag |= END_LINK;
+    /* a screen-sized drawing area is (or will be) a screen buffer */
+    PC_GlNoteScreen(env->clip.x, env->clip.y, env->clip.w, env->clip.h);
     send_words(env->dr_env.code, (int)(env->dr_env.tag >> 24));
     memcpy(&s_drawenv, env, sizeof s_drawenv);
     return env;
@@ -422,6 +425,8 @@ DISPENV *PutDispEnv(DISPENV *env)
     if (env->disp.h > (pal ? 288 : 256))
         mode |= 0x24;
     PC_GpuWriteGP1(0x08000000u | mode);
+    if (!env->isrgb24)
+        PC_GlNoteScreen(env->disp.x, env->disp.y, env->disp.w, env->disp.h);
 
     memcpy(&s_dispenv, env, sizeof s_dispenv);
     return env;

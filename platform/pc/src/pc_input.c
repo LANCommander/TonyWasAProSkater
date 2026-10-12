@@ -16,6 +16,8 @@
 #include "pc_hle.h"
 #include "pc_input.h"
 #include "pc_runtime.h"
+#include "pc_settings.h"
+#include "pc_video.h"
 
 /* ---- actions ---------------------------------------------------------------------------------- */
 
@@ -216,13 +218,6 @@ static const struct {
 };
 #define NUM_SECTIONS ((int)(sizeof s_sections / sizeof s_sections[0]))
 
-static const char *SettingsPath(void) {
-    static char path[MAX_PATH];
-    if (!path[0])
-        snprintf(path, sizeof path, "%s\\Settings.ini", PC_UserDir());
-    return path;
-}
-
 static char *Trim(char *s) {
     char *e;
     while (isspace((unsigned char)*s))
@@ -233,19 +228,17 @@ static char *Trim(char *s) {
     return s;
 }
 
-int PC_InputSaveSettings(void) {
-    char tmp[MAX_PATH];
-    FILE *f;
+int PC_InputSaveSettings(void) { return PC_SettingsSave(); }
+
+void PC_InputSettingsDefaults(void) {
+    PC_InputResetDevice(0, 0);
+    PC_InputResetDevice(0, 1);
+    PC_InputResetDevice(1, 1);
+}
+
+void PC_InputWriteSettings(FILE *f) {
     int s, a, i;
-    snprintf(tmp, sizeof tmp, "%s.tmp", SettingsPath());
-    f = fopen(tmp, "w");
-    if (!f) {
-        PC_Log("cannot write %s", tmp);
-        return 0;
-    }
-    fputs("; Tony Hawk's Pro Skater (PC) settings. Options > Player 1/2 Controls edits the controls.\n"
-          ";\n"
-          "; Controls: each action takes up to two keys and two gamepad buttons, separated by a\n"
+    fputs("\n; Controls: each action takes up to two keys and two gamepad buttons, separated by a\n"
           "; comma. Leave a slot empty (or write None) to unbind it.\n"
           "; Keys are SDL key names: letters and digits, Space, Return, Escape, Backspace, Tab,\n"
           "; Left Shift, Right Ctrl, Up, Down, Left, Right, Keypad 2, Comma, ...\n"
@@ -276,70 +269,34 @@ int PC_InputSaveSettings(void) {
             fputs("\n", f);
         }
     }
-    if (fclose(f) != 0 || !MoveFileExA(tmp, SettingsPath(), MOVEFILE_REPLACE_EXISTING)) {
-        PC_Log("cannot write %s", SettingsPath());
-        DeleteFileA(tmp);
-        return 0;
-    }
-    return 1;
 }
 
-/* Entries missing from the file keep their defaults. The file is only written when it doesn't
- * exist yet (and when the controls screen changes something). */
-static void LoadSettings(void) {
-    char line[512];
-    int sec = -1;
-    FILE *f;
-    PC_InputResetDevice(0, 0);
-    PC_InputResetDevice(0, 1);
-    PC_InputResetDevice(1, 1);
-    f = fopen(SettingsPath(), "r");
-    if (!f) {
-        if (PC_InputSaveSettings())
-            PC_Log("controls: wrote the default bindings to %s", SettingsPath());
-        return;
+int PC_InputSettingsLine(const char *section, const char *key, char *value) {
+    char *field;
+    int sec, a, n;
+    for (sec = 0; sec < NUM_SECTIONS; sec++)
+        if (!SDL_strcasecmp(section, s_sections[sec].name))
+            break;
+    if (sec == NUM_SECTIONS)
+        return 0;
+    for (a = 0; a < PC_ACT_COUNT; a++)
+        if (s_actions[a].set == s_sections[sec].set && !SDL_strcasecmp(key, s_actions[a].name))
+            break;
+    if (a == PC_ACT_COUNT) {
+        PC_Log("Settings.ini: unknown action \"%s\" in [%s]", key, s_sections[sec].name);
+        return 1;
     }
-    while (fgets(line, sizeof line, f)) {
-        char *s = Trim(line), *eq, *field;
-        int a, i, n;
-        if (!*s || *s == ';' || *s == '#')
-            continue;
-        if (*s == '[') {
-            char *e = strchr(s, ']');
-            if (e)
-                *e = 0;
-            s = Trim(s + 1);
-            sec = -1;
-            for (i = 0; i < NUM_SECTIONS; i++)
-                if (!SDL_strcasecmp(s, s_sections[i].name))
-                    sec = i;
-            continue;
-        }
-        eq = strchr(s, '=');
-        if (sec < 0 || !eq)
-            continue;
-        *eq = 0;
-        s = Trim(s);
-        for (a = 0; a < PC_ACT_COUNT; a++)
-            if (s_actions[a].set == s_sections[sec].set && !SDL_strcasecmp(s, s_actions[a].name))
-                break;
-        if (a == PC_ACT_COUNT) {
-            PC_Log("Settings.ini: unknown action \"%s\" in [%s]", s, s_sections[sec].name);
-            continue;
-        }
-        for (n = 0, field = eq + 1; n < PC_BIND_SLOTS; n++) {
-            char *comma = field ? strchr(field, ',') : NULL;
-            const char *v;
-            int *p = Slot(s_sections[sec].player, s_sections[sec].gamepad, (PcAction)a, n);
-            if (comma)
-                *comma = 0;
-            v = field ? Trim(field) : "";
-            *p = s_sections[sec].gamepad ? ParsePad(v) : ParseKey(v);
-            field = comma ? comma + 1 : NULL;
-        }
+    for (n = 0, field = value; n < PC_BIND_SLOTS; n++) {
+        char *comma = field ? strchr(field, ',') : NULL;
+        const char *v;
+        int *p = Slot(s_sections[sec].player, s_sections[sec].gamepad, (PcAction)a, n);
+        if (comma)
+            *comma = 0;
+        v = field ? Trim(field) : "";
+        *p = s_sections[sec].gamepad ? ParsePad(v) : ParseKey(v);
+        field = comma ? comma + 1 : NULL;
     }
-    fclose(f);
-    PC_Log("controls: %s", SettingsPath());
+    return 1;
 }
 
 /* ---- devices ---------------------------------------------------------------------------------- */
@@ -547,7 +504,7 @@ void PC_InputInit(void) {
         return;
     s_init = 1;
     SDL_InitSubSystem(SDL_INIT_EVENTS);
-    LoadSettings();
+    PC_SettingsLoad();
     LoadXInput();
     PollGamepads();
 }
@@ -555,9 +512,11 @@ void PC_InputInit(void) {
 void PC_PumpEvents(void) {
     SDL_Event e;
     PC_InputInit();
-    while (SDL_PollEvent(&e))
+    while (SDL_PollEvent(&e)) {
         if (e.type == SDL_QUIT)
             s_quit = 1;
+        PC_VideoEvent(&e);
+    }
 }
 
 int PC_QuitRequested(void) { return s_quit; }
@@ -573,6 +532,8 @@ void PC_InputUpdate(void) {
     k = SDL_GetKeyboardState(NULL);
     for (sc = 0; sc < SDL_NUM_SCANCODES; sc++)
         down[sc] = k ? k[sc] : 0;
+    if (SDL_GetModState() & KMOD_ALT)
+        down[SDL_SCANCODE_RETURN] = 0; /* Alt+Enter switches fullscreen (PC_VideoEvent) */
     ScriptedKeys(down);
     for (sc = 0; sc < SDL_NUM_SCANCODES; sc++) {
         s_keyPressed[sc] = down[sc] && !s_keyDown[sc];
