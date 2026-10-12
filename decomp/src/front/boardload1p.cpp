@@ -3,53 +3,8 @@
    its loop: fills in the picture file names of the three columns (decks the skater hasn't got the
    tapes for show "b1lock01.bmp"; trucks and wheels come from fixed tables), resets the streaming
    state that FUN_80054134 (boardstream1p.cpp) works through, and loads the "locked" picture. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-/* SBoard as in boardselect2p.cpp, with the picture file name that precedes it: the array really
-   starts at 0x54, so `Name` is at 0x58 and `Req` at 0x5c as there. */
-struct SBoard {
-	char *File;   /* 0: picture */
-	char *Name;   /* 4 */
-	uchar Req;    /* 8: tapes needed */
-	int Stats[4]; /* 0xc */
-	int pad;
-};
-
-struct SStats {
-	char pad0[0x54];
-	SBoard Boards[8]; /* 0x54 */
-};
-
-struct SSkaterCareer {
-	uchar pad0[4];
-	uchar NumTapes; /* 4 (0x8 in SCareer) */
-	uchar pad5[9];
-};
-
-struct SCareer {
-	int Version;
-	SSkaterCareer Skater[148];
-	char pad[0x824 - 4 - 148 * 14];
-	char LastSkater[2]; /* 0x824 */
-	char LastDeck[2];   /* 0x826 */
-	char LastWheel[2];  /* 0x828 */
-	char LastTrucks[2]; /* 0x82a */
-};
-
-class CItem {
-  public:
-	virtual ~CItem();
-	void *operator new(uint) throw();
-};
-
-class SlicedImage : public CItem {
-  public:
-	int m[12];
-	SlicedImage(char *, int, int, int, int, int, ushort);
-	void pack();
-};
+#include "game/shellutils.h"
+#include "game/career.h"
 
 extern SCareer GCareer;
 extern SStats Stats[];
@@ -93,7 +48,7 @@ extern "C" void FUN_80053dbc(void) {
 	DAT_800d33a4[2] = GCareer.LastWheel[0];
 
 	for (int i = 0; i < DAT_800d33c4[0]; i++) {
-		if (GCareer.Skater[DAT_800d22f0].NumTapes >= Stats[DAT_800d22f0].Boards[i].Req)
+		if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes >= Stats[DAT_800d22f0].Boards[i].Req)
 			strcpy(DAT_800d33d4[0][i], Stats[DAT_800d22f0].Boards[i].File);
 		else
 			strcpy(DAT_800d33d4[0][i], "b1lock01.bmp");

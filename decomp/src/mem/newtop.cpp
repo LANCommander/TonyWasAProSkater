@@ -3,15 +3,7 @@
    best-fit over the free list (the last block big enough), splitting the block's tail off if
    there's room for another header, else taking it whole. An allocated block's pNext holds the
    allocation serial number. */
-#pragma interface
-
-typedef unsigned int uint;
-
-struct SBlockHeader {
-	SBlockHeader *pNext;
-	uint Flags : 4;
-	uint Size : 28;
-};
+#include "game/mem.h"
 
 int LowMemory;
 uint CriticalBigHeapUsage;
@@ -19,8 +11,6 @@ uint UniqueIndentifier;
 int Used[2];
 uint Used_4;
 SBlockHeader *FirstFreeBlock[2];
-
-void Bang(unsigned char, unsigned char, unsigned char);
 
 void *Mem_NewTop(uint size) {
 	int Heap = 1;
@@ -66,7 +56,7 @@ void *Mem_NewTop(uint size) {
 		pBlock = (SBlockHeader *)pMem - 1;
 		pBlock->Size = size;
 		pBlock->pNext = (SBlockHeader *)UniqueIndentifier;
-		pBlock->Flags = 1;
+		pBlock->ParentHeap = 1;
 		Used[Heap] += pBlock->Size + 8;
 
 		if (Heap == 1) {
@@ -86,7 +76,7 @@ void *Mem_NewTop(uint size) {
 	else
 		FirstFreeBlock[Heap] = pChoice->pNext;
 
-	pChoice->Flags = 1;
+	pChoice->ParentHeap = 1;
 	pChoice->pNext = (SBlockHeader *)UniqueIndentifier;
 	Used[Heap] += pChoice->Size + 8;
 

@@ -1,23 +1,6 @@
 /* QFromZRot__Fs (0x800775a8) */
 /* C++ (QUAT.CPP). Exact demo twin: quaternion for a rotation about one axis. Locals from MAIN.SYM. */
-#pragma interface
-
-class CClass {
-  public:
-	virtual ~CClass() {}
-};
-
-class CQuat : public CClass {
-  public:
-	int x, y, z, w;
-	CQuat() {}
-	CQuat(int a, int b, int c, int d) {
-		x = a;
-		y = b;
-		z = c;
-		w = d;
-	}
-};
+#include "game/vector.h"
 
 struct SSinCos {
 	short s, c;

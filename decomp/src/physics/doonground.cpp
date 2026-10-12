@@ -2,13 +2,13 @@
 /* C++ (PHYSICS.CPP). Demo twin, locals from its MAIN.SYM. One function: functions.tsv splits it into
    DoOnGroundPhysics__6CBruce (3092) + FUN_800353bc (4) + FUN_800353c0 (2568) at the OrientToNormal call, but
    the only prologue/epilogue pair spans all 5664 bytes and nothing calls 0x800353c0.
-   On the ground: terrain sparks and pad rumble (rails/metal/etc. by m72C), moves the skater by the
+   On the ground: terrain sparks and pad rumble (rails/metal/etc. by mTerrain), moves the skater by the
    frame-scaled velocity and kick, turns along the fall line, sweeps the movement against the world
    (bouncing off walls, stepping up kerbs, sliding along), pushes out of side walls, then probes
    down along -mUp for the floor: on it, snaps to it, handles the bail / grind / wallride hand-offs
    and adds gravity projected into the floor plane; off it, skates off the ground. Finally the side
    velocity is removed and the forwards velocity damped (auto-kick, top speed, terrain drag).
-   Levers: the mPos update is wrapped in do{}while(0) (its refs count double, so &mKick wins fp
+   Levers: the mPos update is wrapped in do{}while(0) (its refs count double, so &mAcc wins fp
    over OnInvisible, which is spilled as in retail); CVector Old is declared mid-function at
    function scope, after the early temps, so it takes sp+344 and later block locals sit above it;
    -Normal.vy > ABS(Normal.vx) loads vy first; the rumble switch lists the empty cases 0,1,2,4
@@ -21,34 +21,10 @@ extern "C" {
 }
 
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
-
-struct CVector {
-	int vx, vy, vz;
-	void Set(int x, int y, int z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-	CVector &operator+=(const CVector &);
-	CVector &operator-=(const CVector &);
-	int operator!=(const CVector &);
-	int Length() const;
-};
-
-struct CSVector {
-	short vx, vy, vz;
-	void Set(short x, short y, short z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-};
-
-CVector operator*(const CVector &, const int &);
-CVector operator>>(const CVector &, const int &);
-CVector operator/(const CVector &, const int &);
-CVector operator+(const CVector &, const CVector &);
-CVector operator-(const CVector &, const CVector &);
+#include "game/colij.h"
+#include "game/bruce.h"
+#include "game/bit.h"
+#include "game/career.h"
 
 #define SetVector(v, x, y, z)                                                                      \
 	{                                                                                              \
@@ -60,181 +36,16 @@ CVector operator-(const CVector &, const CVector &);
 		(v)->vz = _z;                                                                              \
 	}
 
-struct CFriction {
-	unsigned char x, y, z;
-};
-
-class CBit {
-  public:
-	CBit *mPrevious;
-	CBit *mNext;
-	short mAge;
-	unsigned short mLifetime;
-	CVector mTweenPos;
-	CVector mPos;
-	CVector mVel;
-	CVector mAcc;
-	CFriction mFric;
-	unsigned char mDead;
-	unsigned short mFrigDeltaZ;
-	unsigned char mProtected;
-	unsigned char mType;
-	virtual ~CBit();
-	void *operator new(unsigned int) throw();
-};
-
-class CPixel : public CBit {
-  public:
-	unsigned int tag;
-	unsigned char r0, g0, b0, code;
-	unsigned int mWidthHeight;
-};
-
-class CSpark : public CPixel {
-  public:
-	unsigned char mFadeR, mFadeG, mFadeB;
-	int m58;
-	CSpark(CVector &pos, int vel, int gravity, int life);
-	virtual ~CSpark();
-};
-
-struct SHandle {
-	int a, b;
-};
-
-struct SItem {
-	char pad0[0x1b];
-	unsigned char Type; /* 0x1b */
-};
-
-struct SFace {
-	char pad0[0xe];
-	unsigned short Flags; /* 0xe */
-};
-
-struct SItemType {
-	char pad0[0x14];
-	void *p14; /* 0x14 */
-	char pad18[0x40 - 0x18];
-};
-
-struct SLineInfo {
-	CVector StartCoords;
-	CVector EndCoords;
-	CVector MinCoords;
-	CVector MaxCoords;
-	int iLo, iHi, jLo, jHi;
-	int Distance; /* 0x40 */
-	int Length;
-	char pad48[0x68 - 0x48];
-	SItem *pItem;     /* 0x68 */
-	CVector HitPoint; /* 0x6c */
-	SVECTOR Normal;   /* 0x78 */
-	SFace *pFace;     /* 0x80 */
-	char pad84[168 - 0x84];
-};
-
-struct SColl {
-	char pad0[0x10];
-	unsigned char x10; /* 0x10 */
-	char pad11[0x20 - 0x11];
-	unsigned char x20; /* 0x20 */
-};
-
-struct SPadOptions {
-	char pad0[0x940];
-	int AutoKick[2]; /* 0x940 */
-};
-
-class CBruce {
-  public:
-	char pad0[0x4];
-	CVector mPos;     /* 0x4 */
-	CSVector mAngles; /* 0x10 */
-	char pad16[0x6c - 0x16];
-	CVector mVel;  /* 0x6c */
-	CVector mKick; /* 0x78 */
-	char pad84[0xa8 - 0x84];
-	SVECTOR mLastNormal; /* 0xa8 */
-	char padb0[0xf0 - 0xb0];
-	CVector mOldPos; /* 0xf0 */
-	char padfc[0x146 - 0xfc];
-	unsigned short mAnim; /* 0x146 */
-	char pad148[0x150 - 0x148];
-	int m150; /* 0x150 */
-	char pad154[0x1c8 - 0x154];
-	CVector mGravity; /* 0x1c8 */
-	char pad1d4[0x1f8 - 0x1d4];
-	int m1F8; /* 0x1f8 */
-	int m1FC; /* 0x1fc */
-	char pad200[0x214 - 0x200];
-	int m214; /* 0x214 */
-	char pad218[0x284 - 0x218];
-	int m284; /* 0x284 */
-	int m288; /* 0x288 */
-	char pad28c[0x304 - 0x28c];
-	int m304; /* 0x304 */
-	char pad308[0x324 - 0x308];
-	int m324; /* 0x324 */
-	int m328; /* 0x328 */
-	int m32C; /* 0x32c */
-	char pad330[0x334 - 0x330];
-	int mMaxSpeed; /* 0x334 */
-	char pad338[0x358 - 0x338];
-	int mInAir; /* 0x358 */
-	char pad35c[0x368 - 0x35c];
-	int m368; /* 0x368 */
-	char pad36c[0x418 - 0x36c];
-	SItem *mpWallItem;   /* 0x418 */
-	SHandle mWallHandle; /* 0x41c */
-	char pad424[0x720 - 0x424];
-	int m720; /* 0x720 */
-	int m724; /* 0x724 */
-	char pad728[0x72c - 0x728];
-	int m72C; /* 0x72c */
-	char pad730[0x734 - 0x730];
-	int m734; /* 0x734 */
-	char pad738[0x740 - 0x738];
-	int m740; /* 0x740 */
-	char pad744[0x768 - 0x744];
-	int m768; /* 0x768 */
-	char pad76c[0x7d8 - 0x76c];
-	CVector mFront;      /* 0x7d8 */
-	CVector mRight;      /* 0x7e4 */
-	CVector mUp;         /* 0x7f0 */
-	CVector mFallLine;   /* 0x7fc */
-	int mFallLineTurn;   /* 0x808 */
-	SVECTOR mPolyNormal; /* 0x80c */
-	CVector m814;        /* 0x814 */
-	int m820;            /* 0x820 */
-	CVector m824;        /* 0x824 */
-	char pad830[0x838 - 0x830];
-	int m838; /* 0x838 */
-	char pad83c[0x86c - 0x83c];
-	SColl *mpColl; /* 0x86c */
-	int mPad;      /* 0x870 */
-	void StateTransition(int, int);
-	void OrientToNormal();
-	void FRUVectorsFromRotMatrix();
-	void RotMatrixFromFRUVectors();
-	void SetAnglesFromHeading();
-	void AlignToFallLine(int);
-	void RotateHeadingAndVelocity(int, int, int);
-	void Vibrate(int, int, int);
-	void HandleBailPerpendicular(SVECTOR);
-	void DoOnGroundPhysics();
-};
-
 extern int GGame;
 extern int GHorsePlayer;
-extern SPadOptions GCareer;
+extern SCareer GCareer;
 extern int BitCount;
 extern int UseCacheForBits;
 extern int XFrames;
 extern int TimeScale;
 extern int TimeScaleSquared;
 extern CVector ZeroVector;
-extern SItemType PSXRegion[];
+extern SPSXRegion PSXRegion[];
 
 int Face_Air;
 int Face_Skateable;
@@ -255,18 +66,15 @@ extern "C" {
 	int FUN_8008b5dc(int);
 	int Mips_FixMul__Fii(int, int);
 	int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
-	SHandle FUN_8004d7ac(void *);
+	SMemHandle FUN_8004d7ac(void *);
 	void Bit_SetSparkTrajectoryCone__FRC8CSVector(CSVector *);
 	void Bit_SetSparkSize__FUi(int);
 	void Bit_SetSparkRGB__FUcUcUc(int, int, int);
 	void Bit_SetSparkFadeRGB__FUcUcUc(int, int, int);
 	int Mem_GetFree__Fc(int);
-	void FlipToVelocity__6CBruce(CBruce *);
 	int FUN_800343f0(CBruce *, int);
 	void FUN_8003434c(CBruce *);
 	void FUN_8002f1a0(CBruce *);
-	void Debug_RunAnim__6CBruceii(CBruce *, int, int);
-	void ReflectHeadingVelocityInPlane__6CBruceG7SVECTORi(CBruce *, SVECTOR, int);
 	void SFX_Grunt__FP6CBruce(CBruce *);
 }
 
@@ -283,23 +91,23 @@ void CBruce::DoOnGroundPhysics() {
 	int AutoKickEnabled;
 	CVector Gravity;
 
-	OnInvisible = m734 == 2;
+	OnInvisible = mPhysicsState == 2;
 
 	if (GGame != 7)
-		AutoKickEnabled = GCareer.AutoKick[mPad];
+		AutoKickEnabled = GCareer.Options.AutoKickEnabled[mPadIndex];
 	else
-		AutoKickEnabled = GCareer.AutoKick[mPad ^ GHorsePlayer];
+		AutoKickEnabled = GCareer.Options.AutoKickEnabled[mPadIndex ^ GHorsePlayer];
 
 	Gravity.vx = 0;
 	Gravity.vy = 6500;
 	Gravity.vz = 0;
 
-	if (!m734)
+	if (!mPhysicsState)
 		m724 = 0;
 
 	Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
 
-	if ((m72C == 5 || m72C == 6 || m72C == 3) && BitCount < 200) {
+	if ((mTerrain == 5 || mTerrain == 6 || mTerrain == 3) && BitCount < 200) {
 		SetAnglesFromHeading();
 		Bit_SetSparkTrajectory(mAngles);
 		CSVector Cone;
@@ -311,7 +119,7 @@ void CBruce::DoOnGroundPhysics() {
 		if (Speed > 0x10000) {
 			int i;
 
-			switch (m72C) {
+			switch (mTerrain) {
 				case 5:
 					Bit_SetSparkRGB__FUcUcUc(2, 160, 32);
 					break;
@@ -345,7 +153,7 @@ void CBruce::DoOnGroundPhysics() {
 		if (Speed > 64)
 			Speed = 64;
 
-		switch (m72C) {
+		switch (mTerrain) {
 			case 0:
 			case 1:
 			case 2:
@@ -364,23 +172,23 @@ void CBruce::DoOnGroundPhysics() {
 	}
 
 	do {
-		mPos += ((mVel * TimeScale) >> 8) + ((mKick * TimeScaleSquared) >> 8) / 2;
+		mPos += ((mVel * TimeScale) >> 8) + ((mAcc * TimeScaleSquared) >> 8) / 2;
 	} while (0);
 
 	Platform_HandleBounce();
 
 	if (!OnInvisible && !mInAir)
-		FlipToVelocity__6CBruce(this);
+		FlipToVelocity();
 
 	vMovement = mPos - mOldPos;
 	((void (*)(int))FUN_8008b5dc)(Mips_CVecDotProd__FP7CVectorT0(&vMovement, &vMovement));
-	TurnAngle = m838 >> 12;
+	TurnAngle = mLeanAngle >> 12;
 	mFallLineTurn = 0;
 
-	if (!m720 && !m324 && m1FC && !m284) {
+	if (!m720 && !mTapTurn && m1FC && !mNoSpin) {
 		if (!TurnAngle) {
 			AlignToFallLine(40);
-		} else if (mpColl->x10 || mpColl->x20) {
+		} else if (mpPad->Square.Pressed || mpPad->Circle.Pressed) {
 			m1FC = m1FC - 1;
 		} else {
 			m1FC = m1FC - 3;
@@ -397,20 +205,20 @@ void CBruce::DoOnGroundPhysics() {
 	Mips_FixMul__Fii(TurnAngle, 3072);
 	RotateHeadingAndVelocity((TurnAngle * TimeScale) >> 8, !OnInvisible, 0);
 
-	m328 += (TurnAngle * TimeScale) >> 8;
+	mTallyAngles += (TurnAngle * TimeScale) >> 8;
 
-	if (m328 >= 2048) {
-		m328 -= 2048;
+	if (mTallyAngles >= 2048) {
+		mTallyAngles -= 2048;
 
-		if (!m288)
-			m32C++;
+		if (!mNoSpinScore)
+			mNum180Spins++;
 	}
 
-	if (m328 <= -2048) {
-		m328 += 2048;
+	if (mTallyAngles <= -2048) {
+		mTallyAngles += 2048;
 
-		if (!m288)
-			m32C++;
+		if (!mNoSpinScore)
+			mNum180Spins++;
 	}
 
 	SetVector(&line_info.StartCoords, mOldPos.vx, mOldPos.vy, mOldPos.vz)
@@ -448,15 +256,15 @@ void CBruce::DoOnGroundPhysics() {
 					SetVector(&WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
 					          line_info.Normal.vz) if (Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal, &mFront) >
 					                                   2896) {
-						m150 = 0x10000;
-						Debug_RunAnim__6CBruceii(this, 12, 4120);
+						mAnimSpeed = 0x10000;
+						Debug_RunAnim(12, 4120);
 
 						TurnAway = 200;
 						SFX_Grunt__FP6CBruce(this);
 					}
 				}
 
-				ReflectHeadingVelocityInPlane__6CBruceG7SVECTORi(this, line_info.Normal, TurnAway);
+				ReflectHeadingVelocityInPlane(line_info.Normal, TurnAway);
 			} else if (line_info.pItem) {
 				if (!Face_Air || Face_Visible) {
 					CVector WallFloorNormal;
@@ -470,19 +278,19 @@ void CBruce::DoOnGroundPhysics() {
 
 						if (-line_info.Normal.vy > ABS(line_info.Normal.vx) &&
 						    -line_info.Normal.vy > ABS(line_info.Normal.vz)) {
-							m820 = 0;
-							SetVector(&mLastNormal, line_info.Normal.vx, line_info.Normal.vy,
+							mSameNormal = 0;
+							SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
 							          line_info.Normal.vz) mPos.vx =
-							    line_info.HitPoint.vx + line_info.Normal.vx * 30;
-							mPos.vy = line_info.HitPoint.vy + line_info.Normal.vy * 30;
-							mPos.vz = line_info.HitPoint.vz + line_info.Normal.vz * 30;
+							    line_info.Position.vx + line_info.Normal.vx * 30;
+							mPos.vy = line_info.Position.vy + line_info.Normal.vy * 30;
+							mPos.vz = line_info.Position.vz + line_info.Normal.vz * 30;
 							OrientToNormal();
 
-							if (m734 == 2) {
-								m820 = 25;
-								SetVector(&mLastNormal, line_info.Normal.vx, line_info.Normal.vy,
+							if (mPhysicsState == 2) {
+								mSameNormal = 25;
+								SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
 								          line_info.Normal.vz)
-								    SetVector(&m824, line_info.Normal.vx, line_info.Normal.vy,
+								    SetVector(&mOldNormal, line_info.Normal.vx, line_info.Normal.vy,
 									          line_info.Normal.vz)
 								        ProjectCVectorToPlane(&mFront, line_info.Normal);
 								M3dUtils_NormaliseVector(&mFront);
@@ -494,7 +302,7 @@ void CBruce::DoOnGroundPhysics() {
 								RotMatrixFromFRUVectors();
 							}
 
-							StateTransition(0, 4193);
+							StateTransition(PHYSICS_ON_GROUND, 4193);
 						} else {
 							mPos = mOldPos;
 							CVector OldVel = mVel;
@@ -506,28 +314,28 @@ void CBruce::DoOnGroundPhysics() {
 								          line_info.Normal.vy,
 								          line_info.Normal.vz) if (Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal,
 								                                                &mFront) > 2896) {
-									m150 = 0x10000;
-									Debug_RunAnim__6CBruceii(this, 12, 4219);
+									mAnimSpeed = 0x10000;
+									Debug_RunAnim(12, 4219);
 									SFX_Grunt__FP6CBruce(this);
 
 									TurnAway = 200;
 								}
 							}
 
-							ReflectHeadingVelocityInPlane__6CBruceG7SVECTORi(this, line_info.Normal, TurnAway);
+							ReflectHeadingVelocityInPlane(line_info.Normal, TurnAway);
 							m814.Set(0, 0, 0);
 						}
 					} else if (line_info.Distance <= Speed >> 12) {
-						mPos.vx = line_info.HitPoint.vx + line_info.Normal.vx * 30;
-						mPos.vy = line_info.HitPoint.vy + line_info.Normal.vy * 30;
-						mPos.vz = line_info.HitPoint.vz + line_info.Normal.vz * 30;
+						mPos.vx = line_info.Position.vx + line_info.Normal.vx * 30;
+						mPos.vy = line_info.Position.vy + line_info.Normal.vy * 30;
+						mPos.vz = line_info.Position.vz + line_info.Normal.vz * 30;
 
-						if (*(int *)&line_info.Normal == *(int *)&mLastNormal &&
-						    line_info.Normal.vz == mLastNormal.vz) {
-							m820++;
+						if (*(int *)&line_info.Normal == *(int *)&mNormal &&
+						    line_info.Normal.vz == mNormal.vz) {
+							mSameNormal++;
 						} else {
-							m820 = 0;
-							SetVector(&mLastNormal, line_info.Normal.vx, line_info.Normal.vy,
+							mSameNormal = 0;
+							SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
 							          line_info.Normal.vz)
 						}
 
@@ -568,15 +376,15 @@ void CBruce::DoOnGroundPhysics() {
 	GetFaceFlags(&line_info);
 
 	if (line_info.pItem) {
-		m72C = Face_Terrain;
+		mTerrain = Face_Terrain;
 
 		if (!Face_Skateable && !Face_WallRide && !Face_Air) {
-			StateTransition(1, 4363);
+			StateTransition(PHYSICS_IN_AIR, 4363);
 		} else if (line_info.pItem) {
 			int d = line_info.Distance;
 			int CheckDist;
 
-			if (m734 == 2) {
+			if (mPhysicsState == 2) {
 				m214 = 20;
 				CheckDist = 160;
 			} else {
@@ -584,19 +392,19 @@ void CBruce::DoOnGroundPhysics() {
 			}
 
 			if (d <= CheckDist) {
-				m768 = line_info.pFace->Flags & 0x20;
+				m768 = ((SFace *)line_info.pFace)->Flags2 & 0x20;
 				CVector Orig = mPos;
 
-				mPos.vx = line_info.HitPoint.vx + mUp.vx * 30;
-				mPos.vy = line_info.HitPoint.vy + mUp.vy * 30;
-				mPos.vz = line_info.HitPoint.vz + mUp.vz * 30;
+				mPos.vx = line_info.Position.vx + mUp.vx * 30;
+				mPos.vy = line_info.Position.vy + mUp.vy * 30;
+				mPos.vz = line_info.Position.vz + mUp.vz * 30;
 				CVector Move = Orig - mPos;
 
 				if (Mips_CVecDotProd__FP7CVectorT0(&Move, &Move) < 4096)
 					mPos = Orig;
 
 				if (Face_Air) {
-					if (!Face_Visible && m1F8 && XFrames - m1F8 >= 5 && !mInAir && m734 != 2) {
+					if (!Face_Visible && m1F8 && XFrames - m1F8 >= 5 && !mInAir && mPhysicsState != 2) {
 						SVECTOR N;
 
 						N = line_info.Normal;
@@ -604,79 +412,79 @@ void CBruce::DoOnGroundPhysics() {
 						mVel.vz -= Mips_FixMul__Fii(N.vz, Speed / 4);
 						mVel.vy /= 2;
 
-						if (!m734) {
-							m32C = 0;
-							m328 = 0;
+						if (!mPhysicsState) {
+							mNum180Spins = 0;
+							mTallyAngles = 0;
 						}
 
-						StateTransition(1, 4466);
+						StateTransition(PHYSICS_IN_AIR, 4466);
 						FUN_8002f1a0(this);
 
 						m768 = 0;
-						m150 = 0x10000;
-						Debug_RunAnim__6CBruceii(this, 14, 4470);
+						mAnimSpeed = 0x10000;
+						Debug_RunAnim(14, 4470);
 
 						m740 = 1;
 					} else {
-						if (m734 != 2 && !m740 && !mInAir) {
-							m150 = 0x10000;
-							Debug_RunAnim__6CBruceii(this, 14, 4478);
+						if (mPhysicsState != 2 && !m740 && !mInAir) {
+							mAnimSpeed = 0x10000;
+							Debug_RunAnim(14, 4478);
 
 							m740 = 1;
 						}
 
-						if (m734 != 2) {
+						if (mPhysicsState != 2) {
 							FUN_8002f1a0(this);
 
-							m328 = 0;
-							m32C = 0;
+							mTallyAngles = 0;
+							mNum180Spins = 0;
 						}
 
-						StateTransition(2, 4488);
+						StateTransition(PHYSICS_ON_INVISIBLE, 4488);
 					}
 				} else if (Face_Skateable) {
-					if (m734)
+					if (mPhysicsState)
 						HandleBailPerpendicular(line_info.Normal);
 
-					if (!m734) {
+					if (!mPhysicsState) {
 						CVector NewNormal;
 						CVector LastNormal;
 						int Dot;
 
 						SetVector(&NewNormal, line_info.Normal.vx, line_info.Normal.vy,
 						          line_info.Normal.vz)
-						    SetVector(&LastNormal, mLastNormal.vx, mLastNormal.vy, mLastNormal.vz)
+						    SetVector(&LastNormal, mNormal.vx, mNormal.vy, mNormal.vz)
 						        Dot = Mips_CVecDotProd__FP7CVectorT0(&LastNormal, &NewNormal);
 
 						if (Mips_CVecDotProd__FP7CVectorT0(&mFront, &NewNormal) < 0 && mVel.vy <= 0 && Dot > 0 &&
 						    Dot < 3000)
 							FUN_8003434c(this);
 					} else {
-						StateTransition(0, 4551);
+						StateTransition(PHYSICS_ON_GROUND, 4551);
 					}
 
 					if (!OnInvisible) {
 						mpWallItem = line_info.pItem;
-						mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Type].p14);
+						mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Region].pPSX);
 					}
 				} else {
 					FUN_8003434c(this);
 				}
 
-				if (m734 != 1) {
-					if (*(int *)&line_info.Normal == *(int *)&mLastNormal &&
-					    line_info.Normal.vz == mLastNormal.vz) {
-						m820++;
+				if (mPhysicsState != 1) {
+					if (*(int *)&line_info.Normal == *(int *)&mNormal &&
+					    line_info.Normal.vz == mNormal.vz) {
+						mSameNormal++;
 					} else {
-						m820 = 0;
-						SetVector(&mLastNormal, line_info.Normal.vx, line_info.Normal.vy,
+						mSameNormal = 0;
+						SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
 						          line_info.Normal.vz)
 					}
 
 					OrientToNormal();
 				}
 			} else {
-				m768 = line_info.pFace->Flags & 0x20;
+				m768 = ((SFace *)line_info.pFace)->Flags2 & 0x20;
 				FUN_8003434c(this);
 			}
 		} else {
@@ -686,26 +494,26 @@ void CBruce::DoOnGroundPhysics() {
 		FUN_8003434c(this);
 	}
 
-	if (m734 != 1 && line_info.pItem) {
-		if (m734 == 2)
+	if (mPhysicsState != 1 && line_info.pItem) {
+		if (mPhysicsState == 2)
 			InplaneGravity = mGravity;
 		else
 			InplaneGravity.Set(0, 6500, 0);
 
 		ProjectCVectorToPlane(&InplaneGravity, line_info.Normal);
 
-		mKick += InplaneGravity;
+		mAcc += InplaneGravity;
 
-		if (m734 != 2)
+		if (mPhysicsState != 2)
 			mFallLine = InplaneGravity;
 
 		mPolyNormal = line_info.Normal;
 		CVectorRotateToPlane(&mVel, &line_info.Normal, &mVel);
 	} else {
-		mKick += Gravity;
+		mAcc += Gravity;
 	}
 
-	if (m734 != 2 && !mInAir) {
+	if (mPhysicsState != 2 && !mInAir) {
 		CVector SideVelocity;
 		CVector ForwardsVelocity;
 		int dot;
@@ -722,32 +530,32 @@ void CBruce::DoOnGroundPhysics() {
 
 		if (!m304) {
 			if (AutoKickEnabled) {
-				mKick.vx -= Mips_FixMul__Fii(8, ForwardsVelocity.vx);
-				mKick.vy -= Mips_FixMul__Fii(8, ForwardsVelocity.vy);
-				mKick.vz -= Mips_FixMul__Fii(8, ForwardsVelocity.vz);
+				mAcc.vx -= Mips_FixMul__Fii(8, ForwardsVelocity.vx);
+				mAcc.vy -= Mips_FixMul__Fii(8, ForwardsVelocity.vy);
+				mAcc.vz -= Mips_FixMul__Fii(8, ForwardsVelocity.vz);
 			}
 		} else {
-			mKick.vx -= Mips_FixMul__Fii(82, ForwardsVelocity.vx);
-			mKick.vy -= Mips_FixMul__Fii(82, ForwardsVelocity.vy);
-			mKick.vz -= Mips_FixMul__Fii(82, ForwardsVelocity.vz);
+			mAcc.vx -= Mips_FixMul__Fii(82, ForwardsVelocity.vx);
+			mAcc.vy -= Mips_FixMul__Fii(82, ForwardsVelocity.vy);
+			mAcc.vz -= Mips_FixMul__Fii(82, ForwardsVelocity.vz);
 		}
 
-		if (m72C == 5) {
-			mKick.vx -= Mips_FixMul__Fii(120, ForwardsVelocity.vx);
-			mKick.vy -= Mips_FixMul__Fii(120, ForwardsVelocity.vy);
-			mKick.vz -= Mips_FixMul__Fii(120, ForwardsVelocity.vz);
+		if (mTerrain == 5) {
+			mAcc.vx -= Mips_FixMul__Fii(120, ForwardsVelocity.vx);
+			mAcc.vy -= Mips_FixMul__Fii(120, ForwardsVelocity.vy);
+			mAcc.vz -= Mips_FixMul__Fii(120, ForwardsVelocity.vz);
 		}
 
-		if (m72C == 6) {
-			mKick.vx -= Mips_FixMul__Fii(120, ForwardsVelocity.vx);
-			mKick.vy -= Mips_FixMul__Fii(120, ForwardsVelocity.vy);
-			mKick.vz -= Mips_FixMul__Fii(120, ForwardsVelocity.vz);
+		if (mTerrain == 6) {
+			mAcc.vx -= Mips_FixMul__Fii(120, ForwardsVelocity.vx);
+			mAcc.vy -= Mips_FixMul__Fii(120, ForwardsVelocity.vy);
+			mAcc.vz -= Mips_FixMul__Fii(120, ForwardsVelocity.vz);
 		}
 
-		if (m72C == 3) {
-			mKick.vx -= Mips_FixMul__Fii(180, ForwardsVelocity.vx);
-			mKick.vy -= Mips_FixMul__Fii(180, ForwardsVelocity.vy);
-			mKick.vz -= Mips_FixMul__Fii(180, ForwardsVelocity.vz);
+		if (mTerrain == 3) {
+			mAcc.vx -= Mips_FixMul__Fii(180, ForwardsVelocity.vx);
+			mAcc.vy -= Mips_FixMul__Fii(180, ForwardsVelocity.vy);
+			mAcc.vz -= Mips_FixMul__Fii(180, ForwardsVelocity.vz);
 		}
 	}
 }

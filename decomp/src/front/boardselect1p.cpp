@@ -6,104 +6,10 @@
    rows draw bar sprites: the skater's base stats, the best unlocked board's, and the difference
    to the chosen deck. X/Start accepts an unlocked deck and saves the choice into the career
    record; triangle backs out. Returns 1 (accept) or -1 (back). No demo twin. */
-#pragma interface
-
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	int rest[11];
-};
-
-struct SBoard {
-	char *Name;   /* 0 */
-	uchar Req;    /* 4: tapes needed */
-	int Stats[4]; /* 8 */
-	int pad[2];
-};
-
-struct SStats {
-	char pad0[0x18];
-	int Stats[4]; /* 0x18 */
-	char pad28[0x58 - 0x28];
-	SBoard Boards[7]; /* 0x58 */
-	char pad138[340 - 0x138];
-};
-
-struct SSkaterCareer {
-	uchar pad0[4];
-	uchar NumTapes; /* 4 (0x8 in SCareer) */
-	uchar pad5[9];
-};
-
-struct SCareer {
-	int Version;
-	SSkaterCareer Skater[148];
-	char pad[0x824 - 4 - 148 * 14];
-	char LastSkater[2]; /* 0x824 */
-	char LastDeck[2];   /* 0x826 */
-	char LastWheel[2];  /* 0x828 */
-	char LastTrucks[2]; /* 0x82a */
-};
-
-struct BoardStats {
-	uchar s[5];
-};
-
-class CItem {
-  public:
-	virtual ~CItem();
-	void *operator new(uint) throw();
-};
-
-class SlicedImage {
-  public:
-	void pack();
-	void unpack();
-	void draw(int, int, int, int, int, int, int, int);
-};
-
-class Sprite : public CItem {
-  public:
-	int m_w;
-	int m_h;
-	int m_packed;
-	int m_bpp;
-	SlicedImage *m_image;
-	Sprite(char *, int, int, int);
-	Sprite(int, int, int, int, int, int, int);
-	~Sprite();
-	void draw(int, int, int, int, int, int);
-	void drawFaded(int, int, int, int, int, int);
-	void prepare();
-};
-
-class PadBuffer : public CItem {
-  public:
-	int pad[(0x11c - 4) / 4];
-	PadBuffer(int);
-	~PadBuffer();
-	void update();
-	int getPress();
-};
-
-class PREManager {
-  public:
-	void unloadPRE(char *);
-};
+#include "game/shellutils.h"
+#include "game/pre.h"
+#include "game/career.h"
+#include "game/pad.h"
 
 extern SControl Pad[];
 extern SCareer GCareer;
@@ -131,7 +37,6 @@ uchar DAT_800d22e8;
 int DAT_800d22ec;
 int DAT_800d22f0;
 
-void Pad_ClearTriggers(SControl *);
 void Pack_DefragmentFully();
 void Mess_SetRGB(uchar, uchar, uchar, int);
 void Mess_SetFontScale(uint);
@@ -274,7 +179,7 @@ extern "C" int FUN_80054510(int player) {
 	base[3] = Stats[DAT_800d22f0].Stats[3];
 
 	while (n < 7) {
-		if (GCareer.Skater[DAT_800d22f0].NumTapes <
+		if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes <
 		    Stats[DAT_800d22f0].Boards[n + 1].Req)
 			break;
 
@@ -654,7 +559,7 @@ extern "C" int FUN_80054510(int player) {
 				textX += textSpeed;
 
 				if (textTimer == 0) {
-					if (GCareer.Skater[DAT_800d22f0].NumTapes >=
+					if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes >=
 					    Stats[DAT_800d22f0].Boards[deck].Req) {
 						FUN_8008e904(text, Stats[DAT_800d22f0].Boards[deck].Name);
 					} else if (GGame == 1) {
@@ -728,7 +633,7 @@ extern "C" int FUN_80054510(int player) {
 			GBoardStats[0].s[3] = Stats[DAT_800d22f0].Boards[n].Stats[3];
 			GBoardStats[0].s[4] = DAT_800be438[trucks];
 
-			if (GCareer.Skater[DAT_800d22f0].NumTapes >=
+			if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes >=
 			    Stats[DAT_800d22f0].Boards[deck].Req) {
 				int j;
 

@@ -1,48 +1,13 @@
 /* Competition_LadderDisplay__Fv (0x80074d10) */
 /* C++ (COMPETITION.CPP). Fuzzy demo twin; CCompetition and the locals from its MAIN.SYM (pComp isn't listed
    there, but retail keeps the global's address in s2 from entry). */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CJudge {
-	int a, b;
-};
-
-class CCompetition {
-  public:
-	int **vf;
-	uchar mCompetitorList[10];
-	uint mJudgeTimer;
-	uint mLadderTimer;
-	int mWinLoseCheer;
-	uchar mLastLadderEntry;
-	int mJudgeFullyDisplayed;
-	int mLadderFullyDisplayed;
-	CJudge mJudges[5];
-	short mJudgesScore[5];
-	uchar mHighScore;
-	uchar mLowScore;
-	uchar mPlacing[10];
-	uchar mOrdering[10];
-	ushort mScore[10][3];
-	ushort mTotalScore[10];
-	uchar mCurrentHeat;
-	int medal_mask;
-	void *mMedal1, *mMedal2, *mMedal3;
-	char *mMarqueeText;
-	char mMarqueeTextBuf[75];
-	uint mMarqueeTimer;
-	int our_skater_num;
-	int mFading;
-};
+#include "game/competition.h"
 
 struct SSkaterInfo {
 	char *pName;
 	char pad[0x154 - 4];
 };
 
-extern CCompetition theCompetition;
 extern SSkaterInfo Stats_2c[];
 extern char s_COMPETITION_STANDINGS[], s_Heat[], s_1_2_3_Total[];
 extern char s_s_800d1fd4[];

@@ -57,7 +57,7 @@ int Mips_CVecDotProd(V *, V *);
 int M3dUtils_LineLineClosestPoints(V *, V *, V *, V *, V *, int *, V *, int *);
 void M3dUtils_NormaliseVector(V *);
 int __eq__7CVectorRC7CVector(V *, V *);
-void __mi__C7CVector(V *, V *);
+V __mi__C7CVector(const V *);
 void __mi__FRC7CVectorT0(V *, V *, V *);
 
 void FUN_8004f8a0(void) {
@@ -164,7 +164,7 @@ void FUN_8004f8a0(void) {
 											o2->f700 = v80;
 											flag = __eq__7CVectorRC7CVector(&v70, &pb) != 0;
 										} else {
-											__mi__C7CVector(&v90, &v80);
+											v90 = __mi__C7CVector(&v80);
 
 											o2->f700 = v90;
 

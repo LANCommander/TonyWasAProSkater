@@ -12,92 +12,11 @@
    temps before any pInfo store; NearestHit_8 as an unsized extern; NearestHit reached through
    a pointer set in the loop guard before a do-while (it is spilled and rematerialised as
    `la s5` + 4(s5), and its high-part temp in the preheader pushes pFaceCache from v0 to v1). */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct SVECTOR {
-	short vx, vy, vz, pad;
-};
-
-struct SModel {
-	ushort Flags;
-	ushort NumVertices;  /* 0x02 */
-	ushort NumNormals;   /* 0x04 */
-	ushort NumFaces;     /* 0x06 */
-	int Radius;          /* 0x08 */
-	Vector Box;          /* 0x0c */
-	short zMax;          /* 0x18 */
-	ushort NextLOD;      /* 0x1a */
-	SVECTOR Vertices[1]; /* 0x1c */
-};
-
-struct SPSXRegion {
-	char pad0[16];
-	SModel **pModels; /* 0x10 */
-	char pad14[64 - 0x14];
-};
-
-struct Item {
-	ushort Flags;      /* 0 */
-	ushort Inquiry;    /* 2 */
-	Vector Pos;        /* 4 */
-	short Angles[3];   /* 16 */
-	ushort ModelIndex; /* 22 */
-	char pad18[27 - 24];
-	uchar Region; /* 27 */
-};
-
-struct SLineInfo {
-	Vector StartCoords;          /* 0x00 */
-	Vector EndCoords;            /* 0x0c */
-	Vector MinCoords;            /* 0x18 */
-	Vector MaxCoords;            /* 0x24 */
-	int iLo, iHi, jLo, jHi;      /* 0x30 */
-	int Distance;                /* 0x40 */
-	int Length;                  /* 0x44 */
-	int WorldCst[8];             /* 0x48 */
-	Item *pItem;                 /* 0x68 */
-	Vector Position;             /* 0x6c */
-	SVECTOR Normal;              /* 0x78 */
-	uint *pFace;                 /* 0x80 */
-	int Model;                   /* 0x84 */
-	uchar RecordTriggerZoneHits; /* 0x88 */
-	uchar DropDown;              /* 0x89 */
-	ushort Inquiry;              /* 0x8a */
-	int tNear;                   /* 0x8c */
-};
-
-struct SColCache {
-	Item *pItem;
-	SModel *pModel;
-	int Faces;
-	int FirstFace;
-};
-
-struct SFaceCache {
-	int Flags;
-	int XMin;
-	int YMin;
-	int ZMin;
-	int XMax;
-	int YMax;
-	int ZMax;
-};
-
-struct SColijInfo {
-	int pad0;
-	uint *pFace;
-	char pad8[0x24 - 8];
-};
+#include "game/colij.h"
 
 extern SPSXRegion PSXRegion[];
 extern SFaceCache FaceCache[];
-extern SColijInfo NearestHit;
+extern SHit NearestHit;
 extern SVECTOR *NearestHit_8[];
 extern int OtherEnvIndex;
 extern int *EnvModelChecksums[2];
@@ -138,7 +57,7 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 	uint *pFace;
 	int tNear;
 	int CollidedTriggerModel;
-	SColijInfo *pColij;
+	SHit *pColij;
 
 	XMin = pInfo->MinCoords.vx;
 	YMin = pInfo->MinCoords.vy;
@@ -154,7 +73,7 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 	ZMax = ((ZMax >> 12) << 12) + 0x4000;
 	pFaceCache = &FaceCache[pColCache->FirstFace];
 	Faces = pColCache->Faces;
-	pModel = PSXRegion[pItem->Region].pModels[pItem->ModelIndex];
+	pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
 	NumNormals = pModel->NumNormals;
 	pVerts = pModel->Vertices;
 	Normals = &pModel->Vertices[pModel->NumVertices];
@@ -216,12 +135,12 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 					x0 = pVerts[pVertexIndex[0]].vx;
 					y0 = pVerts[pVertexIndex[0]].vy;
 					z0 = pVerts[pVertexIndex[0]].vz;
-					L0x = (pInfo->StartCoords.vx >> 12) - (pItem->Pos.vx >> 12);
-					L0y = (pInfo->StartCoords.vy >> 12) - (pItem->Pos.vy >> 12);
-					L0z = (pInfo->StartCoords.vz >> 12) - (pItem->Pos.vz >> 12);
-					L1x = (pInfo->EndCoords.vx >> 12) - (pItem->Pos.vx >> 12);
-					L1y = (pInfo->EndCoords.vy >> 12) - (pItem->Pos.vy >> 12);
-					L1z = (pInfo->EndCoords.vz >> 12) - (pItem->Pos.vz >> 12);
+					L0x = (pInfo->StartCoords.vx >> 12) - (pItem->Position.vx >> 12);
+					L0y = (pInfo->StartCoords.vy >> 12) - (pItem->Position.vy >> 12);
+					L0z = (pInfo->StartCoords.vz >> 12) - (pItem->Position.vz >> 12);
+					L1x = (pInfo->EndCoords.vx >> 12) - (pItem->Position.vx >> 12);
+					L1y = (pInfo->EndCoords.vy >> 12) - (pItem->Position.vy >> 12);
+					L1z = (pInfo->EndCoords.vz >> 12) - (pItem->Position.vz >> 12);
 					LineLen = pInfo->Length;
 					s0 = Nx * (L0x - x0) + Ny * (L0y - y0) + Nz * (L0z - z0);
 					s1 = Nx * (L1x - x0) + Ny * (L1y - y0) + Nz * (L1z - z0);
@@ -284,11 +203,11 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 					}
 
 					if (contained) {
-						pInfo->Model = pItem->ModelIndex;
+						pInfo->Model = pItem->Model;
 
 						if (((ushort *)pFace)[7] & 2) {
 							if (pInfo->RecordTriggerZoneHits)
-								CollidedTriggerModel = pItem->ModelIndex;
+								CollidedTriggerModel = pItem->Model;
 						} else {
 							int Qx, Qy, Qz;
 							int t;
@@ -299,9 +218,9 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 								Qx = Mips_DotProd2(L0x << 12, 0x4000, (int)Dx << 12, t) >> 2;
 								Qy = Mips_DotProd2(L0y << 12, 0x4000, (int)Dy << 12, t) >> 2;
 								Qz = Mips_DotProd2(L0z << 12, 0x4000, (int)Dz << 12, t) >> 2;
-								Qx += pItem->Pos.vx;
-								Qy += pItem->Pos.vy;
-								Qz += pItem->Pos.vz;
+								Qx += pItem->Position.vx;
+								Qy += pItem->Position.vy;
+								Qz += pItem->Position.vz;
 								tNear = t;
 								pInfo->tNear = t;
 								pInfo->Position.vx = Qx;
@@ -309,7 +228,7 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 								pInfo->Position.vz = Qz;
 								pInfo->pItem = pItem;
 								pInfo->pFace = pFace;
-								pInfo->Model = pItem->ModelIndex;
+								pInfo->Model = pItem->Model;
 								pInfo->Distance = Mips_FixMul__Fii(LineLen, tNear) >> 2;
 								NearestHit_8[0] =
 								    (SVECTOR *)((char *)Normals + (((ushort *)pFace)[6] & 0xfff8));

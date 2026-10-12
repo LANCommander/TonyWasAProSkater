@@ -1,17 +1,5 @@
 /* Video_SortAndMerge__Fv (0x80069164) */
-struct SHighlight {
-	short FromFrame;
-	short ToFrame;
-	int Score;
-};
-
-struct SVideoInfo {
-	char pad0[0x1c];
-	unsigned long NumFrames;
-	char pad1[0x30];
-	SHighlight Highlights[5];
-	char pad2[0x48];
-};
+#include "game/video.h"
 
 extern SVideoInfo GVInfo1[2];
 

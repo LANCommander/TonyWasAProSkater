@@ -1,35 +1,11 @@
 /* M3dInit_ParsePSX__Fi (0x800821f8) */
-/* C++ (M3DINIT.CPP). Locals from the demo's MAIN.SYM; SModel/Item/Texture are the demo's layouts.
+/* C++ (M3DINIT.CPP). Locals from the demo's MAIN.SYM; SModel/Texture are the demo's layouts.
    The per-region table (64-byte entries) is laid out by offset. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
+#include "game/m3d.h"
 
-struct SVECTOR {
-	short vx, vy, vz, pad;
-};
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct SVector {
-	short vx, vy, vz;
-};
-
-struct SModel {
-	ushort Flags;
-	ushort NumVertices;
-	ushort NumNormals;
-	ushort NumFaces;
-	int Radius;
-	Vector Box;
-	short zMax;
-	ushort NextLOD;
-	SVECTOR Vertices[1];
-};
-
-struct Item {
+/* one item record in a PSX file (SPSXRegion::pPSX + 3): the first 0x24 bytes of m3d.h's Item.
+   game/m3d.h's Item runs on to 0x48 (CItem's data), so it can't step through the file's array */
+struct SPSXItem {
 	ushort Flags;
 	ushort Inquiry;
 	Vector Position;
@@ -39,30 +15,11 @@ struct Item {
 	uchar TintIndex;
 	uchar Anim;
 	uchar Region;
-	Item *NextItem;
+	SPSXItem *NextItem;
 	uint RGB;
 };
 
-struct Texture {
-	uchar u0, v0;
-	ushort clut;
-	uchar u1, v1;
-	ushort tpage;
-	uchar u2, v2, u3, v3;
-	uint TexWin;
-};
-
-struct SRegion {
-	char pad0[0x10];
-	SModel **ppModels; /* 0x10; count at [-1] */
-	int *pItems;       /* 0x14; count at [2], items from [3] */
-	char pad18[0x30 - 0x18];
-	short NumParts; /* 0x30 */
-	uchar Fastable; /* 0x32 */
-	char pad33[0x40 - 0x33];
-};
-
-extern SRegion PSXRegion[];
+extern SPSXRegion PSXRegion[];
 
 int GHeadPart;
 int GBoardPart;
@@ -74,7 +31,7 @@ extern ushort M3d_DefaultLODDistance;
 
 void M3dInit_ParsePSX(int Region) {
 	SModel *pModel;
-	Item *pItem;
+	SPSXItem *pItem;
 	uint *pFace;
 	uint Fastable;
 	int i;
@@ -235,8 +192,8 @@ void M3dInit_ParsePSX(int Region) {
 
 	PSXRegion[Region].Fastable = Fastable;
 	PSXRegion[Region].NumParts = NumParts;
-	NumItems = PSXRegion[Region].pItems[2];
-	pItem = (Item *)(PSXRegion[Region].pItems + 3);
+	NumItems = PSXRegion[Region].pPSX[2];
+	pItem = (SPSXItem *)(PSXRegion[Region].pPSX + 3);
 
 	for (i = 0; i < NumItems; i++) {
 		if (i < NumItems - 1)

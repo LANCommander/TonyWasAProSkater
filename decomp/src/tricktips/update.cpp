@@ -6,113 +6,11 @@
    after the sllv) needs plain statements with the `tip_mask &= bit` split and no one-pass loop
    wrappers (their loop notes pinned the load above the sllv); the constant-tip copies keep the
    single-expression form. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton b[16];
-	char pad100[0x16c - 0x100];
-};
-
-class CBruce {
-  public:
-	char pad0[0x20c];
-	int mGrinds; /* 0x20c */
-	char pad210[0x218 - 0x210];
-	int mBails;              /* 0x218 */
-	int mPerpendicularBails; /* 0x21c */
-	int mTrickBails;         /* 0x220 */
-	int mRailBails;          /* 0x224 */
-	int mJumps;              /* 0x228 */
-	int mWeakJumps;          /* 0x22c */
-	int mAirs;               /* 0x230 */
-	int mTricks;             /* 0x234 */
-	int mRails;              /* 0x238 */
-	int mAirPolys;           /* 0x23c */
-	int mAirPolyBreaks;      /* 0x240 */
-	int mBigAirs;            /* 0x244 */
-};
-
-struct STip {
-	int Flag;
-	int pad4;
-	char *Line1;
-	char *Line2;
-	char *Line3;
-};
-
-struct SLevel {
-	char pad0[12];
-	int NoTips; /* 0x0c */
-	char pad10[0x58 - 0x10];
-	int DisabledTips[2]; /* 0x58 */
-	char pad60[120 - 0x60];
-};
-
-struct SCareer {
-	char pad0[0x974];
-	int TipsSeen[2];  /* 0x974 */
-	int TipsShown[2]; /* 0x97c */
-	char pad984[0x9b4 - 0x984];
-	int TipsOn; /* 0x9b4 */
-};
-
-struct SVideoInfo {
-	int VideoMode;
-};
-
-struct CTrickTipMonitor {
-	char pad0[0x58];
-	uint mTimer;       /* 0x58 */
-	uint mLastTipTime; /* 0x5c */
-	uint mJumpTimer;   /* 0x60 */
-	CBruce *pSkater;   /* 0x64 */
-	char mTipLine1Buf[40];
-	char *mTipLine1; /* 0x90 */
-	char *mTipLine2;
-	char *mTipLine3;
-	char *mTipLine4;
-	uint mTipTimer; /* 0xa0 */
-	int mOldBails;
-	int mOldPerpendicularBails;
-	int mOldTrickBails;
-	int mOldRailBails;
-	int mOldJumps;
-	int mOldWeakJumps;
-	int mOldAirs;
-	int mOldTricks;
-	int mOldRails;
-	int mOldAirPolys;
-	int mOldAirPolyBreaks;
-	int mOldBigAirs;
-	int mOldGrinds;
-	int mBailCounter;
-	int mPerpendicularBailCounter;
-	int mTrickBailCounter;
-	int mRailBailCounter;
-	int mJumpCounter;
-	int mWeakJumpCounter;
-	int mAirCounter;
-	int mTrickCounter;
-	int mRailCounter;
-	int mAirPolyCounter;
-	int mAirPolyBreakCounter;
-	int mBigAirCounter;
-	int mGrindCounter;
-	int mHoldingForwardCounter;
-	void ShowTip(int tip);
-	void ShowFoundTip(int tip);
-	int FindTip();
-	void Update();
-};
+#include "game/panel.h"
+#include "game/bruce.h"
+#include "game/career.h"
+#include "game/video.h"
+#include "game/pad.h"
 
 extern CTrickTipMonitor TrickTipMonitor;
 extern SCareer GCareer;
@@ -147,7 +45,7 @@ inline int CTrickTipMonitor::FindTip() {
 		if (TRICKTIP[i].Flag)
 			continue;
 
-		if ((GCareer.TipsSeen[TipBank(i)] >> (i - TipBank(i) * 32)) & 1)
+		if ((GCareer.Options.TrickTipUsed[TipBank(i)] >> (i - TipBank(i) * 32)) & 1)
 			continue;
 
 		return i;
@@ -161,11 +59,11 @@ inline void CTrickTipMonitor::ShowTip(int tip) {
 		mLastTipTime = mTimer;
 		int tip_bank = TipBank(tip);
 
-		if (GCareer.TipsOn) {
-			if (((Levels[GLevel].DisabledTips[tip_bank] >> (tip - tip_bank * 32)) &
+		if (GCareer.Options.TrickTipsEnabled) {
+			if (((Levels[GLevel].TrickTipMask[tip_bank] >> (tip - tip_bank * 32)) &
 			     1) == 0) {
-				int &seen = GCareer.TipsSeen[tip_bank];
-				int tip_mask = GCareer.TipsShown[tip_bank] & (1 << (tip - tip_bank * 32));
+				int &seen = GCareer.Options.TrickTipUsed[tip_bank];
+				int tip_mask = GCareer.Options.TrickTipMask[tip_bank] & (1 << (tip - tip_bank * 32));
 				int tip_used = seen & (1 << (tip - tip_bank * 32));
 
 				seen |= (1 << (tip - tip_bank * 32));
@@ -173,7 +71,7 @@ inline void CTrickTipMonitor::ShowTip(int tip) {
 				if (!tip_mask) {
 					if (tip_used) {
 						mTipLine1 = TEXT_REMEMBER;
-						GCareer.TipsShown[tip_bank] |= 1 << (tip - tip_bank * 32);
+						GCareer.Options.TrickTipMask[tip_bank] |= 1 << (tip - tip_bank * 32);
 					} else {
 						mTipLine1 = TEXT_TIP;
 					}
@@ -197,19 +95,19 @@ inline void CTrickTipMonitor::ShowFoundTip(int tip) {
 		mLastTipTime = mTimer;
 		tip_bank = TipBank(tip);
 
-		if (GCareer.TipsOn) {
-			if (((Levels[GLevel].DisabledTips[tip_bank] >> (tip - tip_bank * 32)) &
+		if (GCareer.Options.TrickTipsEnabled) {
+			if (((Levels[GLevel].TrickTipMask[tip_bank] >> (tip - tip_bank * 32)) &
 			     1) == 0) {
-				tip_mask = GCareer.TipsShown[tip_bank];
-				tip_used = GCareer.TipsSeen[tip_bank];
+				tip_mask = GCareer.Options.TrickTipMask[tip_bank];
+				tip_used = GCareer.Options.TrickTipUsed[tip_bank];
 				tip_mask &= (1 << (tip - tip_bank * 32));
-				GCareer.TipsSeen[tip_bank] |= (1 << (tip - tip_bank * 32));
+				GCareer.Options.TrickTipUsed[tip_bank] |= (1 << (tip - tip_bank * 32));
 				tip_used &= (1 << (tip - tip_bank * 32));
 
 				if (!tip_mask) {
 					if (tip_used) {
 						mTipLine1 = TEXT_REMEMBER;
-						GCareer.TipsShown[tip_bank] |= 1 << (tip - tip_bank * 32);
+						GCareer.Options.TrickTipMask[tip_bank] |= 1 << (tip - tip_bank * 32);
 					} else {
 						mTipLine1 = TEXT_TIP;
 					}
@@ -225,7 +123,7 @@ inline void CTrickTipMonitor::ShowFoundTip(int tip) {
 }
 
 inline void CTrickTipMonitor::Update() {
-	if (Levels[GLevel].NoTips)
+	if (Levels[GLevel].isCompetition)
 		return;
 
 	if (GVInfo1[0].VideoMode == 2 || GVInfo2[0].VideoMode == 2)
@@ -252,8 +150,8 @@ inline void CTrickTipMonitor::Update() {
 	if (mOldGrinds < pSkater->mGrinds) {
 		mOldGrinds = pSkater->mGrinds;
 		mGrindCounter++;
-		GCareer.TipsSeen[0] |= 0x100;
-		GCareer.TipsShown[0] |= 0x100;
+		GCareer.Options.TrickTipUsed[0] |= 0x100;
+		GCareer.Options.TrickTipMask[0] |= 0x100;
 	}
 
 	if (mOldJumps < pSkater->mJumps) {
@@ -265,7 +163,7 @@ inline void CTrickTipMonitor::Update() {
 	if (mJumpTimer > 600)
 		mJumpTimer = 0;
 
-	if (Pad[0].b[10].Pressed || Pad[1].b[10].Pressed)
+	if (Pad[0].Up.Pressed || Pad[1].Up.Pressed)
 		mHoldingForwardCounter++;
 	else
 		mHoldingForwardCounter = 0;

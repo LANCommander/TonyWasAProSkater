@@ -1,24 +1,6 @@
 /* TrickOb_Update__Fv (0x8004f374) */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct Item {
-	ushort mFlags;
-	char pad[0x1e];
-	uint mRGB;
-};
-
-struct CTrickOb {
-	int vf;
-	uint mChecksum;
-	ushort mNode;
-	uchar mState;
-	uchar mPlayer;
-	ushort mScore;
-	CTrickOb *mpNext;
-	Item *mpItem;
-};
+#include "game/m3d.h"
+#include "game/trickob.h"
 
 CTrickOb *TrickObList;
 
@@ -56,16 +38,16 @@ void TrickOb_Update(void) {
 					}
 
 					if (pTrickOb->mPlayer == 1)
-						pItem->mRGB = (pItem->mRGB & 0xff00ffff) | ((Red + 64) << 16);
+						pItem->RGB = (pItem->RGB & 0xff00ffff) | ((Red + 64) << 16);
 					else
-						pItem->mRGB = (pItem->mRGB & 0xffffff00) | (Red + 64);
+						pItem->RGB = (pItem->RGB & 0xffffff00) | (Red + 64);
 				} else {
 					int Red = (Xblanks >> 1) & 63;
 
 					if (Red > 32)
 						Red = 64 - Red;
 
-					pItem->mRGB = (pItem->mRGB & 0xffffff00) | (Red + 32);
+					pItem->RGB = (pItem->RGB & 0xffffff00) | (Red + 32);
 				}
 			}
 		}

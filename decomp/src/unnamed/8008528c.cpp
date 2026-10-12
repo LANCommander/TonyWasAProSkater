@@ -9,72 +9,9 @@
      to give retail's u1,u0,u2,v3,v2,u3,v1,v0 priority order (s1..fp).
    - The `0xff00U` masks matter: an unsigned mask stops the store to a ushort narrowing the AND
      into `li -256`. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
+#include "game/m3d.h"
 
-struct SVECTOR {
-	short vx, vy, vz, pad;
-};
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct SVector {
-	short vx, vy, vz;
-};
-
-struct SModel {
-	ushort Flags;
-	ushort NumVertices;
-	ushort NumNormals;
-	ushort NumFaces;
-	int Radius;
-	Vector Box;
-	short zMax;
-	ushort NextLOD;
-	SVECTOR Vertices[1];
-};
-
-struct Item {
-	ushort Flags;
-	ushort Inquiry;
-	Vector Position;
-	SVector Angles;
-	ushort Model;
-	uchar Frame;
-	uchar TintIndex;
-	uchar Anim;
-	uchar Region;
-	Item *NextItem;
-	uint RGB;
-};
-
-struct STexWibVertInfo {
-	uchar u;
-	uchar v;
-	uchar uAmpPhase;
-	uchar vAmpPhase;
-};
-
-struct STexWibFaceInfo {
-	STexWibVertInfo p0;
-	STexWibVertInfo p1;
-	STexWibVertInfo p2;
-	STexWibVertInfo p3;
-};
-
-struct SRegion {
-	char pad0[0x10];
-	SModel **ppModels; /* 0x10 */
-	uint *pPSX;        /* 0x14 */
-	char pad18[0x28 - 0x18];
-	uint *pWibbleData; /* 0x28 */
-	char pad2c[0x40 - 0x2c];
-};
-
-extern SRegion PSXRegion[];
+extern SPSXRegion PSXRegion[];
 
 int XblanksNow;
 int BasePhase;
@@ -109,7 +46,7 @@ void M3d_PreprocessWibblyTextures(int Region) {
 	if (Region == -1)
 		return;
 
-	pData = PSXRegion[Region].pWibbleData;
+	pData = PSXRegion[Region].pTexWibData;
 
 	if (!pData)
 		return;

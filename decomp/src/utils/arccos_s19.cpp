@@ -1,10 +1,7 @@
 /* Utils_ArcCos__Fi (0x800480f8) */
-struct TE {
-	short x;
-	short y;
-};
+#include "game/trig.h"
 
-extern TE rcossin_tbl[2];
+extern SSinCos rcossin_tbl[2];
 
 int Utils_ArcCos(int a) {
 	int flag;
@@ -22,8 +19,8 @@ int Utils_ArcCos(int a) {
 	t = 512;
 
 	for (;;) {
-		TE *p = &rcossin_tbl[t];
-		int c = p->y;
+		SSinCos *p = &rcossin_tbl[t];
+		int c = p->c;
 
 		if (a < c) {
 			t += d;

@@ -2,13 +2,15 @@
 /* C++ (M3D.CPP, between M3d_BuildTransform and M3d_PreprocessWibblyTextures). Looks up a face's
    wibble offset: the high nibble of byte 3 picks a 64-entry row of a short table (0 = none), the
    low nibble phase-shifts the global counter BasePhase into it. */
+#include "game/m3d.h"
+
 int BasePhase;
 
 extern short WibbleTables[][64];
 
-extern "C" int vWibble__FP15STexWibVertInfo(unsigned char *p) {
-	int hi = p[3] >> 4;
-	int lo = p[3] & 15;
+int vWibble(STexWibVertInfo *p) {
+	int hi = p->vAmpPhase >> 4;
+	int lo = p->vAmpPhase & 15;
 
 	if (hi) {
 		int i = (BasePhase + lo * 4) & 63;

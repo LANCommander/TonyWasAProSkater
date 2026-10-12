@@ -2,26 +2,8 @@
 /* C++ (VIDEO.CPP). Demo twin. Inserts a finished trick into the player's top-5 replay highlights. */
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
 
-struct SHighlight {
-	short FromFrame;
-	short ToFrame;
-	int Score;
-};
-
-struct SVideoInfo {
-	char pad0[0x1c];
-	unsigned int NumFrames;
-	char pad1[0x30];
-	SHighlight Highlights[5];
-	char pad2[0x48];
-};
-
-struct CBruce {
-	int vf;
-	int x;
-	int y;
-	int z;
-};
+#include "game/video.h"
+#include "game/bruce.h"
 
 extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList;
@@ -43,7 +25,7 @@ void Video_HighlightEnd(CBruce *pSkater, int Score) {
 
 	HLStartCalled = 0;
 	HighlightEndFrame = VInfo->NumFrames;
-	HighlightEndY = pSkater->y;
+	HighlightEndY = pSkater->mPos.vy;
 	WasABail = (Score < 0);
 
 	if (Score < 0)

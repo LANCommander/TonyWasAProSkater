@@ -8,32 +8,13 @@ extern "C" {
 	#include <inline_c.h>
 }
 
-struct CVector {
-	int x, y, z;
-	CVector() {}
-	void Set(int _x, int _y, int _z) {
-		x = _x;
-		y = _y;
-		z = _z;
-	}
-};
+#include "game/bruce.h"
 
 extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
 extern "C" void FUN_80093130(MATRIX *, MATRIX *);
 extern "C" MATRIX *FUN_80093240(SVECTOR *, MATRIX *);
 
 extern CVector WorldUp;
-
-struct CBruce {
-	char pad0[0x78c];
-	MATRIX mRotMatrix;
-	char pad2[0x7d8 - 0x7ac];
-	CVector mFront;
-	CVector mRight;
-	CVector mUp;
-	void FRUVectorsFromRotMatrix();
-	void UprightSideways();
-};
 
 void CBruce::UprightSideways() {
 	CVector TmpCV;
@@ -52,9 +33,9 @@ void CBruce::UprightSideways() {
 		int _y = v.vy;
 		int _z = v.vz;
 
-		TmpCV.x = _x;
-		TmpCV.y = _y;
-		TmpCV.z = _z;
+		TmpCV.vx = _x;
+		TmpCV.vy = _y;
+		TmpCV.vz = _z;
 	}
 
 	dot = Mips_CVecDotProd__FP7CVectorT0(&mUp, &TmpCV);

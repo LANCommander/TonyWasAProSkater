@@ -1,35 +1,6 @@
 /* Display__6CamPosUsUsUcUcUc (0x8007d258) */
 /* C++ (CAMERA.CPP). Members from the demo's MAIN.SYM (the calc_/lock_ flags have no type there). */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct CQuat {
-	int x, y, z, w, n;
-};
-
-class CBody {
-  public:
-	ushort mFlags;
-	ushort mInquiry;
-	CVector mPos;
-};
-
-class CamPos {
-  public:
-	int **vf;
-	int calc_mTripod;
-	CBody *mTripod;
-	CVector mTripodPos;
-	int lock_mStickO;
-	CQuat mStickO;
-	CVector mStickOffset;
-	short mStickLength;
-	void Display(ushort x, ushort y, uchar r, uchar g, uchar b);
-};
+#include "game/camera.h"
 
 void Font_String(ushort, ushort, char *, uchar, uchar, uchar, uchar);
 void Font_Number(ushort, ushort, int, uchar, uchar, uchar, uchar);

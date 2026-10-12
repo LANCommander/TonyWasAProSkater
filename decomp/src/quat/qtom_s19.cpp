@@ -1,13 +1,10 @@
 /* QToM__FRC5CQuatR6MATRIX (0x800775e8) */
-struct CQuat {
-	int vf;
-	int x, y, z, w;
-};
+extern "C" {
+#include <sys/types.h>
+#include <libgte.h>
+}
 
-struct MATRIX {
-	short m[3][3];
-	int t[3];
-};
+#include "game/vector.h"
 
 void QToM(const CQuat &q, MATRIX &m) {
 	int wx, wy, wz, xx, xy, xz, yy, yz, zz;

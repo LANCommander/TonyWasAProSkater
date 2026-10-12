@@ -1,24 +1,7 @@
 /* FUN_8005c68c (0x8005c68c) */
 /* Hold START+SELECT on either pad to count DAT_800d2348 down from 110 (eating the START trigger);
    at zero stop the looping sound and set DAT_800d1cb8. Called from 9 sites. */
-typedef unsigned char uchar;
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	int rest[11];
-};
+#include "game/pad.h"
 
 extern SControl Pad[2]; /* Pad */
 

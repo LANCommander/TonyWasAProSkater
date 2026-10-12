@@ -2,27 +2,9 @@
 /* C++ (MAIN.CPP). Fuzzy demo twin; locals (Frozen) from MAIN.SYM. Runs the per-frame game logic
    on every other frame: objects, tricks, panels, front end and messages, swapping the two pads
    around the front-end update in two-player mode. */
-struct SControl {
-	int b[91];
-};
-
-struct CBody;
-
-struct CBodyPtrs {
-	CBody *p;
-};
-
-struct SCareer {
-	char pad[0x5f0];
-	int Money;
-};
-
-struct CSkater {
-	char pad1d8[0x1d8];
-	SCareer *pCareer;
-	char pad[0x734 - 0x1dc];
-	int Dead;
-};
+#include "game/bruce.h"
+#include "game/camera.h"
+#include "game/pad.h"
 
 extern "C" {
 	extern SControl Pad[2];
@@ -37,8 +19,8 @@ extern "C" {
 	int GSpin;
 	int GSpinSpeed;
 	int GHorsePlayer;
-	CSkater *GSkater;
-	CSkater *DAT_800d17cc;
+	CBruce *GSkater;
+	CBruce *DAT_800d17cc;
 
 	extern CBody *BaddyList;
 	extern CBody *EnvironmentalObjectList;
@@ -57,8 +39,6 @@ extern "C" {
 	void FUN_8004f8a0(void);
 	void FUN_8006c4e8(void);
 	void Spool_Continue__Fv(void);
-	void Pad_Remap__Fv(void);
-	void Pad_Restore__Fv(void);
 	void TrickTips_Update__Fv(void);
 	void Flash_Update__Fv(void);
 	void Font_Reset__Fv(void);
@@ -104,12 +84,12 @@ void Game_Logic(void) {
 			Bit_RemoveDeadBits__Fv();
 
 			if (GGame != 7)
-				if (GState == 1 && GSpin < 40 && !GSkater->Dead &&
-				    (!DAT_800d17cc || !DAT_800d17cc->Dead)) {
-					GSkater->pCareer->Money += GSpinSpeed;
+				if (GState == 1 && GSpin < 40 && !GSkater->mPhysicsState &&
+				    (!DAT_800d17cc || !DAT_800d17cc->mPhysicsState)) {
+					GSkater->mpCamera->extra_YRot += GSpinSpeed;
 
 					if (DAT_800d17cc)
-						DAT_800d17cc->pCareer->Money += GSpinSpeed;
+						DAT_800d17cc->mpCamera->extra_YRot += GSpinSpeed;
 				}
 		}
 	} else {
@@ -127,9 +107,9 @@ void Game_Logic(void) {
 		Pad[1] = t;
 	}
 
-	Pad_Remap__Fv();
+	Pad_Remap();
 	Front_Update__Fv();
-	Pad_Restore__Fv();
+	Pad_Restore();
 
 	if (GGame == 7 && GHorsePlayer == 1) {
 		SControl t = Pad[0];

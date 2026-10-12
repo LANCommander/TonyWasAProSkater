@@ -2,138 +2,10 @@
 /* C++ (TRIG.CPP). Fuzzy demo twin (0.52); locals from its MAIN.SYM. Runs a trigger node's command
    script: restart names and points, spooling, kill/visibility boxes, backgrounds, fog and sky
    colours, gaps, sounds, pulses and signals to linked nodes, and the camera settings. */
-#pragma interface
-
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector() {}
-	int Length() const;
-};
-
-CVector operator-(const CVector &, const CVector &);
-
-struct CSVector {
-	short vx, vy, vz;
-	CSVector() {}
-};
-
-struct SGapTrick {
-	short Type;
-	short Score;
-	char *Name;
-};
-
-struct SCommandPoint {
-	ushort *pCommands;
-	uchar Collision;
-	uchar Executed;
-	uchar NumPulsesSet;
-	uchar PulsesReceived;
-	ushort NumPulses;
-	ushort NodeIndex;
-	uint Checksum;
-	SCommandPoint *pNextSimilar;
-	SCommandPoint *pNext;
-};
-
-class CCamera {
-  public:
-	char pad0[0x420];
-	class CBody *mTripod; /* 0x420 */
-	char pad424[0x458 - 0x424];
-	class CBody *mFocus; /* 0x458 */
-	char pad45c[0x4b0 - 0x45c];
-	short mPitchDamper;      /* 0x4b0 */
-	short mTripodPosYDamper; /* 0x4b2 */
-	void SetPitchDamper(short v) {
-		mPitchDamper = v;
-	}
-	void SetTripodPosYDamper(short v) {
-		mTripodPosYDamper = v;
-	}
-	char pad4b4[0x584 - 0x4b4];
-	int mCameraMode; /* 0x584 */
-	void ResetOrientation();
-	void SetZoom(ushort, ushort);
-	void SetCamAngle(short, ushort);
-	void SetCamXZDistance(ushort, ushort);
-	void SetCamYDistance(short, ushort);
-	void SetCamXOffset(short, ushort);
-	void SetCamYOffset(short, ushort);
-	void SetCamZOffset(short, ushort);
-	void SetCollisionRayLR(int);
-	void SetCollisionRayBack(int);
-	void SetCollisionAngLR(short);
-	void SetCollisionAngBack(short);
-	void SetComplexMode(ushort);
-};
-
-class CPanelData {
-  public:
-	void OutOfBounds();
-};
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos;     /* 0x04 */
-	CSVector mAngles; /* 0x10 */
-	char pad16[0x6c - 0x16];
-	CVector mVel; /* 0x6c */
-	CVector mAcc; /* 0x78 */
-	char pad84[0xf0 - 0x84];
-	CVector mOldPos; /* 0xf0 */
-	char padfc[0x1bc - 0xfc];
-	CVector mSafePos; /* 0x1bc */
-	char pad1c8[0x1d8 - 0x1c8];
-	CCamera *mpCamera; /* 0x1d8 */
-	CVector m1DC;      /* 0x1dc */
-	char pad1e8[0x28c - 0x1e8];
-	int mGapChecksum[10];       /* 0x28c */
-	int mGapType[10];           /* 0x2b4 */
-	int mGaps;                  /* 0x2dc */
-	SGapTrick *mpGrindGapTrick; /* 0x2e0 */
-	char pad2e4[0x358 - 0x2e4];
-	int mInBail;      /* 0x358 */
-	int mDoingATrick; /* 0x35c */
-	char pad360[0x6e0 - 0x360];
-	int mStickToRail; /* 0x6e0 */
-	char pad6e4[0x744 - 0x6e4];
-	int mJumpPending;  /* 0x744 */
-	int mJumpStrength; /* 0x748 */
-	char pad74c[0x884 - 0x74c];
-	int mIgnoreBruceInputTimer;       /* 0x884 */
-	int mIgnoreBruceInputFreezeTimer; /* 0x888 */
-	char pad88c[0x8a4 - 0x88c];
-	int m8A4; /* 0x8a4 */
-	int m8A8; /* 0x8a8 */
-	void SetM8A4(int a, int b) {
-		m8A4 = a;
-		m8A8 = b;
-	}
-	char pad8ac[0x924 - 0x8ac];
-	CPanelData mPanelData; /* 0x924 */
-	void Trick(int, char *, int, int);
-	void Bail();
-	void ResetTrickBuffers();
-	void RunAnim(int, int, int, int);
-};
-
-class CItem {
-  public:
-	char padItem[0x4c];
-	static void *operator new(uint) throw();
-};
-
-class CBackground : public CItem {
-  public:
-	char pad4c[312 - 0x4c];
-	CBackground(uint, const CSVector &);
-};
+#include "game/trig.h"
+#include "game/bruce.h"
+#include "game/backgrnd.h"
+#include "game/camera.h"
 
 int NumCheatRestarts;
 int NumHorseRestarts;
@@ -415,7 +287,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 						    pCurrentPlayer->mGapChecksum[i] == pCommandPoint->Checksum) {
 							pCurrentPlayer->mGapChecksum[i] = 0;
 
-							if (!pCurrentPlayer->mInBail) {
+							if (!pCurrentPlayer->mInAir) {
 								SGapTrick *pGapTrick = GapTricks;
 
 								while (pGapTrick->Type != -1) {
@@ -427,7 +299,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 								if (pGapTrick->Type != -1) {
 									if (pGapTrick->Type < 20000) {
-										pCurrentPlayer->Trick(77, pGapTrick->Name, -pGapTrick->Score,
+										pCurrentPlayer->Trick_Trick(77, pGapTrick->Name, -pGapTrick->Score,
 										                    0);
 										SFX_PlayX(161, 0x2000, 0);
 									} else {
@@ -534,7 +406,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 					pBruce->mAcc.vy = 0;
 					pBruce->mAcc.vz = 0;
 					pBruce->mPos.vy += -102400;
-					pBruce->Bail();
+					pBruce->Trick_Bail();
 
 					pBruce->mDoingATrick = 0;
 					pBruce->mJumpPending = 0;
@@ -547,10 +419,10 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 					pBruce->mOldPos = pBruce->mPos;
 					pBruce->mSafePos = pBruce->mPos;
-					pBruce->mInBail = 0;
+					pBruce->mInAir = 0;
 					pBruce->mpCamera->ResetOrientation();
 					pBruce->RunAnim(0, 0, -1, -1);
-					pBruce->mPanelData.OutOfBounds();
+					pBruce->mPanel.OutOfBounds();
 				} else {
 					Front_Restart();
 				}
@@ -767,7 +639,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 			case 0xa0:
 				if (CameraList)
-					CameraList->mCameraMode = *pCommands;
+					CameraList->mCameraMode = (ECameraMode)*pCommands;
 
 				pCommands++;
 				break;

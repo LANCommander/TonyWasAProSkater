@@ -1,137 +1,15 @@
 /* ReactToCollision__7CCamera (0x80078f3c) */
 /* C++ (CAMERA.CPP). Demo twin (opcode-identical but for a few `lui`s); locals and frame from its
    MAIN.SYM. CCamera members are the demo's + 0x2c. */
-#pragma interface
-
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <inline_c.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector() {}
-	CVector(int _x, int _y, int _z) {
-		vx = _x;
-		vy = _y;
-		vz = _z;
-	}
-	CVector &operator*=(const int &);
-};
-
-class CClass {
-  public:
-	virtual ~CClass() {}
-};
-
-class CQuat : public CClass {
-  public:
-	int x, y, z, w;
-	void operator*=(const CQuat &r) {
-		int tempw, tempz, tempy, tempx;
-
-		tempw = w * r.w - x * r.x - y * r.y - z * r.z;
-		tempx = w * r.x + x * r.w + y * r.z - z * r.y;
-		tempy = w * r.y + y * r.w + z * r.x - x * r.z;
-		tempz = w * r.z + z * r.w + x * r.y - y * r.x;
-		x = tempx >> 12;
-		y = tempy >> 12;
-		z = tempz >> 12;
-		w = tempw >> 12;
-	}
-};
-
-struct Item;
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct SLineInfo {
-	Vector StartCoords;
-	Vector EndCoords;
-	Vector MinCoords;
-	Vector MaxCoords;
-	int iLo, iHi, jLo, jHi;
-	int Distance;
-	int Length;
-	MATRIX WorldCst;
-	Item *pItem;
-	Vector Position;
-	SVECTOR Normal;
-	uint *pFace;
-	int Model;
-	uchar RecordTriggerZoneHits;
-	uchar DropDown;
-	ushort Inquiry;
-	int tNear;
-	uint tNumtrLo;
-	int tNumtrHi;
-	uint tDenomLo;
-	int tDenomHi;
-	uint NormalOffset;
-};
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos;
-	char pad10[0x358 - 0x10];
-	int m358; /* 0x358 */
-	char pad35c[0x734 - 0x35c];
-	int m734; /* 0x734 */
-};
-
-class CCamera {
-  public:
-	char pad0[4];
-	CVector mPos; /* 0x004 */
-	char pad10[0x6c - 0x10];
-	CVector mVel; /* 0x06c */
-	char pad78[0x420 - 0x78];
-	CBruce *mTripod; /* 0x420 */
-	CBruce *mOldTripod;
-	int mCalcTripod;       /* 0x428 */
-	CVector mOldTripodPos; /* 0x42c */
-	int new_focus;         /* 0x438 */
-	CVector mTripodPos;    /* 0x43c */
-	char pad448[0x4c0 - 0x448];
-	CQuat mO;           /* 0x4c0 */
-	CQuat mDesiredO;    /* 0x4d4 */
-	CQuat mPrevO;       /* 0x4e8 */
-	CQuat mPreFocusO;   /* 0x4fc */
-	CQuat mStoppedO;    /* 0x510 */
-	int mStoppedOValid; /* 0x524 */
-	char pad528[0x554 - 0x528];
-	int mCollisionRayLR;     /* 0x554 */
-	int mCollisionRayBack;   /* 0x558 */
-	short mCollisionAngLR;   /* 0x55c */
-	short mCollisionAngBack; /* 0x55e */
-	short mCollisionBack;    /* 0x560 */
-	char pad562[0x590 - 0x562];
-	uint mTimer; /* 0x590 */
-	char pad594[0x5b0 - 0x594];
-	short mColAngBuffer[8];     /* 0x5b0 */
-	short mPrevColAngBuffer[8]; /* 0x5c0 */
-	uchar mColCheckIndex;       /* 0x5d0 */
-	uint mColCheckCycleCounter; /* 0x5d4 */
-	int mDownDist;              /* 0x5d8 */
-	char pad5dc[0x614 - 0x5dc];
-	int big_air_timer; /* 0x614 */
-	char pad618[0x658 - 0x618];
-	uint mSpeed; /* 0x658 */
-	char pad65c[0x674 - 0x65c];
-	short mStoppedExtraYRot; /* 0x674 */
-	int ColAng(int i) {
-		return (mPrevColAngBuffer[i] + mColAngBuffer[i]) >> 1;
-	}
-	void ReactToCollision();
-};
+#include "game/camera.h"
+#include "game/bruce.h"
+#include "game/colij.h"
 
 extern int GamePaused;
 extern int GameFrozen;
@@ -146,11 +24,8 @@ extern "C" int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
 extern "C" VECTOR *FUN_80092f60(MATRIX *, VECTOR *, VECTOR *);
 extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
 void Utils_CalcUnit(CVector &, const CVector &);
-CVector operator-(const CVector &, const CVector &);
 
-int operator==(const CVector &, const CVector &);
 
-CQuat operator*(const CQuat &, const CQuat &);
 CQuat Quat_FromXRot(short);
 CQuat Quat_FromYRot(short);
 CQuat QFromV(const CVector &);
@@ -215,7 +90,7 @@ void CCamera::ReactToCollision() {
 				mColAngBuffer[2] = 0;
 			}
 		} else {
-			if (mTripod->m734 == 1)
+			if (((CBruce *)mTripod)->mPhysicsState == 1)
 				mColAngBuffer[2] = 512;
 			else
 				mColAngBuffer[2] = mPrevColAngBuffer[2];
@@ -223,7 +98,7 @@ void CCamera::ReactToCollision() {
 			mDownDist = -1;
 		}
 
-		if (mTripod->m734 == 2) {
+		if (((CBruce *)mTripod)->mPhysicsState == 2) {
 			vTemp.vx = 0;
 			vTemp.vy = Camera_CamDist << 13;
 			vTemp.vz = 0;
@@ -372,7 +247,7 @@ void CCamera::ReactToCollision() {
 	vTemp.vz = 0;
 	FUN_80092f60(&m, &vTemp, &vOffset);
 
-	if (big_air_timer <= 0 && mTripod->m734 != 2 && mCollisionBack) {
+	if (big_air_timer <= 0 && ((CBruce *)mTripod)->mPhysicsState != 2 && mCollisionBack) {
 		uint ratioL;
 		uint ratioR = 0;
 		int ang;
@@ -427,7 +302,7 @@ void CCamera::ReactToCollision() {
 
 		ang = 1384;
 
-		if (mTripod->m734 == 4) {
+		if (((CBruce *)mTripod)->mPhysicsState == 4) {
 			ratioR = 0;
 			ratioL = 0;
 		}
@@ -449,7 +324,7 @@ void CCamera::ReactToCollision() {
 		}
 	}
 
-	if (big_air_timer > 0 || mTripod->m734 == 2) {
+	if (big_air_timer > 0 || ((CBruce *)mTripod)->mPhysicsState == 2) {
 		mColAngBuffer[3] = 0;
 		mPrevColAngBuffer[3] = 0;
 	}
@@ -549,7 +424,7 @@ void CCamera::ReactToCollision() {
 			mStoppedOValid = 0;
 	}
 
-	if (mSpeed < 4 || mTripodPos == mOldTripodPos || mTripod->m358) {
+	if (mSpeed < 4 || mTripodPos == mOldTripodPos || ((CBruce *)mTripod)->mInAir) {
 		if (!mStoppedOValid && mDownDist >= 0) {
 			Quat_Slerp(mO, mDesiredO, 1536, mStoppedO);
 

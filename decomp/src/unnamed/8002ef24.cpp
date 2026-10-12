@@ -1,10 +1,5 @@
 /* FUN_8002ef24 (0x8002ef24) */
-struct CVector {
-	int vx, vy, vz;
-	int Length() const;
-};
-
-CVector operator/(const CVector &, const int &);
+#include "game/vector.h"
 
 extern "C" {
 	extern CVector DAT_800a7f28;

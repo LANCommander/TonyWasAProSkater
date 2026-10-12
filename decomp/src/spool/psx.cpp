@@ -3,22 +3,11 @@
    holding Name, or one from the recent-load cache (an entry matches when Name is a prefix ending
    at the '.' of the cached file name). Otherwise claims a free region, records the name and
    queues the load. Retail drops the demo's KeepTextures argument. */
-typedef unsigned char uchar;
+#include "game/spool.h"
+#include "game/m3d.h"
 
-struct SRegion {
-	char Name[64];
-};
-
-struct SPSXCache {
-	char Name[13];
-	uchar Used;   /* 13 */
-	uchar Type;   /* 14 */
-	uchar Region; /* 15 */
-	uchar Heap;   /* 16 */
-};
-
-extern SRegion PSXRegion[40];
-extern SPSXCache SpoolQ[20];
+extern SPSXRegion PSXRegion[40];
+extern SQueue SpoolQ[20];
 extern char s_psx[];
 
 int FreePos;
@@ -33,7 +22,7 @@ int Spool_PSX(char *Name, int IsEnviro, int WhichHeap) {
 		int i;
 
 		for (i = 0; i < 40; i++)
-			if (PSXRegion[i].Name[0] && Utils_CompareStrings(Name, PSXRegion[i].Name, -1))
+			if (PSXRegion[i].Filename[0] && Utils_CompareStrings(Name, PSXRegion[i].Filename, -1))
 				return i;
 	}
 
@@ -41,7 +30,7 @@ int Spool_PSX(char *Name, int IsEnviro, int WhichHeap) {
 		int i;
 
 		for (i = 0; i < 20; i++) {
-			if (SpoolQ[i].Used) {
+			if (SpoolQ[i].Occupied) {
 				char *pQName = SpoolQ[i].Name;
 				char *pPSXName = Name;
 				int Identical = 1;
@@ -71,7 +60,7 @@ int Spool_PSX(char *Name, int IsEnviro, int WhichHeap) {
 		int i;
 
 		for (i = 0; i < 40; i++) {
-			if (!PSXRegion[i].Name[0]) {
+			if (!PSXRegion[i].Filename[0]) {
 				freeregion = i;
 				break;
 			}
@@ -80,7 +69,7 @@ int Spool_PSX(char *Name, int IsEnviro, int WhichHeap) {
 
 	if (IsEnviro == 0 || IsEnviro == 2) {
 		char *pNew = Name;
-		char *pDest = PSXRegion[freeregion].Name;
+		char *pDest = PSXRegion[freeregion].Filename;
 		int c;
 
 		for (c = 0; *pNew && c < 9; c++)
@@ -92,13 +81,13 @@ int Spool_PSX(char *Name, int IsEnviro, int WhichHeap) {
 	LoadNameExt(Name, s_psx);
 
 	if (IsEnviro != 2)
-		SpoolQ[FreePos].Type = IsEnviro != 0;
+		SpoolQ[FreePos].FileType = IsEnviro != 0;
 	else
-		SpoolQ[FreePos].Type = IsEnviro;
+		SpoolQ[FreePos].FileType = IsEnviro;
 
 	SpoolQ[FreePos].Region = freeregion;
-	SpoolQ[FreePos].Used = 1;
-	SpoolQ[FreePos].Heap = WhichHeap;
+	SpoolQ[FreePos].Occupied = 1;
+	SpoolQ[FreePos].KeepTextures = WhichHeap;
 	FreePos = (FreePos + 1) % 20;
 	return freeregion;
 }

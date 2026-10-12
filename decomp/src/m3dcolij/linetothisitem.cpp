@@ -9,45 +9,9 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-};
+#include "game/colij.h"
 
 struct SProjectedVertex;
-
-struct SModel {
-	short pad0;
-	ushort NumVerts; /* 2 */
-};
-
-struct SPSXRegion {
-	char pad0[16];
-	SModel **pModels; /* 0x10 */
-	char pad14[64 - 0x14];
-};
-
-struct Item {
-	ushort Flags; /* 0 */
-	ushort pad2;
-	CVector Pos;       /* 4 */
-	short Angles[3];   /* 16 */
-	ushort ModelIndex; /* 22 */
-	char pad18[27 - 24];
-	uchar Region; /* 27 */
-};
-
-struct SLineInfo {
-	CVector Start; /* 0 */
-	char padc[0x44 - 12];
-	int x44;       /* 0x44 */
-	MATRIX Matrix; /* 0x48 */
-	char pad68[0x89 - 0x68];
-	uchar Swapped; /* 0x89 */
-};
 
 extern SPSXRegion PSXRegion[];
 extern MATRIX Tfm;
@@ -82,29 +46,29 @@ void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
 	SModel *pModel;
 	SProjectedVertex *pVertices;
 
-	gte_SetColorMatrix(&pInfo->Matrix);
+	gte_SetColorMatrix(&pInfo->WorldCst);
 
-	pModel = PSXRegion[pItem->Region].pModels[pItem->ModelIndex];
+	pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
 
-	if (pModel->NumVerts > 128)
+	if (pModel->NumVertices > 128)
 		pVertices = ProjectedVertices;
 	else
 		pVertices = (SProjectedVertex *)0x1f800000;
 
-	if (!*(int *)pItem->Angles && !pItem->Angles[2] && !(pItem->Flags & 0x200)) {
-		PosnRelStart.vx = (pItem->Pos.vx - pInfo->Start.vx) >> 12;
-		PosnRelStart.vy = (pItem->Pos.vy - pInfo->Start.vy) >> 12;
-		PosnRelStart.vz = (pItem->Pos.vz - pInfo->Start.vz) >> 12;
+	if (!*(int *)&pItem->Angles && !pItem->Angles.vz && !(pItem->Flags & 0x200)) {
+		PosnRelStart.vx = (pItem->Position.vx - pInfo->StartCoords.vx) >> 12;
+		PosnRelStart.vy = (pItem->Position.vy - pInfo->StartCoords.vy) >> 12;
+		PosnRelStart.vz = (pItem->Position.vz - pInfo->StartCoords.vz) >> 12;
 		__asm__ volatile("ctc2 $0, $5; ctc2 $0, $6; ctc2 $0, $7");
 	} else {
-		if (pInfo->Swapped) {
-			Tfm.t[0] = (pItem->Pos.vx - pInfo->Start.vx) >> 12;
-			Tfm.t[1] = (pInfo->Start.vz - pItem->Pos.vz) >> 12;
-			Tfm.t[2] = (pItem->Pos.vy - pInfo->Start.vy) >> 12;
+		if (pInfo->DropDown) {
+			Tfm.t[0] = (pItem->Position.vx - pInfo->StartCoords.vx) >> 12;
+			Tfm.t[1] = (pInfo->StartCoords.vz - pItem->Position.vz) >> 12;
+			Tfm.t[2] = (pItem->Position.vy - pInfo->StartCoords.vy) >> 12;
 		} else {
-			Tfm.t[0] = (pItem->Pos.vx - pInfo->Start.vx) >> 12;
-			Tfm.t[1] = (pItem->Pos.vy - pInfo->Start.vy) >> 12;
-			Tfm.t[2] = (pItem->Pos.vz - pInfo->Start.vz) >> 12;
+			Tfm.t[0] = (pItem->Position.vx - pInfo->StartCoords.vx) >> 12;
+			Tfm.t[1] = (pItem->Position.vy - pInfo->StartCoords.vy) >> 12;
+			Tfm.t[2] = (pItem->Position.vz - pInfo->StartCoords.vz) >> 12;
 			gte_ldlv0(&Tfm.t[0]);
 			gte_lcv0();
 			gte_stlvnl(&Tfm.t[0]);
@@ -116,8 +80,8 @@ void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
 		PosnRelStart.vy = 0;
 		PosnRelStart.vz = 0;
 
-		if (*(int *)pItem->Angles || pItem->Angles[2]) {
-			FUN_8008b3d4(pItem->Angles, &Tfm);
+		if (*(int *)&pItem->Angles || pItem->Angles.vz) {
+			FUN_8008b3d4((short *)&pItem->Angles, &Tfm);
 
 			if (pItem->Flags & 0x200)
 				FUN_8008b4e0(pItem, &Tfm);
@@ -132,7 +96,7 @@ void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
 		}
 	}
 
-	if (!(FUN_8008aa50(pModel, pVertices, pInfo->x44, &PosnRelStart) & 0x60f)) {
+	if (!(FUN_8008aa50(pModel, pVertices, pInfo->Length, &PosnRelStart) & 0x60f)) {
 		CollidedTriggerModel = -1;
 		FUN_8008ab28(pModel, pVertices, pInfo, pItem);
 

@@ -1,41 +1,9 @@
 /* Update__5CMenu (0x80016dc0) */
 /* C++ (FRONT.CPP). Types from the demo's MAIN.SYM. */
-typedef unsigned char uchar;
+#include "game/front.h"
+#include "game/pad.h"
 
-struct SEntry {
-	char *pString;
-	short CurrentScale;
-	short TargetScale;
-	short HiScale;
-	short LowScale;
-	uchar Clearance;
-	uchar Visible;
-	uchar Enabled;
-	uchar HiR, HiG, HiB;
-	uchar LowR, LowG, LowB;
-	uchar FadeUpCounter;
-};
-
-struct CMenu {
-	int **vf;
-	uchar mJustification;
-	uchar mRep;
-	uchar mLine;
-	uchar mHasCursor;
-	uchar mCursorLine;
-	uchar mNumLines;
-	int mX;
-	int mY;
-	int mLineSep;
-	SEntry mEntry[15];
-	void Update();
-};
-
-struct SPad {
-	uchar b[364];
-};
-
-extern SPad Pad[];
+extern SControl Pad[];
 
 int UpDownAutoRepeatTimer;
 
@@ -54,10 +22,10 @@ void CMenu::Update() {
 		mEntry[mLine].CurrentScale = mEntry[mLine].LowScale;
 	}
 
-	if (Pad[0].b[0xa0] || Pad[0].b[0xb0] || Pad[1].b[0xa0] ||
-	    Pad[1].b[0xb0]) {
+	if (Pad[0].Up.Pressed || Pad[0].Down.Pressed || Pad[1].Up.Pressed ||
+	    Pad[1].Down.Pressed) {
 		if (UpDownAutoRepeatTimer == 0 || (UpDownAutoRepeatTimer >= 16 && (UpDownAutoRepeatTimer & 3) == 0)) {
-			if (Pad[0].b[0xa0] || Pad[1].b[0xa0]) {
+			if (Pad[0].Up.Pressed || Pad[1].Up.Pressed) {
 				mEntry[mLine].TargetScale = mEntry[mLine].LowScale;
 
 				do {
@@ -71,7 +39,7 @@ void CMenu::Update() {
 				SFX_PlayX(6, 8192, 0);
 			}
 
-			if (Pad[0].b[0xb0] || Pad[1].b[0xb0]) {
+			if (Pad[0].Down.Pressed || Pad[1].Down.Pressed) {
 				mEntry[mLine].TargetScale = mEntry[mLine].LowScale;
 
 				do {

@@ -4,58 +4,18 @@
    fading up from half brightness; then, for the cursor line of a left-justified menu, a pair of
    red arrowheads either side of the text. Needs -fstructure-noalias: retail loads pDoubleBuffer
    (the OT) above the right arrow's halfword stores. */
-#pragma interface
-
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
-
-struct SEntry {
-	char *pString;
-	short CurrentScale;
-	short TargetScale;
-	short HiScale;
-	short LowScale;
-	uchar Clearance;
-	uchar Visible;
-	uchar Enabled;
-	uchar HiR, HiG, HiB;
-	uchar LowR, LowG, LowB;
-	uchar FadeUpCounter;
-};
-
-class CClass {
-  public:
-	virtual ~CClass();
-};
-
-class CMenu : public CClass {
-  public:
-	uchar mJustification;
-	uchar mRep;
-	uchar mLine;
-	uchar mHasCursor;
-	uchar mCursorLine;
-	uchar mNumLines;
-	int mX;
-	int mY;
-	int mLineSep;
-	SEntry mEntry[15];
-	void Display();
-};
-
-struct SOTBuffer {
-	char pad[132];
-	u_long OT2D;
-};
+#include "game/front.h"
+#include "game/m3d.h"
 
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
-extern SOTBuffer *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 
 void Mess_SetScale(int);
 void Mess_SetRGB(uchar, uchar, uchar, int);

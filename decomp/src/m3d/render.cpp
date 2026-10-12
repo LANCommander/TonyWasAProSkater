@@ -15,76 +15,14 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+#include "game/m3d.h"
+#include "game/ob.h"
+#include "game/camera.h"
 
 #ifdef PC_PORT
 #include <stdio.h>
 #include <stdlib.h>
 #endif
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct SVector {
-	short vx, vy, vz;
-};
-
-struct SModel {
-	ushort Flags;
-	ushort NumVertices;
-	ushort NumNormals;
-	char pad6[8 - 6];
-	int Radius;
-	char padc[0x18 - 0xc];
-	short LODDist;
-	ushort NextLOD;
-};
-
-struct SCamera {
-	int pad;
-	VECTOR Pos; /* 0x04 */
-	char pad14[0x74 - 0x14];
-	MATRIX View; /* 0x74 */
-};
-
-struct SViewport {
-	char pad0[0xa];
-	ushort Yon; /* 0x0a */
-	char padc[0xe - 0xc];
-	ushort Fov; /* 0x0e */
-};
-
-struct SPSXRegion {
-	char pad0[0xa];
-	uchar Active; /* 0x0a */
-	char padb[0x10 - 0xb];
-	SModel **ppModels; /* 0x10 */
-	char pad14[0x24 - 0x14];
-	void *pAnimTex; /* 0x24 */
-	char pad28[64 - 0x28];
-};
-
-struct Item {
-	ushort Flags; /* 0x000 */
-	ushort Inquiry;
-	struct {
-		int vx, vy, vz;
-	} Position;     /* 0x004 */
-	SVector Angles; /* 0x010 */
-	ushort Model;   /* 0x016 */
-	uchar Frame;    /* 0x018 */
-	uchar TintIndex;
-	uchar Anim;     /* 0x01a */
-	uchar Region;   /* 0x01b */
-	Item *NextItem; /* 0x01c */
-	uint RGB;       /* 0x020 */
-	char pad24[0x2c - 0x24];
-	int SemiTrans; /* 0x02c */
-	char pad30[0x3c - 0x30];
-	char *pLight; /* 0x03c */
-	char pad40[0x15a - 0x40];
-	uchar NumShadows; /* 0x15a */
-};
 
 #define RGB2GPU(c)    ((((c) & 0xff) << 2) | (((c) & 0xff00) << 5) | (((c) & 0xff0000) << 8))
 #define ANGLES_SET(p) (*(int *)&(p)->Angles.vx || (p)->Angles.vz)
@@ -185,7 +123,7 @@ void M3d_Render(void *p) {
 			static uchar prev_active[64];
 			static int prev_valid;
 			uchar reg = pItem->Region;
-			uchar now = PSXRegion[reg].Active != 0;
+			uchar now = PSXRegion[reg].Usable != 0;
 			if (reg < 64) {
 				if (prev_valid && prev_active[reg] != now) {
 					extern volatile unsigned pc_heartbeat;
@@ -198,7 +136,7 @@ void M3d_Render(void *p) {
 		}
 #endif
 
-		if (!PSXRegion[pItem->Region].Active)
+		if (!PSXRegion[pItem->Region].Usable)
 			goto next;
 
 		GlobalFaceFlags = 0xffff0000;
@@ -235,9 +173,9 @@ void M3d_Render(void *p) {
 
 		if (pItem->Flags & 2) {
 			if (pItem == MechList)
-				WaterNormal_6 = (CurrentWaterLevel >> 12) - pCurrentCamera->Pos.vy;
+				WaterNormal_6 = (CurrentWaterLevel >> 12) - pCurrentCamera->Position.vy;
 			else
-				WaterNormal_6 = (CurrentWaterLevel2 >> 12) - pCurrentCamera->Pos.vy;
+				WaterNormal_6 = (CurrentWaterLevel2 >> 12) - pCurrentCamera->Position.vy;
 
 			RenderSuperItem(pItem);
 
@@ -267,12 +205,12 @@ void M3d_Render(void *p) {
 				GlobalFaceFlags |= 8;
 				SCRATCH_I(0x3e4) = RGB2GPU(pItem->RGB);
 				SCRATCH_I(0x3f4) = GlobalFaceFlags;
-				NumShadows = pItem->NumShadows;
-				pItem->NumShadows = 0;
+				NumShadows = ((CSuper *)pItem)->mShadowLights;
+				((CSuper *)pItem)->mShadowLights = 0;
 				RenderSuperItem(pItem);
 
 				pItem->Flags = tmp;
-				pItem->NumShadows = NumShadows;
+				((CSuper *)pItem)->mShadowLights = NumShadows;
 				WaterClipValue = 0xffff;
 			}
 
@@ -294,21 +232,21 @@ void M3d_Render(void *p) {
 			gte_ldtr(zero, zero, zero);
 		}
 
-		PosnRelCam.vx = (pItem->Position.vx >> 12) - pCurrentCamera->Pos.vx;
-		PosnRelCam.vy = (pItem->Position.vy >> 12) - pCurrentCamera->Pos.vy;
-		PosnRelCam.vz = (pItem->Position.vz >> 12) - pCurrentCamera->Pos.vz;
+		PosnRelCam.vx = (pItem->Position.vx >> 12) - pCurrentCamera->Position.vx;
+		PosnRelCam.vy = (pItem->Position.vy >> 12) - pCurrentCamera->Position.vy;
+		PosnRelCam.vz = (pItem->Position.vz >> 12) - pCurrentCamera->Position.vz;
 		gte_ldlv0(&PosnRelCam);
 		gte_rtv0();
 		gte_stlvnl(&Position);
 
-		if (pModel->LODDist < 0) {
-			while (-((short)(pModel->LODDist * pCurrentViewport->Fov / 191) * DpqMax >> 10) <
+		if (pModel->zMax < 0) {
+			while (-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10) <
 			           Position.vz &&
 			       pModel->NextLOD != 0xffff)
 				pModel = PSXRegion[pItem->Region].ppModels[pModel->NextLOD];
 
-			if (pModel->LODDist < 0) {
-				if (-((short)(pModel->LODDist * pCurrentViewport->Fov / 191) * DpqMax >> 10) <
+			if (pModel->zMax < 0) {
+				if (-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10) <
 				        Position.vz &&
 				    pModel->NextLOD == 0xffff) {
 #ifdef PC_PORT
@@ -316,34 +254,34 @@ void M3d_Render(void *p) {
 						extern volatile unsigned pc_heartbeat;
 						fprintf(stderr,
 						        "lodskip(neg) f%u item=%p model=%p LODDist=%d vz=%d thresh=%d\n",
-						        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->LODDist,
+						        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->zMax,
 						        Position.vz,
-						        -((short)(pModel->LODDist * pCurrentViewport->Fov / 191) * DpqMax >>
+						        -((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >>
 						          10));
 					}
 #endif
 					goto next;
 				}
 			} else {
-				if (pModel->LODDist * pCurrentViewport->Fov / 191 < Position.vz &&
+				if (pModel->zMax * pCurrentViewport->Zoom / 191 < Position.vz &&
 				    pModel->NextLOD == 0xffff) {
 #ifdef PC_PORT
 					if (getenv("THPS_TRACE_CULL")) {
 						extern volatile unsigned pc_heartbeat;
 						fprintf(stderr, "lodskip(pos) f%u item=%p model=%p LODDist=%d vz=%d thresh=%d\n",
-						        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->LODDist,
-						        Position.vz, pModel->LODDist * pCurrentViewport->Fov / 191);
+						        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->zMax,
+						        Position.vz, pModel->zMax * pCurrentViewport->Zoom / 191);
 					}
 #endif
 					goto next;
 				}
 			}
 		} else {
-			while (pModel->LODDist * pCurrentViewport->Fov / 191 < Position.vz &&
+			while (pModel->zMax * pCurrentViewport->Zoom / 191 < Position.vz &&
 			       pModel->NextLOD != 0xffff)
 				pModel = PSXRegion[pItem->Region].ppModels[pModel->NextLOD];
 
-			if (pModel->LODDist * pCurrentViewport->Fov / 191 < Position.vz &&
+			if (pModel->zMax * pCurrentViewport->Zoom / 191 < Position.vz &&
 			    pModel->NextLOD == 0xffff)
 				goto next;
 		}
@@ -383,7 +321,7 @@ void M3d_Render(void *p) {
 			}
 		}
 
-		pColourTable = PSXRegion[pItem->Region].pAnimTex;
+		pColourTable = PSXRegion[pItem->Region].pColourTable;
 
 		if ((pModel->Flags & 1) || (pItem->Flags & 0x4000)) {
 			FUN_800866cc(&WorldTransform, (long *)&Position, pModel);
@@ -395,8 +333,8 @@ void M3d_Render(void *p) {
 				gte_SetLightMatrix(pItem->pLight);
 			}
 
-			gte_SetColorMatrix(pItem->pLight + 20);
-			FUN_80086f20(pItem->pLight + 40);
+			gte_SetColorMatrix((char *)pItem->pLight + 20);
+			FUN_80086f20((char *)pItem->pLight + 40);
 			FUN_80086a4c((char *)pModel + (pModel->NumVertices * 8 + 28), pModel->NumNormals);
 		}
 

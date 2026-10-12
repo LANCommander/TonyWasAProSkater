@@ -9,27 +9,8 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
-
-struct Character {
-	int w, h, x, y, baseline;
-	u_char u0, v0;
-	u_short clut;
-	u_char u1, v1;
-	u_short tp;
-	u_char u2, v2, u3, v3;
-	int real_w;
-};
-
-struct FontInfo {
-	char mFont_name[16];
-	int mNum_chars;
-	Character *mChar_table;
-	u_char mFont_shadow_offset;
-	u_short mFont_scale;
-	int mChar_sep;
-	int mSpace_width;
-};
+#include "game/font.h"
+#include "game/m3d.h"
 
 struct SWobble {
 	short Offsets[32];
@@ -37,11 +18,6 @@ struct SWobble {
 	u_short Count;
 	short pad44;
 	u_short ClipY;
-};
-
-struct SDB {
-	char pad0[0x84];
-	u_long OT[3];
 };
 
 extern FontInfo Font_table[10];
@@ -53,7 +29,7 @@ u_int FlagsBGR;
 u_short Sort;
 u_int LastFlagsBGR;
 
-extern SDB *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 
@@ -329,9 +305,9 @@ int Mess_DrawText(int x, int y, const char *pMessage, int DrawSolid, u_int FireR
 				continue;
 			}
 
-			addPrim(&pDoubleBuffer->OT[Sort], apoly);
-			addPrim(&pDoubleBuffer->OT[Sort], anothershadow);
-			addPrim(&pDoubleBuffer->OT[Sort], shadow);
+			addPrim(&(&pDoubleBuffer->OT2D)[Sort], apoly);
+			addPrim(&(&pDoubleBuffer->OT2D)[Sort], anothershadow);
+			addPrim(&(&pDoubleBuffer->OT2D)[Sort], shadow);
 		}
 	}
 

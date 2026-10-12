@@ -1,58 +1,7 @@
 /* __5CGlowRC7CVectoriiUcUcUcUcUcUc (0x80028d54) */
 /* C++ (BIT.CPP). Fuzzy demo twin; members and locals from its MAIN.SYM. Written as a real constructor so
    `this` is copied where retail copies it. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct SSection {
-	int Radius;
-	uint CodeBGR;
-};
-
-struct SFringeQuad {
-	int Radius;
-	uint code;
-};
-
-class CBit {
-  public:
-	CBit *mPrevious;
-	CBit *mNext;
-	short mAge;
-	unsigned short mLifetime;
-	CVector mTweenPos;
-	CVector mPos;
-	CVector mVel;
-	CVector mAcc;
-	uchar mFric[3];
-	uchar mDead;
-	unsigned short mFrigDeltaZ;
-	uchar mProtected;
-	uchar mType;
-	CBit();
-	virtual ~CBit();
-	void AttachTo(void *);
-};
-
-class CGlow : public CBit {
-  public:
-	SSection *mpSections;
-	SFringeQuad *mpFringes;
-	uint mNumSections;
-	uint mNumFringes;
-	uint mCentreCodeBGR;
-	short mStepAngle;
-	uchar mSkipTriangles;
-	short mAngle;
-	uint mMask;
-	CGlow(const CVector &Pos, int InnerRadius, int FringeRadius, uchar r0, uchar g0, uchar b0,
-	      uchar r1, uchar g1, uchar b1);
-	virtual ~CGlow();
-};
+#include "game/bit.h"
 
 void *Mem_New(uint, int, int);
 
@@ -92,8 +41,8 @@ CGlow::CGlow(const CVector &Pos, int InnerRadius, int FringeRadius, uchar r0, uc
 		uint i;
 
 		for (i = 0; i < mNumSections; i++) {
-			mpFringes[i].Radius = FringeRadius;
-			mpFringes[i].code = 0x3a000000;
+			mpFringes[i].Width = FringeRadius;
+			mpFringes[i].CodeBGR= 0x3a000000;
 		}
 	}
 

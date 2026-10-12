@@ -1,9 +1,7 @@
 /* FUN_80024010 (0x80024010) */
 /* C++ (GAMEFMV). Sets the CD-audio mixer for a sound at pos: the spatial attenuation's left/right
    (12 bits each) are scaled by the current volume and added to a 3/4-volume base. */
-struct CVector {
-	int vx, vy, vz;
-};
+#include "game/vector.h"
 
 struct CdlATV {
 	unsigned char val0, val1, val2, val3;

@@ -1,38 +1,7 @@
 /* Options_RemapControllers__Fv (0x80010518) */
 /* C++ (CAREER.CPP). Demo twin. Points each pad's pTriangle/pSquare/pCircle/pX at the button the career options map it to. */
-struct SButton {
-	unsigned char Pressed;
-	unsigned char Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle;
-	SButton Square;
-	SButton Circle;
-	SButton X;
-	char pad40[0x15c - 0x40];
-	SButton *pTriangle;
-	SButton *pSquare;
-	SButton *pCircle;
-	SButton *pX;
-};
-
-struct SOptions {
-	int SFXVolume;
-	int MusicVolume;
-	int OtherOptions[66];
-	int AutoKickEnabled[2];
-	int VibrationEnabled[2];
-	int ControllerFunction[2][4];
-};
-
-struct SCareer {
-	char pad0[0x830];
-	SOptions Options;
-};
+#include "game/career.h"
+#include "game/pad.h"
 
 extern SControl Pad[2];
 extern SCareer GCareer;

@@ -4,34 +4,9 @@
    skater within 2000 units is inside the cone ahead of it; the flag at +0x220 rearms when clear.
    Mips_DotProd2Sign = 64-bit cross-product sign helper, SFX_PlayX__FUisi = SFX_PlayX. Each honk case
    makes its own SFX call; cross-jumping merges them into retail's single jal. */
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos; /* 0x04 */
-	char pad10[0x1c - 0x10];
-	CBruce *mpNext; /* 0x1c */
-};
-
-class CCar {
-  public:
-	char pad0[4];
-	CVector mPos; /* 0x04 */
-	char pad10[0x3a - 0x10];
-	ushort mType; /* 0x3a */
-	char pad3c[0x220 - 0x3c];
-	int mHonked; /* 0x220 */
-};
-
-struct SVideoInfo {
-	int VideoMode;
-	char pad4[0xc0 - 4];
-};
+#include "game/car.h"
+#include "game/bruce.h"
+#include "game/video.h"
 
 extern SVideoInfo GVInfo1;
 extern SVideoInfo GVInfo2;
@@ -52,7 +27,7 @@ void HonkAtSkaters(CCar *pCar, CVector Front) {
 		return;
 
 	CBruce *pSkater = MechList;
-	CBruce *pOther = pSkater->mpNext;
+	CBruce *pOther = (CBruce *)pSkater->mNextItem;
 
 	if (Utils_CrapDist(pCar->mPos, pSkater->mPos) < 2000) {
 		int LeftX = -Front.vz + Front.vx;
@@ -86,7 +61,7 @@ void HonkAtSkaters(CCar *pCar, CVector Front) {
 	}
 
 	if (Honk) {
-		if (!pCar->mHonked) {
+		if (!pCar->mHonkLock) {
 			switch (pCar->mType) {
 				case 213:
 					SFX_PlayX__FUisi(Redbook_Rnd(3) + 110, 0x2000, 0);
@@ -102,8 +77,8 @@ void HonkAtSkaters(CCar *pCar, CVector Front) {
 					break;
 			}
 
-			pCar->mHonked = 1;
+			pCar->mHonkLock = 1;
 		}
 	} else
-		pCar->mHonked = 0;
+		pCar->mHonkLock = 0;
 }

@@ -8,30 +8,13 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned int uint;
+#include "game/m3d.h"
 
 #define gte_ldRGBC_r(r0) __asm__ volatile("mtc2 %0, $6" : : "r"(r0))
 #define gte_ldlvnl(r0)                                                                             \
 	__asm__ volatile("lwc2 $25, 0( %0 ); lwc2 $26, 4( %0 ); lwc2 $27, 8( %0 )" : : "r"(r0))
 
-struct SRGBI {
-	uchar r;
-	uchar g;
-	uchar b;
-	uchar Interval;
-};
-
-struct SRegion {
-	char pad0[0x24];
-	u_long *pColours; /* 0x24 */
-	char pad28[0x2c - 0x28];
-	uint *pPulse; /* 0x2c */
-	char pad30[64 - 0x30];
-};
-
-extern SRegion PSXRegion[];
+extern SPSXRegion PSXRegion[];
 
 uint XblanksNow;
 uint XblanksThen;
@@ -51,14 +34,14 @@ void M3d_PreprocessPulsingColours(int Region) {
 	if (Region == -1)
 		return;
 
-	pData = PSXRegion[Region].pPulse;
+	pData = PSXRegion[Region].pColourPulseData;
 
 	if (!pData)
 		return;
 
 	pEnd = (uint *)((char *)pData + pData[-1]);
 	dt = XblanksNow - XblanksThen;
-	pColourTable = PSXRegion[Region].pColours;
+	pColourTable = (u_long *)PSXRegion[Region].pColourTable;
 
 	if (XblanksNow < XblanksThen)
 		dt = 1;

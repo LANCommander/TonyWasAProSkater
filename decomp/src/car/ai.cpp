@@ -1,35 +1,7 @@
 /* AI__4CCar (0x8006bf5c) */
 /* C++ (CAR.CPP). Locals, their order and types come from the demo's MAIN.SYM, statements from its
    line table; field offsets are THPS1's. */
-struct CVector {
-	int vx, vy, vz;
-};
-
-CVector operator-(const CVector &, const CVector &);
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-class CSuper;
-class CBruce;
-
-class CCar {
-  public:
-	char pad0[4];
-	CVector mPos;
-	CSVector mAngles;
-	char pad16[0x6c - 0x16];
-	CVector mVel;
-	char pad78[0x210 - 0x78];
-	unsigned int mLoopingSound;
-	int mLoopingSoundUpdate;
-	CBruce *mpCreatedByPlayer;
-	int mCurrentRoadSegment;
-	int mHonkLock;
-
-	void AI(void);
-};
+#include "game/car.h"
 
 extern int XFrames;
 extern int SFXLEVEL;
@@ -46,7 +18,6 @@ int Mips_FixMul(int, int);
 int Mips_CVecDotProd(CVector *, CVector *);
 void M3dUtils_NormaliseVector(CVector *);
 void M3d_BuildTransform(CSuper *);
-extern "C" int ratan2(int, int);
 
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
 

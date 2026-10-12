@@ -3,25 +3,8 @@
    there, DAT_800d1f08 here). Steps the load queue's head entry through three states: open the file
    and allocate (an environment takes a free environment slot, evicting the oldest, and names its
    region), wait for the read, then process the PSX data and attach the environment. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct SQueue {
-	char Name[13];
-	uchar Occupied;     /* 13 */
-	uchar FileType;     /* 14 */
-	uchar Region;       /* 15 */
-	uchar KeepTextures; /* 16 */
-};
-
-struct SPSXRegion {
-	char Name[16]; /* 0 */
-	uint *pModels; /* 0x10 */
-	uint *pPSX;    /* 0x14 */
-	char pad18[0x34 - 0x18];
-	uchar KeepTextures; /* 0x34 */
-	char pad35[64 - 0x35];
-};
+#include "game/spool.h"
+#include "game/m3d.h"
 
 extern SQueue SpoolQ[];
 extern SPSXRegion PSXRegion[];
@@ -74,7 +57,7 @@ void Spool_Continue() {
 					}
 
 					pNew = Q->Name;
-					pDest = PSXRegion[Q->Region].Name;
+					pDest = PSXRegion[Q->Region].Filename;
 
 					for (c = 0; *pNew != '.' && c < 9; c++)
 						*pDest++ = *pNew++;
@@ -92,7 +75,7 @@ void Spool_Continue() {
 			}
 
 			DAT_800d1f08 = 1;
-			PSXRegion[Q->Region].KeepTextures = Q->KeepTextures;
+			PSXRegion[Q->Region].KeepTexturesInRAM = Q->KeepTextures;
 			break;
 		}
 		case 1:

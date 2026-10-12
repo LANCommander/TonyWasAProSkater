@@ -7,14 +7,9 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
+#include "game/m3d.h"
 
-struct SDB {
-	char pad0[0x84];
-	u_long OT[3];
-};
-
-extern SDB *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 
 void Draw_Rect(int X0, int Y0, int X1, int Y1, int X2, int Y2, int X3, int Y3, int c) {
@@ -32,7 +27,7 @@ void Draw_Rect(int X0, int Y0, int X1, int Y1, int X2, int Y2, int X3, int Y3, i
 	pF4->y2 = Y3 + 1;
 	newppoly = (uchar *)pF4 + sizeof(POLY_F4);
 	SetPolyF4((POLY_F4 *)pPoly);
-	addPrim(&pDoubleBuffer->OT[2], pPoly);
+	addPrim(&pDoubleBuffer->OT3D[0], pPoly);
 
 	pPoly = newppoly;
 }

@@ -5,111 +5,16 @@
    EndCode test in the init's last block. System_Logic is an inline. Sets up the level (video restart/replay loading, the
    powerup visibility, settling the cameras), runs the frame loop until EndCode is set, then shuts
    the game down and unloads the fonts. */
-typedef unsigned char uchar;
-typedef unsigned long ulong;
+extern "C" {
+#include <sys/types.h>
+#include <libgte.h>
+}
 
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	int rest[11];
-};
-
-struct SHighlight {
-	short FromFrame;
-	short ToFrame;
-	int Score;
-};
-
-struct SVideoHead {
-	ulong NumFrames;
-	SHighlight Highlights[5];
-	short NumSkaters;
-	short Skater;
-	short Skater2;
-	short Level;
-	short GGame;
-	short Checksum;
-	char VideoFlags;
-	char Padding[7];
-};
-
-struct SVideoInfo {
-	int VideoMode;
-	ulong *pBlockStart;
-	ulong *pStreamStart;
-	ulong *pStreamEnd;
-	ulong *pStream;
-	ulong Bits;
-	int BitsLeft;
-	ulong NumFrames;
-	int pad20[11];
-	int ReplayHighlight;
-	SHighlight Highlights[5];
-	int pad78[18];
-};
-
-struct SVideoRestart {
-	int NumSkaters;
-	int Skater;
-	int Skater2;
-	int Level;
-	int GGame;
-};
-
-struct SLevel {
-	int pad0[3];
-	int isCompetition;
-	int pad10[20];
-	int m60;
-	int pad64[5];
-};
-
-struct CBody {
-	char pad0[0x1c];
-	CBody *pNext;
-	char pad20[0x330 - 0x20];
-	int m330;
-};
-
-struct CPowerUp {
-	char pad0[0x15c];
-	short Visible;
-};
-
-struct CVector {
-	int vx, vy, vz;
-	void Set(int x, int y, int z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-};
-
-struct CSkater {
-	char pad0[0x6c];
-	CVector mVel;
-	char pad78[0x6c4 - 0x78];
-	int m6c4;
-	int m6c8;
-	int m6cc;
-	char pad6d0[0x734 - 0x6d0];
-	int Dead;
-	char pad738[0x7d8 - 0x738];
-	CVector m7d8;
-	char pad7e4[0xa64 - 0x7e4];
-	int ma64;
-};
+#include "game/video.h"
+#include "game/career.h"
+#include "game/bruce.h"
+#include "game/powerup.h"
+#include "game/pad.h"
 
 extern "C" {
 	extern volatile unsigned Xblanks; /* Xblanks */
@@ -147,8 +52,8 @@ extern "C" {
 	int GState;       /* GState */
 	int GSpin;
 	int GSpinSpeed;
-	CSkater *GSkater; /* GSkater[0] */
-	CSkater *DAT_800d17cc; /* GSkater[1] */
+	CBruce *GSkater; /* GSkater[0] */
+	CBruce *DAT_800d17cc; /* GSkater[1] */
 	int GHorsePlayer;      /* GHorsePlayer */
 	int GClear1;      /* GClear1 */
 	int GClear2;      /* GClear2 */
@@ -180,7 +85,6 @@ extern "C" {
 	void Mess_SetRGB__FUcUcUci(int, int, int, int);
 	void Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int); /* Mess_DrawText */
 	void FUN_8006b26c(void);                                 /* HiRes_DrawOTag */
-	void Pad_ClearTriggers__FP8SControl(SControl *);
 	int FUN_80070ff4(void); /* Pad_Update */
 	int Card_LoadReplayFromCD__FPUlT0Pc(ulong *, ulong *, uchar *);
 	int Career_Got__Fi(int);                     /* Career_Got */
@@ -197,9 +101,6 @@ extern "C" {
 	void Front_SwitchOnEndLevelMenu__Fv(void);
 	void FUN_80010bb8(void);
 	void FUN_80024258(void);
-	void Pad_Remap__Fv(void); /* Pad_Restore */
-	void Pad_Restore__Fv(void); /* Pad_Remap */
-	void Pad_ClearAllOne__Fi(int);
 	void Video_HandleStepping__Fv(void);
 	void Game_Logic__Fv(void); /* Game_Logic */
 	void FUN_80048fec(void); /* Db_WaitRender */
@@ -211,7 +112,6 @@ extern "C" {
 	void Db_Render__Fv(void);
 	void FUN_8001a5e0(void);
 	void Front_SwitchOnStartLevelMenu__Fv(void);
-	int IsDead__C5CBody(CBody *);
 	void Spool_Sync__Fv(void);
 	void Front_SaveGameState__Fv(void);
 	void FUN_8008c468(int);
@@ -230,9 +130,9 @@ static inline void System_Logic(void) {
 		Pad[1] = TempPad;
 	}
 
-	Pad_Remap__Fv();
+	Pad_Remap();
 	FUN_80070ff4();
-	Pad_Restore__Fv();
+	Pad_Restore();
 
 	if (GGame == 7 && GHorsePlayer == 1) {
 		TempPad = Pad[0];
@@ -241,10 +141,10 @@ static inline void System_Logic(void) {
 	}
 
 	if (GClear1)
-		Pad_ClearAllOne__Fi(0);
+		Pad_ClearAllOne(0);
 
 	if (GClear2)
-		Pad_ClearAllOne__Fi(1);
+		Pad_ClearAllOne(1);
 }
 
 void PlayAway(void) {
@@ -288,8 +188,8 @@ void PlayAway(void) {
 			Mess_DrawText__FiiPCciUiib(256, 110, s_memory_card_error, 1, 0, 256, 0);
 			Mess_DrawText__FiiPCciUiib(256, 130, s_press_x_to_continue, 1, 0, 256, 0);
 			FUN_8006b26c();
-			Pad_ClearTriggers__FP8SControl(&Pad[0]);
-			Pad_ClearTriggers__FP8SControl(&Pad[1]);
+			Pad_ClearTriggers(&Pad[0]);
+			Pad_ClearTriggers(&Pad[1]);
 
 			while (!Pad[0].X.Triggered && !Pad[1].X.Triggered &&
 			       !Pad[0].Start.Triggered && !Pad[1].Start.Triggered)
@@ -384,20 +284,20 @@ void PlayAway(void) {
 
 	if (GGame == 1 && !Levels[GLevel].isCompetition) {
 		if (GVideoFlags & 2) {
-			GPowS->Visible = 1;
-			GPowK->Visible = 1;
-			GPowA->Visible = 1;
-			GPowT->Visible = 1;
-			GPowE->Visible = 1;
+			GPowS->mLifetime = 1;
+			GPowK->mLifetime = 1;
+			GPowA->mLifetime = 1;
+			GPowT->mLifetime = 1;
+			GPowE->mLifetime = 1;
 		}
 
 		if (GVideoFlags & 1)
-			GPowTape->Visible = 1;
+			GPowTape->mLifetime = 1;
 	}
 
 	if (GVideoReplay) {
 		CBody *pSkater = MechList;
-		CBody *pSkater2 = pSkater->pNext;
+		CBody *pSkater2 = (CBody *)pSkater->mNextItem;
 
 		if (GVideoReplay > 0) {
 			GVInfo1.ReplayHighlight = GVideoReplay;
@@ -423,16 +323,16 @@ void PlayAway(void) {
 		GState = 0;
 		Flash_Reset__Fv();
 
-		MechList->m330 = Xblanks + 216030;
+		((CBruce *)MechList)->mTime = Xblanks + 216030;
 
-		if (MechList->pNext)
-			MechList->pNext->m330 = Xblanks + 216030;
+		if (MechList->mNextItem)
+			((CBruce *)MechList->mNextItem)->mTime = Xblanks + 216030;
 	} else {
 		Video_Cleanup__Fv();
 
 		{
 			CBody *pSkater = MechList;
-			CBody *pSkater2 = pSkater->pNext;
+			CBody *pSkater2 = (CBody *)pSkater->mNextItem;
 
 			if (!GVInfo1.VideoMode && !FUN_8007cd64(CameraList)) {
 				Video_Start__FP6CBruce10EVideoModeii(pSkater, 1, 1, 0x7fffffff);
@@ -451,8 +351,8 @@ void PlayAway(void) {
 		FUN_800920b4(1);
 
 	{
-		CSkater *p = GSkater;
-		int x = p->m7d8.vx, y = p->m7d8.vy, z = p->m7d8.vz;
+		CBruce *p = GSkater;
+		int x = p->mFront.vx, y = p->mFront.vy, z = p->mFront.vz;
 
 		p->mVel.vx = x * 20;
 		p->mVel.vy = y * 20;
@@ -472,34 +372,34 @@ void PlayAway(void) {
 
 		FUN_800242cc();
 
-		if (!GSkater->Dead && (!DAT_800d17cc || !DAT_800d17cc->Dead) && GState == 1) {
+		if (!GSkater->mPhysicsState && (!DAT_800d17cc || !DAT_800d17cc->mPhysicsState) && GState == 1) {
 			if (--GSpin <= 0) {
-				if (GGame != 7 && GSkater->ma64) {
+				if (GGame != 7 && GSkater->mPanel.mLandedTotal) {
 					GSpinSpeed = 0;
 					GSpin = 1;
 				} else {
-					if (GSkater->m6c8) {
-						SFX_Stop__FUi(GSkater->m6c4);
+					if (GSkater->mGrindSnd) {
+						SFX_Stop__FUi(GSkater->mLoopSnd);
 
-						GSkater->m6c8 = 0;
+						GSkater->mGrindSnd = 0;
 					}
 
-					if (GSkater->m6cc) {
-						SFX_Stop__FUi(GSkater->m6cc);
+					if (GSkater->mRollSnd) {
+						SFX_Stop__FUi(GSkater->mRollSnd);
 
-						GSkater->m6cc = 0;
+						GSkater->mRollSnd = 0;
 					}
 
-					if (DAT_800d17cc && DAT_800d17cc->m6c8) {
-						SFX_Stop__FUi(DAT_800d17cc->m6c8);
+					if (DAT_800d17cc && DAT_800d17cc->mGrindSnd) {
+						SFX_Stop__FUi(DAT_800d17cc->mGrindSnd);
 
-						DAT_800d17cc->m6c8 = 0;
+						DAT_800d17cc->mGrindSnd = 0;
 					}
 
-					if (DAT_800d17cc && DAT_800d17cc->m6cc) {
-						SFX_Stop__FUi(DAT_800d17cc->m6cc);
+					if (DAT_800d17cc && DAT_800d17cc->mRollSnd) {
+						SFX_Stop__FUi(DAT_800d17cc->mRollSnd);
 
-						DAT_800d17cc->m6cc = 0;
+						DAT_800d17cc->mRollSnd = 0;
 					}
 
 					GState = 0;
@@ -518,19 +418,19 @@ void PlayAway(void) {
 		Video_HandleStepping__Fv();
 
 		if (GState == 1 && !GamePaused) {
-			if (!GSkater->Dead) {
+			if (!GSkater->mPhysicsState) {
 				uchar c = Pad[0].Circle.Pressed;
 
-				Pad_ClearAllOne__Fi(0);
+				Pad_ClearAllOne(0);
 
 				Pad[0].Down.Pressed = 1;
 				Pad[0].Circle.Pressed = c;
 			}
 
-			if (GNumberOfPlayers == 2 && !DAT_800d17cc->Dead) {
+			if (GNumberOfPlayers == 2 && !DAT_800d17cc->mPhysicsState) {
 				uchar c = Pad[1].Circle.Pressed;
 
-				Pad_ClearAllOne__Fi(1);
+				Pad_ClearAllOne(1);
 
 				Pad[1].Down.Pressed = 1;
 				Pad[1].Circle.Pressed = c;
@@ -538,7 +438,7 @@ void PlayAway(void) {
 		}
 
 		if ((GNumberOfPlayers == 1 || (GGame == 7 && GHorseClearInput2)) && !Cheat_ScreenShots)
-			Pad_ClearAllOne__Fi(1);
+			Pad_ClearAllOne(1);
 
 		Game_Logic__Fv();
 
@@ -560,7 +460,7 @@ void PlayAway(void) {
 		if (!DemoTimer)
 			Front_PrintDemo__Fv();
 
-		FUN_8002357c(Levels[GLevel].m60 && (GNumberOfPlayers == 1 || GGame == 7)
+		FUN_8002357c(Levels[GLevel].FMV && (GNumberOfPlayers == 1 || GGame == 7)
 		                 ? M3d_WireframeMode
 						 : 0);
 
@@ -585,7 +485,7 @@ void PlayAway(void) {
 			}
 		}
 
-		if (IsDead__C5CBody(MechList))
+		if (MechList->IsDead())
 			EndCode = 2;
 	}
 done:

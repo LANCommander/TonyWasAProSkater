@@ -6,89 +6,9 @@ extern "C" {
 	#include <libgte.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector() {}
-	CVector(int _x, int _y, int _z) {
-		vz = _z;
-		vx = _x;
-		vy = _y;
-	}
-};
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-struct SHighlight {
-	short FromFrame;
-	short ToFrame;
-	int Score;
-};
-
-struct SVideoInfo {
-	int VideoMode;
-	unsigned long *pBlockStart, *pStreamStart, *pStreamEnd, *pStream;
-	unsigned long Bits;
-	int BitsLeft;
-	unsigned long NumFrames;
-	unsigned long FramesLeft;
-	int CurCameraIndex;
-	CVector CamPos;
-	int CamMode, CamXblanks, TabuCam, NoLOS, OldCameraIndex, TrailingCameraType;
-	int ReplayHighlight;
-	SHighlight Highlights[5];
-	int OldPhysicsState, OldAnim, OldFrame;
-	SVECTOR Euler;
-	SVECTOR OldEuler;
-	CVector OldPos;
-	CVector OldPos2;
-	int OldFlipAngle, FlipAngleDelta, OldXblanks, Yblanks, PlaybackFrozen;
-};
-
-class CBody;
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos; /* 0x004 */
-	char pad10[0x6c - 0x10];
-	int m6c; /* 0x06c */
-	int pad70;
-	int m74; /* 0x074 */
-	char pad78[0xbc - 0x78];
-	int mbc; /* 0x0bc */
-	int padc0;
-	int mc4; /* 0x0c4 */
-	char padc8[0x146 - 0xc8];
-	ushort m146; /* 0x146 */
-	char pad148[0x2e4 - 0x148];
-	int m2e4; /* 0x2e4 */
-	char pad2e8[0x734 - 0x2e8];
-	int m734; /* 0x734 */
-	char pad738[0x7d8 - 0x738];
-	int m7d8; /* 0x7d8 */
-	int pad7dc;
-	int m7e0; /* 0x7e0 */
-	void DoShadowCheck();
-	void GlowUpdate();
-	void HandleWater();
-};
-
-class CBit {
-  public:
-	char pad[120];
-	void *operator new(unsigned int) throw();
-};
-
-class CGrindSpark : public CBit {
-  public:
-	CGrindSpark(CBody *pParent, CVector &pos, int vel, int gravity, int life);
-};
+#include "game/video.h"
+#include "game/bruce.h"
+#include "game/bit.h"
 
 extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList;
@@ -137,10 +57,10 @@ void Video_Playback(CBruce *pSkater) {
 
 		VInfo->FramesLeft--;
 		IsAGrind =
-		    ABS(Mips_DotProd2(-pSkater->m7e0, pSkater->m6c, pSkater->m7d8, pSkater->m74)) < 40000;
-		int st = pSkater->m734;
+		    ABS(Mips_DotProd2(-pSkater->mFront.vz, pSkater->mVel.vx, pSkater->mFront.vx, pSkater->mVel.vz)) < 40000;
+		int st = pSkater->mPhysicsState;
 
-		if (st == 4 && (IsAGrind || pSkater->m146 == 58) && BitCount < 200) {
+		if (st == 4 && (IsAGrind || pSkater->mAnim == 58) && BitCount < 200) {
 			CSVector Angles;
 
 			{
@@ -160,21 +80,26 @@ void Video_Playback(CBruce *pSkater) {
 			Bit_SetSparkTrajectoryCone__FRC8CSVector(cone);
 
 			UseCacheForBits = 0;
-			CVector SparkPos(0, 0x19000, 0);
+			CVector SparkPos;
+
+			/* retail stores vz, vx, vy (not the header ctor's order) */
+			SparkPos.vz = 0;
+			SparkPos.vx = 0;
+			SparkPos.vy = 0x19000;
 
 			for (int i = 0; i < 9; i++)
 				new CGrindSpark((CBody *)pSkater, SparkPos, -40, 4096, 5);
 
-			st = pSkater->m734;
+			st = pSkater->mPhysicsState;
 			UseCacheForBits = 1;
 		}
 
-		if (st || ABS(pSkater->mPos.vy - pSkater->m2e4) > 64) {
-			pSkater->m2e4 = pSkater->mPos.vy;
+		if (st || ABS(pSkater->mPos.vy - pSkater->m2E4) > 64) {
+			pSkater->m2E4 = pSkater->mPos.vy;
 			pSkater->DoShadowCheck();
 		} else {
-			pSkater->mbc = pSkater->mPos.vx;
-			pSkater->mc4 = pSkater->mPos.vz;
+			pSkater->mShadowPos.vx = pSkater->mPos.vx;
+			pSkater->mShadowPos.vz = pSkater->mPos.vz;
 		}
 
 		pSkater->GlowUpdate();

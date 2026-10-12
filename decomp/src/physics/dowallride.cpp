@@ -14,17 +14,8 @@ extern "C" {
 	#include <inline_c.h>
 }
 
-struct CVector {
-	int vx, vy, vz;
-	CVector &operator+=(const CVector &);
-	int operator!=(const CVector &);
-};
-
-CVector operator*(const CVector &, const int &);
-CVector operator>>(const CVector &, const int &);
-CVector operator/(const CVector &, const int &);
-CVector operator+(const CVector &, const CVector &);
-CVector operator-(const CVector &, const CVector &);
+#include "game/colij.h"
+#include "game/bruce.h"
 
 #define SetVector(v, x, y, z)                                                                      \
 	{                                                                                              \
@@ -36,105 +27,10 @@ CVector operator-(const CVector &, const CVector &);
 		(v)->vz = _z;                                                                              \
 	}
 
-struct SHandle {
-	int a, b;
-};
-
-struct SItem {
-	char pad0[0x1b];
-	unsigned char Type; /* 0x1b */
-};
-
-struct SFace {
-	char pad0[0xe];
-	unsigned short Flags; /* 0xe */
-};
-
-struct SItemType {
-	char pad0[0x14];
-	void *p14; /* 0x14 */
-	char pad18[0x40 - 0x18];
-};
-
-struct SLineInfo {
-	CVector StartCoords;
-	CVector EndCoords;
-	CVector MinCoords;
-	CVector MaxCoords;
-	int iLo, iHi, jLo, jHi;
-	int Distance; /* 0x40 */
-	int Length;
-	char pad48[0x68 - 0x48];
-	SItem *pItem;     /* 0x68 */
-	CVector HitPoint; /* 0x6c */
-	SVECTOR Normal;   /* 0x78 */
-	SFace *pFace;     /* 0x80 */
-	char pad84[168 - 0x84];
-};
-
-class CBruce {
-  public:
-	char pad0[0x4];
-	CVector mPos; /* 0x4 */
-	char pad10[0x6c - 0x10];
-	CVector mVel;  /* 0x6c */
-	CVector mKick; /* 0x78 */
-	char pad84[0xa8 - 0x84];
-	SVECTOR mLastNormal; /* 0xa8 */
-	char padb0[0xf0 - 0xb0];
-	CVector mOldPos; /* 0xf0 */
-	char padfc[0x144 - 0xfc];
-	short mFrame;         /* 0x144 */
-	unsigned short mAnim; /* 0x146 */
-	char pad148[0x14f - 0x148];
-	unsigned char m14F; /* 0x14f */
-	int m150;           /* 0x150 */
-	char pad154[0x304 - 0x154];
-	int m304; /* 0x304 */
-	char pad308[0x324 - 0x308];
-	int m324; /* 0x324 */
-	int m328; /* 0x328 */
-	int m32C; /* 0x32c */
-	char pad330[0x334 - 0x330];
-	int mMaxSpeed; /* 0x334 */
-	char pad338[0x358 - 0x338];
-	int mInAir; /* 0x358 */
-	int m35C;   /* 0x35c */
-	char pad360[0x418 - 0x360];
-	SItem *mpWallItem;   /* 0x418 */
-	SHandle mWallHandle; /* 0x41c */
-	char pad424[0x720 - 0x424];
-	int m720; /* 0x720 */
-	char pad724[0x734 - 0x724];
-	int m734; /* 0x734 */
-	char pad738[0x73c - 0x738];
-	int m73C; /* 0x73c */
-	int m740; /* 0x740 */
-	char pad744[0x768 - 0x744];
-	int m768; /* 0x768 */
-	char pad76c[0x7d8 - 0x76c];
-	CVector mFront;      /* 0x7d8 */
-	CVector mRight;      /* 0x7e4 */
-	CVector mUp;         /* 0x7f0 */
-	CVector mFallLine;   /* 0x7fc */
-	int mFallLineTurn;   /* 0x808 */
-	SVECTOR mPolyNormal; /* 0x80c */
-	char pad814[0x820 - 0x814];
-	int m820;     /* 0x820 */
-	CVector m824; /* 0x824 */
-	void StateTransition(int, int);
-	void OrientToNormal();
-	void FRUVectorsFromRotMatrix();
-	void RotMatrixFromFRUVectors();
-	void AlignToFallLine(int);
-	void RotateHeadingAndVelocity(int, int, int);
-	void DoWallRidePhysics();
-};
-
 extern int TimeScale;
 extern int TimeScaleSquared;
 extern CVector ZeroVector;
-extern SItemType PSXRegion[];
+extern SPSXRegion PSXRegion[];
 
 int Face_Air;
 int Face_Skateable;
@@ -152,10 +48,8 @@ extern "C" {
 	int FUN_8008b5dc(int);
 	int Mips_FixMul__Fii(int, int);
 	int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
-	SHandle FUN_8004d7ac(void *);
+	SMemHandle FUN_8004d7ac(void *);
 	void FUN_8002f1a0(CBruce *);
-	void Debug_RunAnim__6CBruceii(CBruce *, int, int);
-	void ReflectHeadingVelocityInPlane__6CBruceG7SVECTORi(CBruce *, SVECTOR, int);
 	void SFX_Grunt__FP6CBruce(CBruce *);
 }
 
@@ -174,22 +68,22 @@ void CBruce::DoWallRidePhysics() {
 	Gravity.vx = 0;
 	Gravity.vy = 9000;
 	Gravity.vz = 0;
-	OnInvisible = m734 == 2;
+	OnInvisible = mPhysicsState == 2;
 
-	if (m14F) {
+	if (mAnimFinished) {
 		if (mAnim == 36)
 			mFrame = PingPong(7, 9, 15);
 		else if (mAnim == 35)
 			mFrame = PingPong(7, 9, 15);
 	}
 
-	mPos += ((mVel * TimeScale) >> 8) + ((mKick * TimeScaleSquared) >> 8) / 2;
+	mPos += ((mVel * TimeScale) >> 8) + ((mAcc * TimeScaleSquared) >> 8) / 2;
 	vMovement = mPos - mOldPos;
 	/* result unused; called as void so v0 isn't reserved (retail's register choice) */
 	((void (*)(int))FUN_8008b5dc)(Mips_CVecDotProd__FP7CVectorT0(&vMovement, &vMovement));
 	TurnAngle = 0;
 
-	if (!m720 && !m324) {
+	if (!m720 && !mTapTurn) {
 		AlignToFallLine(4);
 
 		TurnAngle = mFallLineTurn;
@@ -222,28 +116,28 @@ void CBruce::DoWallRidePhysics() {
 
 		if (line_info.pItem) {
 			if (Face_Visible || !Face_Air) {
-				mPos.vx = line_info.HitPoint.vx + mUp.vx * 30;
-				mPos.vy = line_info.HitPoint.vy + mUp.vy * 30;
-				mPos.vz = line_info.HitPoint.vz + mUp.vz * 30;
+				mPos.vx = line_info.Position.vx + mUp.vx * 30;
+				mPos.vy = line_info.Position.vy + mUp.vy * 30;
+				mPos.vz = line_info.Position.vz + mUp.vz * 30;
 
 				if (!OnInvisible) {
 					mpWallItem = line_info.pItem;
-					mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Type].p14);
+					mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Region].pPSX);
 				}
 
-				if (*(int *)&line_info.Normal == *(int *)&mLastNormal &&
-				    line_info.Normal.vz == mLastNormal.vz) {
-					m820++;
+				if (*(int *)&line_info.Normal == *(int *)&mNormal &&
+				    line_info.Normal.vz == mNormal.vz) {
+					mSameNormal++;
 				} else {
-					m820 = 0;
-					SetVector(&mLastNormal, line_info.Normal.vx, line_info.Normal.vy,
+					mSameNormal = 0;
+					SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
 					          line_info.Normal.vz)
 				}
 
 				OrientToNormal();
 
 				if (Face_Skateable) {
-					StateTransition(0, 5840);
+					StateTransition(PHYSICS_ON_GROUND, 5840);
 					ProjectCVectorToPlane(&mFront, line_info.Normal);
 					M3dUtils_NormaliseVector(&mFront);
 					SetVector(&mUp, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
@@ -253,10 +147,10 @@ void CBruce::DoWallRidePhysics() {
 					gte_stlvnl(&mRight);
 					RotMatrixFromFRUVectors();
 
-					m820 = 0;
-					SetVector(&mLastNormal, line_info.Normal.vx, line_info.Normal.vy,
+					mSameNormal = 0;
+					SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
 					          line_info.Normal.vz)
-					    SetVector(&m824, line_info.Normal.vx, line_info.Normal.vy,
+					    SetVector(&mOldNormal, line_info.Normal.vx, line_info.Normal.vy,
 						          line_info.Normal.vz)
 					        ProjectCVectorToPlane(&mVel, line_info.Normal);
 				}
@@ -286,29 +180,29 @@ void CBruce::DoWallRidePhysics() {
 		int CheckDist = 116;
 
 		if (d <= CheckDist) {
-			m768 = line_info.pFace->Flags & 0x20;
-			mPos.vx = line_info.HitPoint.vx + mUp.vx * 30;
-			mPos.vy = line_info.HitPoint.vy + mUp.vy * 30;
-			mPos.vz = line_info.HitPoint.vz + mUp.vz * 30;
+			m768 = ((SFace *)line_info.pFace)->Flags2 & 0x20;
+			mPos.vx = line_info.Position.vx + mUp.vx * 30;
+			mPos.vy = line_info.Position.vy + mUp.vy * 30;
+			mPos.vz = line_info.Position.vz + mUp.vz * 30;
 
 			if (!OnInvisible) {
 				mpWallItem = line_info.pItem;
-				mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Type].p14);
+				mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Region].pPSX);
 			}
 
-			if (*(int *)&line_info.Normal == *(int *)&mLastNormal &&
-			    line_info.Normal.vz == mLastNormal.vz) {
-				m820++;
+			if (*(int *)&line_info.Normal == *(int *)&mNormal &&
+			    line_info.Normal.vz == mNormal.vz) {
+				mSameNormal++;
 			} else {
-				m820 = 0;
-				SetVector(&mLastNormal, line_info.Normal.vx, line_info.Normal.vy,
+				mSameNormal = 0;
+				SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
 				          line_info.Normal.vz)
 			}
 
 			OrientToNormal();
 
 			if (Face_Skateable) {
-				StateTransition(0, 5949);
+				StateTransition(PHYSICS_ON_GROUND, 5949);
 				ProjectCVectorToPlane(&mFront, line_info.Normal);
 				M3dUtils_NormaliseVector(&mFront);
 				SetVector(&mUp, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
@@ -318,21 +212,21 @@ void CBruce::DoWallRidePhysics() {
 				gte_stlvnl(&mRight);
 				RotMatrixFromFRUVectors();
 
-				m820 = 0;
-				SetVector(&mLastNormal, line_info.Normal.vx, line_info.Normal.vy,
+				mSameNormal = 0;
+				SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
 				          line_info.Normal.vz)
-				    SetVector(&m824, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
+				    SetVector(&mOldNormal, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
 				        ProjectCVectorToPlane(&mVel, line_info.Normal);
 			} else {
 				int Steep = line_info.Normal.vy >= 3278;
 
 				if (Steep) {
 					mPos = mOldPos;
-					StateTransition(1, 5987);
+					StateTransition(PHYSICS_IN_AIR, 5987);
 
 					m740 = 1;
-					mKick += Gravity;
-					ReflectHeadingVelocityInPlane__6CBruceG7SVECTORi(this, line_info.Normal, 200);
+					mAcc += Gravity;
+					ReflectHeadingVelocityInPlane(line_info.Normal, 200);
 					SFX_Grunt__FP6CBruce(this);
 				}
 			}
@@ -341,28 +235,28 @@ void CBruce::DoWallRidePhysics() {
 		InplaneGravity = Gravity;
 		ProjectCVectorToPlane(&InplaneGravity, line_info.Normal);
 
-		mKick += InplaneGravity;
+		mAcc += InplaneGravity;
 		mFallLine = InplaneGravity;
 		mPolyNormal = line_info.Normal;
 		CVectorRotateToPlane(&mVel, &line_info.Normal, &mVel);
 	} else {
-		StateTransition(1, 6040);
+		StateTransition(PHYSICS_IN_AIR, 6040);
 		FUN_8002f1a0(this);
 
-		m328 = 0;
-		m32C = 0;
-		m35C = 0;
+		mTallyAngles = 0;
+		mNum180Spins = 0;
+		mDoingATrick = 0;
 		m740 = 1;
 
 		if (!mInAir) {
-			m150 = 0x10000;
+			mAnimSpeed = 0x10000;
 
-			if (m73C)
-				Debug_RunAnim__6CBruceii(this, 26, 6071);
+			if (mManIsCrouched)
+				Debug_RunAnim(26, 6071);
 			else
-				Debug_RunAnim__6CBruceii(this, 27, 6073);
+				Debug_RunAnim(27, 6073);
 		}
 
-		mKick += Gravity;
+		mAcc += Gravity;
 	}
 }

@@ -1,13 +1,5 @@
 /* DisplayTapesSkate__Fv (0x8006c7e8) */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CBruce {
-	char pad0[0x1c];
-	int mDead;
-	char pad1[0xdec - 0x20];
-	int mTape[5];
-};
+#include "game/bruce.h"
 
 extern CBruce *MechList;
 extern uint Xblanks;
@@ -30,7 +22,7 @@ void Mess_DrawPanelText(int, int, const char *, int, uint, int);
 void DisplayTapesSkate(void) {
 	CBruce *pSkater = MechList;
 
-	if (!pSkater->mDead) {
+	if (!pSkater->mNextItem) {
 		if (SKATE_Display) {
 			if (SKATE_Pos >= 483 && SKATE_Display > 10)
 				SKATE_Pos -= 4;
@@ -43,19 +35,19 @@ void DisplayTapesSkate(void) {
 			Mess_SetTextJustify(1);
 			Mess_SetScale(255);
 
-			if (pSkater->mTape[0])
+			if (pSkater->mPanel.SKATE[0])
 				Mess_DrawPanelText(SKATE_Pos, 80, DAT_800d1e6c, 0, 0, 256);
 
-			if (pSkater->mTape[1])
+			if (pSkater->mPanel.SKATE[1])
 				Mess_DrawPanelText(SKATE_Pos, 105, DAT_800d1e70, 0, 0, 256);
 
-			if (pSkater->mTape[2])
+			if (pSkater->mPanel.SKATE[2])
 				Mess_DrawPanelText(SKATE_Pos, 130, DAT_800d1e74, 0, 0, 256);
 
-			if (pSkater->mTape[3])
+			if (pSkater->mPanel.SKATE[3])
 				Mess_DrawPanelText(SKATE_Pos, 155, DAT_800d1e78, 0, 0, 256);
 
-			if (pSkater->mTape[4])
+			if (pSkater->mPanel.SKATE[4])
 				Mess_DrawPanelText(SKATE_Pos, 180, DAT_800d1e7c, 0, 0, 256);
 		}
 

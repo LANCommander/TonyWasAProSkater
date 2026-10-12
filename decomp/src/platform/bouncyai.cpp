@@ -6,100 +6,8 @@ extern "C" {
 	#include <libgte.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector() {}
-	CVector(int _x, int _y, int _z) {
-		vx = _x;
-		vy = _y;
-		vz = _z;
-	}
-	int Length() const;
-	void KillSmall();
-	CVector &operator%=(const struct CFriction &);
-};
-
-CVector operator+(const CVector &, const CVector &);
-
-struct CSVector {
-	short vx, vy, vz;
-	void Mask();
-	void KillSmall();
-	CSVector &operator+=(const CSVector &);
-};
-
-struct CFriction {
-	uchar vx, vy, vz;
-	CFriction() {}
-	CFriction(uchar x, uchar y, uchar z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-};
-
-struct Item;
-
-struct SLineInfo {
-	CVector StartCoords;
-	CVector EndCoords;
-	CVector MinCoords;
-	CVector MaxCoords;
-	int iLo, iHi, jLo, jHi;
-	int Distance;
-	int Length;
-	MATRIX WorldCst;
-	Item *pItem;
-	CVector Position;
-	SVECTOR Normal;
-	uint *pFace;
-	int Model;
-	uchar RecordTriggerZoneHits;
-	uchar DropDown;
-	ushort Inquiry;
-	int tNear;
-	uint tNumtrLo;
-	int tNumtrHi;
-	uint tDenomLo;
-	int tDenomHi;
-	uint NormalOffset;
-};
-
-struct VT {
-	char pad[0x10];
-	short off;
-	short pad2;
-	void (*fn)(char *);
-};
-
-class CPlatform {
-  public:
-	ushort mFlags;
-	ushort mInquiry;
-	CVector mPos;     /* 0x004 */
-	CSVector mAngles; /* 0x010 */
-	char pad16[0x48 - 0x16];
-	VT *vt; /* 0x048 */
-	char pad4c[0x6c - 0x4c];
-	CVector mVel; /* 0x06c */
-	char pad78[0x88 - 0x78];
-	CSVector mAngVel; /* 0x088 */
-	char pad8e[0x1ac - 0x8e];
-	uint mBaddyFlags; /* 0x1ac */
-	char pad1b0[0x22a - 0x1b0];
-	ushort mNumBounces; /* 0x22a */
-	ushort mType;       /* 0x22c */
-	ushort mWidth;      /* 0x22e */
-	ushort mHeight;
-	ushort mDepth;
-	ushort mDeathTimer;     /* 0x234 */
-	CSVector mTargetAngles; /* 0x236 */
-	void BouncyAI();
-};
+#include "game/platform.h"
+#include "game/colij.h"
 
 extern "C" void FUN_8008b3d4(CSVector *, MATRIX *);
 void M3dColij_InitLineInfo(SLineInfo *);
@@ -122,11 +30,11 @@ void CPlatform::BouncyAI() {
 	int ObjectExtent;
 
 	if (mDeathTimer && !--mDeathTimer) {
-		vt->fn((char *)this + vt->off);
+		Die();
 		return;
 	}
 
-	if (!(mBaddyFlags & 0x20))
+	if (!(mSpecificFlags & 0x20))
 		return;
 
 	mTargetAngles.Mask();
@@ -271,7 +179,7 @@ void CPlatform::BouncyAI() {
 				NewVel.vy = 0;
 				NewVel.vx = 0;
 				mDeathTimer = 10;
-				mBaddyFlags &= ~0x20;
+				mSpecificFlags &= ~0x20;
 				return;
 			}
 
@@ -288,6 +196,6 @@ void CPlatform::BouncyAI() {
 		mDeathTimer = 10;
 		mAngles.vx = mTargetAngles.vx;
 		mAngles.vz = mTargetAngles.vz;
-		mBaddyFlags &= ~0x20;
+		mSpecificFlags &= ~0x20;
 	}
 }

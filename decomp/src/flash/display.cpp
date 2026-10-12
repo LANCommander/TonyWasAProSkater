@@ -7,13 +7,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
-
-typedef unsigned char uchar;
-
-struct SDB {
-	char pad0[0x84];
-	u_long OT[1];
-};
+#include "game/m3d.h"
 
 int FlashCountdown;
 
@@ -21,7 +15,7 @@ extern const int Fading;
 
 int FlashSort;
 
-extern SDB *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 
@@ -31,7 +25,7 @@ volatile ushort CurrentB_2;
 
 void Flash_Display() {
 	if (FlashCountdown || Fading) {
-		u_long *OTPos = &pDoubleBuffer->OT[FlashSort];
+		u_long *OTPos = &pDoubleBuffer->OT2D + FlashSort;
 		POLY_F4 *aPoly = (POLY_F4 *)pPoly;
 		uchar *newppoly = pPoly + sizeof(POLY_F4) + sizeof(DR_TPAGE);
 		DR_TPAGE *ptpage = (DR_TPAGE *)(aPoly + 1);

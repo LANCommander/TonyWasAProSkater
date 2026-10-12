@@ -1,26 +1,5 @@
 /* __8CTrickObUs (0x8004ef08) flags=-fstructure-noalias */
-#pragma interface
-
-class Item;
-
-class CClass {
-  public:
-	CClass() {}
-	virtual ~CClass();
-};
-
-class CTrickOb : public CClass {
-  public:
-	unsigned int mChecksum;
-	unsigned short mNode;
-	unsigned char mState;
-	unsigned char mPlayer;
-	unsigned short mScore;
-	CTrickOb *mpNext;
-	Item *mpItem;
-	CTrickOb(unsigned short Node);
-	virtual ~CTrickOb();
-};
+#include "game/trickob.h"
 
 CTrickOb *TrickObList;
 

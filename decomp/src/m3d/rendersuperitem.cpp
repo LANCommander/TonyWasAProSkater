@@ -9,81 +9,9 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-struct SModel {
-	ushort Flags;
-	ushort NumVertices;
-	ushort NumNormals;
-};
-
-struct Texture;
-
-struct SAnimFrame {
-	int m0;
-	Texture *pTexture;
-};
-
-struct SMatrix {
-	short m[3][3];
-	short t[3];
-};
-
-struct SCamera {
-	int pad;
-	CVector Pos; /* 0x04 */
-	char pad10[0x74 - 0x10];
-	MATRIX View; /* 0x74 */
-};
-
-struct SPSXRegion {
-	char pad0[0x10];
-	SModel **ppModels; /* 0x10 */
-	char pad14[0x24 - 0x14];
-	SAnimFrame *pAnimTex; /* 0x24 */
-	char pad28[0x30 - 0x28];
-	ushort NumParts; /* 0x30 */
-	uchar m32;       /* 0x32 */
-	char pad33[64 - 0x33];
-};
-
-struct Item {
-	ushort Flags; /* 0x000 */
-	char pad2[2];
-	CVector Pos; /* 0x004 */
-	char pad10[0x1b - 0x10];
-	uchar Region; /* 0x01b */
-	char pad1c[0x3c - 0x1c];
-	char *pLight; /* 0x03c */
-	char pad40[0xb4 - 0x40];
-	uint EllipsoidRGB;         /* 0x0b4 */
-	ushort EllipsoidScale;     /* 0x0b8 */
-	short EllipsoidOTPushback; /* 0x0ba */
-	CVector ShadowPos;         /* 0x0bc */
-	CSVector ShadowNormal;     /* 0x0c8 */
-	char padce[0x134 - 0xce];
-	int SuperFlags; /* 0x134 */
-	char pad138[0x15a - 0x138];
-	uchar NumShadows;       /* 0x15a */
-	SVECTOR *pShadowLights; /* 0x15c */
-	CVECTOR *pShadowRGBs;   /* 0x160 */
-	MATRIX Matrix;          /* 0x164 */
-	char pad184[0x184 - 0x184];
-	SMatrix *pAnimTransform; /* 0x184 */
-	char pad188[0x194 - 0x188];
-	uint HiddenParts; /* 0x194 */
-};
+#include "game/m3d.h"
+#include "game/ob.h"
+#include "game/camera.h"
 
 extern SPSXRegion PSXRegion[];
 extern SAnimFrame *QuickAnimLookup[];
@@ -136,35 +64,35 @@ void RenderSuperItem(Item *pItem) {
 
 	ItemFlags = pItem->Flags;
 
-	if (!PSXRegion[pItem->Region].m32 || (ItemFlags & 0xc80))
+	if (!PSXRegion[pItem->Region].Fastable || (ItemFlags & 0xc80))
 		Fast = 0;
 	else
 		Fast = 1;
 
-	if (pItem->SuperFlags & 2) {
-		pItem->Matrix.m[0][0] = -pItem->Matrix.m[0][0];
-		pItem->Matrix.m[1][0] = -pItem->Matrix.m[1][0];
-		pItem->Matrix.m[2][0] = -pItem->Matrix.m[2][0];
+	if (((CSuper *)pItem)->mExtraFlags & 2) {
+		((CSuper *)pItem)->mTransform.m[0][0] = -((CSuper *)pItem)->mTransform.m[0][0];
+		((CSuper *)pItem)->mTransform.m[1][0] = -((CSuper *)pItem)->mTransform.m[1][0];
+		((CSuper *)pItem)->mTransform.m[2][0] = -((CSuper *)pItem)->mTransform.m[2][0];
 		*(short *)0x1f8002d4 = 1;
 	} else {
 		*(short *)0x1f8002d4 = 0;
 	}
 
 	gte_SetRotMatrix(&pCurrentCamera->View);
-	FUN_8008b254(&pItem->Matrix, &SuperTransform);
+	FUN_8008b254(&((CSuper *)pItem)->mTransform, &SuperTransform);
 
-	Position.vx = (pItem->Pos.vx >> 12) - pCurrentCamera->Pos.vx;
-	Position.vy = (pItem->Pos.vy >> 12) - pCurrentCamera->Pos.vy;
-	Position.vz = (pItem->Pos.vz >> 12) - pCurrentCamera->Pos.vz;
+	Position.vx = (pItem->Position.vx >> 12) - pCurrentCamera->Position.vx;
+	Position.vy = (pItem->Position.vy >> 12) - pCurrentCamera->Position.vy;
+	Position.vz = (pItem->Position.vz >> 12) - pCurrentCamera->Position.vz;
 	gte_ldlvl(&Position);
 	gte_rtir();
 	gte_stlvnl(&SuperTransform.t[0]);
 
 	if (*(short *)&SuperTransform.t[2] < 1000) {
 		Dewibble = 1;
-		Position.vx = (pItem->Pos.vx >> 8) - (pCurrentCamera->Pos.vx << 4);
-		Position.vy = (pItem->Pos.vy >> 8) - (pCurrentCamera->Pos.vy << 4);
-		Position.vz = (pItem->Pos.vz >> 8) - (pCurrentCamera->Pos.vz << 4);
+		Position.vx = (pItem->Position.vx >> 8) - (pCurrentCamera->Position.vx << 4);
+		Position.vy = (pItem->Position.vy >> 8) - (pCurrentCamera->Position.vy << 4);
+		Position.vz = (pItem->Position.vz >> 8) - (pCurrentCamera->Position.vz << 4);
 		gte_ldlvl(&Position);
 		gte_rtir();
 		gte_stlvnl(&SuperTransform.t[0]);
@@ -176,13 +104,13 @@ void RenderSuperItem(Item *pItem) {
 	NumParts = PSXRegion[pItem->Region].NumParts;
 
 	if (ItemFlags & 4)
-		pAnimTransform = pItem->pAnimTransform;
+		pAnimTransform = ((CSuper *)pItem)->mpPoseBuffer;
 	else
 		pAnimTransform = Decomp_GetAnimTransform__FP6CSuper(pItem);
 
-	FUN_8009738c((MATRIX *)pItem->pLight, &pItem->Matrix, &SuperLightTransform);
+	FUN_8009738c((MATRIX *)pItem->pLight, &((CSuper *)pItem)->mTransform, &SuperLightTransform);
 
-	Type = pItem->EllipsoidRGB >> 24;
+	Type = ((CSuper *)pItem)->mEllipsoidRGB >> 24;
 
 	if (Type & 127) {
 		int Lookup = (Type - 1) & 127;
@@ -195,18 +123,18 @@ void RenderSuperItem(Item *pItem) {
 
 		pAnimTex = QuickAnimLookup[Lookup];
 		pAnimTex += FrameNo % ((uint *)pAnimTex)[-1];
-		Rgb = pItem->EllipsoidRGB & 0xffffff;
-		Scale = pItem->EllipsoidScale;
-		OTPushback = pItem->EllipsoidOTPushback;
+		Rgb = ((CSuper *)pItem)->mEllipsoidRGB & 0xffffff;
+		Scale = ((CSuper *)pItem)->mEllipsoidScale;
+		OTPushback = ((CSuper *)pItem)->mEllipsoidOTPushback;
 	}
 
 	FreeStitchVertex = Fast ? (char *)0x1f8003f8 : ProjectedVertices + 3192;
-	pColourTable = PSXRegion[pItem->Region].pAnimTex;
+	pColourTable = (SAnimFrame *)PSXRegion[pItem->Region].pColourTable;
 
 	for (i = 0; i < NumParts; i++, pAnimTransform++) {
-		SubObjectMasked = (pItem->HiddenParts & (1 << i)) != 0;
+		SubObjectMasked = (((CSuper *)pItem)->mSubObjectDisplayMask & (1 << i)) != 0;
 		pModel = ppModels[i];
-		FUN_8009738c(&pItem->Matrix, (MATRIX *)pAnimTransform, &WorldTransform);
+		FUN_8009738c(&((CSuper *)pItem)->mTransform, (MATRIX *)pAnimTransform, &WorldTransform);
 
 		if (Dewibble)
 			FUN_80089fc8(&SuperTransform, &SuperLightTransform, pAnimTransform);
@@ -216,8 +144,8 @@ void RenderSuperItem(Item *pItem) {
 		if ((pModel->Flags & 1) || (pItem->Flags & 0x4000)) {
 			FUN_800866cc(&WorldTransform, SuperTransform.t, pModel);
 		} else if ((pModel->Flags & 4) || (ItemFlags & 128)) {
-			gte_SetColorMatrix((MATRIX *)(pItem->pLight + 20));
-			FUN_80086f20(pItem->pLight + 40);
+			gte_SetColorMatrix((MATRIX *)((char *)pItem->pLight + 20));
+			FUN_80086f20((char *)pItem->pLight + 40);
 			FUN_80086a4c((char *)pModel + (pModel->NumVertices * 8 + 28), pModel->NumNormals);
 		}
 
@@ -230,18 +158,18 @@ void RenderSuperItem(Item *pItem) {
 
 		if (!SubObjectMasked) {
 			int DoEllipsoids = Type & 127;
-			int DoShadows = pItem->NumShadows != 0;
+			int DoShadows = ((CSuper *)pItem)->mShadowLights != 0;
 
 			if (DoEllipsoids || DoShadows) {
 				gte_ldsv(&pAnimTransform->t[0]);
-				FUN_8008b71c(&pItem->Matrix);
+				FUN_8008b71c(&((CSuper *)pItem)->mTransform);
 				gte_stlvnl(&WorldTransform.t[0]);
 				WorldTransform.t[0] >>= 4;
 				WorldTransform.t[1] >>= 4;
 				WorldTransform.t[2] >>= 4;
-				WorldTransform.t[0] += pItem->Pos.vx >> 12;
-				WorldTransform.t[1] += pItem->Pos.vy >> 12;
-				WorldTransform.t[2] += pItem->Pos.vz >> 12;
+				WorldTransform.t[0] += pItem->Position.vx >> 12;
+				WorldTransform.t[1] += pItem->Position.vy >> 12;
+				WorldTransform.t[2] += pItem->Position.vz >> 12;
 			}
 
 			if (DoEllipsoids && (!TestTheWater || WorldTransform.t[1] < (CurrentWaterLevel >> 12) - 40))
@@ -251,17 +179,17 @@ void RenderSuperItem(Item *pItem) {
 			if (DoShadows) {
 				int s;
 
-				for (s = 0; s < pItem->NumShadows; s++)
-					M3dElips_RenderShadow(pModel, &WorldTransform, &pItem->ShadowNormal,
-					                      &pItem->ShadowPos, &pItem->pShadowLights[s],
-					                      pItem->pShadowRGBs[s]);
+				for (s = 0; s < ((CSuper *)pItem)->mShadowLights; s++)
+					M3dElips_RenderShadow(pModel, &WorldTransform, &((CSuper *)pItem)->mShadowNormal,
+					                      &((CSuper *)pItem)->mShadowPos, &((CSuper *)pItem)->mpShadowSource[s],
+					                      ((CSuper *)pItem)->mpShadowRGB[s]);
 			}
 		}
 	}
 
-	if (pItem->SuperFlags & 2) {
-		pItem->Matrix.m[0][0] = -pItem->Matrix.m[0][0];
-		pItem->Matrix.m[1][0] = -pItem->Matrix.m[1][0];
-		pItem->Matrix.m[2][0] = -pItem->Matrix.m[2][0];
+	if (((CSuper *)pItem)->mExtraFlags & 2) {
+		((CSuper *)pItem)->mTransform.m[0][0] = -((CSuper *)pItem)->mTransform.m[0][0];
+		((CSuper *)pItem)->mTransform.m[1][0] = -((CSuper *)pItem)->mTransform.m[1][0];
+		((CSuper *)pItem)->mTransform.m[2][0] = -((CSuper *)pItem)->mTransform.m[2][0];
 	}
 }

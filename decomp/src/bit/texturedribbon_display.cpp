@@ -11,79 +11,16 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
+#include "game/bit.h"
+#include "game/m3d.h"
+#include "game/trig.h"
 
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct SRibbonPoint {
-	CVector Pos;
-	uint Colour;   /* 12 */
-	ushort Width;  /* 16 */
-	ushort WidthB; /* 18 */
-	uint ColourB;  /* 20 */
-	int Last1Scr;
-	int Last2Scr;
-	int Last3Scr;
-};
-
-struct SCalcBuffer {
-	int Pos;       /* 0, screen XY */
-	int NormalX;   /* 4 */
-	int NormalY;   /* 8 */
-	int Zed;       /* 12 */
-	int ScrWidth;  /* 16 */
-	int ScrWidthB; /* 20 */
-	int Bad;       /* 24 */
-};
-
-struct Texture {
-	uchar u0, v0;
-	ushort clut; /* 2 */
-	uchar u1, v1;
-	ushort tpage; /* 6 */
-};
-
-struct SCamera {
-	char pad0[8];
-	ushort Near; /* 8 */
-	ushort Far;  /* 10 */
-};
-
-struct SOTBuffer {
-	char pad0[0x808c];
-	char *pOT; /* 0x808c */
-};
-
-struct STrig {
-	short s, c;
-};
-
-class CTexturedRibbon {
-  public:
-	char pad0[0x48];
-	uchar mTrail;           /* 0x48 */
-	Texture *mpTex;         /* 0x4c */
-	uchar mDontDisplay;     /* 0x50 */
-	int mU;                 /* 0x54 */
-	int mV;                 /* 0x58 */
-	int mDv;                /* 0x5c */
-	int mWibble;            /* 0x60 */
-	int mNumPoints;         /* 0x64 */
-	SRibbonPoint *mpPoints; /* 0x68 */
-	void Display();
-};
-
-extern SCamera *pCurrentViewport;
-extern SOTBuffer *pDoubleBuffer;
+extern SViewport *pCurrentViewport;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 extern int TTime;
-extern STrig
+extern SSinCos
     rcossin_tbl[1]; /* declared <= 8 bytes: cc1 then emits one la (as retail), not a hi/lo split */
 
 u_long StoredTPagePrim[2];
@@ -122,7 +59,7 @@ void CTexturedRibbon::Display() {
 		for (i = 0; i < mNumPoints; i++) {
 			pBuf->Zed = Transform(pPoint->Pos, pBuf->Pos);
 
-			if (pBuf->Zed < pCurrentViewport->Near || pCurrentViewport->Far < pBuf->Zed) {
+			if (pBuf->Zed < pCurrentViewport->Hither || pCurrentViewport->Yon < pBuf->Zed) {
 				pBuf->Bad = 1;
 			} else {
 				pBuf->Bad = 0;
@@ -220,7 +157,7 @@ void CTexturedRibbon::Display() {
 				y = pBuf->Pos >> 16;
 				NewTop = ((y + dy) << 16) | ((x + dx) & 0xffff);
 				NewBottom = ((y - dy) << 16) | ((x - dx) & 0xffff);
-				pOTPos = (uint *)(pDoubleBuffer->pOT + (MinZ & 0x3ffc));
+				pOTPos = (uint *)((char *)pDoubleBuffer->pOT + (MinZ & 0x3ffc));
 				NewTopB = ((y + dyB) << 16) | ((x + dxB) & 0xffff);
 				NewBottomB = ((y - dyB) << 16) | ((x - dxB) & 0xffff);
 
@@ -299,34 +236,34 @@ void CTexturedRibbon::Display() {
 				pBottomPolyB->u3 = u + 48;
 				pBottomPolyB->v3 = v + mDv;
 				voff -= mDv;
-				*(u_long *)&pTopPoly->r0 = pPoint->ColourB;
-				*(u_long *)&pTopPoly->r1 = pLastPoint->ColourB;
-				*(u_long *)&pTopPoly->r2 = pPoint->Colour;
-				*(u_long *)&pTopPoly->r3 = pLastPoint->Colour;
+				*(u_long *)&pTopPoly->r0 = *(uint *)&pPoint->rB;
+				*(u_long *)&pTopPoly->r1 = *(uint *)&pLastPoint->rB;
+				*(u_long *)&pTopPoly->r2 = *(uint *)&pPoint->r;
+				*(u_long *)&pTopPoly->r3 = *(uint *)&pLastPoint->r;
 				*(u_long *)&pTopPoly->x0 = NewTop;
 				*(u_long *)&pTopPoly->x1 = LastTop;
 				*(u_long *)&pTopPoly->x2 = pBuf->Pos;
 				*(u_long *)&pTopPoly->x3 = pLastBuf->Pos;
 				*(u_long *)&pTopPolyB->r0 = 0;
 				*(u_long *)&pTopPolyB->r1 = 0;
-				*(u_long *)&pTopPolyB->r2 = pPoint->ColourB;
-				*(u_long *)&pTopPolyB->r3 = pLastPoint->ColourB;
+				*(u_long *)&pTopPolyB->r2 = *(uint *)&pPoint->rB;
+				*(u_long *)&pTopPolyB->r3 = *(uint *)&pLastPoint->rB;
 				*(u_long *)&pTopPolyB->x0 = NewTopB;
 				*(u_long *)&pTopPolyB->x1 = LastTopB;
 				*(u_long *)&pTopPolyB->x2 = NewTop;
 				*(u_long *)&pTopPolyB->x3 = LastTop;
-				*(u_long *)&pBottomPoly->r0 = pPoint->ColourB;
-				*(u_long *)&pBottomPoly->r1 = pLastPoint->ColourB;
-				*(u_long *)&pBottomPoly->r2 = pPoint->Colour;
-				*(u_long *)&pBottomPoly->r3 = pLastPoint->Colour;
+				*(u_long *)&pBottomPoly->r0 = *(uint *)&pPoint->rB;
+				*(u_long *)&pBottomPoly->r1 = *(uint *)&pLastPoint->rB;
+				*(u_long *)&pBottomPoly->r2 = *(uint *)&pPoint->r;
+				*(u_long *)&pBottomPoly->r3 = *(uint *)&pLastPoint->r;
 				*(u_long *)&pBottomPoly->x0 = NewBottom;
 				*(u_long *)&pBottomPoly->x1 = LastBottom;
 				*(u_long *)&pBottomPoly->x2 = pBuf->Pos;
 				*(u_long *)&pBottomPoly->x3 = pLastBuf->Pos;
 				*(u_long *)&pBottomPolyB->r0 = 0;
 				*(u_long *)&pBottomPolyB->r1 = 0;
-				*(u_long *)&pBottomPolyB->r2 = pPoint->ColourB;
-				*(u_long *)&pBottomPolyB->r3 = pLastPoint->ColourB;
+				*(u_long *)&pBottomPolyB->r2 = *(uint *)&pPoint->rB;
+				*(u_long *)&pBottomPolyB->r3 = *(uint *)&pLastPoint->rB;
 				*(u_long *)&pBottomPolyB->x0 = NewBottomB;
 				*(u_long *)&pBottomPolyB->x1 = LastBottomB;
 				*(u_long *)&pBottomPolyB->x2 = NewBottom;

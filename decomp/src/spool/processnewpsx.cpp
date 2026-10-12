@@ -6,41 +6,7 @@
    (rails, zones, anims, ...) and records where each one lives. GeometryAndTableSize keeps
    (NumChecksums*4 + 4) as one term: written plainly, fold moves the +4 onto the left sum; the
    assignment inside the expression stops it. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct SModel {
-	ushort Flags;
-	ushort NumVertices; /* 2 */
-	ushort NumNormals;  /* 4 */
-	ushort NumFaces;    /* 6 */
-};
-
-struct Texture {
-	char pad0[16];
-	ushort Usage; /* 16 */
-};
-
-struct SPSXRegion {
-	char Name[9]; /* 0 */
-	uchar m9;     /* 9 */
-	uchar Loaded; /* 10 */
-	char padb[12 - 11];
-	uint *pChecksums;  /* 0x0c */
-	SModel **ppModels; /* 0x10 */
-	uint *pPSX;        /* 0x14 */
-	uint *pRails;      /* 0x18 */
-	uint *pHier;       /* 0x1c */
-	char pad20[0x24 - 0x20];
-	uint *pRGBs;  /* 0x24 */
-	uint *pTrig;  /* 0x28 */
-	uint *pPack7; /* 0x2c */
-	char pad30[0x33 - 0x30];
-	uchar InMemory;     /* 0x33 */
-	uchar KeepTextures; /* 0x34 */
-	char pad35[64 - 0x35];
-};
+#include "game/m3d.h"
 
 extern SPSXRegion PSXRegion[];
 
@@ -94,8 +60,8 @@ void ProcessNewPSX(int region) {
 	}
 
 	PSXRegion[region].ppModels = ppModels;
-	PSXRegion[region].pChecksums = Spool_SkipPackets(pPSX);
-	ChecksumTable = PSXRegion[region].pChecksums + NumModels + 1;
+	PSXRegion[region].pModelChecksums = Spool_SkipPackets(pPSX);
+	ChecksumTable = PSXRegion[region].pModelChecksums + NumModels + 1;
 	NumChecksums = ChecksumTable[-1];
 
 	{
@@ -172,31 +138,31 @@ void ProcessNewPSX(int region) {
 	Pack_NoBottom = 0;
 	Pack_NoRight = 0;
 
-	if (PSXRegion[region].Name[0] == 'b' && PSXRegion[region].Name[1] == 'i' &&
-	    PSXRegion[region].Name[2] == 't' && PSXRegion[region].Name[3] == 's' &&
-	    !PSXRegion[region].Name[4]) {
+	if (PSXRegion[region].Filename[0] == 'b' && PSXRegion[region].Filename[1] == 'i' &&
+	    PSXRegion[region].Filename[2] == 't' && PSXRegion[region].Filename[3] == 's' &&
+	    !PSXRegion[region].Filename[4]) {
 		Pack_NoBottom = 1;
 		Pack_NoRight = 1;
 	}
 
-	PSXRegion[region].InMemory = 1;
+	PSXRegion[region].TexturesInRAM = 1;
 	Spool_LoadTexturesToVRAM__Fii(region, 0);
 
 	Pack_NoBottom = 0;
 	Pack_NoRight = 0;
 
-	if (!PSXRegion[region].KeepTextures) {
+	if (!PSXRegion[region].KeepTexturesInRAM) {
 		FUN_8004d6a0(pPSX, GeometryAndTableSize);
 
-		PSXRegion[region].InMemory = 0;
+		PSXRegion[region].TexturesInRAM = 0;
 	}
 
 	AnimPacketFound = 0;
 	M3dInit_ParsePSX(region);
 
-	PSXRegion[region].m9 = 0;
-	PSXRegion[region].pTrig = 0;
-	PSXRegion[region].pPack7 = 0;
+	PSXRegion[region].IsSuper = 0;
+	PSXRegion[region].pTexWibData = 0;
+	PSXRegion[region].pColourPulseData = 0;
 	pPacket = (uint *)((char *)pPSX + pPSX[1]);
 	PacketType = *pPacket;
 
@@ -215,21 +181,21 @@ void ProcessNewPSX(int region) {
 				break;
 			case 0x2a:
 			case 0x2c:
-				PSXRegion[region].pRails = pPacket;
-				PSXRegion[region].m9 = 1;
+				PSXRegion[region].pAnimFile = pPacket;
+				PSXRegion[region].IsSuper = 1;
 				break;
 			case 0x73424752:
-				PSXRegion[region].pRGBs = pPacket;
+				PSXRegion[region].pColourTable = pPacket;
 				break;
 			case 6:
-				PSXRegion[region].pTrig = pPacket;
+				PSXRegion[region].pTexWibData = pPacket;
 				pCurrentTexWibPacket = pPacket - 2;
 				break;
 			case 7:
-				PSXRegion[region].pPack7 = pPacket;
+				PSXRegion[region].pColourPulseData = pPacket;
 				break;
 			case 0x52454948:
-				PSXRegion[region].pHier = pPacket;
+				PSXRegion[region].pHierarchy = (ushort *)pPacket;
 				break;
 		}
 
@@ -242,5 +208,5 @@ void ProcessNewPSX(int region) {
 	if (AnimPacketFound)
 		FUN_8004d6a0(pPSX, (char *)pPacket - (char *)pPSX);
 
-	PSXRegion[region].Loaded = 1;
+	PSXRegion[region].Usable = 1;
 }

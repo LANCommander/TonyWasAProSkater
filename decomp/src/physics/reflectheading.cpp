@@ -5,15 +5,7 @@ extern "C" {
 	#include <inline_c.h>
 }
 
-struct CVector {
-	int x, y, z;
-	CVector() {}
-	void Set(int _x, int _y, int _z) {
-		x = _x;
-		y = _y;
-		z = _z;
-	}
-};
+#include "game/bruce.h"
 
 extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
 extern "C" int Mips_FixMul__Fii(int, int);
@@ -21,20 +13,6 @@ extern "C" int FUN_8008b5dc(int);
 extern "C" void FUN_80093130(MATRIX *, MATRIX *);
 extern "C" void FUN_80093240(SVECTOR *, MATRIX *);
 void M3dUtils_NormaliseVector(CVector *);
-
-struct CBruce {
-	char pad0[0x6c];
-	CVector mVel;
-	char pad1[0x78c - 0x78];
-	MATRIX mRotMatrix;
-	char pad2[0x7d8 - 0x7ac];
-	CVector mFront;
-	CVector mRight;
-	CVector mUp;
-	void FRUVectorsFromRotMatrix();
-	void RotMatrixFromFRUVectors();
-	void ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle);
-};
 
 void CBruce::ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle) {
 	CVector TmpCV;
@@ -52,20 +30,20 @@ void CBruce::ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle) {
 		int _y = Normal.vy;
 		int _z = Normal.vz;
 
-		TmpCV.x = _x;
-		TmpCV.y = _y;
-		TmpCV.z = _z;
+		TmpCV.vx = _x;
+		TmpCV.vy = _y;
+		TmpCV.vz = _z;
 	}
 
 	dot = Mips_CVecDotProd__FP7CVectorT0(&mVel, &TmpCV);
 
 	if (dot < 0) {
-		mVel.x -= Mips_FixMul__Fii(Normal.vx, dot);
-		mVel.y -= Mips_FixMul__Fii(Normal.vy, dot);
-		mVel.z -= Mips_FixMul__Fii(Normal.vz, dot);
-		mVel.x += Mips_FixMul__Fii(Normal.vx, 205);
-		mVel.y += Mips_FixMul__Fii(Normal.vy, 205);
-		mVel.z += Mips_FixMul__Fii(Normal.vz, 205);
+		mVel.vx -= Mips_FixMul__Fii(Normal.vx, dot);
+		mVel.vy -= Mips_FixMul__Fii(Normal.vy, dot);
+		mVel.vz -= Mips_FixMul__Fii(Normal.vz, dot);
+		mVel.vx += Mips_FixMul__Fii(Normal.vx, 205);
+		mVel.vy += Mips_FixMul__Fii(Normal.vy, 205);
+		mVel.vz += Mips_FixMul__Fii(Normal.vz, 205);
 	}
 
 	{
@@ -73,9 +51,9 @@ void CBruce::ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle) {
 		int _y = -Normal.vy;
 		int _z = -Normal.vz;
 
-		TmpCV.x = _x;
-		TmpCV.y = _y;
-		TmpCV.z = _z;
+		TmpCV.vx = _x;
+		TmpCV.vy = _y;
+		TmpCV.vz = _z;
 	}
 
 	dot = Mips_CVecDotProd__FP7CVectorT0(&mFront, &TmpCV);

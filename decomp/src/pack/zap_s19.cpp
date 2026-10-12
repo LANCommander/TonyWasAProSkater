@@ -1,13 +1,5 @@
 /* Pack_Zap__Fiiii (0x8004a69c) */
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-
-struct TSPack {
-	ushort X, Y, W, H;
-	TSPack *pNext;
-	char Type;
-	uchar no_bottom, bpp, aligned;
-};
+#include "game/m3d.h"
 
 TSPack *Pack_pFull;
 

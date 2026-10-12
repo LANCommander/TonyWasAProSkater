@@ -5,52 +5,11 @@
    Levers: the arrow text is `if (up && down) ... else sprintf(.., up ? a : b)` with `down` a
    separate block local (keeps up in a1 and XMid in s1); FUN_8008c468 returns int; the
    VerticalMenu ?: count is `n < 6 ? n : 5`; sizeof(VerticalMenu) = 820. */
-typedef struct {
-	char pad0[0xc];
-	char *f0c;
-	char *f10;
-	char pad1[0x104 - 0x14];
-	char *f104;
-	char *f108;
-	char *f10c;
-	char pad2[0x128 - 0x110];
-	char *f128;
-	char *f12c;
-	char *f130;
-	char *f134;
-	char pad3[0x180 - 0x138];
-	char *f180;
-	char pad4[0x1c8 - 0x184];
-	char *f1c8;
-	char *f1cc;
-	char *f1d0;
-	char *f1d4;
-	char pad5[0x1f8 - 0x1d8];
-	char *f1f8;
-	char *f1fc;
-	char *f200;
-	char pad6[0x244 - 0x204];
-	char *f244;
-} S;
-
-class CItem {
-  public:
-	virtual ~CItem();
-	void *operator new(unsigned int) throw();
-};
-
-class VerticalMenu : public CItem {
-  public:
-	char pad[816];
-	virtual void draw();
-	VerticalMenu(int, int, int, char **, int, int *, int *, int);
-	void erase();
-	int getSelected();
-	void setString(int, char *);
-};
+#include "game/shellutils.h"
+#include "game/front.h"
 
 extern "C" {
-	extern S GameText;
+	extern LocalText GameText;
 	extern char *GameText_180[];
 	extern char *VertMenuItem[];
 	extern char s_loading_video_file[];
@@ -160,41 +119,41 @@ void Front_MemCardHiResDisplay() {
 		case 15:
 		case 16:
 			FUN_80011214();
-			Front_DirtyRectText(XMid, 180, GameText.f200);
+			Front_DirtyRectText(XMid, 180, GameText.pCheckingCard);
 			RGBRed();
-			Front_DirtyRectText(XMid, 280, GameText.f1f8);
-			Front_DirtyRectText(XMid, 332, GameText.f1fc);
+			Front_DirtyRectText(XMid, 280, GameText.pDoNotRemove1);
+			Front_DirtyRectText(XMid, 332, GameText.pDoNotRemove2);
 			break;
 		case 17:
 			RGBRed();
-			Front_DirtyRectText(XMid, 180, GameText.f1c8);
-			Front_DirtyRectText(XMid, 232, GameText.f1cc);
-			Front_DirtyRectText(XMid, 284, GameText.f1d0);
-			Front_DirtyRectText(XMid, 336, GameText.f1d4);
+			Front_DirtyRectText(XMid, 180, GameText.pPleaseInsert1);
+			Front_DirtyRectText(XMid, 232, GameText.pPleaseInsert2);
+			Front_DirtyRectText(XMid, 284, GameText.pPleaseInsert3);
+			Front_DirtyRectText(XMid, 336, GameText.pPleaseInsert4);
 			break;
 		case 18:
 			RGBRed();
-			Front_DirtyRectText(XMid, 174, GameText.f104);
-			Front_DirtyRectText(XMid, 226, GameText.f108);
-			Front_DirtyRectText(XMid, 278, GameText.f10c);
+			Front_DirtyRectText(XMid, 174, GameText.pHiResUnformatted1);
+			Front_DirtyRectText(XMid, 226, GameText.pHiResUnformatted2);
+			Front_DirtyRectText(XMid, 278, GameText.pHiResUnformatted3);
 			break;
 		case 19:
 			RGBRed();
 
 			if (GLoadAction == 2)
-				Front_DirtyRectText(XMid, 220, GameText.f10);
+				Front_DirtyRectText(XMid, 220, GameText.pNoCareerFiles);
 			else
-				Front_DirtyRectText(XMid, 220, GameText.f0c);
+				Front_DirtyRectText(XMid, 220, GameText.pNoVideoFiles);
 
 			if (MCResolution == 512)
-				Front_PrintCentredPrompt(GameText.f180);
+				Front_PrintCentredPrompt(GameText.pContinue);
 
 			break;
 		case 20:
 			if (!pVertMenu) {
 				pVertMenu = new VerticalMenu(100, 398, 15, VertMenuItem,
 				                                NumVertMenuItems < 6 ? NumVertMenuItems : 5, 0, 0, 0);
-				FUN_8008b900(msg, GameText.f128, GameText.f134);
+				FUN_8008b900(msg, GameText.pHiResScroll, GameText.pHiResUpOrDown);
 				Front_DirtyRectText(XMid, 380, msg);
 			}
 
@@ -211,10 +170,10 @@ void Front_MemCardHiResDisplay() {
 					int down = VertMenuTopIndex < NumVertMenuItems - 5;
 
 					if (up && down)
-						FUN_8008b900(msg, GameText.f128, GameText.f134);
+						FUN_8008b900(msg, GameText.pHiResScroll, GameText.pHiResUpOrDown);
 					else
-						FUN_8008b900(msg, GameText.f128,
-						             up ? GameText.f12c : GameText.f130);
+						FUN_8008b900(msg, GameText.pHiResScroll,
+						             up ? GameText.pHiResUp : GameText.pHiResDown);
 				}
 
 				Front_DirtyRectText(XMid, 380, msg);
@@ -230,15 +189,15 @@ void Front_MemCardHiResDisplay() {
 			FUN_80011214();
 			Front_DirtyRectText(XMid, 220, s_loading_video_file);
 			RGBRed();
-			Front_DirtyRectText(XMid, 280, GameText.f1f8);
-			Front_DirtyRectText(XMid, 332, GameText.f1fc);
+			Front_DirtyRectText(XMid, 280, GameText.pDoNotRemove1);
+			Front_DirtyRectText(XMid, 332, GameText.pDoNotRemove2);
 			break;
 		case 22:
 			RGBRed();
-			Front_DirtyRectText(XMid, 220, GameText.f244);
+			Front_DirtyRectText(XMid, 220, GameText.pCardError);
 
 			if (MCResolution == 512)
-				Front_PrintCentredPrompt(GameText.f180);
+				Front_PrintCentredPrompt(GameText.pContinue);
 
 			break;
 		case 23:

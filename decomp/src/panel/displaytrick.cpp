@@ -5,39 +5,12 @@
    shrink away (4), or hand over to the message effect at +0x164 (5). Called on pBruce->mPanel.
    The per-mode scale pair is set in both arms (NormalScale first): that keeps jump.c from
    rewriting the if/else into "x = b; if (c) x = a;", giving retail's bne; j shape. */
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct SVideoInfo {
-	int VideoMode;
-	char pad4[0xc0 - 4];
-};
-
-class CBruce;
-
-class CPanelData {
-  public:
-	char pad0[0x14c];
-	int mTrickState; /* 0x14c */
-	int mTrickTimer; /* 0x150 */
-	char pad154[0x158 - 0x154];
-	int mTrickAbort; /* 0x158 */
-	char pad15c[0x164 - 0x15c];
-	char mTrickMess[0x38c - 0x164]; /* 0x164 */
-	char mTrickLine1[100];          /* 0x38c */
-	char mTrickLine2[100];          /* 0x3f0 */
-	char mTrickLine3[100];          /* 0x454 */
-	void DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos);
-};
-
-class CBruce {
-  public:
-	char pad0[0x924];
-	CPanelData mPanel; /* 0x924 */
-};
+#include "game/bruce.h"
+#include "game/video.h"
+#include "game/career.h"
 
 extern SVideoInfo GVInfo1;
-extern int GCareer_9b8[];
+extern SCareer GCareer;
 extern int GNumberOfPlayers;
 extern int GameFrozen;
 
@@ -49,9 +22,9 @@ int Mess_DrawPanelText(int, int, const char *, int, uint, int);
 extern "C" {
 	void GraffitiColor__FP6CBruce(CBruce *);
 	void Mess_SetTextJustify__FUc(int);
-	void FUN_8001e0a4(char *, int);
-	void FUN_8001e0f8(char *, ushort);
-	ushort FUN_8001e108(char *);
+	void FUN_8001e0a4(FallingTextEffect *, int);
+	void FUN_8001e0f8(FallingTextEffect *, ushort);
+	ushort FUN_8001e108(FallingTextEffect *);
 }
 
 void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
@@ -60,7 +33,7 @@ void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
 	if (!ok)
 		return;
 
-	if (!GCareer_9b8[0])
+	if (!GCareer.Options.ScoreDisplayEnabled)
 		return;
 
 	Mess_SetRGB(128, 128, 128, 0);
@@ -112,9 +85,9 @@ void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
 				mTrickState = 4;
 			}
 
-			if (mTrickAbort) {
+			if (mLastMult) {
 				mTrickState = 5;
-				mTrickAbort = 0;
+				mLastMult = 0;
 			}
 
 			break;
@@ -128,8 +101,8 @@ void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
 				mTrickState = 0;
 			}
 
-			if (mTrickAbort)
-				mTrickAbort = 0;
+			if (mLastMult)
+				mLastMult = 0;
 
 			break;
 		}
@@ -138,32 +111,32 @@ void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
 	}
 
 	if (mTrickState == 5)
-		FUN_8001e0a4(pBruce->mPanel.mTrickMess, 1);
+		FUN_8001e0a4(&pBruce->mPanel.mFallingTextEffect, 1);
 	else
-		FUN_8001e0f8(pBruce->mPanel.mTrickMess, Mess_GetScale());
+		FUN_8001e0f8(&pBruce->mPanel.mFallingTextEffect, Mess_GetScale());
 
 	if (!GameFrozen)
 		mTrickTimer++;
 
 	int LineHeight = Mess_GetScale() * 13 / 188;
 
-	if (pBruce->mPanel.mTrickLine3[0]) {
-		Mess_DrawPanelText(xpos, ypos, pBruce->mPanel.mTrickLine3, 0, 0, 256);
+	if (pBruce->mPanel.mTrickName3[0]) {
+		Mess_DrawPanelText(xpos, ypos, pBruce->mPanel.mTrickName3, 0, 0, 256);
 
 		ypos -= LineHeight;
 	}
 
-	if (pBruce->mPanel.mTrickLine2[0]) {
-		Mess_DrawPanelText(xpos, ypos, pBruce->mPanel.mTrickLine2, 0, 0, 256);
+	if (pBruce->mPanel.mTrickName2[0]) {
+		Mess_DrawPanelText(xpos, ypos, pBruce->mPanel.mTrickName2, 0, 0, 256);
 
 		ypos -= LineHeight;
 	}
 
-	Mess_DrawPanelText(xpos, ypos, pBruce->mPanel.mTrickLine1, 0, 0, 256);
-	int Busy = FUN_8001e108(pBruce->mPanel.mTrickMess);
+	Mess_DrawPanelText(xpos, ypos, pBruce->mPanel.mTrickName, 0, 0, 256);
+	int Busy = FUN_8001e108(&pBruce->mPanel.mFallingTextEffect);
 
 	if (mTrickState == 5) {
-		FUN_8001e0a4(pBruce->mPanel.mTrickMess, 0);
+		FUN_8001e0a4(&pBruce->mPanel.mFallingTextEffect, 0);
 
 		if (!Busy)
 			pBruce->mPanel.mTrickState = 0;

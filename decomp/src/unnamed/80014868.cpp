@@ -2,15 +2,8 @@
 /* C++ (CARD.CPP). Debug twin of Card_Write: writes the replay header/data buffers (and the 2-player
    pair) to the PC host through the Psy-Q PCinit/PCcreat/PClseek/PCwrite/PCclose break calls,
    with the same switch(FileType) setup and checksums as Card_Write (only case 1 survives). */
-typedef unsigned long ulong;
-enum EFileType { FILETYPE_A, FILETYPE_B, FILETYPE_C, FILETYPE_D };
-struct SVideoHead;
-
-struct SVideoInfo {
-	int VideoMode;
-	ulong *pBlockStart;
-	char pad[0xc0 - 8];
-};
+#include "game/card.h"
+#include "game/video.h"
 
 extern SVideoInfo GVInfo1;
 extern SVideoInfo GVInfo2;

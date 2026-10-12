@@ -7,7 +7,7 @@
    the dead stack Gravity is stored field by field and sits between the two Set()s (its
    constant 13000 is shared with mGravity.Set); the unused locals give the 248-byte gap below it;
    `check` is a function-scope C++ local declared after UberFrig, so it takes the freed arg
-   slot and stays live, pushing the final mKick temps up 16; `old` is initialised, not assigned
+   slot and stays live, pushing the final mAcc temps up 16; `old` is initialised, not assigned
    (no copy temp); BrakeVal = 4096 - Angle; BrakeVal = BrakeVal * 6144 / 208; puts the
    difference in BrakeVal's s0; the anim and state range tests are switches (slti trees). */
 extern "C" {
@@ -15,89 +15,17 @@ extern "C" {
 	#include <libgte.h>
 }
 
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
-
-struct CVector {
-	int vx, vy, vz;
-	void Set(int x, int y, int z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-	CVector &operator+=(const CVector &);
-};
-
-CVector operator*(const CVector &, const int &);
-CVector operator>>(const CVector &, const int &);
-CVector operator-(const CVector &, const CVector &);
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle; /* 0x00 */
-	SButton Square;   /* 0x10 */
-	SButton Circle;   /* 0x20 */
-	SButton X;        /* 0x30 */
-	SButton LeftOne;  /* 0x40 */
-	SButton LeftTwo;  /* 0x50 */
-	SButton RightOne; /* 0x60 */
-	SButton RightTwo; /* 0x70 */
-	SButton Left;     /* 0x80 */
-	SButton Right;    /* 0x90 */
-	SButton Up;       /* 0xa0 */
-	SButton Down;     /* 0xb0 */
-};
-
-struct SStats {
-	char pad0[0x18];
-	int Stats[10]; /* 0x18 */
-	char pad40[340 - 0x40];
-};
-
-struct SCareer {
-	char pad0[0x940];
-	int AutoKick[2]; /* 0x940 */
-};
-
-struct SLevel {
-	char pad0[0xc];
-	int f0C; /* 0x0c */
-	char pad10[120 - 0x10];
-};
-
-struct STrickInfo {
-	int w[11];
-};
-
-struct STrickScore {
-	short pad0;
-	short Score; /* 0x2 */
-	char *pName; /* 0x4 */
-};
-
-struct SLineInfo {
-	CVector StartCoords;
-	CVector EndCoords;
-	char pad18[0x88 - 0x18];
-	uchar Flag88; /* 0x88 */
-	char pad89[168 - 0x89];
-};
+#include "game/colij.h"
+#include "game/bruce.h"
+#include "game/career.h"
 
 extern SStats Stats[];
 extern SCareer GCareer;
 extern SLevel Levels[];
-extern STrickInfo DAT_800a7250, DAT_800a727c, DAT_800a72a8, DAT_800a72d4, DAT_800a7300,
+extern STrick DAT_800a7250, DAT_800a727c, DAT_800a72a8, DAT_800a72d4, DAT_800a7300,
     DAT_800a732c;
-extern STrickInfo DAT_800a7460, DAT_800a74e4, DAT_800a7510;
+extern STrick DAT_800a7460, DAT_800a74e4, DAT_800a7510;
 extern short HeadBloodAtFrame[];
 extern CVector WorldUp;
 extern CVector DAT_800d25e4;
@@ -118,119 +46,12 @@ extern int GLevel;
 extern int BaddyCollisionCheck;
 extern int BulletCollisionCheck;
 
-class CBruce;
-
 extern CBruce *GSkater;
 extern CBruce *pCurrentPlayer;
 
-class CBruce {
-  public:
-	char pad0[0x4];
-	CVector mPos; /* 0x4 */
-	char pad10[0x6c - 0x10];
-	CVector mVel;  /* 0x6c */
-	CVector mKick; /* 0x78 */
-	char pad84[0xf0 - 0x84];
-	CVector mOldPos; /* 0xf0 */
-	char padfc[0x144 - 0xfc];
-	short mFrame; /* 0x144 */
-	ushort mAnim; /* 0x146 */
-	char pad148[0x14f - 0x148];
-	uchar m14F; /* 0x14f */
-	int m150;   /* 0x150 */
-	char pad154[0x198 - 0x154];
-	uchar *mpStatBonus; /* 0x198 */
-	int m19C;           /* 0x19c */
-	int m1A0;           /* 0x1a0 */
-	CVector m1A4;       /* 0x1a4 */
-	CVector m1B0;       /* 0x1b0 */
-	CVector m1BC;       /* 0x1bc */
-	CVector mGravity;   /* 0x1c8 */
-	char pad1d4[0x1dc - 0x1d4];
-	CVector m1DC; /* 0x1dc */
-	int m1E8;     /* 0x1e8 */
-	char pad1ec[0x1f8 - 0x1ec];
-	int m1F8; /* 0x1f8 */
-	char pad1fc[0x20c - 0x1fc];
-	int m20C; /* 0x20c */
-	char pad210[0x214 - 0x210];
-	int m214; /* 0x214 */
-	char pad218[0x24c - 0x218];
-	int m24C; /* 0x24c */
-	int m250; /* 0x250 */
-	int m254; /* 0x254 */
-	char pad258[0x28c - 0x258];
-	int m28C[10];      /* 0x28c */
-	int m2B4[10];      /* 0x2b4 */
-	int m2DC;          /* 0x2dc */
-	STrickScore *m2E0; /* 0x2e0 */
-	char pad2e4[0x2e8 - 0x2e4];
-	int mSkaterIndex; /* 0x2e8 */
-	char pad2ec[0x300 - 0x2ec];
-	int m300; /* 0x300 */
-	int m304; /* 0x304 */
-	char pad308[0x330 - 0x308];
-	int m330;       /* 0x330 */
-	int m334;       /* 0x334 */
-	int mKickSpeed; /* 0x338 */
-	int m33C;       /* 0x33c */
-	int m340;       /* 0x340 */
-	int m344;       /* 0x344 */
-	char pad348[0x358 - 0x348];
-	int m358; /* 0x358 */
-	char pad35c[0x71c - 0x35c];
-	int m71C; /* 0x71c */
-	int m720; /* 0x720 */
-	int m724; /* 0x724 */
-	int m728; /* 0x728 */
-	char pad72c[0x734 - 0x72c];
-	int mPhysicsState;  /* 0x734 */
-	int m738;           /* 0x738 */
-	int mManIsCrouched; /* 0x73c */
-	int m740;           /* 0x740 */
-	int m744;           /* 0x744 */
-	char pad748[0x76c - 0x748];
-	MATRIX mOldRotMatrix; /* 0x76c */
-	MATRIX mRotMatrix;    /* 0x78c */
-	char pad7ac[0x80c - 0x7ac];
-	SVECTOR mNormal; /* 0x80c */
-	CVector m814;    /* 0x814 */
-	char pad820[0x840 - 0x820];
-	int m840; /* 0x840 */
-	char pad844[0x86c - 0x844];
-	SControl *mPad; /* 0x86c */
-	int m870;       /* 0x870 */
-	char pad874[0x894 - 0x874];
-	signed char mAX; /* 0x894 */
-	signed char mAY; /* 0x895 */
-	char pad896[0x8e4 - 0x896];
-	int mBalance;    /* 0x8e4 */
-	int mBalanceVel; /* 0x8e8 */
-	int m8EC;        /* 0x8ec */
-	int mRailTime;   /* 0x8f0 */
-	void Trick_PlayerInit(ushort);
-	void Trick_Trick(int, char *, int, int);
-	void StateTransition(int, int);
-	void Vibrate(int, int, int);
-	void BloodSplat(int, int);
-	void FRUVectorsFromRotMatrix();
-	void HandleSpin();
-	void HandleKick();
-	void HandleJump();
-	void HandleTricksNew();
-	void HandleContinuousSounds();
-	void HandleStickToRail();
-	void DoOnRailPhysics();
-	void DoHandPlantPhysics();
-	void DoFootPlantPhysics();
-	void DoInAirPhysics();
-	void DoWallRidePhysics();
-	void DoPhysics();
-};
-
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
+	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
 	                    mpStatBonus[n])
 #define MAXSPEED(k) (((GetStat(1) + (k)) << 12) * 3 * 15 / 28)
 
@@ -244,11 +65,6 @@ int SFX_PlayX(unsigned int, short, int);
 extern "C" {
 	void FUN_80042700(CBruce *, int, int, int, int);
 	void Game_Over__Fv(void);
-	void Debug_RunAnim__6CBruceii(CBruce *, int, int);
-	void Debug_RunAnim1__6CBruceiii(CBruce *, int, int, int);
-	void Debug_RunAnim3__6CBruceiiiii(CBruce *, int, int, int, int, int);
-	void BoardOn__6CBruce(CBruce *);
-	void DoOnGroundPhysics__6CBruce(CBruce *);
 	void FUN_8003b2f0(CBruce *);
 	int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
 	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
@@ -262,9 +78,9 @@ void CBruce::DoPhysics() {
 	int Spd;
 
 	if (GGame != 7)
-		AutoKickEnabled = GCareer.AutoKick[m870];
+		AutoKickEnabled = GCareer.Options.AutoKickEnabled[mPadIndex];
 	else
-		AutoKickEnabled = GCareer.AutoKick[m870 ^ GHorsePlayer];
+		AutoKickEnabled = GCareer.Options.AutoKickEnabled[mPadIndex ^ GHorsePlayer];
 
 	WorldUp.Set(0, -4096, 0);
 	CVector Gravity;
@@ -309,23 +125,23 @@ void CBruce::DoPhysics() {
 			m214 = 0;
 	}
 
-	if (m250) {
-		m250 -= 2;
+	if (mBalanceTime) {
+		mBalanceTime -= 2;
 
-		if (m250 <= 0)
-			m250 = 0;
+		if (mBalanceTime <= 0)
+			mBalanceTime = 0;
 	}
 
-	if (m254) {
-		m254 -= 2;
+	if (mBalanceFlash) {
+		mBalanceFlash -= 2;
 
-		if (m254 <= 0) {
-			m254 = 0;
+		if (mBalanceFlash <= 0) {
+			mBalanceFlash = 0;
 			FUN_80042700(this, 0, 0, 0, 5);
 		}
 	}
 
-	if ((mPad->Up.Pressed || mAY < -40) && !mPad->Left.Pressed && !mPad->Right.Pressed && !mAX) {
+	if ((mpPad->Up.Pressed || mAY < -40) && !mpPad->Left.Pressed && !mpPad->Right.Pressed && !mAX) {
 		if (!m1F8)
 			m1F8 = XFrames;
 	} else
@@ -343,13 +159,13 @@ void CBruce::DoPhysics() {
 		if (GAutoTest)
 			ticks = 100 - XFrames;
 		else
-			ticks = m330 - XFrames;
+			ticks = mTime - XFrames;
 
 		if (ticks < 0 && !GState) {
 			if (GAutoTest)
 				EndCode = 8;
 			else {
-				if (GGame == 1 && Levels[GLevel].f0C)
+				if (GGame == 1 && Levels[GLevel].isCompetition)
 					SFX_PlayX(160, 0x2000, 0);
 
 				Game_Over__Fv();
@@ -377,22 +193,22 @@ void CBruce::DoPhysics() {
 	HandleSpin();
 
 	if (mPhysicsState != 1)
-		m1A0 = 0;
+		mLastCar = 0;
 
-	mKick.vx = mKick.vy = mKick.vz = 0;
+	mAcc.vx = mAcc.vy = mAcc.vz = 0;
 	HandleKick();
 	HandleJump();
 
-	if (mPhysicsState != 5 && m14F) {
+	if (mPhysicsState != 5 && mAnimFinished) {
 		switch (mAnim) {
 			case 35:
 			case 36:
-				m150 = 0x10000;
+				mAnimSpeed = 0x10000;
 
 				if (!mPhysicsState)
-					Debug_RunAnim__6CBruceii(this, 0, 7869);
+					Debug_RunAnim(0, 7869);
 				else
-					Debug_RunAnim__6CBruceii(this, 14, 7871);
+					Debug_RunAnim(14, 7871);
 
 				break;
 		}
@@ -404,15 +220,15 @@ void CBruce::DoPhysics() {
 	{
 		int DownOnly = 0;
 
-		if ((mPad->Down.Pressed && !mPad->Left.Pressed && !mPad->Right.Pressed) ||
+		if ((mpPad->Down.Pressed && !mpPad->Left.Pressed && !mpPad->Right.Pressed) ||
 		    (mAY > 0 && !mAX))
 			DownOnly = 1;
 
 		if (mPhysicsState == 7 && !DownOnly)
-			StateTransition(0, 7888);
+			StateTransition(PHYSICS_ON_GROUND, 7888);
 
-		if (!mPhysicsState && DownOnly && !m358) {
-			int Angle = -(mNormal.vy << 12) >> 12;
+		if (!mPhysicsState && DownOnly && !mInAir) {
+			int Angle = -(mPolyNormal.vy << 12) >> 12;
 			int BrakeVal;
 
 			if (Angle < 768)
@@ -426,9 +242,9 @@ void CBruce::DoPhysics() {
 
 			if (BrakeVal < FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6) {
 				if (mAnim != 49) {
-					m150 = 0x20000;
+					mAnimSpeed = 0x20000;
 					SFX_PlayX(2, 0x2000, 0);
-					Debug_RunAnim__6CBruceii(this, 49, 7923);
+					Debug_RunAnim(49, 7923);
 				}
 
 				if (mAY > 0) {
@@ -443,37 +259,37 @@ void CBruce::DoPhysics() {
 					mVel.vz -= ((mVel.vz >> 4) * TimeScale) >> 8;
 				}
 			} else if (BrakeVal <= 0xa000) {
-				StateTransition(7, 7943);
+				StateTransition(PHYSICS_STOPPED, 7943);
 				mVel.Set(0, 0, 0);
 
 				if (mAnim == 49)
-					Debug_RunAnim__6CBruceii(this, 0, 7984);
+					Debug_RunAnim(0, 7984);
 			}
 
 			m840 = 2;
 		} else if (mAnim == 49) {
-			m150 = 0x10000;
-			Debug_RunAnim__6CBruceii(this, 0, 7996);
+			mAnimSpeed = 0x10000;
+			Debug_RunAnim(0, 7996);
 		}
 	}
 
-	if (m14F) {
+	if (mAnimFinished) {
 		switch (mAnim) {
 			case 11:
 			case 12:
 				if (mManIsCrouched) {
-					m150 = 0x10000;
-					Debug_RunAnim3__6CBruceiiiii(this, 8, 19, 26, 19, 8012);
+					mAnimSpeed = 0x10000;
+					Debug_RunAnim3(8, 19, 26, 19, 8012);
 				} else {
-					m150 = 0x10000;
-					Debug_RunAnim__6CBruceii(this, 0, 8017);
+					mAnimSpeed = 0x10000;
+					Debug_RunAnim(0, 8017);
 				}
 
 				break;
 		}
 	}
 
-	m738 = mPhysicsState;
+	mOldPhysicsState = mPhysicsState;
 	mOldRotMatrix = mRotMatrix;
 	m1B0 = mOldPos;
 	mOldPos = mPos;
@@ -486,13 +302,13 @@ void CBruce::DoPhysics() {
 	if (m33C) {
 		int NewMag = (FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6) >> 12;
 
-		mKick.vx += mVel.vx / NewMag;
-		mKick.vy += mVel.vy / NewMag;
-		mKick.vz += mVel.vz / NewMag;
+		mAcc.vx += mVel.vx / NewMag;
+		mAcc.vy += mVel.vy / NewMag;
+		mAcc.vz += mVel.vz / NewMag;
 		m33C--;
 	}
 
-	if (m334 < FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6)
+	if (mMaxSpeed < FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6)
 		m304 = 1;
 	else
 		m304 = 0;
@@ -504,8 +320,8 @@ void CBruce::DoPhysics() {
 	else {
 		m344 = 30;
 
-		if (MAXSPEED(39) < m334)
-			m334 -= 4096;
+		if (MAXSPEED(39) < mMaxSpeed)
+			mMaxSpeed -= 4096;
 
 		if (MAXSPEED(17) < mKickSpeed)
 			mKickSpeed -= 4096;
@@ -513,15 +329,15 @@ void CBruce::DoPhysics() {
 
 	UberFrig(this, mPos, s_restart_at_start_of_main_physics);
 
-	m1BC = mPos;
+	mSafePos = mPos;
 
-	if (!m358)
-		BoardOn__6CBruce(this);
+	if (!mInAir)
+		BoardOn();
 
 	if (mPhysicsState != 8)
 		HandleStickToRail();
 
-	if (m358 && mAnim == 46 && mFrame == HeadBloodAtFrame[mSkaterIndex])
+	if (mInAir && mAnim == 46 && mFrame == HeadBloodAtFrame[mSkaterIndex])
 		BloodSplat(0, 50);
 
 	/* HandlePhysicsStates */
@@ -533,30 +349,30 @@ void CBruce::DoPhysics() {
 			mBalanceVel = 0;
 			m8EC = 0;
 			mRailTime = 0;
-			m20C = 0;
-			m2DC = 0;
-			m2E0 = 0;
+			mGrinds = 0;
+			mGaps = 0;
+			mpGrindGapTrick = 0;
 			m1DC = mPos;
-			DoOnGroundPhysics__6CBruce(this);
+			DoOnGroundPhysics();
 			break;
 		case 7:
-			DoOnGroundPhysics__6CBruce(this);
+			DoOnGroundPhysics();
 
 			mPos = mOldPos;
 			break;
 		case 4: {
 			int i;
 
-			if (m2E0) {
-				Trick_Trick(77, m2E0->pName, -m2E0->Score, 0);
+			if (mpGrindGapTrick) {
+				Trick_Trick(77, mpGrindGapTrick->Name, -mpGrindGapTrick->Score, 0);
 				SFX_PlayX(161, 0x2000, 0);
 
-				m2E0 = 0;
+				mpGrindGapTrick = 0;
 			}
 
 			for (i = 0; i < 10; i++)
-				if (m2B4[i] < 10000)
-					m28C[i] = 12345;
+				if (mGapType[i] < 10000)
+					mGapChecksum[i] = 12345;
 
 			DoOnRailPhysics();
 		} break;
@@ -575,22 +391,22 @@ void CBruce::DoPhysics() {
 			DoInAirPhysics();
 
 			if (mPhysicsState == 3 && XFrames - m1E8 >= 26)
-				StateTransition(1, 8263);
+				StateTransition(PHYSICS_IN_AIR, 8263);
 
 			break;
 		case 2:
-			DoOnGroundPhysics__6CBruce(this);
+			DoOnGroundPhysics();
 			break;
 	}
 
 	/* HandleBailStates */
-	if (m358) {
-		mKick.vx = 0;
-		mKick.vz = 0;
-		m744 = 0;
+	if (mInAir) {
+		mAcc.vx = 0;
+		mAcc.vz = 0;
+		mJumpPending = 0;
 		m740 = 0;
 
-		if ((!m19C || mPhysicsState == 2) && mVel.vy < 0)
+		if ((!mBailNumber || mPhysicsState == 2) && mVel.vy < 0)
 			mVel.vy = 0;
 
 		switch (m24C) {
@@ -612,7 +428,7 @@ void CBruce::DoPhysics() {
 					mVel.vz -= ((mVel.vz >> 5) * TimeScale) >> 8;
 				}
 
-				if (m14F && !mPhysicsState) {
+				if (mAnimFinished && !mPhysicsState) {
 					if (mAnim != 46)
 						m24C = 2;
 					else
@@ -638,9 +454,9 @@ void CBruce::DoPhysics() {
 					mVel.vz -= ((mVel.vz >> 5) * TimeScale) >> 8;
 				}
 
-				if (m14F && !mPhysicsState) {
+				if (mAnimFinished && !mPhysicsState) {
 					if (mAnim != 46) {
-						Debug_RunAnim__6CBruceii(this, 55, 8366);
+						Debug_RunAnim(55, 8366);
 
 						m24C = 7;
 					} else
@@ -655,8 +471,8 @@ void CBruce::DoPhysics() {
 					mVel.vz = 0;
 				}
 
-				if (m14F && !mPhysicsState) {
-					Debug_RunAnim1__6CBruceiii(this, 54, 99, 8381);
+				if (mAnimFinished && !mPhysicsState) {
+					Debug_RunAnim1(54, 99, 8381);
 
 					m24C = 4;
 				}
@@ -669,8 +485,8 @@ void CBruce::DoPhysics() {
 					mVel.vz -= ((mVel.vz >> 5) * TimeScale) >> 8;
 				}
 
-				m150 = 0x10000;
-				Debug_RunAnim1__6CBruceiii(this, 54, 30, 8399);
+				mAnimSpeed = 0x10000;
+				Debug_RunAnim1(54, 30, 8399);
 
 				m24C = 3;
 				break;
@@ -685,7 +501,7 @@ void CBruce::DoPhysics() {
 					mVel.vz = 0;
 				}
 
-				if (m14F && !mPhysicsState)
+				if (mAnimFinished && !mPhysicsState)
 					m24C = 4;
 
 				break;
@@ -696,20 +512,20 @@ void CBruce::DoPhysics() {
 					mVel.vz -= ((mVel.vz >> 2) * TimeScale) >> 8;
 				}
 
-				if (m14F && !mPhysicsState)
+				if (mAnimFinished && !mPhysicsState)
 					m24C = 4;
 
 				break;
 			case 8:
 				if (mFrame < 18) {
-					mKick.vy = 0;
+					mAcc.vy = 0;
 					mVel.vx -= ((mVel.vx >> 4) * TimeScale) >> 8;
 					mVel.vy -= ((mVel.vy >> 4) * TimeScale) >> 8;
 					mVel.vz -= ((mVel.vz >> 4) * TimeScale) >> 8;
 				}
 
-				if (m14F && !mPhysicsState) {
-					Debug_RunAnim1__6CBruceiii(this, 54, 76, 8451);
+				if (mAnimFinished && !mPhysicsState) {
+					Debug_RunAnim1(54, 76, 8451);
 
 					m24C = 4;
 				}
@@ -722,8 +538,8 @@ void CBruce::DoPhysics() {
 					mVel.vz -= ((mVel.vz >> 2) * TimeScale) >> 8;
 				}
 
-				if (m14F && !mPhysicsState) {
-					Debug_RunAnim1__6CBruceiii(this, 46, 36, 8467);
+				if (mAnimFinished && !mPhysicsState) {
+					Debug_RunAnim1(46, 36, 8467);
 
 					m24C = 4;
 				}
@@ -737,22 +553,22 @@ void CBruce::DoPhysics() {
 				}
 
 				if (mFrame >= 112)
-					BoardOn__6CBruce(this);
+					BoardOn();
 
-				if (m14F) {
+				if (mAnimFinished) {
 					m840 = 4;
-					m150 = 0x10000;
+					mAnimSpeed = 0x10000;
 
-					if (mManIsCrouched && mPad->Square.Pressed)
-						Debug_RunAnim3__6CBruceiiiii(this, 8, 0, 26, 19, 8490);
+					if (mManIsCrouched && mpPad->Square.Pressed)
+						Debug_RunAnim3(8, 0, 26, 19, 8490);
 					else {
 						mManIsCrouched = 0;
-						Debug_RunAnim__6CBruceii(this, 0, 8495);
+						Debug_RunAnim(0, 8495);
 					}
 
-					m358 = 0;
+					mInAir = 0;
 					mVel.vx = mVel.vy = mVel.vz = 0;
-					BoardOn__6CBruce(this);
+					BoardOn();
 				}
 
 				break;
@@ -776,11 +592,15 @@ void CBruce::DoPhysics() {
 		Utils_CalcUnit(unit, DAT_800d25e4);
 		CVector old = mOldPos - unit * 16;
 
-		LInfo.StartCoords.Set(old.vx, old.vy, old.vz);
-		LInfo.EndCoords.Set(mPos.vx, mPos.vy, mPos.vz);
+		LInfo.StartCoords.vx = old.vx;
+		LInfo.StartCoords.vy = old.vy;
+		LInfo.StartCoords.vz = old.vz;
+		LInfo.EndCoords.vx = mPos.vx;
+		LInfo.EndCoords.vy = mPos.vy;
+		LInfo.EndCoords.vz = mPos.vz;
 		M3dColij_InitLineInfo(&LInfo);
 
-		LInfo.Flag88 = 1;
+		LInfo.RecordTriggerZoneHits = 1;
 		n = this == GSkater ? 1 : 2;
 		Trig_ResetCPCollisionFlags(n);
 
@@ -804,7 +624,7 @@ void CBruce::DoPhysics() {
 			break;
 	}
 
-	mVel += (mKick * TimeScale) >> 8;
+	mVel += (mAcc * TimeScale) >> 8;
 
 	/* LimitFinalSpeed */
 	Spd = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;

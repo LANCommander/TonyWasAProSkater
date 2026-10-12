@@ -1,33 +1,12 @@
 /* SendVisibleFromNode__Fii (0x80045838) */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct Item {
-	ushort mFlags;
-};
-
-struct CBit {
-	char pad0[4];
-	CBit *mNext;
-	char pad1[2];
-	ushort mNodeId;
-	char pad2[0x43 - 0xc];
-	uchar mType;
-	char pad3[0x56 - 0x44];
-	uchar mProtected;
-};
-
-struct CItemL {
-	ushort mFlags;
-	char pad[0x1a];
-	CItemL *mNextItem;
-};
+#include "game/m3d.h"
+#include "game/ob.h"
+#include "game/bit.h"
 
 extern int pCurrentPlayer;
 extern int GNumberOfPlayers;
 extern int MechList;
-extern CItemL *PowerUpList;
+extern CItem *PowerUpList;
 extern CBit *NonRenderedBitList;
 
 short **OffsetList;
@@ -67,10 +46,10 @@ void SendVisibleFromNode(int node, int visible) {
 
 			switch (*pVisNode) {
 				case 5: {
-					CItemL *pUp;
+					CItem *pUp;
 
 					for (pUp = PowerUpList; pUp; pUp = pUp->mNextItem) {
-						if (*(ushort *)((char *)pUp + 0xe2) == VisNode) {
+						if (((CBody *)pUp)->mNode == VisNode) {
 							pUp->mFlags = (pUp->mFlags & ClearFlags) | SetFlags;
 							break;
 						}
@@ -82,11 +61,11 @@ void SendVisibleFromNode(int node, int visible) {
 					CBit *pBit;
 
 					for (pBit = NonRenderedBitList; pBit; pBit = pBit->mNext) {
-						if (pBit->mType == 2 && pBit->mNodeId == VisNode) {
+						if (pBit->mType == 2 && pBit->mLifetime == VisNode) {
 							if (visible)
-								pBit->mProtected = 1;
+								((CLight *)pBit)->mOn = 1;
 							else if (GNumberOfPlayers == 1)
-								pBit->mProtected = 0;
+								((CLight *)pBit)->mOn = 0;
 
 							break;
 						}
@@ -109,7 +88,7 @@ void SendVisibleFromNode(int node, int visible) {
 					pItem = Spool_FindEnviroItem(*(uint *)pVisNode);
 
 					if (pItem)
-						pItem->mFlags = (pItem->mFlags & ClearFlags) | SetFlags;
+						pItem->Flags = (pItem->Flags & ClearFlags) | SetFlags;
 
 					break;
 				}

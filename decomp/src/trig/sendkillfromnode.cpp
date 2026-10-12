@@ -2,58 +2,15 @@
 /* C++ (TRIG.CPP). Fuzzy demo twin (0.73); locals from its MAIN.SYM. Sends a kill to every node
    linked from Node: platforms bounce the skater and pulse their own links, environment items are
    hit (How 1) or flagged, bits are killed. Anything else goes to the body lists by node id. */
-#pragma interface
-
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct Item {
-	ushort Flags;
-};
-
-class CBruce {
-  public:
-	char pad0[0x6c];
-	CVector m6C; /* 0x6c */
-};
-
-class CBody {
-  public:
-	ushort mFlags; /* 0x00 */
-	char pad2[0x1c - 2];
-	CBody *mNextItem; /* 0x1c */
-	char pad20[0xe2 - 0x20];
-	ushort mNodeId; /* 0xe2 */
-	char pade4[0x1a1 - 0xe4];
-	uchar m1A1; /* 0x1a1 */
-	char pad1a2[0x1ac - 0x1a2];
-	uint m1AC; /* 0x1ac */
-};
-
-class CPlatform : public CBody {
-  public:
-	void Bounce(CBruce *, const CVector &);
-};
-
-class CBit {
-  public:
-	char pad0[4];
-	CBit *pNext; /* 0x04 */
-	char pad8[2];
-	ushort Node; /* 0x0a */
-	char padc[0x43 - 0xc];
-	uchar Type; /* 0x43 */
-};
+#include "game/m3d.h"
+#include "game/bruce.h"
+#include "game/platform.h"
+#include "game/bit.h"
 
 short **OffsetList;
 
-extern CBody *EnvironmentalObjectList;
-extern CBody *BaddyList;
+extern CBaddy *EnvironmentalObjectList;
+extern CBaddy *BaddyList;
 extern CBruce *pCurrentPlayer;
 extern CBit *NonRenderedBitList;
 
@@ -64,7 +21,6 @@ void Exp_HitEnvItem(Item *, uint *, int);
 
 extern "C" {
 	void FUN_80045774(int, CBody *, int);
-	void Die__4CBit(CBit *);
 }
 
 void SendKillFromNode(int Node, int How) {
@@ -79,22 +35,22 @@ void SendKillFromNode(int Node, int How) {
 	for (i = 0; i < NumLinks; i++) {
 		ushort KillNode = *pNodes++;
 		short *pKillNode = OffsetList[KillNode];
-		CBody *pList;
+		CBaddy *pList;
 
 		Bounced = 0;
 
 		switch (*pKillNode) {
 			case 1:
-				for (pList = EnvironmentalObjectList; pList; pList = pList->mNextItem) {
-					if (pList->mNodeId == KillNode && (pList->mFlags & 0x100) &&
-					    (pList->m1AC & 0x10)) {
+				for (pList = EnvironmentalObjectList; pList; pList = (CBaddy *)pList->mNextItem) {
+					if (pList->mNode == KillNode && (pList->mFlags & 0x100) &&
+					    (pList->mSpecificFlags & 0x10)) {
 						pList->mFlags |= 0x20;
 
-						if (!(pList->m1AC & 0x20)) {
-							Trig_SendPulse(Trig_GetLinksPointer(pList->mNodeId));
+						if (!(pList->mSpecificFlags & 0x20)) {
+							Trig_SendPulse(Trig_GetLinksPointer(pList->mNode));
 
-							pList->m1A1 = 1;
-							((CPlatform *)pList)->Bounce(pCurrentPlayer, pCurrentPlayer->m6C);
+							pList->mDeathPulseSent = 1;
+							((CPlatform *)pList)->Bounce(pCurrentPlayer, pCurrentPlayer->mVel);
 							Bounced = 1;
 						}
 					}
@@ -144,9 +100,9 @@ void SendKillFromNode(int Node, int How) {
 			case 501: {
 				CBit *pBit;
 
-				for (pBit = NonRenderedBitList; pBit; pBit = pBit->pNext) {
-					if (pBit->Type == 2 && pBit->Node == KillNode) {
-						Die__4CBit(pBit);
+				for (pBit = NonRenderedBitList; pBit; pBit = pBit->mNext) {
+					if (pBit->mType == 2 && pBit->mLifetime == KillNode) {
+						pBit->Die();
 						break;
 					}
 				}

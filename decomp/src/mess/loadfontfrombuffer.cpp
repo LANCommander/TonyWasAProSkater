@@ -6,25 +6,7 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-struct Character {
-	int w, h, x, y, baseline;
-	u_char u0, v0;
-	u_short clut;
-	u_char u1, v1;
-	u_short tp;
-	u_char u2, v2, u3, v3;
-	int real_w;
-};
-
-struct FontInfo {
-	char mFont_name[16];
-	int mNum_chars;
-	Character *mChar_table;
-	u_char mFont_shadow_offset;
-	u_short mFont_scale;
-	int mChar_sep;
-	int mSpace_width;
-};
+#include "game/font.h"
 
 extern FontInfo Font_table[10];
 

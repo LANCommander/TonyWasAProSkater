@@ -3,60 +3,7 @@
    vertical text menu: erases the old selection triangles (ticks 63/64), redraws every item (the
    selected one large and orange, greyed ones dark), rebuilds the triangles' erase sprites at
    tick 61 (the selected item's width is re-measured at tick 63), and draws the selection triangles while the tick counts down. */
-#pragma interface
-
-typedef unsigned int uint;
-
-class CItem {
-  public:
-	virtual ~CItem();
-	void *operator new(uint) throw();
-};
-
-class SlicedImage;
-
-class Sprite : public CItem {
-  public:
-	int m_w;
-	int m_h;
-	int m_packed;
-	int m_bpp;
-	SlicedImage *m_image;
-	Sprite(int, int, int, int, int, int, int);
-	~Sprite();
-	void draw(int, int, int, int, int, int);
-};
-
-struct VerticalMenuItem {
-	Sprite *erase_sprite;
-	char string[32];
-	int x;
-	int y;
-	int w;
-	int h;
-	int baseline;
-	int grayed;
-	int erase_sprite_x;
-};
-
-class VerticalMenu {
-  public:
-	void *vptr;
-	int item_spacing;
-	int font_scale;
-	int font_scale_big;
-	int num_items;
-	int old_selected;
-	int selected;
-	VerticalMenuItem list[12];
-	int tick;
-	Sprite *mTri1;
-	Sprite *mTri2;
-	Sprite *mEraseTri1;
-	Sprite *mEraseTri2;
-	int mDontDeleteSprites;
-	void draw();
-};
+#include "game/shellutils.h"
 
 void Mess_SetFontScale(uint);
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);

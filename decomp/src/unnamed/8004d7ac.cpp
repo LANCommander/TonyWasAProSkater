@@ -3,18 +3,7 @@
    serial in the header's first word, parent heap -2/0/1, a sane size). FUN_8004d83c checks one.
    The `default: return h;` in the switch is what stops cse skip-blocks from reusing the first
    pNext load. */
-typedef unsigned int uint;
-
-struct SBlockHeader {
-	SBlockHeader *pNext; /* serial number while allocated */
-	int ParentHeap : 4;
-	uint Size : 28;
-};
-
-struct SMemHandle {
-	void *p;
-	int Serial;
-};
+#include "game/mem.h"
 
 SMemHandle FUN_8004d7ac(void *p) {
 	SMemHandle h;

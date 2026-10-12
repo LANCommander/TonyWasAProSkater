@@ -344,7 +344,7 @@
 0x8002aa0c	96	FUN_8002aa0c	~BIT	FUN_8002aa0c
 0x8002aa6c	180	FUN_8002aa6c	~BIT	FUN_8002aa6c
 0x8002ab20	12120	FUN_8002ab20	~BIT	FUN_8002ab20
-0x8002da78	96	_._17TextScreenElement	SCREENTOOLS	TextScreenElement::~TextScreenElement(void)
+0x8002da78	96	_._14CGouraudRibbon	~BIT	CGouraudRibbon::~CGouraudRibbon(void)
 0x8002dad8	280	CalcScreenNormal__FP11SCalcBufferRiT1i	BIT	CalcScreenNormal(SCalcBuffer *, int &, int &, int)
 0x8002dbf0	1520	Display__14CGouraudRibbon	~BIT	CGouraudRibbon::Display(void)
 0x8002e1e0	176	__15CTexturedRibbonii	~BIT	CTexturedRibbon::CTexturedRibbon(int, int)

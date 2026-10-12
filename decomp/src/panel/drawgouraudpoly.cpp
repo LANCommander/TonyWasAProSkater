@@ -8,14 +8,9 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
+#include "game/m3d.h"
 
-struct SDB {
-	char pad0[0x84];
-	u_long OT[1];
-};
-
-extern SDB *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 
@@ -50,6 +45,6 @@ POLY_G4 *DrawGouraudPoly(int x, int y, int w, int h, uchar rtop, uchar gtop, uch
 	apoly->x3 = x + w;
 	apoly->y2 = y + h;
 	apoly->y3 = y + h;
-	addPrim(&pDoubleBuffer->OT[sort], apoly);
+	addPrim(&(&pDoubleBuffer->OT2D)[sort], apoly);
 	return apoly;
 }

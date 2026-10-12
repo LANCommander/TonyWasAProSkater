@@ -9,29 +9,7 @@ extern "C" {
 	#include <inline_c.h>
 }
 
-struct CVector {
-	int vx, vy, vz;
-};
-
-class CBruce {
-  public:
-	char pad0[0x6c];
-	CVector mVel; /* 0x6c */
-	char pad78[0x308 - 0x78];
-	int mFallLineSide;  /* 0x308 */
-	int mFallLineFrame; /* 0x30c */
-	char pad310[0x334 - 0x310];
-	int mMaxSpeed; /* 0x334 */
-	char pad338[0x358 - 0x338];
-	int mInAir; /* 0x358 */
-	char pad35c[0x7d8 - 0x35c];
-	CVector mFront; /* 0x7d8 */
-	char pad7e4[0x7fc - 0x7e4];
-	CVector mFallLine;   /* 0x7fc */
-	int mFallLineTurn;   /* 0x808 */
-	SVECTOR mPolyNormal; /* 0x80c */
-	void AlignToFallLine(int Amount);
-};
+#include "game/bruce.h"
 
 extern int XFrames;
 

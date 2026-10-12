@@ -9,59 +9,12 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
+#include "game/bit.h"
+#include "game/m3d.h"
+#include "game/trig.h"
 
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct SRibbonPoint {
-	CVector Pos;
-	uint Colour;  /* 12 */
-	ushort Width; /* 16 */
-	char pad18[24 - 18];
-	uint OldXY;   /* 24 */
-	uint OlderXY; /* 28 */
-	char pad20[36 - 32];
-};
-
-struct SCalcBuffer {
-	int Pos;       /* 0, screen XY */
-	int NormalX;   /* 4 */
-	int NormalY;   /* 8 */
-	int Zed;       /* 12 */
-	int ScrWidth;  /* 16 */
-	int ScrWidthB; /* 20 */
-	int Bad;       /* 24 */
-};
-
-struct SCamera {
-	char pad0[8];
-	ushort Near; /* 8 */
-	ushort Far;  /* 10 */
-};
-
-struct SOTBuffer {
-	char pad0[0x808c];
-	char *pOT; /* 0x808c */
-};
-
-class CGouraudRibbon {
-  public:
-	char pad0[0x40];
-	ushort mZOffset; /* 0x40 */
-	char pad42[0x48 - 0x42];
-	int mFrames;           /* 0x48 */
-	int mNumPoints;        /* 0x4c */
-	SRibbonPoint *mPoints; /* 0x50 */
-	void Display();
-};
-
-extern SCamera *pCurrentViewport;
-extern SOTBuffer *pDoubleBuffer;
+extern SViewport *pCurrentViewport;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 
@@ -85,7 +38,7 @@ void CGouraudRibbon::Display() {
 	int LastBottom;
 
 	pBuf = (SCalcBuffer *)0x1f800000;
-	pPoint = mPoints;
+	pPoint = mpPoints;
 
 	{
 		int i;
@@ -93,7 +46,7 @@ void CGouraudRibbon::Display() {
 		for (i = 0; i < mNumPoints; i++) {
 			pBuf->Zed = Transform(pPoint->Pos, pBuf->Pos);
 
-			if (pBuf->Zed < pCurrentViewport->Near || pCurrentViewport->Far < pBuf->Zed) {
+			if (pBuf->Zed < pCurrentViewport->Hither || pCurrentViewport->Yon < pBuf->Zed) {
 				pBuf->Bad = 1;
 			} else {
 				pBuf->Bad = 0;
@@ -140,7 +93,7 @@ void CGouraudRibbon::Display() {
 	LastBottom = ((y - dy) << 16) | ((x - dx) & 0xffff);
 	pLastBuf = (SCalcBuffer *)0x1f800000;
 	pBuf = pLastBuf + 1;
-	pLastPoint = mPoints;
+	pLastPoint = mpPoints;
 	pPoint = pLastPoint + 1;
 
 	{
@@ -165,7 +118,7 @@ void CGouraudRibbon::Display() {
 				uint a;
 				uint b;
 
-				pOTPos = (uint *)(pDoubleBuffer->pOT + ((pBuf->Zed - mZOffset) & 0x3ffc));
+				pOTPos = (uint *)((char *)pDoubleBuffer->pOT + ((pBuf->Zed - mFrigDeltaZ) & 0x3ffc));
 				dx = pBuf->NormalX * pBuf->ScrWidth >> 6;
 				dy = pBuf->NormalY * pBuf->ScrWidth >> 6;
 				x = (short)pBuf->Pos;
@@ -186,7 +139,7 @@ void CGouraudRibbon::Display() {
 				ptpage->code[0] = b;
 				pPoly = newppoly;
 
-				if (mFrames >= 3) {
+				if (mTrail >= 3) {
 					{
 						uchar *newppoly = pPoly + sizeof(POLY_G4);
 
@@ -202,10 +155,10 @@ void CGouraudRibbon::Display() {
 						*(u_long *)&pTrail->tag = 0x08000000;
 						*(u_long *)&pTrail->r0 = 0x3a000000;
 						*(u_long *)&pTrail->r1 = 0;
-						*(u_long *)&pTrail->r3 = pLastPoint->Colour;
-						*(u_long *)&pTrail->r2 = pPoint->Colour;
-						*(u_long *)&pTrail->x1 = pLastPoint->OlderXY;
-						*(u_long *)&pTrail->x0 = pPoint->OlderXY;
+						*(u_long *)&pTrail->r3 = *(uint *)&pLastPoint->r;
+						*(u_long *)&pTrail->r2 = *(uint *)&pPoint->r;
+						*(u_long *)&pTrail->x1 = pLastPoint->Last2Scr;
+						*(u_long *)&pTrail->x0 = pPoint->Last2Scr;
 						*(u_long *)&pTrail->x3 = pLastBuf->Pos;
 						*(u_long *)&pTrail->x2 = pBuf->Pos;
 						addPrim(pOTPos, pTrail);
@@ -215,8 +168,8 @@ void CGouraudRibbon::Display() {
 				*(u_long *)&pTopPoly->tag = *(u_long *)&pBottomPoly->tag = 0x08000000;
 				*(u_long *)&pTopPoly->r0 = *(u_long *)&pBottomPoly->r0 = 0x3a000000;
 				*(u_long *)&pTopPoly->r1 = 0;
-				*(u_long *)&pTopPoly->r3 = pLastPoint->Colour;
-				*(u_long *)&pTopPoly->r2 = pPoint->Colour;
+				*(u_long *)&pTopPoly->r3 = *(uint *)&pLastPoint->r;
+				*(u_long *)&pTopPoly->r2 = *(uint *)&pPoint->r;
 				*(u_long *)&pTopPoly->x0 = NewTop;
 				*(u_long *)&pTopPoly->x1 = LastTop;
 				*(u_long *)&pTopPoly->x2 = pBuf->Pos;
@@ -224,8 +177,8 @@ void CGouraudRibbon::Display() {
 				addPrim(pOTPos, pTopPoly);
 
 				*(u_long *)&pBottomPoly->r1 = 0;
-				*(u_long *)&pBottomPoly->r3 = pLastPoint->Colour;
-				*(u_long *)&pBottomPoly->r2 = pPoint->Colour;
+				*(u_long *)&pBottomPoly->r3 = *(uint *)&pLastPoint->r;
+				*(u_long *)&pBottomPoly->r2 = *(uint *)&pPoint->r;
 				*(u_long *)&pBottomPoly->x0 = NewBottom;
 				*(u_long *)&pBottomPoly->x1 = LastBottom;
 				*(u_long *)&pBottomPoly->x2 = pBuf->Pos;
@@ -239,24 +192,24 @@ void CGouraudRibbon::Display() {
 		}
 	}
 SEEYA:
-	if (mFrames) {
+	if (mTrail) {
 		int i;
 
 		pBuf = (SCalcBuffer *)0x1f800000;
-		pPoint = mPoints;
+		pPoint = mpPoints;
 
 		for (i = 0; i < mNumPoints; i++) {
-			if (mFrames == 1) {
-				pPoint->OlderXY = pPoint->OldXY = pBuf->Pos;
+			if (mTrail == 1) {
+				pPoint->Last2Scr = pPoint->Last1Scr = pBuf->Pos;
 			} else {
-				pPoint->OlderXY = pPoint->OldXY;
-				pPoint->OldXY = pBuf->Pos;
+				pPoint->Last2Scr = pPoint->Last1Scr;
+				pPoint->Last1Scr = pBuf->Pos;
 			}
 
 			pPoint++;
 			pBuf++;
 		}
 
-		mFrames++;
+		mTrail++;
 	}
 }

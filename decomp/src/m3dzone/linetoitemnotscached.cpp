@@ -7,29 +7,7 @@
    them on the z1 > zH test), which is what frees a register for zL. The single-cell case uses X/Z
    (not X0/Z0), raising X/Z's priority to s0/s1. The walk's bounds checks are part of the while
    condition (one source line in the demo). */
-struct Item;
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct SLineInfo {
-	Vector StartCoords;
-	Vector EndCoords;
-};
-
-struct SZone {
-	int Active;
-	int xL;
-	int zL;
-	int xH;
-	int zH;
-	int CellSize;
-	int pad18;
-	short NumX;
-	short NumZ;
-	Item *Cells[20][20];
-};
+#include "game/colij.h"
 
 extern SZone Zones[2];
 extern Item *EnvironmentalObjectList;
@@ -81,18 +59,18 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 		int EnvIndex;
 
 		for (EnvIndex = 0; EnvIndex < 2; EnvIndex++) {
-			if (!Zones[EnvIndex].Active)
+			if (!Zones[EnvIndex].Flags)
 				continue;
 
 			x0 = pInfo->StartCoords.vx;
 			x1 = pInfo->EndCoords.vx;
 			z0 = pInfo->StartCoords.vz;
 			z1 = pInfo->EndCoords.vz;
-			xL = Zones[EnvIndex].xL;
-			xH = Zones[EnvIndex].xH;
-			zL = Zones[EnvIndex].zL;
-			zH = Zones[EnvIndex].zH;
-			l = Zones[EnvIndex].CellSize;
+			xL = Zones[EnvIndex].xMin;
+			xH = Zones[EnvIndex].xMax;
+			zL = Zones[EnvIndex].zMin;
+			zH = Zones[EnvIndex].zMax;
+			l = Zones[EnvIndex].ZoneWidth;
 
 			if ((x0 < xL && x1 < xL) || (x0 > xH && x1 > xH) || (z0 < zL && z1 < zL) ||
 			    (z0 > zH && z1 > zH))
@@ -102,13 +80,13 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 				X = (x0 - xL) / l;
 				Z = (z0 - zL) / l;
 
-				if (X == Zones[EnvIndex].NumX)
+				if (X == Zones[EnvIndex].Width)
 					X--;
 
-				if (Z == Zones[EnvIndex].NumZ)
+				if (Z == Zones[EnvIndex].Height)
 					Z--;
 
-				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Cells[X][Z], pInfo);
+				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Ptr[X][Z], pInfo);
 				continue;
 			}
 
@@ -183,20 +161,20 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 			r0 = (x0 - xL) % l;
 			s0 = (z0 - zL) % l;
 
-			if (X0 == Zones[EnvIndex].NumX) {
+			if (X0 == Zones[EnvIndex].Width) {
 				X0--;
 				r0 += l;
 			}
 
-			if (Z0 == Zones[EnvIndex].NumZ) {
+			if (Z0 == Zones[EnvIndex].Height) {
 				Z0--;
 				s0 += l;
 			}
 
-			if (X1 == Zones[EnvIndex].NumX)
+			if (X1 == Zones[EnvIndex].Width)
 				X1--;
 
-			if (Z1 == Zones[EnvIndex].NumZ)
+			if (Z1 == Zones[EnvIndex].Height)
 				Z1--;
 
 			qw = FUN_8008b62c(w, s0, l);
@@ -205,9 +183,9 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 			Z = Z0;
 			d = (x0 < x1 ? qh - h : -qh) + (z0 < z1 ? w - qw : qw);
 
-			while ((X != X1 || Z != Z1) && X >= 0 && X < Zones[EnvIndex].NumX && Z >= 0 &&
-			       Z < Zones[EnvIndex].NumZ) {
-				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Cells[X][Z], pInfo);
+			while ((X != X1 || Z != Z1) && X >= 0 && X < Zones[EnvIndex].Width && Z >= 0 &&
+			       Z < Zones[EnvIndex].Height) {
+				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Ptr[X][Z], pInfo);
 
 				if (d >= 0) {
 					d -= h;
@@ -218,9 +196,9 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 				}
 			}
 
-			if (X >= 0 && X < Zones[EnvIndex].NumX && Z >= 0 &&
-			    Z < Zones[EnvIndex].NumZ)
-				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Cells[X][Z], pInfo);
+			if (X >= 0 && X < Zones[EnvIndex].Width && Z >= 0 &&
+			    Z < Zones[EnvIndex].Height)
+				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Ptr[X][Z], pInfo);
 		}
 	}
 

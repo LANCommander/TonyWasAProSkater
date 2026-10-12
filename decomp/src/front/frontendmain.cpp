@@ -23,26 +23,17 @@
    counter v0 ahead of the short-lived constant 9 (as retail). The Competition_Init test is the `&&`
    form `!GVideoReplay && Levels[choice].isCompetition == 1`, which expands as (base+12)+idx and
    gives retail's base-first `addu base,base,idx`. */
+extern "C" {
+#include <sys/types.h>
+#include <libgte.h>
+#include <libgpu.h>
+}
+
+#include "game/video.h"
+#include "game/career.h"
+#include "game/m3d.h"
+
 enum EPackInitType { PACK_0, PACK_1 };
-
-struct SVideoRestart {
-	int NumSkaters;
-	int Skater;
-	int Skater2;
-	int Level;
-	int GGame;
-};
-
-struct SLevel {
-	int pad0[3];
-	int isCompetition;
-	int pad10[26];
-};
-
-struct SDoubleBuffer {
-	char pad0[0x80a8];
-	unsigned char *Polys; /* 0x80a8 */
-};
 
 struct SName {
 	char c[10];

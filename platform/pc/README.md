@@ -29,6 +29,17 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
   in `tests/` that runs the original MIPS in a small reference interpreter (`tests/mips_ref.c`).
   `reimpl.tsv` also holds byte-exact C for the few compiler-generated C++ functions a native
   build can't take from their matching source. What is still translated is Psy-Q library code.
+- **C++ classes.** To stay byte-exact, the matching decomp wrote many class members as C (raw
+  `this + offset` access, explicit vptr stores and base-class calls). The port's copies are real
+  C++ classes with the same logic (`reimpl.tsv` rows marked `cxx`; `decomp/tools/port_cxx.py`).
+  A native destructor is wrapped at its retail address as the egcs `(this, in_chrg)` destructor:
+  it runs the C++ destructor chain, then frees through the class's `operator delete` when asked.
+  Classes are declared once, in `decomp/include/game/*.h` (complete retail layouts, virtuals in
+  retail vtable order; also compiled by the matching egcs, hence `#pragma interface`). The build
+  inlines those headers before its egcs-ABI pass, drops in-class bodies of virtual functions so
+  calls dispatch through the retail vtable, and compiles with `-funsigned-char` (plain `char` is
+  unsigned on the PS1). `tools/header_check.py`, `tools/layouts.py` and `tools/tu_diff.py` check
+  header layouts and that a refactor doesn't change what a TU links to.
 - **Hardware libraries** (GPU, CD, SPU, pad, memory card, BIOS) are high-level reimplementations
   ("HLE") of the Psy-Q entry points, in `src/`.
 

@@ -1,14 +1,6 @@
 /* HandleWater__6CBruce (0x80043258) */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-
-struct CVector {
-	int x, y, z;
-};
-
-struct TE {
-	short x, y;
-};
+#include "game/trig.h"
+#include "game/bruce.h"
 
 extern "C" {
 	void *__nw__4CBitUi(unsigned int);
@@ -20,19 +12,10 @@ extern int GNumberOfPlayers;
 extern int CurrentWaterLevel;
 extern int CurrentWaterLevel2;
 extern const int TTime;
-extern TE rcossin_tbl[];
+extern SSinCos rcossin_tbl[];
 
 void SFX_PlayX(unsigned int, short, int);
 int Rnd(int);
-
-struct CBruce;
-
-struct CBruce {
-	ushort mFlags;
-	char pad0[2];
-	CVector mPos;
-	void HandleWater();
-};
 
 CBruce *MechList;
 
@@ -46,7 +29,7 @@ void CBruce::HandleWater() {
 		else
 			WaterLevel = CurrentWaterLevel2;
 
-		bottom = mPos.y + 0x19000;
+		bottom = mPos.vy + 0x19000;
 
 		if (WaterLevel < bottom) {
 			if (!(mFlags & 8))
@@ -59,18 +42,18 @@ void CBruce::HandleWater() {
 				int offset;
 
 				p = mPos;
-				p.y = WaterLevel;
+				p.vy = WaterLevel;
 				offset = Rnd(24) + 16;
 
 				{
-					TE *b;
+					SSinCos *b;
 					int idx = Rnd(4096) & 4095;
 
 					b = rcossin_tbl;
-					TE *e = b + idx;
+					SSinCos *e = b + idx;
 
-					p.x += offset * e->x;
-					p.z += offset * e->y;
+					p.vx += offset * e->s;
+					p.vz += offset * e->c;
 				}
 
 				void *r = __nw__4CBitUi(116);

@@ -1,15 +1,7 @@
 /* FUN_800144a8 (0x800144a8) */
 /* C++ (CARD.CPP). Fuzzy demo twin Card_FileExists (0.69). Builds a one-block header for the save
    or replay file name, then opens the file for writing (mode 1) to create it. */
-struct SCardHead {
-	char Magic[2];
-	char Type;
-	char BlockEntry;
-	char Title[64];
-	char reserve[28];
-	char Clut[32];
-	char Icon[3][128];
-};
+#include "game/card.h"
 
 extern char CARD_FNAME[];
 extern char CARD_VNAME[];

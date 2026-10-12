@@ -3,37 +3,17 @@
    into a single VRAM RECT (allocated on first use) and draws each slice rotated via DrawIt.
    numx/remy are declared mid-block, at their first assignment: their pseudos are then created
    after the division's quotient temp, which gives retail's spill-slot order (numx 48, remy 52). */
-typedef unsigned short ushort;
-typedef unsigned int uint;
+extern "C" {
+#include <sys/types.h>
+#include <libgte.h>
+#include <libgpu.h>
+}
 
-struct RECT {
-	ushort x, y, w, h;
-};
-
-class SlicedImage {
-  public:
-	int **vf;
-	int width;
-	int height;
-	int slice_width;
-	int slice_height;
-	ushort *slicedBuffer;
-	RECT *sliceTab;
-	int num_slices_x;
-	int num_slices_y;
-	int bpp;
-	ushort clut;
-	void rotateDraw(int x, int y);
-};
+#include "game/shellutils.h"
 
 void *Mem_New(uint, int, int);
 void Pack_Pack(int, int, int, int *, int *, int, int, uint);
 void DrawIt(RECT *r, int x, int y, int bpp, int clut);
-
-extern "C" {
-	int LoadImage(RECT *, ushort *);
-	int DrawSync(int);
-}
 
 extern int Pack_NoBottom;
 
@@ -81,7 +61,7 @@ void SlicedImage::rotateDraw(int x, int y) {
 		for (k = 0; k < numy; k++) {
 			r.w = slice_width;
 			r.h = slice_height;
-			LoadImage(&r, data);
+			LoadImage(&r, (u_long *)data);
 			DrawSync(0);
 			DrawIt(&r, xt, yt, bpp, clut);
 
@@ -92,7 +72,7 @@ void SlicedImage::rotateDraw(int x, int y) {
 		if (remy > 0) {
 			r.w = slice_width;
 			r.h = remy;
-			LoadImage(&r, data);
+			LoadImage(&r, (u_long *)data);
 			DrawSync(0);
 			DrawIt(&r, xt, yt, bpp, clut);
 		}
@@ -112,7 +92,7 @@ void SlicedImage::rotateDraw(int x, int y) {
 		for (k = 0; k < numy; k++) {
 			r.w = remx;
 			r.h = slice_height;
-			LoadImage(&r, data);
+			LoadImage(&r, (u_long *)data);
 			DrawSync(0);
 			DrawIt(&r, xt, yt, bpp, clut);
 
@@ -123,7 +103,7 @@ void SlicedImage::rotateDraw(int x, int y) {
 		if (remy > 0) {
 			r.w = remx;
 			r.h = remy;
-			LoadImage(&r, data);
+			LoadImage(&r, (u_long *)data);
 			DrawSync(0);
 			DrawIt(&r, xt, yt, bpp, clut);
 		}

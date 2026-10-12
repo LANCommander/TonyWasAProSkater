@@ -11,152 +11,26 @@
    .rdata before the jump tables, as in retail. Levers: the main loop is a for(;;) whose exits are
    all `goto done` (a `break` lets expand_end_loop roll the leading exit test to the bottom), and
    FUN_80093240 (RotMatrix) returns MATRIX*. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
+extern "C" {
+#include <sys/types.h>
+#include <libgte.h>
+}
 
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	int rest[11];
-};
-
-struct SBoard {
-	char *Name;   /* 0 */
-	uchar Req;    /* 4: tapes needed */
-	int Stats[4]; /* 8 */
-	int pad[2];
-};
-
-struct SStats {
-	char pad0[8];
-	char *pModel; /* 0x08 */
-	char pad0c[0x13 - 0x0c];
-	uchar m13;       /* 0x13 */
-	signed char m14; /* 0x14 */
-	char pad15[0x18 - 0x15];
-	int Stats[4]; /* 0x18 */
-	char pad28[0x2c - 0x28];
-	char *pName;   /* 0x2c */
-	char *pBio[6]; /* 0x30 */
-	char pad48[0x58 - 0x48];
-	SBoard Boards[7]; /* 0x58 */
-	char pad138[340 - 0x138];
-};
-
-struct SSkaterCareer {
-	uchar NumTapes; /* 0 (0x8 + 14 * n in SCareer) */
-	uchar pad1[3];
-	uchar Medals[6]; /* 4: per competition */
-	uchar pada[4];
-};
-
-struct SCareer {
-	int Version;
-	int m4;
-	SSkaterCareer Skater[148];
-	char pad[0x824 - 8 - 148 * 14];
-	char LastSkater[2]; /* 0x824 */
-	char LastDeck[2];   /* 0x826 */
-	char LastWheel[2];  /* 0x828 */
-	char LastTrucks[2]; /* 0x82a */
-	char m82c;          /* 0x82c */
-};
-
-struct SCompetition {
-	char *Name;
-	char pad[120 - 4];
-};
-
-struct SVECTOR {
-	short vx, vy, vz, pad;
-};
-
-struct MATRIX {
-	short m[3][3];
-	int t[3];
-};
-
-struct SStatRow {
-	int x, y, value;
-	int pad[2];
-	int bar;
-};
-
-class CItem {
-  public:
-	virtual ~CItem() {}
-	void *operator new(uint) throw();
-};
-
-class SlicedImage;
-
-class Sprite : public CItem {
-  public:
-	int m_w;
-	int m_h;
-	int m_packed;
-	int m_bpp;
-	SlicedImage *m_image;
-	Sprite(char *, int, int, int);
-	Sprite(int, int, int, int, int, int, int);
-	~Sprite();
-	void draw(int, int, int, int, int, int);
-	void pack();
-	void unpack();
-	void removeFromMemory();
-};
-
-class PadBuffer : public CItem {
-  public:
-	int pad[(0x11c - 4) / 4];
-	PadBuffer(int);
-	void update();
-	int getPress();
-};
-
-class EraseSprite : public CItem {
-  public:
-	short x, y, w, h;
-	void *buf;
-	EraseSprite(int, int, int, int);
-	~EraseSprite();
-	void restore(int, int);
-};
-
-class PREManager {
-  public:
-	void unloadPRE(char *);
-};
-
-class CSuper {
-  public:
-	int m0;
-	int mX; /* 0x04 */
-	char pad8[0x48 - 8];
-	virtual ~CSuper();
-};
-
-class CBruce : public CSuper {
-  public:
-	char pad4c[0x78c - 0x4c];
-	MATRIX mRotMatrix; /* 0x78c */
-};
+/* emit this TU's out-of-line copy of CClass's inline destructor and its vtable (retail
+   0x8005bb3c / 0x800a18e4, after FUN_8005bad0), as retail's FRONT end TU did */
+#pragma implementation "class.h"
+#include "game/class.h"
+#include "game/shellutils.h"
+#include "game/pre.h"
+#include "game/career.h"
+#include "game/pad.h"
+#include "game/front.h"
+#include "game/bruce.h"
 
 extern SControl Pad[];
 extern SCareer GCareer;
 extern SStats Stats[];
-extern SCompetition Levels[];
+extern SLevel Levels[];
 extern int DAT_800d37b4[];
 extern int DAT_800d37e4[];
 extern int DAT_800d1cb8;
@@ -190,7 +64,6 @@ int DAT_800d1c64 = 0; /* ... as of the last visit */
 
 typedef char SLabel6[6] __attribute__((aligned(4)));
 
-void Pad_ClearTriggers(SControl *);
 void Pack_DefragmentFully();
 void Mess_SetRGB(uchar, uchar, uchar, int);
 void Mess_SetFontScale(uint);
@@ -203,7 +76,6 @@ void M3d_BuildTransform(CSuper *);
 extern "C" {
 	void FUN_8005c97c(int);
 	void *FUN_8005ca3c(char *);
-	void Mem_Delete__FPv(void *);
 	void FUN_8005ca64(void);
 	void FUN_80061714(void *);
 	void FUN_80059520(int);
@@ -216,7 +88,6 @@ extern "C" {
 	int Mess_TextHeightAboveBaseline__FPCc(char *);
 	void Mess_SetTextJustify__FUc(int);
 	void Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	uchar *Mem_NewX__FUiii(int, int, int);
 	void FUN_8005c8dc(int);
 	void FUN_80059618(int);
 	void FUN_8005c780(void);
@@ -266,7 +137,7 @@ extern "C" int FUN_80059794() {
 	DAT_800d1c40 = GCareer.LastSkater[0];
 
 	for (i = 0; i < 11; i++) {
-		if (GCareer.Skater[i].NumTapes >= 30) {
+		if (GCareer.CharacterProgress[i].NumTapes >= 30) {
 			DAT_800d1c60 = 1;
 			numSkaters = 11;
 		}
@@ -281,7 +152,7 @@ extern "C" int FUN_80059794() {
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
 	FUN_8005c97c(1);
-	Mem_Delete__FPv(FUN_8005ca3c("select2p.bmp"));
+	Mem_Delete(FUN_8005ca3c("select2p.bmp"));
 	FUN_8005ca64();
 	FUN_80061714(FUN_8005ca3c("selectp.bmp"));
 	Pack_DefragmentFully();
@@ -365,7 +236,7 @@ extern "C" int FUN_80059794() {
 	viewport[1] = 480;
 
 	for (int k = 0; k < 11; k++) {
-		if (GCareer.Skater[k].NumTapes) {
+		if (GCareer.CharacterProgress[k].NumTapes) {
 			noTapes = 0;
 			break;
 		}
@@ -406,7 +277,7 @@ extern "C" int FUN_80059794() {
 	int textTimer = 0;
 	int statTimer = 0;
 	int medalTimer = 0;
-	uchar *flags = Mem_NewX__FUiii(10, 1, 1);
+	uchar *flags = (uchar *)Mem_NewX(10, 1, 1);
 
 	FUN_8005c8dc(9);
 	FUN_80059618(0);
@@ -461,12 +332,12 @@ extern "C" int FUN_80059794() {
 				if (!DAT_800d2344 && DAT_800d37e4[DAT_800d1c40]) {
 					DAT_800d2344 = 1;
 
-					if (*Stats[DAT_800d1c40].pModel) {
+					if (*Stats[DAT_800d1c40].FrontName) {
 						FUN_8006ed2c(DAT_800d37b4[DAT_800d1c40]);
 
 						if (Cheat_BigHead) {
-							GHeadPart = Stats[DAT_800d1c40].m13;
-							GHeadUp = Stats[DAT_800d1c40].m14;
+							GHeadPart = Stats[DAT_800d1c40].Head;
+							GHeadUp = Stats[DAT_800d1c40].Neck;
 						}
 
 						ProcessNewPSX__Fi(DAT_800d37b4[DAT_800d1c40]);
@@ -475,15 +346,15 @@ extern "C" int FUN_80059794() {
 					}
 
 					pBruce = FUN_8005933c();
-					pBruce->mX = DAT_800d232c;
+					pBruce->mPos.vx = DAT_800d232c;
 				}
 
 				break;
 			case 1:
 				if (DAT_800d2344) {
-					pBruce->mX -= speed << 12;
+					pBruce->mPos.vx -= speed << 12;
 
-					if (!settle && pBruce->mX < DAT_800d2334)
+					if (!settle && pBruce->mPos.vx < DAT_800d2334)
 						settle = 2;
 					else if (settle > 0 && --settle == 0)
 						state = 5;
@@ -497,9 +368,9 @@ extern "C" int FUN_80059794() {
 				break;
 			case 2:
 				if (DAT_800d2344) {
-					pBruce->mX += speed << 12;
+					pBruce->mPos.vx += speed << 12;
 
-					if (!settle && pBruce->mX >= DAT_800d2330)
+					if (!settle && pBruce->mPos.vx >= DAT_800d2330)
 						settle = 2;
 					else if (settle > 0 && --settle == 0)
 						state = 5;
@@ -513,9 +384,9 @@ extern "C" int FUN_80059794() {
 				break;
 			case 3:
 				if (DAT_800d2344) {
-					pBruce->mX += speed << 12;
+					pBruce->mPos.vx += speed << 12;
 
-					if (pBruce->mX >= DAT_800d232c)
+					if (pBruce->mPos.vx >= DAT_800d232c)
 						done = 1;
 				} else {
 					loadX += speed;
@@ -526,7 +397,7 @@ extern "C" int FUN_80059794() {
 
 				if (done) {
 					state = 0;
-					pBruce->mX = DAT_800d232c;
+					pBruce->mPos.vx = DAT_800d232c;
 					int press = input.getPress();
 
 					if (press == 2) {
@@ -549,9 +420,9 @@ extern "C" int FUN_80059794() {
 				break;
 			case 4:
 				if (DAT_800d2344) {
-					pBruce->mX -= speed << 12;
+					pBruce->mPos.vx -= speed << 12;
 
-					if (pBruce->mX < DAT_800d232c)
+					if (pBruce->mPos.vx < DAT_800d232c)
 						done = 1;
 				} else {
 					loadX -= speed;
@@ -562,7 +433,7 @@ extern "C" int FUN_80059794() {
 
 				if (done) {
 					state = 0;
-					pBruce->mX = DAT_800d232c;
+					pBruce->mPos.vx = DAT_800d232c;
 					int press = input.getPress();
 
 					if (press == 2) {
@@ -590,7 +461,7 @@ extern "C" int FUN_80059794() {
 				if (DAT_800d2344) {
 					delete pBruce;
 
-					if (*Stats[DAT_800d1c40].pModel) {
+					if (*Stats[DAT_800d1c40].FrontName) {
 						ClearRegion__Fiii(DAT_800d37b4[DAT_800d1c40], 1, 1);
 						FUN_8006edb8(DAT_800d37b4[DAT_800d1c40]);
 					}
@@ -623,12 +494,12 @@ extern "C" int FUN_80059794() {
 				DAT_800d2344 = DAT_800d37e4[DAT_800d1c40];
 
 				if (DAT_800d2344) {
-					if (*Stats[DAT_800d1c40].pModel) {
+					if (*Stats[DAT_800d1c40].FrontName) {
 						FUN_8006ed2c(DAT_800d37b4[DAT_800d1c40]);
 
 						if (Cheat_BigHead) {
-							GHeadUp = Stats[DAT_800d1c40].m14;
-							GHeadPart = Stats[DAT_800d1c40].m13;
+							GHeadUp = Stats[DAT_800d1c40].Neck;
+							GHeadPart = Stats[DAT_800d1c40].Head;
 						}
 
 						ProcessNewPSX__Fi(DAT_800d37b4[DAT_800d1c40]);
@@ -639,9 +510,9 @@ extern "C" int FUN_80059794() {
 					pBruce = FUN_8005933c();
 
 					if (dir == 1)
-						pBruce->mX = DAT_800d2334;
+						pBruce->mPos.vx = DAT_800d2334;
 					else
-						pBruce->mX = DAT_800d2330;
+						pBruce->mPos.vx = DAT_800d2330;
 				}
 
 				nameState = 0;
@@ -671,7 +542,7 @@ extern "C" int FUN_80059794() {
 			pBruce->mRotMatrix.m[1][1] = -pBruce->mRotMatrix.m[1][1];
 			pBruce->mRotMatrix.m[2][1] = -pBruce->mRotMatrix.m[2][1];
 
-			if (pBruce->mX >= DAT_800d2334 && pBruce->mX <= DAT_800d2330) {
+			if (pBruce->mPos.vx >= DAT_800d2334 && pBruce->mPos.vx <= DAT_800d2330) {
 				M3d_BuildTransform(pBruce);
 				FUN_80043f70(pBruce);
 				M3d_RenderSetup__FP7SCameraP9SViewportPUi(MikeCamera, viewport, pDoubleBuffer + 140);
@@ -682,7 +553,7 @@ extern "C" int FUN_80059794() {
 			if (--blink == 0)
 				blink = 96;
 
-			if (!noTapes && !state && !GCareer.Skater[DAT_800d1c40].NumTapes && blink >= 23 &&
+			if (!noTapes && !state && !GCareer.CharacterProgress[DAT_800d1c40].NumTapes && blink >= 23 &&
 			    GGame == 1) {
 				Mess_SetCurrentFont("stats1.fnt");
 				Mess_SetRGB(250, 190, 60, 0);
@@ -690,10 +561,10 @@ extern "C" int FUN_80059794() {
 				int n;
 
 				for (n = 0; n < 15; n++) {
-					if (Stats[DAT_800d1c40].pName[n] == ' ')
+					if (Stats[DAT_800d1c40].Name[n] == ' ')
 						break;
 
-					first[n] = Stats[DAT_800d1c40].pName[n];
+					first[n] = Stats[DAT_800d1c40].Name[n];
 				}
 
 				first[n] = 0;
@@ -721,7 +592,7 @@ extern "C" int FUN_80059794() {
 				arrow[3]->draw(585, 95, 0, -1, -1, -1);
 		}
 
-		if (medalTimer && GGame == 1 && GCareer.Skater[DAT_800d1c40].NumTapes) {
+		if (medalTimer && GGame == 1 && GCareer.CharacterProgress[DAT_800d1c40].NumTapes) {
 			itemBox->draw(395, 313, 0, -1, -1, -1);
 			Mess_SetCurrentFont("tapes1.fnt");
 			Mess_SetTextJustify__FUc(1);
@@ -749,7 +620,7 @@ extern "C" int FUN_80059794() {
 			int best = 0;
 
 			while (best < 7) {
-				if (GCareer.Skater[DAT_800d1c40].NumTapes <
+				if (GCareer.CharacterProgress[DAT_800d1c40].NumTapes <
 				    Stats[DAT_800d1c40].Boards[best + 1].Req)
 					break;
 
@@ -820,7 +691,7 @@ extern "C" int FUN_80059794() {
 				medalTimer = 3;
 		} else if (medalTimer) {
 			Mess_SetCurrentFont("tapes1.fnt");
-			SSkaterCareer *pCareer = &GCareer.Skater[DAT_800d1c40];
+			SSkaterCareer *pCareer = &GCareer.CharacterProgress[DAT_800d1c40];
 
 			*flags = pCareer->NumTapes;
 			uint n = *flags;
@@ -834,10 +705,10 @@ extern "C" int FUN_80059794() {
 			for (int c = 0; c < 3; c++) {
 				int j = 0;
 
-				while (FUN_8008f6fc(Levels[j].Name, comps[c]))
+				while (FUN_8008f6fc(Levels[j].pLevelName, comps[c]))
 					j++;
 
-				*flags = pCareer->Medals[j];
+				*flags = pCareer->Tapes[j];
 				int f = *flags;
 
 				if (f & 0x20)
@@ -859,11 +730,11 @@ extern "C" int FUN_80059794() {
 				Mess_SetTextJustify__FUc(0);
 
 				nameR = 320;
-				nameX = -Mess_TextWidth__FPCc(Stats[DAT_800d1c40].pName) >> 1;
+				nameX = -Mess_TextWidth__FPCc(Stats[DAT_800d1c40].Name) >> 1;
 				nameStep = (nameR - nameX) / 6;
 				nameState = 3;
-				nameY = 70 - (Mess_TextHeight(Stats[DAT_800d1c40].pName) >> 1) +
-				        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pName);
+				nameY = 70 - (Mess_TextHeight(Stats[DAT_800d1c40].Name) >> 1) +
+				        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].Name);
 				nameR -= nameStep;
 				nameL = nameX - nameStep;
 				break;
@@ -880,7 +751,7 @@ extern "C" int FUN_80059794() {
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
 				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].pName, 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
 				break;
 			case 4:
 				nameX -= nameStep;
@@ -893,7 +764,7 @@ extern "C" int FUN_80059794() {
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
 				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].pName, 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
 				break;
 			case 5:
 				nameBar->draw(0, 54, 0, -1, -1, -1);
@@ -901,7 +772,7 @@ extern "C" int FUN_80059794() {
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
 				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].pName, 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
 
 				nameState = 2;
 				break;
@@ -927,7 +798,7 @@ extern "C" int FUN_80059794() {
 				GCareer.LastDeck[0] = 0;
 				GCareer.LastWheel[0] = 0;
 				GCareer.LastTrucks[0] = 1;
-				GCareer.m82c = 0;
+				GCareer.LastLevel = 0;
 			}
 
 			GCareer.LastSkater[0] = DAT_800d1c40;
@@ -948,7 +819,7 @@ done:
 	FUN_8006af64();
 	if (Loading)
 		FileIO_Sync__Fv();
-	Mem_Delete__FPv(flags);
+	Mem_Delete(flags);
 
 	if (DAT_800d2344)
 		delete pBruce;

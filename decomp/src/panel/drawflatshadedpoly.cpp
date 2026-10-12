@@ -7,14 +7,9 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
+#include "game/m3d.h"
 
-struct SDB {
-	char pad0[0x84];
-	u_long OT[1];
-};
-
-extern SDB *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 
@@ -29,6 +24,6 @@ POLY_F4 *Panel_DrawFlatShadedPoly(int x, int y, int w, int h, uchar r, uchar g, 
 	setPolyF4(apoly);
 	setRGB0(apoly, r, g, b);
 	setXY4(apoly, x, y, x + w, y, x, y + h, x + w, y + h);
-	addPrim(&pDoubleBuffer->OT[sort], apoly);
+	addPrim(&(&pDoubleBuffer->OT2D)[sort], apoly);
 	return apoly;
 }

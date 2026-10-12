@@ -5,44 +5,8 @@
    continues: draws the background, the level picture (DAT_800d1d0c) and the blinking "Press X"
    sprite (DAT_800d1d04, toggled by the DAT_800d1d08 counter). START/X or GAutoTest continue
    (sound 6, fade 64); triangle backs out (sound 2). Afterwards it deletes the two sprites. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	int rest[11];
-};
-
-class CItem {
-  public:
-	virtual ~CItem();
-	void *operator new(uint) throw();
-};
-
-class SlicedImage;
-
-class Sprite : public CItem {
-  public:
-	int m_w;
-	int m_h;
-	int m_packed;
-	int m_bpp;
-	SlicedImage *m_image;
-	~Sprite();
-	void draw(int, int, int, int, int, int);
-};
+#include "game/shellutils.h"
+#include "game/pad.h"
 
 extern SControl Pad[2];
 extern int DAT_800bf0d4[]; /* picture x by screen */
@@ -62,7 +26,6 @@ int DAT_800d1d14;     /* redraw picture */
 
 int SFX_PlayX(uint, short, int);
 void Pause(int);
-void Pad_ClearTriggers(SControl *);
 
 extern "C" {
 	void FUN_8008eebc(int);

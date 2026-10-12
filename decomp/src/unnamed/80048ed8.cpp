@@ -2,20 +2,7 @@
 /* C++ (DB.CPP). Demo twin Db_Vblank; THPS1 moved the demo's second loop into FUN_80048d24.
    Flips any buffer that finished drawing. The unused frame delta (a dead read of the volatile
    vblank counter, demo line 209) is what keeps &LastVblanks out of the loop's giv set. */
-struct DISPENV {
-	short d[10];
-};
-
-struct SDoubleBuffer {
-	char Draw[0x5c];
-	DISPENV Disp;    /* 0x5c */
-	int Visible;     /* 0x70 */
-	int RenderNow;   /* 0x74 */
-	int Rendering;   /* 0x78 */
-	int FlipNow;     /* 0x7c */
-	int LastVblanks; /* 0x80 */
-	unsigned long OrderingTable[(0x80ac - 0x84) / 4];
-};
+#include "game/m3d.h"
 
 extern SDoubleBuffer DoubleBuffer[2];
 extern volatile int Vblanks;

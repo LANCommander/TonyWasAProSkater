@@ -1,20 +1,10 @@
 /* MToQ__FRC6MATRIXR5CQuat (0x800776f8) */
-#pragma interface
+extern "C" {
+#include <sys/types.h>
+#include <libgte.h>
+}
 
-struct MATRIX {
-	short m[3][3];
-	int t[3];
-};
-
-class CClass {
-  public:
-	virtual void vf0();
-};
-
-class CQuat : public CClass {
-  public:
-	int x, y, z, w;
-};
+#include "game/vector.h"
 
 extern int DAT_800c110c[];
 

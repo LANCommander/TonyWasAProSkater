@@ -1,83 +1,8 @@
 /* GetVariable__6CBaddyUs (0x80040f50) */
 /* C++ (BADDY.CPP). Fuzzy demo twin (0.74); locals from its MAIN.SYM. Reads a script variable:
    distance to / line of sight to the skater, positions (>> 12), counters, and script operands. */
-#pragma interface
-
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-struct SLight;
-
-class CItem {
-  public:
-	ushort mFlags;
-	ushort mInquiry;
-	CVector mPos;
-	CSVector mAngles;
-	ushort mModel;
-	char mDummyFrame;
-	uchar mTintIndex;
-	uchar mDummyAnim;
-	uchar mRegion;
-	CItem *mNextItem;
-	uint mRGB;
-	CSVector mScale;
-	uint mTRN;
-	CItem *mPreviousItem;
-	uint mStoredRGB;
-	uchar mPredatorEffectType;
-	uchar mPredatorEffectFade;
-	ushort mType;
-	SLight *mpLight;
-	ushort mFlashTimer;
-	short mFlash_dR;
-	short mFlash_dG;
-	short mFlash_dB;
-	virtual ~CItem();
-	virtual void Virtual2();
-	virtual void AI();
-	virtual void Virtual4();
-	virtual void Virtual5();
-	virtual void Virtual6();
-	virtual void Virtual7();
-	virtual void Virtual8();
-	virtual void Virtual9();
-	virtual int GetNode(ushort);
-};
-
-class CBody : public CItem {
-  public:
-	char pad4c[0xe2 - 0x4c];
-	short mNodeId; /* 0xe2 */
-	short mE4;
-	short mE6; /* 0xe6 */
-};
-
-class CBaddy : public CBody {
-  public:
-	char pade8[0x19f - 0xe8];
-	uchar m19F; /* 0x19f */
-	uchar m1A0; /* 0x1a0 */
-	char pad1a1[0x1a8 - 0x1a1];
-	short m1A8; /* 0x1a8 */
-	char pad1aa[0x1b0 - 0x1aa];
-	ushort *pScript; /* 0x1b0 */
-	char pad1b4[0x1ea - 0x1b4];
-	short mEyeHeight; /* 0x1ea */
-	short mVars[8];   /* 0x1ec */
-	short GetVariable(ushort variable);
-};
-
-class CBruce : public CItem {};
+#include "game/baddy.h"
+#include "game/bruce.h"
 
 extern short GameFMV_CurrentFrame;
 extern CBruce *MechList;
@@ -106,17 +31,17 @@ short CBaddy::GetVariable(ushort variable) {
 			if (MechList) {
 				CVector eye_pos = mPos;
 
-				eye_pos.vy -= mEyeHeight << 12;
+				eye_pos.vy -= mOriginToEye << 12;
 				return Utils_LineOfSight(eye_pos, MechList->mPos);
 			}
 
 			break;
 		case 0x212e:
-			return m1A8;
+			return mVerticalCompliance;
 		case 0x212c:
-			return m1A0;
+			return mInputSignal;
 		case 0x212d:
-			return m19F;
+			return mHit;
 		case 0x2140:
 			return mPos.vx >> 12;
 		case 0x2141:
@@ -139,23 +64,23 @@ short CBaddy::GetVariable(ushort variable) {
 
 			break;
 		case 0x2100:
-			return mE6;
+			return mHealth;
 		case 0x2129:
-			return Redbook_Rnd(*pScript++);
+			return Redbook_Rnd(*mpScript++);
 		case 0x2120: {
-			uchar i = *(uchar *)pScript;
+			uchar i = *(uchar *)mpScript;
 
-			pScript++;
-			return mVars[i];
+			mpScript++;
+			return mRegister[i];
 		}
 		case 0x212a:
-			return mNodeId;
+			return mNode;
 		case 0x212b: {
-			ushort node = *pScript++;
+			ushort node = *mpScript++;
 			ushort *p_links;
 
 			if (node & 0x2000)
-				node = GetNode(node);
+				node = GetVariable(node);
 
 			p_links = Trig_GetLinksPointer(node);
 

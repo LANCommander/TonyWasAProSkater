@@ -3,167 +3,11 @@
    The generic baddy script commands: power-ups, labels/gotos and conditionals on flags and
    variables, camera shakes, pulses and signals to nodes, animations, sounds, sparks, FMVs and
    screen flashes. Returns 0 to stop the script for this frame. */
-#pragma interface
-
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector() {}
-	void Zero() {
-		vx = vy = vz = 0;
-	}
-};
-
-struct CSVector {
-	short vx, vy, vz;
-	CSVector() {}
-	CSVector(short x, short y, short z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-};
-
-struct SLight;
-
-class CItem {
-  public:
-	ushort mFlags;
-	ushort mInquiry;
-	CVector mPos;
-	CSVector mAngles;
-	ushort mModel;
-	char mDummyFrame;
-	uchar mTintIndex;
-	uchar mDummyAnim;
-	uchar mRegion;
-	CItem *mNextItem;
-	uint mRGB;
-	CSVector mScale;
-	uint mTRN;
-	CItem *mPreviousItem;
-	uint mStoredRGB;
-	uchar mPredatorEffectType;
-	uchar mPredatorEffectFade;
-	ushort mType;
-	SLight *mpLight;
-	ushort mFlashTimer;
-	short mFlash_dR;
-	short mFlash_dG;
-	short mFlash_dB;
-	virtual ~CItem();
-	virtual void Virtual2();
-	virtual void AI();
-	virtual void Virtual4();
-	virtual void Virtual5();
-	virtual void Virtual6();
-	virtual void Virtual7();
-	virtual int Virtual8();
-	virtual void SetVariable(ushort);
-	virtual short GetVariable(ushort);
-	void InitItem(char *);
-	void Hide() {
-		mFlags &= ~1;
-	}
-	void Show() {
-		mFlags |= 0x41;
-	}
-};
-
-class CBody : public CItem {
-  public:
-	char pad4c[0x6c - 0x4c];
-	CVector mVel; /* 0x6c */
-	char pad78[0xe2 - 0x78];
-	ushort mNodeId; /* 0xe2 */
-	char pade4[0x110 - 0xe4];
-};
-
-class CSuper : public CBody {
-  public:
-	char pad110[0x198 - 0x110];
-	void CycleAnim(int, signed char);
-	void RunAnim(int, int, int, int);
-};
-
-class CBruce;
-
-class CBaddy : public CSuper {
-  public:
-	uint mMode;      /* 0x198 */
-	uchar mDoScript; /* 0x19c */
-	uchar mReadHooks;
-	uchar mApplyGravity;
-	uchar mHit;
-	uchar mInputSignal;
-	uchar mDeathPulseSent;
-	uchar mComplexSurfaceInterval; /* 0x1a2 */
-	uchar mComplexSurfaceTimer;    /* 0x1a3 */
-	ushort mInputFlagsCopy;        /* 0x1a4 */
-	ushort mSubType;
-	ushort mVerticalCompliance;
-	uint mSpecificFlags;        /* 0x1ac */
-	ushort *mpScript;           /* 0x1b0 */
-	ushort *mpScriptLabel[8];   /* 0x1b4 */
-	ushort mBaddyAttributes[6]; /* 0x1d4 */
-	ushort *mpWeaponAttributes; /* 0x1e0 */
-	uchar mWeapons;
-	uchar mAttributesPerWeapon;
-	uchar mCollisionOn;
-	short mGroundToOrigin;
-	short mOriginToEye;
-	short mRegister[6];
-	ushort mPattern;
-	ushort mSubPattern;
-	ushort mWaitTimer; /* 0x1fc */
-	uint mDeadChecksum;
-	CVector mTargetPos;
-	uint mLoopingSound;
-	int mLoopingSoundUpdate;
-	CBruce *mpCreatedByPlayer; /* 0x218 */
-	int ExecuteCommand(ushort command);
-	int GetScriptValue();
-	void SkipToEndif();
-	void StopScript() {
-		mDoScript = 0;
-	}
-};
-
-class CPowerUp {
-  public:
-	void SetGravity(int, int);
-};
-
-enum EShakeType { SHAKE_0, SHAKE_1, SHAKE_2 };
-
-class CCamera {
-  public:
-	void Shake(const CVector &, EShakeType);
-};
-
-class CBit {
-  public:
-	char pad0[0x42];
-	uchar mKeep; /* 0x42 */
-	char pad43;
-	virtual ~CBit();
-	static void *operator new(uint) throw();
-};
-
-class CSpark : public CBit {
-  public:
-	char pad48[92 - 0x48];
-	CSpark(CVector &, int, int, int);
-};
-
-struct SLevel {
-	char pad0[0x60];
-	int f60;
-	char pad64[120 - 0x64];
-};
+#include "game/baddy.h"
+#include "game/powerup.h"
+#include "game/camera.h"
+#include "game/bit.h"
+#include "game/career.h"
 
 extern CVector ZeroVector;
 extern CBruce *MechList;
@@ -302,11 +146,11 @@ int CBaddy::ExecuteCommand(ushort command) {
 
 			if (CameraList) {
 				if (shake == 0)
-					CameraList->Shake(mPos, SHAKE_2);
+					CameraList->Shake(mPos, CAMERASHAKE_SMALL);
 				else if (shake == 1)
-					CameraList->Shake(mPos, SHAKE_1);
+					CameraList->Shake(mPos, CAMERASHAKE_MEDIUM);
 				else
-					CameraList->Shake(mPos, SHAKE_0);
+					CameraList->Shake(mPos, CAMERASHAKE_BIG);
 			}
 
 			break;
@@ -332,7 +176,7 @@ int CBaddy::ExecuteCommand(ushort command) {
 			CVector pos;
 
 			FUN_80022aec(&mPos);
-			ushort *p_links = Trig_GetLinksPointer(mNodeId);
+			ushort *p_links = Trig_GetLinksPointer(mNode);
 
 			for (int i = 0; i < *p_links; i++) {
 				Trig_GetPosition(pos, p_links[i + 1]);
@@ -342,7 +186,7 @@ int CBaddy::ExecuteCommand(ushort command) {
 			if (GGame == 7)
 				break;
 
-			GameFMV_StartFMV(GNumberOfPlayers == 1 && Levels[GLevel].f60);
+			GameFMV_StartFMV(GNumberOfPlayers == 1 && Levels[GLevel].FMV);
 			break;
 		}
 		case 17053:
@@ -600,7 +444,7 @@ int CBaddy::ExecuteCommand(ushort command) {
 			Show();
 			break;
 		case 16901:
-			Virtual2();
+			Die();
 			break;
 		case 17040:
 			SFX_PlayX((short)*mpScript++, 0x2000, 0);

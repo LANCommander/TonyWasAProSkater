@@ -1,40 +1,9 @@
 /* Move__11CFlatRipple (0x8004ebf4) */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
+#include "game/bit.h"
+#include "game/m3d.h"
+#include "game/trig.h"
 
-struct CVector {
-	int x, y, z;
-};
-
-struct TE {
-	short x, y;
-};
-
-struct SLineSeg {
-	CVector End;
-	uchar r, g, b, code;
-};
-
-extern TE rcossin_tbl[2];
-
-struct CBit {
-	char pad[0x18];
-	CVector mPos;
-	char pad2[0x4c - 0x24];
-	void Die();
-};
-
-struct CFlatRipple : CBit {
-	int mNumSegs;
-	SLineSeg *mSegs;
-	CVector mStart;
-	uchar mR, mG, mB;
-	int mMaxRadius;
-	int mRadius;
-	int mGrowRate;
-	int mAngle;
-	void Move();
-};
+extern SSinCos rcossin_tbl[2];
 
 void CFlatRipple::Move() {
 	int intensity;
@@ -51,10 +20,10 @@ void CFlatRipple::Move() {
 	intensity = ((mMaxRadius - mRadius) << 8) / mMaxRadius;
 	a = mAngle;
 	step = 4096 / mNumSegs;
-	TE *e = &rcossin_tbl[a & 4095];
+	SSinCos *e = &rcossin_tbl[a & 4095];
 
-	mStart.x = mPos.x + (((mRadius * e->y) / 4096) << 12);
-	mStart.z = mPos.z + (((mRadius * e->x) / 4096) << 12);
+	mStart.vx = mPos.vx + (((mRadius * e->c) / 4096) << 12);
+	mStart.vz = mPos.vz + (((mRadius * e->s) / 4096) << 12);
 
 	for (int i = 0; i < mNumSegs; i++) {
 		mSegs[i].r = (mR * intensity) >> 8;
@@ -65,10 +34,10 @@ void CFlatRipple::Move() {
 		if (i == mNumSegs - 1) {
 			mSegs[i].End = mStart;
 		} else {
-			TE *f = &rcossin_tbl[a & 4095];
+			SSinCos *f = &rcossin_tbl[a & 4095];
 
-			mSegs[i].End.x = mPos.x + (((mRadius * f->y) / 4096) << 12);
-			mSegs[i].End.z = mPos.z + (((mRadius * f->x) / 4096) << 12);
+			mSegs[i].End.vx = mPos.vx + (((mRadius * f->c) / 4096) << 12);
+			mSegs[i].End.vz = mPos.vz + (((mRadius * f->s) / 4096) << 12);
 		}
 	}
 }

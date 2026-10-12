@@ -1,17 +1,12 @@
 /* M3dUtils_LineLineClosestPoints__FP7CVectorN40PiT0T5 (0x80081778) */
 /* C++ (M3DUTILS.CPP): build with CC1=D:/Tools/psyq4.5/CC1PLPSX.EXE. Locals and their order come from the demo's MAIN.SYM. */
+extern "C" {
 #include <sys/types.h>
 #include <libgte.h>
 #include <inline_c.h>
+}
+#include "game/vector.h"
 
-struct CVector {
-	int vx, vy, vz;
-	CVector &operator>>=(const int &);
-	CVector &operator<<=(const int &);
-};
-
-CVector operator-(const CVector &, const CVector &);
-CVector operator>>(const CVector &, const int &);
 extern "C" int FUN_8008b5dc(int);
 
 /* MAC1-3 <- r0 (no INLINE_C.H macro for this) */

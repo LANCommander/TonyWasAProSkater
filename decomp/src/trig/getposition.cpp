@@ -1,11 +1,6 @@
 /* Trig_GetPosition__FR7CVectori (0x80047600) */
 /* C++ (TRIG.CPP). Demo twin. Finds a trigger node's word-aligned position (after its variable-length header), stores it <<12 and returns the data past it. Each case repeated the stores; cross-jumping merges them. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-};
+#include "game/vector.h"
 
 ushort **OffsetList;
 

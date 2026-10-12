@@ -7,61 +7,18 @@
    or 0. Called by FUN_800601fc and FUN_8005e8e0.
    Codegen: the exit code is inside the for(;;) as `if (r != 18) { ...; break; }`, which is why
    retail hoists &Pad and the 35 into s-registers before the loop. */
-typedef unsigned long ulong;
-typedef unsigned int uint;
+#include "game/career.h"
+#include "game/video.h"
+#include "game/pad.h"
+#include "game/shellutils.h"
+
 enum EMemCardState { MEMCARD_STATE_15 = 15 };
 enum EPausedStatus { PAUSED_STATUS_39 = 39 };
-
-struct SButton {
-	unsigned char Pressed;
-	unsigned char Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	char pad40[0x16c - 0x40];
-};
-
-struct SOptions {
-	int SFXVolume;
-	int MusicVolume;
-	int OtherOptions[66];
-	int AutoKickEnabled[2];
-	int VibrationEnabled[2];
-	int ControllerFunction[2][4]; /* 0x120 */
-};
-
-struct SVideoInfo {
-	int VideoMode;
-	ulong *pBlockStart;
-	char pad8[0xc0 - 8];
-};
-
-struct SVideoSettings {
-	int NumSkaters, Skater, Skater2, Level, GGame;
-};
-
-struct SCareer {
-	int Version;
-	char pad4[0x830 - 4];
-};
-
-struct SPadMap {
-	int Function[4];
-};
-
-class VerticalMenu {
-  public:
-	void erase();
-};
 
 extern SCareer GCareer;
 extern SControl Pad[2];
 extern SVideoInfo GVInfo1;
-extern SVideoSettings GVideoRestart;
+extern SVideoRestart GVideoRestart;
 extern SOptions GPreferences;
 extern SPadMap DAT_800bf260[2];
 extern VerticalMenu *pVertMenu;
@@ -72,7 +29,6 @@ int DAT_800d235c;
 int Mess_GetFontScale();
 void Mess_SetFontScale(uint);
 void Pack_DefragmentFully();
-void Pad_ClearTriggers(SControl *);
 int SFX_PlayX(uint, short, int);
 void Front_InitMemCardMenus(int, EMemCardState, EPausedStatus);
 void Front_MemCardHiResDisplay();

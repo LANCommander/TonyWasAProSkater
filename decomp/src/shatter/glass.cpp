@@ -3,69 +3,9 @@
    glass bits: finds the floor under the middle, scatters bits at random points of the triangle
    flying outward from the middle plus along the normal, and remembers the shatter point nearest
    the camera (for the sound). THPS1 drops the demo's bit-budget check. */
-#pragma interface
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector() {}
-	CVector(int x, int y, int z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-	CVector &operator<<=(const int &);
-};
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct Item;
-
-struct SLineInfo {
-	Vector StartCoords; /* 0x00 */
-	Vector EndCoords;   /* 0x0c */
-	char pad18[0x68 - 0x18];
-	Item *pItem;     /* 0x68 */
-	Vector Position; /* 0x6c */
-	char pad78[0xa4 - 0x78];
-};
-
-struct SCamera {
-	int pad0;
-	CVector Pos; /* 0x04 */
-	char pad10[0xa4 - 0x10];
-};
-
-class CBit {
-  public:
-	CBit *mPrevious;
-	CBit *mNext;
-	short mAge;
-	unsigned short mLifetime;
-	CVector mTweenPos;
-	CVector mPos;
-	CVector mVel;
-	CVector mAcc;
-	uchar mFric[3];
-	uchar mDead;
-	unsigned short mFrigDeltaZ;
-	uchar mProtected;
-	uchar mType;
-	CBit();
-	virtual ~CBit();
-	void *operator new(uint) throw();
-};
-
-class CGlassBit : public CBit {
-  public:
-	char pad48[120 - 0x48];
-	CGlassBit(const CVector &, const CVector &, int, uchar, uchar, uchar, int, int, int);
-};
+#include "game/bit.h"
+#include "game/colij.h"
+#include "game/camera.h"
 
 int ShatterSound;
 
@@ -78,12 +18,6 @@ extern "C" int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
 int Redbook_Rnd(int);
 void Utils_CalcUnit(CVector &, const CVector &);
 uint Utils_CrapDist(const CVector &, const CVector &);
-CVector operator+(const CVector &, const CVector &);
-CVector operator-(const CVector &, const CVector &);
-CVector operator>>(const CVector &, const int &);
-CVector operator<<(const CVector &, const int &);
-CVector operator*(const CVector &, const int &);
-CVector operator*(const int &, const CVector &);
 
 void Shatter_Glass(int n, const CVector &p0, const CVector &p1, const CVector &p2,
                    const CVector &Normal, uchar r, uchar g, uchar b) {
@@ -130,8 +64,8 @@ void Shatter_Glass(int n, const CVector &p0, const CVector &p1, const CVector &p
 		ShatterSoundPos = middle;
 		ShatterSound = 1;
 	} else {
-		CVector CamPos(MikeCamera[Camera_CurrentMikeCamera].Pos.vx, MikeCamera[Camera_CurrentMikeCamera].Pos.vy,
-		               MikeCamera[Camera_CurrentMikeCamera].Pos.vz);
+		CVector CamPos(MikeCamera[Camera_CurrentMikeCamera].Position.vx, MikeCamera[Camera_CurrentMikeCamera].Position.vy,
+		               MikeCamera[Camera_CurrentMikeCamera].Position.vz);
 
 		CamPos <<= 12;
 

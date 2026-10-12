@@ -9,61 +9,9 @@ extern "C" {
 	#include <inline_c.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-CVector operator-(const CVector &, const CVector &);
-CVector operator>>(const CVector &, const int &);
-
-struct SString {
-	int End;
-	ushort X;
-	ushort Y;
-	char *pString;
-	uint CodeBGR;
-	uchar Is3d;
-	uchar BigText;
-	CVector Pos;
-};
-
-struct Texture {
-	uchar u0, v0;
-	ushort clut;
-	uchar u1, v1;
-	ushort tpage;
-	uchar u2, v2, u3, v3;
-};
-
-struct SAnimFrame {
-	char OffX;
-	char OffY;
-	uchar Width;
-	uchar Height;
-	Texture *pTexture;
-};
-
-struct SCamera {
-	uint Style;
-	VECTOR Position;
-	VECTOR Focus;
-	int Distance;
-	int Height;
-	SVECTOR Angles;
-	MATRIX Transform;
-	MATRIX Inverse;
-	MATRIX View;
-	VECTOR Up;
-};
-
-struct SViewport {
-	ushort xR, yB, xL, yT;
-	ushort Hither, Yon;
-};
+#include "game/font.h"
+#include "game/camera.h"
+#include "game/m3d.h"
 
 extern SCamera MikeCamera[];
 extern int Camera_CurrentMikeCamera;
@@ -76,14 +24,7 @@ extern char *pPoly;
 extern char *PolyBufferEnd;
 extern SViewport *pCurrentViewport;
 
-struct SOTBuffer {
-	char pad[132];
-	u_long OT2D; /* 0x84 */
-	u_long pad88;
-	u_long OT3D[4096]; /* 0x8c */
-};
-
-extern SOTBuffer *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 
 void Font_Display() {
 	SString *pStringInfo;

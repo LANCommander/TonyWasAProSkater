@@ -7,250 +7,24 @@
    That one is local-alloc order in the !Angle block: retail gives the Height/OffY/Width product
    temps v0/v1/a0 and the OffX (short) shift temp a1 (so global puts OffX in a1, Width in t5,
    Angle in s3); ours allocates the OffX chain first (v0). Statement order follows the demo lines. */
-#pragma interface
-
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
 	#include <inline_c.h>
 }
+#include "game/bit.h"
+#include "game/m3d.h"
+#include "game/trig.h"
+#include "game/camera.h"
 
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-CVector operator>>(const CVector &, const int &);
-CVector operator-(const CVector &, const CVector &);
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-struct Texture {
-	uchar u0, v0;
-	ushort clut;
-	uchar u1, v1;
-	ushort tpage;
-	uchar u2, v2;
-	uchar u3, v3;
-	uint TexWin;
-};
-
-struct SAnimFrame {
-	signed char OffX;
-	signed char OffY;
-	uchar Width;
-	uchar Height;
-	Texture *pTexture;
-};
-
-struct SSection {
-	uint Radius;
-	uint PadBGR;
-};
-
-struct SFringeQuad {
-	uint Width;
-	uint CodeBGR;
-};
-
-struct SLineSeg {
-	CVector End;
-	uchar r, g, b, code;
-};
-
-struct SCam {
-	int pad;
-	CVector Pos;
-	char pad10[0x74 - 0x10];
-	MATRIX Matrix;
-	char pad94[164 - 0x94];
-};
-
-struct SCamera {
-	char pad0[8];
-	ushort Near; /* 8 */
-	ushort Far;  /* 10 */
-	char padc[14 - 12];
-	ushort H;    /* 14 */
-	ushort OffX; /* 16 */
-	ushort OffY; /* 18 */
-};
-
-struct SOTBuffer {
-	char pad0[0x808c];
-	char *pOT; /* 0x808c */
-};
-
-struct STrig {
-	short s, c;
-};
-
-class CBit {
-  public:
-	CBit *mPrevious;
-	CBit *mNext;
-	short mAge;
-	ushort mLifetime;
-	CVector mTweenPos;
-	CVector mPos;
-	CVector mVel;
-	CVector mAcc;
-	uchar mFric[3];
-	uchar mDead;
-	ushort mFrigDeltaZ;
-	uchar mProtected;
-	uchar mType;
-	virtual ~CBit();
-	virtual void Move();
-	virtual void Display();
-};
-
-class CSpecialDisplay : public CBit {};
-
-class CGlow : public CBit {
-  public:
-	SSection *mpSections;
-	SFringeQuad *mpFringes;
-	uint mNumSections;
-	uint mNumFringes;
-	uint mCentreCodeBGR;
-	short mStepAngle;
-	uchar mSkipTriangles;
-	short mAngle;
-	uint mMask;
-};
-
-class CGPolyLine : public CBit {
-  public:
-	int mNumSegs;
-	SLineSeg *mSegs;
-	CVector mStart;
-	uchar mStartR, mStartG, mStartB, mCode;
-	uchar mForcedPriority;
-};
-
-class CPolyLine : public CBit {
-  public:
-	uchar mForcedPriority;
-	int mNumSegs;
-	SLineSeg *mSegs;
-	CVector mStart;
-};
-
-class CFT4Bit : public CBit {
-  public:
-	short mTransDecay;
-	short mScaleDecay;
-	uint mCodeBGR;
-	SAnimFrame *mpPSXAnim;
-	SAnimFrame *mpPSXFrame;
-	uchar mBitFlags;
-	uchar mNumFrames;
-	char mFrame;
-	uchar mFrameFrac;
-	short mAnimSpeed;
-	short mScale;
-};
-
-class CFlatBit : public CFT4Bit {
-  public:
-	short mAngle;
-	short mAngVel;
-	short mAngAcc;
-	ushort mAngFric;
-	uint mPostScale;
-	uchar mForcedPriority;
-	uchar mSemiTransparencyRate;
-	ushort mCLUT;
-};
-
-class CGlassBit : public CBit {
-  public:
-	CVector mPosA;
-	CVector mPosB;
-	CVector mPosC;
-	int mGroundY;
-	uchar mDefaultR, mDefaultG, mDefaultB;
-	uchar mR, mG, mB;
-	uchar mFadeRate;
-};
-
-class CGLine : public CBit {
-  public:
-	uint mCodeBGR0;
-	uint mPadBGR1;
-	CVector mStart;
-	CVector mEnd;
-};
-
-class CQuadBit : public CBit {
-  public:
-	CVector mPosB;
-	CVector mPosC;
-	CVector mPosD;
-	CVector mTweenPosB;
-	CVector mTweenPosC;
-	CVector mTweenPosD;
-	uint mCodeBGR;
-	Texture *mpTexture;
-	uchar mFlags;
-};
-
-class CChunkBit : public CBit {
-  public:
-	SVECTOR mPosA;
-	SVECTOR mPosB;
-	SVECTOR mPosC;
-	SVECTOR mPosD;
-	CVector mWorldPosA;
-	CVector mWorldPosB;
-	CVector mWorldPosC;
-	CVector mWorldPosD;
-	CSVector mAngles;
-	uint mClutV0U0;
-	uint mTPageV1U1;
-	ushort mV2U2;
-	ushort mV3U3;
-	uint mB0G0R0;
-	uint mB1G1R1;
-	uint mB2G2R2;
-	uint mB3G3R3;
-	uint mTexWin;
-};
-
-class CPixel : public CBit {
-  public:
-	uint tag;
-	uchar r0, g0, b0, code;
-	uint mWidthHeight;
-};
-
-class CLinked2EndedBit : public CFT4Bit {
-  public:
-	CVector mEndPosA;
-	CVector mEndPosB;
-};
-
-struct SClipLineBuf {
-	CVector Start;
-	CVector End;
-	uint ScrStart;
-	uint ScrEnd;
-};
-
-extern SCam MikeCamera[];
+extern SCamera MikeCamera[];
 extern int Camera_CurrentMikeCamera;
-extern SCamera *pCurrentViewport;
-extern SOTBuffer *pDoubleBuffer;
+extern SViewport *pCurrentViewport;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
-extern STrig rcossin_tbl[];
+extern SSinCos rcossin_tbl[];
 
 CSpecialDisplay *SpecialDisplayList;
 CGlow *GlowList;
@@ -275,13 +49,13 @@ void Bit_Display() {
 	CSpecialDisplay *pSpecial;
 	CGlow *pGlow;
 
-	gte_SetRotMatrix(&MikeCamera[Camera_CurrentMikeCamera].Matrix);
+	gte_SetRotMatrix(&MikeCamera[Camera_CurrentMikeCamera].View);
 	__asm__ volatile("ctc2 $0, $5; ctc2 $0, $6; ctc2 $0, $7");
 
-	camera_pos.vx = MikeCamera[Camera_CurrentMikeCamera].Pos.vx;
-	camera_pos.vy = MikeCamera[Camera_CurrentMikeCamera].Pos.vy;
-	camera_pos.vz = MikeCamera[Camera_CurrentMikeCamera].Pos.vz;
-	GTEZedLimit = pCurrentViewport->H >> 1;
+	camera_pos.vx = MikeCamera[Camera_CurrentMikeCamera].Position.vx;
+	camera_pos.vy = MikeCamera[Camera_CurrentMikeCamera].Position.vy;
+	camera_pos.vz = MikeCamera[Camera_CurrentMikeCamera].Position.vz;
+	GTEZedLimit = pCurrentViewport->Zoom >> 1;
 	pSpecial = SpecialDisplayList;
 
 	while (pSpecial) {
@@ -328,14 +102,14 @@ void Bit_Display() {
 				RGBFade = RotCoords.vz * 255 / 700 + 1;
 
 			if (RotCoords.vz < GTEZedLimit) {
-				CentreX = pCurrentViewport->H * RotCoords.vx / RotCoords.vz + pCurrentViewport->OffX;
+				CentreX = pCurrentViewport->Zoom * RotCoords.vx / RotCoords.vz + pCurrentViewport->xC;
 
 				if (CentreX > 1023)
 					CentreX = 1023;
 				else if (CentreX < -1024)
 					CentreX = -1024;
 
-				CentreY = pCurrentViewport->H * RotCoords.vy / RotCoords.vz + pCurrentViewport->OffY;
+				CentreY = pCurrentViewport->Zoom * RotCoords.vy / RotCoords.vz + pCurrentViewport->yC;
 
 				if (CentreY > 1023)
 					CentreY = 1023;
@@ -351,11 +125,11 @@ void Bit_Display() {
 			if (CentreX == -1024 || CentreX == 1023 || CentreY == -1024 || CentreY == 1023)
 				continue;
 
-			uint *OTPos = (uint *)(pDoubleBuffer->pOT + (RotCoords.vz & 0x3ffc));
+			uint *OTPos = (uint *)((char *)pDoubleBuffer->pOT + (RotCoords.vz & 0x3ffc));
 			DVECTOR *pBufA = (DVECTOR *)0x1f800000;
 			DVECTOR *pBufB = (DVECTOR *)0x1f800004 + pGlow->mNumFringes;
-			STrig *pTab = rcossin_tbl;
-			STrig *p = &pTab[Ang & 4095];
+			SSinCos *pTab = rcossin_tbl;
+			SSinCos *p = &pTab[Ang & 4095];
 			int RadA = pSection[n - 1].Radius * 400 / RotCoords.vz;
 			int MSin = p->s * 400 / 256;
 			int MCos = p->c;
@@ -423,7 +197,7 @@ void Bit_Display() {
 						Ang = pGlow->mAngle;
 
 					int RadB = pSection->Radius * 400 / RotCoords.vz;
-					STrig *q = (STrig *)((Ang & 4095) * 4 + (uint)pTab);
+					SSinCos *q = (SSinCos *)((Ang & 4095) * 4 + (uint)pTab);
 
 					MSin = q->s * 400 / 256;
 					MCos = q->c;
@@ -459,8 +233,8 @@ void Bit_Display() {
 							pPoly = newppoly;
 							aGou->tag = 0x06000000;
 							*(u_long *)&aGou->r0 = pGlow->mCentreCodeBGR;
-							*(u_long *)&aGou->r1 = pSection->PadBGR;
-							*(u_long *)&aGou->r2 = pSection->PadBGR;
+							*(u_long *)&aGou->r1 = pSection->CodeBGR;
+							*(u_long *)&aGou->r2 = pSection->CodeBGR;
 
 							if (RGBFade) {
 								aGou->r0 = aGou->r0 * RGBFade >> 8;
@@ -534,8 +308,8 @@ void Bit_Display() {
 									*(u_long *)&aGou->r2 = PadBGR;
 									*(u_long *)&aGou->r3 = PadBGR;
 								} else {
-									*(u_long *)&aGou->r2 = pSection->PadBGR;
-									*(u_long *)&aGou->r3 = pSection->PadBGR;
+									*(u_long *)&aGou->r2 = pSection->CodeBGR;
+									*(u_long *)&aGou->r3 = pSection->CodeBGR;
 								}
 
 								if (RGBFade) {
@@ -759,7 +533,7 @@ void Bit_Display() {
 		*(u_long *)&apoly->r0 = pFlatBit->mCodeBGR;
 		gte_stlvnl2(&zed);
 
-		if (zed < GTEZedLimit || zed > pCurrentViewport->Far) {
+		if (zed < GTEZedLimit || zed > pCurrentViewport->Yon) {
 			pPoly = (uchar *)apoly;
 			continue;
 		}
@@ -861,7 +635,7 @@ void Bit_Display() {
 				uint y_scale;
 
 				{
-					STrig *p = rcossin_tbl;
+					SSinCos *p = rcossin_tbl;
 
 					p += Angle & 4095;
 					sin = p->s;
@@ -958,7 +732,7 @@ void Bit_Display() {
 		gte_stsxy3(&aGou->x0, &aGou->x1, &aGou->x2);
 		gte_stlvnl2(&zed);
 
-		OTPos = (uint *)(pDoubleBuffer->pOT + (zed & 0x3ffc));
+		OTPos = (uint *)((char *)pDoubleBuffer->pOT + (zed & 0x3ffc));
 		addPrim(OTPos, aGou);
 		addPrim(OTPos, ptpage);
 
@@ -980,7 +754,7 @@ void Bit_Display() {
 		gte_rtps();
 		gte_stlvnl2(&zed);
 
-		if (zed >= pCurrentViewport->Near && zed <= pCurrentViewport->Far) {
+		if (zed >= pCurrentViewport->Hither && zed <= pCurrentViewport->Yon) {
 			gte_stsxy(&y0x01);
 
 			Temp = (pGLine->mEnd >> 12) - camera_pos;
@@ -988,7 +762,7 @@ void Bit_Display() {
 			gte_rtps();
 			gte_stlvnl2(&zed2);
 
-			if (zed2 >= pCurrentViewport->Near && zed2 <= pCurrentViewport->Far) {
+			if (zed2 >= pCurrentViewport->Hither && zed2 <= pCurrentViewport->Yon) {
 				LINE_G2 *aline;
 				uchar *newppoly;
 
@@ -1048,7 +822,7 @@ void Bit_Display() {
 			pPoly = newppoly;
 			gte_stlvnl2(&MaxZed);
 
-			if (MaxZed < pCurrentViewport->Near || MaxZed > pCurrentViewport->Far) {
+			if (MaxZed < pCurrentViewport->Hither || MaxZed > pCurrentViewport->Yon) {
 				pPoly = (uchar *)apoly;
 				goto NEXTQUAD;
 			}
@@ -1060,7 +834,7 @@ void Bit_Display() {
 			gte_rtps();
 			gte_stlvnl2(&ZedB);
 
-			if (ZedB < pCurrentViewport->Near || ZedB > pCurrentViewport->Far) {
+			if (ZedB < pCurrentViewport->Hither || ZedB > pCurrentViewport->Yon) {
 				pPoly = (uchar *)apoly;
 				goto NEXTQUAD;
 			}
@@ -1079,7 +853,7 @@ void Bit_Display() {
 
 			gte_stlvnl2(&ZedC);
 
-			if (ZedC < pCurrentViewport->Near || ZedC > pCurrentViewport->Far) {
+			if (ZedC < pCurrentViewport->Hither || ZedC > pCurrentViewport->Yon) {
 				pPoly = (uchar *)apoly;
 				goto NEXTQUAD;
 			}
@@ -1108,7 +882,7 @@ void Bit_Display() {
 
 			gte_stlvnl2(&ZedD);
 
-			if (ZedD < pCurrentViewport->Near || ZedD > pCurrentViewport->Far) {
+			if (ZedD < pCurrentViewport->Hither || ZedD > pCurrentViewport->Yon) {
 				pPoly = (uchar *)apoly;
 				goto NEXTQUAD;
 			}
@@ -1161,7 +935,7 @@ void Bit_Display() {
 		gte_ldlv0(&Temp);
 		gte_rtps();
 
-		if (ZedA < pCurrentViewport->Near || ZedA > pCurrentViewport->Far)
+		if (ZedA < pCurrentViewport->Hither || ZedA > pCurrentViewport->Yon)
 			goto NEXTCHUNK;
 
 		if (ZedA > MaxZed)
@@ -1174,7 +948,7 @@ void Bit_Display() {
 		gte_ldlv0(&Temp);
 		gte_rtps();
 
-		if (ZedB < pCurrentViewport->Near || ZedB > pCurrentViewport->Far)
+		if (ZedB < pCurrentViewport->Hither || ZedB > pCurrentViewport->Yon)
 			goto NEXTCHUNK;
 
 		if (ZedB > MaxZed)
@@ -1187,7 +961,7 @@ void Bit_Display() {
 		gte_ldlv0(&Temp);
 		gte_rtps();
 
-		if (ZedC < pCurrentViewport->Near || ZedC > pCurrentViewport->Far)
+		if (ZedC < pCurrentViewport->Hither || ZedC > pCurrentViewport->Yon)
 			goto NEXTCHUNK;
 
 		if (ZedC > MaxZed)
@@ -1195,7 +969,7 @@ void Bit_Display() {
 
 		gte_stlvnl2(&ZedD);
 
-		if (ZedD < pCurrentViewport->Near || ZedD > pCurrentViewport->Far)
+		if (ZedD < pCurrentViewport->Hither || ZedD > pCurrentViewport->Yon)
 			goto NEXTCHUNK;
 
 		if (ZedD > MaxZed)
@@ -1203,7 +977,7 @@ void Bit_Display() {
 
 		gte_stsxy(&y0x0D);
 
-		pOTPos = (uint *)(pDoubleBuffer->pOT + (MaxZed & 0x3ffc));
+		pOTPos = (uint *)((char *)pDoubleBuffer->pOT + (MaxZed & 0x3ffc));
 
 		if (p_chunk->mTexWin) {
 			pWinOff = (DR_TWIN *)pPoly;
@@ -1332,12 +1106,12 @@ void Bit_Display() {
 			*(u_long *)&atile->r0 = *(u_long *)&pPixel->r0;
 			gte_stlvnl2(&zed);
 
-			if (zed < pCurrentViewport->Near) {
+			if (zed < pCurrentViewport->Hither) {
 				pPoly = (uchar *)atile;
 				goto SKIPPIXEL;
 			}
 
-			if (zed > pCurrentViewport->Far) {
+			if (zed > pCurrentViewport->Yon) {
 				pPoly = (uchar *)atile;
 				goto SKIPPIXEL;
 			}
@@ -1361,12 +1135,12 @@ void Bit_Display() {
 			*(u_long *)&atile->w = pPixel->mWidthHeight;
 			gte_stlvnl2(&zed);
 
-			if (zed < pCurrentViewport->Near) {
+			if (zed < pCurrentViewport->Hither) {
 				pPoly = (uchar *)atile;
 				goto SKIPPIXEL;
 			}
 
-			if (zed > pCurrentViewport->Far) {
+			if (zed > pCurrentViewport->Yon) {
 				pPoly = (uchar *)atile;
 				goto SKIPPIXEL;
 			}
@@ -1447,7 +1221,7 @@ void Bit_Display() {
 			Width = pLinked2EndedBit->mpPSXFrame->Width;
 			gte_stlvnl2(&zed);
 
-			if (zed < pCurrentViewport->Near || zed > pCurrentViewport->Far) {
+			if (zed < pCurrentViewport->Hither || zed > pCurrentViewport->Yon) {
 				Broken = 1;
 				goto NEXTL2E;
 			}
@@ -1496,7 +1270,7 @@ void Bit_Display() {
 		apoly->v3--;
 		gte_stlvnl2(&zed);
 
-		if (zed < pCurrentViewport->Near || zed > pCurrentViewport->Far) {
+		if (zed < pCurrentViewport->Hither || zed > pCurrentViewport->Yon) {
 			pPoly = (uchar *)apoly;
 			Broken = 1;
 			goto NEXTL2E;

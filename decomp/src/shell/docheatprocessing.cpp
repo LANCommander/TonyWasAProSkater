@@ -2,23 +2,7 @@
 /* C++ (SHELL.CPP). Demo twin for the key part (THPS1 adds the cheat table); locals from its
    MAIN.SYM. Each newly pressed pad-1 button feeds its key into frug's rolling hash; when the hash
    hits a known cheat code the matching cheat is toggled. Returns whether a cheat fired. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	char pad[364 - 192];
-};
+#include "game/pad.h"
 
 extern SControl Pad[2];
 

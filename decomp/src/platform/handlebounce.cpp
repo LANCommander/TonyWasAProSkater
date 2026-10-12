@@ -3,50 +3,9 @@
    its MAIN.SYM. Builds each skater's swept box (old to new position, padded by 0x14000) and bounces
    them off every active bouncy platform whose model box it overlaps. THPS1 checks the second skater
    too when two are playing. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct SModel;
-
-struct SPSXRegion {
-	char pad0[0x10];
-	SModel **ppModels; /* 0x10 */
-	char pad14[64 - 0x14];
-};
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos; /* 0x004 */
-	char pad10[0x1c - 0x10];
-	CBruce *mpNext; /* 0x01c */
-	char pad20[0x6c - 0x20];
-	CVector mVel; /* 0x06c */
-	char pad78[0xf0 - 0x78];
-	CVector mOldPos; /* 0x0f0 */
-};
-
-struct Item {
-	ushort Flags; /* 0x000 */
-	char pad2[2];
-	CVector Pos; /* 0x004 */
-	char pad10[0x16 - 0x10];
-	ushort ModelIndex; /* 0x016 */
-	char pad18[0x1b - 0x18];
-	uchar Region; /* 0x01b */
-	Item *pNext;  /* 0x01c */
-};
-
-class CPlatform : public Item {
-  public:
-	char pad20[0x1ac - 0x20];
-	int mBounceFlags; /* 0x1ac */
-	void Bounce(CBruce *, const CVector &);
-};
+#include "game/platform.h"
+#include "game/bruce.h"
+#include "game/m3d.h"
 
 extern SPSXRegion PSXRegion[];
 extern CBruce *MechList;
@@ -62,7 +21,7 @@ void Platform_HandleBounce() {
 
 	LP1 = MechList->mOldPos.vx;
 	RP1 = MechList->mPos.vx;
-	pSkater2 = MechList->mpNext;
+	pSkater2 = (CBruce *)MechList->mNextItem;
 
 	if (RP1 < LP1) {
 		tmp = LP1;
@@ -131,28 +90,28 @@ void Platform_HandleBounce() {
 		BP2 += 0x14000;
 	}
 
-	for (pItem = EnvironmentalObjectList; pItem; pItem = pItem->pNext) {
+	for (pItem = EnvironmentalObjectList; pItem; pItem = pItem->NextItem) {
 		if (pItem->Flags & 0x100) {
-			if (((CPlatform *)pItem)->mBounceFlags & 16) {
+			if (((CPlatform *)pItem)->mSpecificFlags & 16) {
 				pItem->Flags |= 32;
 
-				if (!(((CPlatform *)pItem)->mBounceFlags & 32)) {
-					SModel *m = PSXRegion[pItem->Region].ppModels[pItem->ModelIndex];
+				if (!(((CPlatform *)pItem)->mSpecificFlags & 32)) {
+					SModel *m = PSXRegion[pItem->Region].ppModels[pItem->Model];
 					short *pBox = (short *)((char *)m + 12);
 
-					if (RP1 >= pItem->Pos.vx + (pBox[1] << 12) &&
-					    pItem->Pos.vx + (pBox[0] << 12) >= LP1 &&
-					    BP1 >= pItem->Pos.vz + (pBox[5] << 12) &&
-					    pItem->Pos.vz + (pBox[4] << 12) >= FP1 &&
-					    DP1 >= pItem->Pos.vy + (pBox[3] << 12) &&
-					    pItem->Pos.vy + (pBox[2] << 12) >= UP1)
+					if (RP1 >= pItem->Position.vx + (pBox[1] << 12) &&
+					    pItem->Position.vx + (pBox[0] << 12) >= LP1 &&
+					    BP1 >= pItem->Position.vz + (pBox[5] << 12) &&
+					    pItem->Position.vz + (pBox[4] << 12) >= FP1 &&
+					    DP1 >= pItem->Position.vy + (pBox[3] << 12) &&
+					    pItem->Position.vy + (pBox[2] << 12) >= UP1)
 						((CPlatform *)pItem)->Bounce(MechList, MechList->mVel);
-					else if (NumMechs >= 2 && RP2 >= pItem->Pos.vx + (pBox[1] << 12) &&
-					         pItem->Pos.vx + (pBox[0] << 12) >= LP2 &&
-					         BP2 >= pItem->Pos.vz + (pBox[5] << 12) &&
-					         pItem->Pos.vz + (pBox[4] << 12) >= FP2 &&
-					         DP2 >= pItem->Pos.vy + (pBox[3] << 12) &&
-					         pItem->Pos.vy + (pBox[2] << 12) >= UP2)
+					else if (NumMechs >= 2 && RP2 >= pItem->Position.vx + (pBox[1] << 12) &&
+					         pItem->Position.vx + (pBox[0] << 12) >= LP2 &&
+					         BP2 >= pItem->Position.vz + (pBox[5] << 12) &&
+					         pItem->Position.vz + (pBox[4] << 12) >= FP2 &&
+					         DP2 >= pItem->Position.vy + (pBox[3] << 12) &&
+					         pItem->Position.vy + (pBox[2] << 12) >= UP2)
 						((CPlatform *)pItem)->Bounce(pSkater2, pSkater2->mVel);
 				}
 			}

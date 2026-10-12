@@ -9,15 +9,8 @@ extern "C" {
 	#include <libgte.h>
 }
 
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct SStats {
-	char pad0[0x18];
-	int Stats[10]; /* 0x18 */
-	char pad40[340 - 0x40];
-};
+#include "game/bruce.h"
+#include "game/career.h"
 
 extern SStats Stats[];
 
@@ -26,41 +19,9 @@ int Cheat_StatsOverride;
 extern int Cheat_Fire;
 extern int GLevel;
 
-class CBruce {
-  public:
-	char pad0[0x6c];
-	CVector mVel; /* 0x6c */
-	char pad78[0x198 - 0x78];
-	unsigned char *mpStatBonus; /* 0x198 */
-	char pad19c[0x210 - 0x19c];
-	int m210; /* 0x210 */
-	char pad214[0x254 - 0x214];
-	int m254; /* 0x254 */
-	char pad258[0x2e8 - 0x258];
-	int mSkaterIndex; /* 0x2e8 */
-	int m2EC;         /* 0x2ec */
-	char pad2f0[0x358 - 0x2f0];
-	int m358; /* 0x358 */
-	char pad35c[0x6c4 - 0x35c];
-	int mLoopSnd;  /* 0x6c4 */
-	int mGrindSnd; /* 0x6c8 */
-	int mRollSnd;  /* 0x6cc */
-	int mAirSnd;   /* 0x6d0 */
-	int mAirPitch; /* 0x6d4 */
-	int mAirVol;   /* 0x6d8 */
-	char pad6dc[0x72c - 0x6dc];
-	int mTerrain;     /* 0x72c */
-	int mRollTerrain; /* 0x730 */
-	int mState;       /* 0x734 */
-	char pad738[0x758 - 0x738];
-	int mRollVolScale;   /* 0x758 */
-	int mRollPitchScale; /* 0x75c */
-	void HandleContinuousSounds();
-};
-
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((m254 || Cheat_Fire) ? 3 : 0)) +     \
+	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
 	                    mpStatBonus[n])
 #define MaxSpeed (((GetStat(1) + 50) << 12) * 3 * 15 / 28)
 
@@ -76,7 +37,7 @@ void SFX_ModifyVol(unsigned int, int, int);
 void SFX_Stop(unsigned int);
 
 void CBruce::HandleContinuousSounds() {
-	if (mState == 5) {
+	if (mPhysicsState == 5) {
 		if (!mLoopSnd)
 			mLoopSnd = SFX_PlayX(15, 0x2000, 0);
 	} else if (mLoopSnd) {
@@ -85,7 +46,7 @@ void CBruce::HandleContinuousSounds() {
 		mLoopSnd = 0;
 	}
 
-	if (mState == 4) {
+	if (mPhysicsState == 4) {
 		if (!mGrindSnd) {
 			int Snd;
 
@@ -106,14 +67,14 @@ void CBruce::HandleContinuousSounds() {
 		mGrindSnd = 0;
 	}
 
-	if (mState == 0) {
-		if (mRollSnd && (mRollTerrain != mTerrain || m358)) {
+	if (mPhysicsState == 0) {
+		if (mRollSnd && (mRollTerrain != mTerrain || mInAir)) {
 			SFX_Stop(mRollSnd);
 
 			mRollSnd = 0;
 		}
 
-		if (!mRollSnd && !m358) {
+		if (!mRollSnd && !mInAir) {
 			mRollVolScale = 100;
 			mRollPitchScale = 100;
 			mRollTerrain = mTerrain;
@@ -206,7 +167,7 @@ void CBruce::HandleContinuousSounds() {
 		mRollSnd = 0;
 	}
 
-	if (mState == 1 || mState == 2 || mState == 8) {
+	if (mPhysicsState == 1 || mPhysicsState == 2 || mPhysicsState == 8) {
 		if (!mAirSnd) {
 			int Spd;
 			unsigned short NewPitch;
@@ -214,7 +175,7 @@ void CBruce::HandleContinuousSounds() {
 
 			Spd = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
 
-			if (mState == 8)
+			if (mPhysicsState == 8)
 				Spd = 300000;
 
 			NewVol = (unsigned short)(Spd * 200 / (MaxSpeed / 16));

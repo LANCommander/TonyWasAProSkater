@@ -2,28 +2,7 @@
 /* C++ (SPOOL.CPP). Demo twin; locals and blocks from its MAIN.SYM. Releases a loaded region: drops
    its texture usage counts and, unless it stays in memory, clears the region record, detaches its
    environment and frees the PSX file. Optionally purges unused textures. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct SPSXRegion {
-	uchar Used; /* 0 */
-	char pad1[10 - 1];
-	uchar Loaded; /* 10 */
-	uchar m0B;    /* 11 */
-	char padc[16 - 12];
-	uint *pModels; /* 0x10 */
-	uint *pPSX;    /* 0x14 */
-	int m18;       /* 0x18 */
-	char pad1c[0x20 - 0x1c];
-	int m20; /* 0x20 */
-	char pad24[0x28 - 0x24];
-	int m28; /* 0x28 */
-	int m2C; /* 0x2c */
-	char pad30[0x33 - 0x30];
-	uchar m33; /* 0x33 */
-	uchar m34; /* 0x34 */
-	char pad35[64 - 0x35];
-};
+#include "game/m3d.h"
 
 extern SPSXRegion PSXRegion[];
 
@@ -43,22 +22,22 @@ void ClearRegion(int Region, int cleanuptextures, int KeepInMemory) {
 	if (Region == -1)
 		return;
 
-	if (!PSXRegion[Region].Used)
+	if (!PSXRegion[Region].Filename[0])
 		return;
 
 	DecrementTextureUsage(Region);
 
 	if (!KeepInMemory) {
-		PSXRegion[Region].m18 = 0;
-		PSXRegion[Region].m2C = 0;
-		PSXRegion[Region].m28 = 0;
-		PSXRegion[Region].m0B = 0;
-		PSXRegion[Region].Loaded = 0;
-		PSXRegion[Region].m20 = 0;
-		PSXRegion[Region].pModels = 0;
-		PSXRegion[Region].Used = 0;
-		PSXRegion[Region].m33 = 0;
-		PSXRegion[Region].m34 = 0;
+		PSXRegion[Region].pAnimFile = 0;
+		PSXRegion[Region].pColourPulseData = 0;
+		PSXRegion[Region].pTexWibData = 0;
+		PSXRegion[Region].Protected = 0;
+		PSXRegion[Region].Usable = 0;
+		PSXRegion[Region].pHooks = 0;
+		PSXRegion[Region].ppModels = 0;
+		PSXRegion[Region].Filename[0] = 0;
+		PSXRegion[Region].TexturesInRAM = 0;
+		PSXRegion[Region].KeepTexturesInRAM = 0;
 
 		{
 			int EnvIndex = Spool_GetEnvIndex(Region);

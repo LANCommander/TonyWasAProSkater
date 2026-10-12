@@ -2,39 +2,8 @@
 /* C++ (QUAT.CPP). Fuzzy demo twin (tools/fuzzy_twins.py); locals from its MAIN.SYM. p and q are by-value
    CQuats (non-POD, so passed by hidden reference); the trailing vptr stores are their destructors
    (CClass is modelled without virtuals so g++ doesn't emit the out-of-line destructors here). */
-extern "C" long SquareRoot0(long);
-
-extern int DAT_800a3484[]; /* CClass's vtable */
-
-class CClass {
-  public:
-	int *vf;
-	~CClass() {
-		vf = DAT_800a3484;
-	}
-};
-
-class CQuat : public CClass {
-  public:
-	int x, y, z, w;
-	CQuat(const CQuat &);
-	void Normalise() {
-		int mag = SquareRoot0(x * x + y * y + z * z + w * w);
-
-		if (!mag)
-			mag = 1;
-
-		x = (x << 12) / mag;
-		y = (y << 12) / mag;
-		z = (z << 12) / mag;
-		w = (w << 12) / mag;
-	}
-	~CQuat() {}
-};
-
-struct SSinCos {
-	short sin, cos;
-};
+#include "game/vector.h"
+#include "game/trig.h"
 
 extern SSinCos rcossin_tbl[1];
 

@@ -7,94 +7,12 @@
    first); the SaveFile/LoadFile name copy is an if/else of two calls; `if (!WriteError)` first; the
    video-header copy in case 1 reads NumFrames/Highlights through VH; "demoX.rec" is a 10-byte
    word-aligned block copy (strcpy of a literal), done as memcpy from the aligned extern. */
-typedef unsigned long ulong;
-enum EFileType { FILETYPE_A, FILETYPE_B, FILETYPE_C, FILETYPE_D };
-
-struct SButton {
-	unsigned char Pressed;
-	unsigned char Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	char pad[0x16c - 0xc0];
-};
-
-struct SCardHead {
-	char Magic[2];
-	char Type;
-	char BlockEntry;
-	unsigned char Title[64];
-	char reserve[28];
-	char Clut[32];
-	char Icon[3][128];
-};
-
-struct SHighlight {
-	int a, b;
-};
-
-struct SVideoHead {
-	ulong NumFrames;
-	SHighlight Highlights[5];
-	short NumSkaters;
-	short Skater;
-	short Skater2;
-	short Level;
-	short GGame;
-	short Checksum;
-	char VideoFlags;
-	char Padding[7];
-};
-
-struct SVideoInfo {
-	int VideoMode;
-	ulong *pBlockStart;
-	ulong *pStreamStart;
-	ulong *pStreamEnd;
-	ulong *pStream;
-	ulong Bits;
-	int BitsLeft;
-	ulong NumFrames;
-	char pad20[0x50 - 0x20];
-	SHighlight Highlights[5];
-	char pad78[0xc0 - 0x78];
-};
-
-struct SVideoSettings {
-	int NumSkaters, Skater, Skater2, Level, GGame;
-};
-
-struct SFrontStrings {
-	char pad0[0x1b4];
-	char *f1b4;
-	char *f1b8;
-};
-
-struct SReplay {
-	int d[2512 / 4];
-};
-
-class CMenu {
-  public:
-	void Update();
-	int ChoiceIs(const char *);
-	int FindEntry(const char *);
-	void SetLine(unsigned char);
-	void CentreY();
-};
-
-class VerticalMenu {
-  public:
-	int getSelected();
-	void up();
-	void down();
-};
+#include "game/card.h"
+#include "game/career.h"
+#include "game/video.h"
+#include "game/pad.h"
+#include "game/front.h"
+#include "game/shellutils.h"
 
 extern "C" {
 	extern int TTime;
@@ -105,8 +23,8 @@ extern "C" {
 	extern int VblankUpdateBar;
 	extern SControl Pad[2];
 	extern SVideoInfo GVInfo1;
-	extern SVideoSettings GVideoRestart;
-	extern SReplay GCareer;
+	extern SVideoRestart GVideoRestart;
+	extern SCareer GCareer;
 	extern unsigned char SaveGameName[];
 	extern char s_800a42dc[];
 	extern char s_800a42e8[];
@@ -116,7 +34,7 @@ extern "C" {
 	extern int VertMenuItemIndex[];
 	extern int FileType[];
 	extern char SLOT_DIR[][40];
-	extern SFrontStrings GameText;
+	extern LocalText GameText;
 
 	extern char s_demoX_rec[] __attribute__((aligned(4)));
 
@@ -227,7 +145,7 @@ int Front_MemCardUpdate() {
 					break;
 				case -2:
 					MCState = 10;
-					pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText.f1b8));
+					pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText.pNo));
 					break;
 			}
 
@@ -332,7 +250,7 @@ int Front_MemCardUpdate() {
 
 					if (FUN_800144a8(FileType) && !(GSaveAction == 1 && GHasCareerLoaded)) {
 						MCState = 3;
-						pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText.f1b8));
+						pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText.pNo));
 						pYesNoMenu->CentreY();
 					} else {
 						MCState = 4;
@@ -352,7 +270,7 @@ int Front_MemCardUpdate() {
 			pYesNoMenu->Update();
 
 			if (Activated) {
-				if (pYesNoMenu->ChoiceIs(GameText.f1b4)) {
+				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
 					SFX_PlayX__FUisi(5, 0x2000, 0);
 
 					MCState = 4;
@@ -413,7 +331,7 @@ int Front_MemCardUpdate() {
 			}
 
 			if (Activated) {
-				if (pYesNoMenu->ChoiceIs(GameText.f1b4)) {
+				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
 					SFX_PlayX__FUisi(5, 0x2000, 0);
 
 					MCState = 11;
@@ -614,8 +532,8 @@ int Front_MemCardUpdate() {
 												break;
 											}
 
-											if (CardHead.Title[Offset + j * 2] == 0x82)
-												*p++ = CardHead.Title[Offset + j * 2 + 1] - 31;
+											if ((uchar)CardHead.Title[Offset + j * 2] == 0x82)
+												*p++ = (uchar)CardHead.Title[Offset + j * 2 + 1] - 31;
 											else
 												*p++ = ' ';
 										}
@@ -709,7 +627,7 @@ int Front_MemCardUpdate() {
 					int Error;
 
 					VblankUpdateBar = 1;
-					Error = Card_Load(FILETYPE_B, GVInfo1.pBlockStart, 0);
+					Error = Card_Load(THPS_VIDEO_FILE, GVInfo1.pBlockStart, 0);
 					VblankUpdateBar = 0;
 
 					if (Error) {
@@ -727,7 +645,7 @@ int Front_MemCardUpdate() {
 					}
 				} break;
 				case 1:
-					if (Card_Load(FILETYPE_C, GVInfo1.pBlockStart, 0)) {
+					if (Card_Load(THPS_VIDEO_HEADER, GVInfo1.pBlockStart, 0)) {
 						MCState = 22;
 					} else {
 						{
@@ -756,10 +674,10 @@ int Front_MemCardUpdate() {
 				case 2: {
 					ulong *pTmp = (ulong *)Mem_NewX__FUiii(3200, 1, 1);
 
-					if (Card_Load(FILETYPE_A, pTmp, 0)) {
+					if (Card_Load(THPS_SAVE_FILE, pTmp, 0)) {
 						MCState = 22;
 					} else {
-						GCareer = *(SReplay *)(pTmp + 160);
+						GCareer = *(SCareer *)(pTmp + 160);
 						GHasCareerLoaded = 1;
 						GLoadedCareerIsSaved = 0;
 						Front_ExtractASCIINameFromSJIS((char *)pTmp + 32, StoredCareerName);

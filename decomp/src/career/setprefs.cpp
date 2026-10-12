@@ -2,25 +2,7 @@
 /* C++ (CAREER.CPP). Demo twin; locals from its MAIN.SYM. Copies the default preferences into the
    career save's options (volumes, per-pad auto-kick/vibration/button mapping, display toggles,
    the HORSE word and the last high-score initials), sets the volume scalers, then remaps pads. */
-struct SOptions {
-	int SFXVolume;
-	int MusicVolume;
-	int OtherOptions[66];
-	int AutoKickEnabled[2];        /* 0x110 */
-	int VibrationEnabled[2];       /* 0x118 */
-	int ControllerFunction[2][4];  /* 0x120 */
-	char LastHighScoreInitials[4]; /* 0x140 */
-	char pad144[0x184 - 0x144];
-	int TrickTipsEnabled;    /* 0x184 */
-	int ScoreDisplayEnabled; /* 0x188 */
-	int HorseLen;            /* 0x18c */
-	char HorseWord[16];      /* 0x190 */
-};
-
-struct SCareer {
-	char pad0[0x830];
-	SOptions Options; /* 0x830 */
-};
+#include "game/career.h"
 
 extern SOptions GPreferences;
 extern SCareer GCareer;

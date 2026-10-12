@@ -9,138 +9,18 @@
    bars' inner loop and of the teardown loops, which lowers its global-alloc priority so the
    counters land in s1 under the pointers/offsets; the best-board scan is a top-tested
    `while (best < 7) { if (tapes < Req) break; best++; }`. */
-#pragma interface
+extern "C" {
+#include <sys/types.h>
+#include <libgte.h>
+#include <libgpu.h>
+}
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	int rest[11];
-};
-
-struct SBoard {
-	char *Name;
-	uchar Req;
-	int Stats[4];
-	int pad[2];
-};
-
-struct SStats {
-	char pad0[0x13];
-	uchar b13;       /* 0x13 */
-	signed char b14; /* 0x14 */
-	char pad15[0x18 - 0x15];
-	int Stats[4]; /* 0x18 */
-	char pad28[0x2c - 0x28];
-	char *Name;    /* 0x2c */
-	char *Info[6]; /* 0x30 */
-	char pad48[0x58 - 0x48];
-	SBoard Boards[7]; /* 0x58 */
-	char pad138[340 - 0x138];
-};
-
-struct SSkaterCareer {
-	uchar pad0[4];
-	uchar NumTapes;
-	uchar pad5[9];
-};
-
-struct SCareer {
-	int Version;
-	SSkaterCareer Skater[148];
-	char pad[0x824 - 4 - 148 * 14];
-	char LastSkater[2]; /* 0x824 */
-	char LastDeck[2];   /* 0x826 */
-	char LastWheel[2];  /* 0x828 */
-	char LastTrucks[2]; /* 0x82a */
-	char b82c;          /* 0x82c */
-};
-
-struct MATRIX {
-	short m[3][3];
-	int t[3];
-};
-
-struct SVECTOR {
-	short vx, vy, vz, pad;
-};
-
-struct SViewport {
-	short w;
-	short h;
-};
-
-struct SStatBar {
-	int x;
-	int y;
-	int value;
-	int pad0c;
-	int pad10;
-	int type;
-};
-
-class CItem {
-  public:
-	virtual ~CItem();
-	void *operator new(uint) throw();
-};
-
-class SlicedImage;
-
-class Sprite : public CItem {
-  public:
-	int m_w;
-	int m_h;
-	int m_packed;
-	int m_bpp;
-	SlicedImage *m_image;
-	Sprite(char *, int, int, int);
-	Sprite(int, int, int, int, int, int, int);
-	~Sprite();
-	void draw(int, int, int, int, int, int);
-	void removeFromMemory();
-};
-
-class PadBuffer : public CItem {
-  public:
-	int pad[(0x11c - 4) / 4];
-	PadBuffer(int);
-	~PadBuffer();
-	void update();
-	int getPress();
-	void reset();
-};
-
-class CSuper {
-  public:
-	ushort mFlags; /* 0x000 */
-	short pad2;
-	int mX; /* 0x004 */
-	char pad8[0x48 - 0x8];
-	virtual ~CSuper();
-};
-
-class CBruce : public CSuper {
-  public:
-	char pad4c[0x15a - 0x4c];
-	uchar m15a; /* 0x15a */
-	char pad15b[0x78c - 0x15b];
-	MATRIX mRotMatrix; /* 0x78c */
-};
+#include "game/shellutils.h"
+#include "game/career.h"
+#include "game/pad.h"
+#include "game/front.h"
+#include "game/bruce.h"
+#include "game/m3d.h"
 
 extern SControl Pad[];
 extern SCareer GCareer;
@@ -171,7 +51,6 @@ int DAT_800d1c24 = 0;
 
 typedef char SLabel7[7] __attribute__((aligned(4)));
 
-void Pad_ClearTriggers(SControl *);
 void Pack_DefragmentFully();
 void Mess_SetRGB(uchar, uchar, uchar, int);
 void Mess_SetFontScale(uint);
@@ -186,8 +65,6 @@ extern "C" {
 	void FUN_8005c97c(int);
 	void FUN_8005ca64(void);
 	void *FUN_8005ca3c(char *);
-	void *Mem_NewX__FUiii(int, int, int);
-	void Mem_Delete__FPv(void *);
 	void FUN_80061714(void *);
 	void FUN_80059520(int);
 	int FUN_8008b900(char *, const char *, ...);
@@ -268,11 +145,11 @@ extern "C" int FUN_80056754(void) {
 	FUN_8005c97c(2);
 	FUN_8005ca64();
 
-	buf = Mem_NewX__FUiii(0x26160, 1, 1);
+	buf = Mem_NewX(0x26160, 1, 1);
 	bmp = FUN_8005ca3c("select2p.bmp");
 
 	Mem_Copy(buf, bmp, 0x26160);
-	Mem_Delete__FPv(bmp);
+	Mem_Delete(bmp);
 	Mess_LoadFont("stats2.fnt", -1, -1, -1);
 	Mess_LoadFont("mainf.fnt", -1, -1, -1);
 	Mess_SetFontScale(200);
@@ -283,7 +160,7 @@ extern "C" int FUN_80056754(void) {
 	numSkaters = 10;
 
 	for (i = 0; i < 11; i++) {
-		if (GCareer.Skater[i].NumTapes >= 30) {
+		if (GCareer.CharacterProgress[i].NumTapes >= 30) {
 			DAT_800d1c20 = 1;
 			numSkaters = 11;
 		}
@@ -412,8 +289,8 @@ extern "C" int FUN_80056754(void) {
 	rot[0].vx = rot[0].vy = rot[0].vz = 0;
 	rot[1].vx = rot[1].vy = rot[1].vz = 0;
 	vp = FUN_8006b1c8();
-	vp->w = 640;
-	vp->h = 480;
+	vp->xR = 640;
+	vp->yB = 480;
 	bruce[0] = 0;
 	bruce[1] = 0;
 
@@ -537,8 +414,8 @@ extern "C" int FUN_80056754(void) {
 							FUN_8006ed2c(DAT_800d3758[DAT_800d2304[p]]);
 
 							if (Cheat_BigHead) {
-								GHeadUp = Stats[DAT_800d2304[p]].b14;
-								GHeadPart = Stats[DAT_800d2304[p]].b13;
+								GHeadUp = Stats[DAT_800d2304[p]].Neck;
+								GHeadPart = Stats[DAT_800d2304[p]].Head;
 							}
 
 							ProcessNewPSX__Fi(DAT_800d3758[DAT_800d2304[p]]);
@@ -547,7 +424,7 @@ extern "C" int FUN_80056754(void) {
 						}
 
 						bruce[p] = FUN_8005622c(p);
-						bruce[p]->mX = homeX[p];
+						bruce[p]->mPos.vx = homeX[p];
 					}
 
 					break;
@@ -568,21 +445,21 @@ extern "C" int FUN_80056754(void) {
 						else if (rot[p].vy > 0)
 							rot[p].vy -= 80;
 
-						if (bruce[p]->mX > homeX[p] - (DAT_800d1c1c << 13) &&
-						    bruce[p]->mX < homeX[p] + (DAT_800d1c1c << 13))
-							bruce[p]->mX = homeX[p];
-						else if (bruce[p]->mX < homeX[p])
-							bruce[p]->mX += DAT_800d1c1c << 13;
-						else if (bruce[p]->mX > homeX[p])
-							bruce[p]->mX -= DAT_800d1c1c << 13;
+						if (bruce[p]->mPos.vx > homeX[p] - (DAT_800d1c1c << 13) &&
+						    bruce[p]->mPos.vx < homeX[p] + (DAT_800d1c1c << 13))
+							bruce[p]->mPos.vx = homeX[p];
+						else if (bruce[p]->mPos.vx < homeX[p])
+							bruce[p]->mPos.vx += DAT_800d1c1c << 13;
+						else if (bruce[p]->mPos.vx > homeX[p])
+							bruce[p]->mPos.vx -= DAT_800d1c1c << 13;
 					}
 
 					break;
 				case 2:
 					if (DAT_800d231c[p]) {
-						bruce[p]->mX -= speed[p] << 12;
+						bruce[p]->mPos.vx -= speed[p] << 12;
 
-						if (bruce[p]->mX < minX[p])
+						if (bruce[p]->mPos.vx < minX[p])
 							state[p] = 5;
 					} else {
 						loadX[p] -= 12;
@@ -594,9 +471,9 @@ extern "C" int FUN_80056754(void) {
 					break;
 				case 3:
 					if (DAT_800d231c[p]) {
-						bruce[p]->mX += speed[p] << 12;
+						bruce[p]->mPos.vx += speed[p] << 12;
 
-						if (bruce[p]->mX >= maxX[p])
+						if (bruce[p]->mPos.vx >= maxX[p])
 							state[p] = 4;
 					} else {
 						loadX[p] += 12;
@@ -632,7 +509,7 @@ extern "C" int FUN_80056754(void) {
 							FUN_8008c190("\nOH FUCK!!!");
 
 						bruce[p] = FUN_8005622c(p);
-						bruce[p]->mX = maxX[p];
+						bruce[p]->mPos.vx = maxX[p];
 					}
 
 					loadX[p] = frameX[p] + 129;
@@ -668,7 +545,7 @@ extern "C" int FUN_80056754(void) {
 							FUN_8008c190("\nOH FUCK!!!");
 
 						bruce[p] = FUN_8005622c(p);
-						bruce[p]->mX = minX[p];
+						bruce[p]->mPos.vx = minX[p];
 					}
 
 					loadX[p] = frameX[p];
@@ -680,11 +557,11 @@ extern "C" int FUN_80056754(void) {
 					break;
 				case 8:
 					if (DAT_800d231c[p]) {
-						bruce[p]->mX += speed[p] << 12;
+						bruce[p]->mPos.vx += speed[p] << 12;
 
-						if (bruce[p]->mX >= homeX[p]) {
+						if (bruce[p]->mPos.vx >= homeX[p]) {
 							done = 1;
-							bruce[p]->mX = homeX[p];
+							bruce[p]->mPos.vx = homeX[p];
 						}
 					} else {
 						loadX[p] += 12;
@@ -717,10 +594,10 @@ extern "C" int FUN_80056754(void) {
 					break;
 				case 9:
 					if (DAT_800d231c[p]) {
-						bruce[p]->mX -= speed[p] << 12;
+						bruce[p]->mPos.vx -= speed[p] << 12;
 
-						if (bruce[p]->mX <= homeX[p]) {
-							bruce[p]->mX = homeX[p];
+						if (bruce[p]->mPos.vx <= homeX[p]) {
+							bruce[p]->mPos.vx = homeX[p];
 							done = 1;
 						}
 					} else {
@@ -766,12 +643,12 @@ extern "C" int FUN_80056754(void) {
 				if (shown[p])
 					frame[p]->draw(frameX[p], 92, 0, -1, -1, -1);
 
-				if (bruce[p]->mX >= minX[p] && maxX[p] >= bruce[p]->mX && shown[p]) {
+				if (bruce[p]->mPos.vx >= minX[p] && maxX[p] >= bruce[p]->mPos.vx && shown[p]) {
 					bruce[p ^ 1]->mFlags ^= 0x41;
 					M3d_BuildTransform(bruce[p]);
 
-					bruce[0]->m15a = 0;
-					bruce[1]->m15a = 0;
+					bruce[0]->mShadowLights = 0;
+					bruce[1]->mShadowLights = 0;
 					M3d_RenderSetup__FP7SCameraP9SViewportPUi(MikeCamera, vp, pDoubleBuffer + ((p << 14) + 140));
 					M3d_Render__FPv(MechList);
 					FUN_80083774();
@@ -808,39 +685,39 @@ extern "C" int FUN_80056754(void) {
 				int ty = 330;
 
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[0]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[0]) >> 1),
-				             Stats[DAT_800d2304[p]].Info[0], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[0]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[0]) >> 1),
+				             Stats[DAT_800d2304[p]].pBio[0], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[1]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[1]) >> 1),
-				             Stats[DAT_800d2304[p]].Info[1], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[1]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[1]) >> 1),
+				             Stats[DAT_800d2304[p]].pBio[1], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[2]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[2]) >> 1),
-				             Stats[DAT_800d2304[p]].Info[2], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[2]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[2]) >> 1),
+				             Stats[DAT_800d2304[p]].pBio[2], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[3]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[3]) >> 1),
-				             Stats[DAT_800d2304[p]].Info[3], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[3]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[3]) >> 1),
+				             Stats[DAT_800d2304[p]].pBio[3], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[4]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[4]) >> 1),
-				             Stats[DAT_800d2304[p]].Info[4], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[4]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[4]) >> 1),
+				             Stats[DAT_800d2304[p]].pBio[4], 0, 0, 256, 0);
 
 				ty += 15;
 				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Info[5]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].Info[5]) >> 1),
-				             Stats[DAT_800d2304[p]].Info[5], 0, 0, 256, 0);
+				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[5]) + ty -
+				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[5]) >> 1),
+				             Stats[DAT_800d2304[p]].pBio[5], 0, 0, 256, 0);
 			}
 
 			if (panelState[p] == -1 && panelState[1 - p] <= 0 && infoTimer[1 - p] <= 0 &&
@@ -857,7 +734,7 @@ extern "C" int FUN_80056754(void) {
 				best[p] = 0;
 
 				while (best[p] < 7) {
-					if (GCareer.Skater[DAT_800d2304[p]].NumTapes <
+					if (GCareer.CharacterProgress[DAT_800d2304[p]].NumTapes <
 					    Stats[DAT_800d2304[p]].Boards[best[p] + 1].Req)
 						break;
 
@@ -1017,7 +894,7 @@ extern "C" int FUN_80056754(void) {
 					GCareer.LastDeck[k] = 0;
 					GCareer.LastWheel[k] = 0;
 					GCareer.LastTrucks[k] = 1;
-					GCareer.b82c = 0;
+					GCareer.LastLevel = 0;
 				}
 
 				GCareer.LastSkater[k] = DAT_800d2304[k];

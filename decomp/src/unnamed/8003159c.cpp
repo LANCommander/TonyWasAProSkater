@@ -6,34 +6,9 @@
    has frames; retail's `j L66` is the cross-jumped `m368 |= 0x800` tail).
    Score is declared at function scope and assigned in both arms: a pseudo set twice loses
    sched1's set-once priority boost, so its load stays above the m424 increment as retail has it.) */
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-
-struct STrick {
-	int Flags;    /* 0x00 */
-	int Anim;     /* 0x04 */
-	int w2;       /* 0x08 */
-	char *pName;  /* 0x0c */
-	int Frames;   /* 0x10 */
-	int w5;       /* 0x14 */
-	int MinFrame; /* 0x18 */
-	int Score;    /* 0x1c */
-	int w8, w9, w10;
-};
+#include "game/bruce.h"
 
 extern STrick Group[];
-
-class CBruce {
-  public:
-	char pad0[0x146];
-	ushort mAnim; /* 0x146 */
-	char pad148[0x364 - 0x148];
-	int m364; /* 0x364 */
-	int m368; /* 0x368 */
-	char pad36c[0x424 - 0x36c];
-	int m424; /* 0x424 */
-	void Trick_Trick(int, char *, int, int);
-};
 
 int SFX_PlayX(unsigned int, short, int);
 

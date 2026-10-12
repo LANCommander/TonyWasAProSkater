@@ -3,29 +3,8 @@
    DUN label from its MAIN.SYM. Re-initialises the packs keeping the save game across
    Init_ForGame, loads the game, then (unless a restart was requested) primes the pads and plays
    levels, looping back to DUN while the game mode says to carry on. */
-typedef unsigned char uchar;
-
-struct SPreferences {
-	int p[6];
-};
-
-struct SSaveGame {
-	int a[28];
-	SPreferences Prefs; /* 0x70 */
-};
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	char pad40[364 - 64];
-};
+#include "game/card.h"
+#include "game/pad.h"
 
 enum EPackInitType { PACK_0, PACK_1 };
 
@@ -81,7 +60,7 @@ int LaunchGame() {
 		StartupGameState = tmp;
 	}
 
-	FUN_800171e8(&StartupGameState.Prefs);
+	FUN_800171e8(&StartupGameState.Preferences);
 
 	if (!Result) {
 		FUN_8005cba0();

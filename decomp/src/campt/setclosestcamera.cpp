@@ -1,76 +1,8 @@
 /* CamPt_SetClosestCamera__FP6CBruce (0x8004e268) */
-typedef unsigned long ulong;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-class CBody;
-
-class CCamera {
-  public:
-	char pad0[4];
-	CVector mPos;
-	char pad10[0x420 - 0x10];
-	CBody *mpTripod; /* 0x420 */
-	char pad424[4];
-	int mTripodMode; /* 0x428 */
-	char pad42c[0x438 - 0x42c];
-	int mDirty;         /* 0x438 */
-	CVector mTripodPos; /* 0x43c */
-	char pad448[0x458 - 0x448];
-	CBody *mpFocus; /* 0x458 */
-	int mFocusMode; /* 0x45c */
-	char pad460[0x584 - 0x460];
-	int mMode; /* 0x584 */
-	char pad588[0x5f0 - 0x588];
-	int m5f0; /* 0x5f0 */
-	void SetMode(int m) {
-		mMode = m;
-	}
-	void SetFocus(CBody *focus) {
-		mFocusMode = 1;
-		mpFocus = focus;
-		mDirty = 1;
-	}
-	void SetTripod(CBody *tripod) {
-		mTripodMode = 1;
-		mpTripod = tripod;
-	}
-	void SetTripodPos(const CVector &p) {
-		mTripodMode = 0;
-		mTripodPos = p;
-		mpTripod = 0;
-		mDirty = 1;
-	}
-};
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos;
-	char pad10[0x1d8 - 0x10];
-	CCamera *mpCamera; /* 0x1d8 */
-	char pad1dc[0x7f0 - 0x1dc];
-	CVector mUp; /* 0x7f0 */
-};
-
-struct SVideoInfo {
-	int VideoMode;
-	ulong *pBlockStart, *pStreamStart, *pStreamEnd, *pStream;
-	ulong Bits;
-	int BitsLeft;
-	ulong NumFrames;
-	ulong FramesLeft;
-	int CurCameraIndex;
-	CVector CamPos;
-	int CamMode, CamXblanks, TabuCam, NoLOS, OldCameraIndex, TrailingCameraType;
-};
-
-struct SFog {
-	char pad0[12];
-	short m12;
-};
+#include "game/camera.h"
+#include "game/bruce.h"
+#include "game/video.h"
+#include "game/m3d.h"
 
 extern SVideoInfo GVInfo1;
 extern SVideoInfo GVInfo2;
@@ -81,7 +13,7 @@ extern unsigned int CamModes[];
 
 int CamPtIndex;
 
-extern SFog *pCurrentViewport;
+extern SViewport *pCurrentViewport;
 extern int camDist;
 extern int camPitch;
 extern int camYOffset;
@@ -206,14 +138,14 @@ void CamPt_SetClosestCamera(CBruce *pSkater) {
 			VInfo->CamPos = ClosestPos;
 
 			if (CamModes[Index] & 0x800) {
-				pSkater->mpCamera->SetMode(1);
-				pSkater->mpCamera->SetFocus((CBody *)pSkater);
-				pSkater->mpCamera->SetTripod((CBody *)pSkater);
+				pSkater->mpCamera->SetMode(CAMERAMODE_NORMAL);
+				pSkater->mpCamera->SetFocus(pSkater);
+				pSkater->mpCamera->SetTripod(pSkater);
 
 				VInfo->TrailingCameraType = Param;
 			} else if (CamModes[Index] & 0x400) {
-				pSkater->mpCamera->SetMode(2);
-				pSkater->mpCamera->SetFocus((CBody *)pSkater);
+				pSkater->mpCamera->SetMode(CAMERAMODE_NO_BIG_AIR);
+				pSkater->mpCamera->SetFocus(pSkater);
 				pSkater->mpCamera->SetTripodPos(ClosestPos);
 			}
 		}
@@ -227,28 +159,28 @@ void CamPt_SetClosestCamera(CBruce *pSkater) {
 		pFlags = base + Index;
 
 		if (*pFlags & 0x800) {
-			pSkater->mpCamera->m5f0 = 0;
+			pSkater->mpCamera->extra_YRot = 0;
 
 			switch (VInfo->TrailingCameraType) {
 				case 0:
 					camDist = 245;
 					camPitch = 215;
-					pCurrentViewport->m12 = 2410;
-					pSkater->mpCamera->m5f0 = 0;
+					pCurrentViewport->TanHalf = 2410;
+					pSkater->mpCamera->extra_YRot = 0;
 					camYOffset = -70;
 					break;
 				case 1:
 					camDist = 175;
 					camPitch = 50;
-					pCurrentViewport->m12 = 2930;
-					pSkater->mpCamera->m5f0 = 0;
+					pCurrentViewport->TanHalf = 2930;
+					pSkater->mpCamera->extra_YRot = 0;
 					camYOffset = -17;
 					break;
 				case 2:
 					camDist = 290;
 					camPitch = 150;
-					pCurrentViewport->m12 = 3410;
-					pSkater->mpCamera->m5f0 = 0;
+					pCurrentViewport->TanHalf = 3410;
+					pSkater->mpCamera->extra_YRot = 0;
 					camYOffset = -108;
 					break;
 				case 3:
@@ -257,27 +189,27 @@ void CamPt_SetClosestCamera(CBruce *pSkater) {
 					camDist = 245;
 					camPitch = 215;
 					camYOffset = -70;
-					pCurrentViewport->m12 = 2410;
-					pSkater->mpCamera->m5f0 = 2048;
+					pCurrentViewport->TanHalf = 2410;
+					pSkater->mpCamera->extra_YRot = 2048;
 					break;
 				case 5:
 					camDist = 195;
 					camPitch = 50;
 					camYOffset = -17;
-					pCurrentViewport->m12 = 2930;
-					pSkater->mpCamera->m5f0 = 2048;
+					pCurrentViewport->TanHalf = 2930;
+					pSkater->mpCamera->extra_YRot = 2048;
 					break;
 				case 6:
 					camDist = 290;
 					camPitch = 150;
 					camYOffset = -108;
-					pCurrentViewport->m12 = 3410;
-					pSkater->mpCamera->m5f0 = 2048;
+					pCurrentViewport->TanHalf = 3410;
+					pSkater->mpCamera->extra_YRot = 2048;
 					break;
 			}
 		} else if (*pFlags & 0x400) {
 			if (*pFlags & 0x200) {
-				pCurrentViewport->m12 = (256 - (*pFlags & 255)) * 10 + 300;
+				pCurrentViewport->TanHalf = (256 - (*pFlags & 255)) * 10 + 300;
 			} else if (*pFlags & 0x100) {
 				int Dist;
 				int FogDist;
@@ -294,7 +226,7 @@ void CamPt_SetClosestCamera(CBruce *pSkater) {
 
 				DpqMin = FogDist + LastDpqMin;
 				DpqMax = DpqMin + (LastDpqMax - LastDpqMin);
-				pCurrentViewport->m12 = (int)(*pFlags & 255) * 34130 / Dist;
+				pCurrentViewport->TanHalf = (int)(*pFlags & 255) * 34130 / Dist;
 			}
 		}
 	}

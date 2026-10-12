@@ -8,16 +8,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct STexture {
-	char pad0[0x1c];
-	ushort x;
-	ushort y;
-};
+#include "game/m3d.h"
 
 int GameFMV_Active;
 short GameFMV_StartX;
@@ -29,11 +20,11 @@ uchar GameFMV_Is24Bit;
 
 extern int GGame;
 
-STexture *Spool_FindTextureEntry(uint Checksum);
-void FUN_800237b4(short tpage, STexture *pTex);
+Texture *Spool_FindTextureEntry(uint Checksum);
+void FUN_800237b4(short tpage, Texture *pTex);
 
 void FUN_800229ec(uint Checksum) {
-	STexture *pTex;
+	Texture *pTex;
 	RECT r;
 
 	GameFMV_StartX = -1;

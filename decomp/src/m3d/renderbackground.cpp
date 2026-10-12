@@ -9,44 +9,8 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-struct SModel;
-
-struct SVector {
-	short vx, vy, vz;
-};
-
-struct Item {
-	ushort Flags;
-	ushort Inquiry;
-	int Position[3]; /* 4 */
-	SVector Angles;  /* 0x10 */
-	ushort Model;    /* 0x16 */
-	uchar Frame;
-	uchar TintIndex;
-	uchar Anim;
-	uchar Region;   /* 0x1b */
-	Item *NextItem; /* 0x1c */
-	uint RGB;
-};
-
-struct SPSXRegion {
-	char pad0[10];
-	uchar Loaded; /* 10 */
-	char padb[16 - 11];
-	SModel **pModels; /* 16 */
-	char pad14[36 - 20];
-	int m24; /* 36 */
-	char pad28[64 - 40];
-};
-
-struct SCamera {
-	char pad0[116];
-	MATRIX Matrix; /* 116 */
-};
+#include "game/m3d.h"
+#include "game/camera.h"
 
 extern SPSXRegion PSXRegion[];
 
@@ -82,9 +46,9 @@ void M3d_RenderBackground(void *p) {
 	GlobalFaceFlags = 0xffff0000;
 
 	do {
-		if (!(pItem->Flags & 0x8001) && PSXRegion[pItem->Region].Loaded) {
+		if (!(pItem->Flags & 0x8001) && PSXRegion[pItem->Region].Usable) {
 			*(uint *)0x1f8003f4 = GlobalFaceFlags;
-			gte_SetRotMatrix(&pCurrentCamera->Matrix);
+			gte_SetRotMatrix(&pCurrentCamera->View);
 
 			if (*(int *)&pItem->Angles || pItem->Angles.vz) {
 				FUN_8008b3d4(&pItem->Angles, &WorldTransform);
@@ -94,8 +58,8 @@ void M3d_RenderBackground(void *p) {
 				FUN_8008b238(&WorldTransform);
 			}
 
-			pColourTable = PSXRegion[pItem->Region].m24;
-			pModel = PSXRegion[pItem->Region].pModels[pItem->Model];
+			pColourTable = (int)PSXRegion[pItem->Region].pColourTable;
+			pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
 
 			if (!*(int *)&pItem->Angles && !pItem->Angles.vz)
 				RenderBackgroundModelNonRotated(pModel);

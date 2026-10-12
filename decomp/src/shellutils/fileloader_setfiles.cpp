@@ -9,29 +9,7 @@ extern "C" {
 	char *strcpy(char *, const char *);
 }
 
-struct SLoadEntry {
-	void *pData;   /* 0 */
-	char Name[16]; /* 4 */
-	int Handle;    /* 0x14 */
-	int Type;      /* 0x18 */
-	int Size;      /* 0x1c */
-	int Loaded;    /* 0x20 */
-};
-
-class CItem {
-  public:
-	virtual ~CItem();
-};
-
-class FileLoader : public CItem {
-  public:
-	int mMode;             /* 4 */
-	int mNum;              /* 8 */
-	int mCur;              /* 0xc */
-	SLoadEntry mEntry[32]; /* 0x10 */
-	void unload(int);
-	void setFiles(char **names, int num);
-};
+#include "game/shellutils.h"
 
 void Spool_Sync();
 void FUN_8004cdd0();

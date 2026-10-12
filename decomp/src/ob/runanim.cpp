@@ -2,43 +2,24 @@
 /* C++ (OB.CPP). Demo twin (same shape); locals from its MAIN.SYM. Starts an animation: clamps the
    anim index to the model's table, then the from/to frames (-1 = last), and sets the play direction.
    The direction byte is signed so its -1 shares the register of the "from == -1" test. */
-typedef struct {
-	char p[0x18];
-	unsigned int *anims;
-	char q[0x40 - 0x1c];
-} R;
+#include "game/ob.h"
+#include "game/m3d.h"
 
-extern R PSXRegion[] __attribute__((section(".data")));
-
-class CSuper {
-  public:
-	char p0[0x1b];
-	unsigned char type;
-	char p1[0x144 - 0x1c];
-	short a144;
-	unsigned short anim;
-	unsigned char f148;
-	signed char f149;
-	unsigned char f14a, f14b;
-	unsigned short f14c;
-	unsigned char nframes;
-	unsigned char f14f;
-	void RunAnim(int anim, int from, int to, int to2);
-};
+extern SPSXRegion PSXRegion[] __attribute__((section(".data")));
 
 void CSuper::RunAnim(int a, int from, int to, int to2) {
-	anim = a;
+	mAnim = a;
 
-	if (anim >= *PSXRegion[type].anims)
-		anim = 46;
+	if (mAnim >= *PSXRegion[mRegion].pAnimFile)
+		mAnim = 46;
 
-	nframes = ((unsigned char *)PSXRegion[type].anims)[anim * 8 + 8];
+	mNumFrames = ((unsigned char *)PSXRegion[mRegion].pAnimFile)[mAnim * 8 + 8];
 
 	if (from == -1)
-		from = nframes - 1;
+		from = mNumFrames - 1;
 
 	if (to == -1)
-		to = nframes - 1;
+		to = mNumFrames - 1;
 
 	if (from < 0)
 		from = 0;
@@ -46,25 +27,25 @@ void CSuper::RunAnim(int a, int from, int to, int to2) {
 	if (to < 0)
 		to = 0;
 
-	if (from >= nframes)
-		from = nframes - 1;
+	if (from >= mNumFrames)
+		from = mNumFrames - 1;
 
-	if (to >= nframes)
-		to = nframes - 1;
+	if (to >= mNumFrames)
+		to = mNumFrames - 1;
 
-	f148 = 0;
+	mAnimMode = 0;
 
 	if (from >= to) {
 		if (to < from)
-			f149 = -1;
+			mAnimDir = -1;
 		else
-			f149 = 0;
+			mAnimDir = 0;
 	} else
-		f149 = 1;
+		mAnimDir = 1;
 
-	a144 = from;
-	f14a = to;
-	f14b = to2;
-	f14c = 0;
-	f14f = (short)from == (signed char)to;
+	mFrame = from;
+	mTargetFrame = to;
+	mTargetFrame2 = to2;
+	mFrameFrac = 0;
+	mAnimFinished = (short)from == (signed char)to;
 }

@@ -1,21 +1,5 @@
 /* Flash__5CItemiUcUcUc (0x800435e8) */
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CItem {
-	ushort mFlags;
-	char pad0[0x1e];
-	uint mRGB;
-	char pad1[0x10];
-	uint mStoredRGB;
-	char pad2[0x08];
-	ushort mFlashTimer;
-	short mFlash_dR;
-	short mFlash_dG;
-	short mFlash_dB;
-	void Flash(int frames, uchar r, uchar g, uchar b);
-};
+#include "game/ob.h"
 
 void CItem::Flash(int frames, uchar r, uchar g, uchar b) {
 	if (frames == 0) {

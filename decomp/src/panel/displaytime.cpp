@@ -4,19 +4,8 @@
    ticks the urgent beep (faster as time runs out) for the first player. The two SVideoInfo blocks
    are one extern array: an unsized extern gives the split lui/addiu that keeps the if/else (a
    single `la` lets jump.c turn it into `VInfo = B; if (...) VInfo = A`). */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CBruce {
-	char pad0[0x330];
-	int mTime; /* 0x330 */
-};
-
-struct SVideoInfo {
-	int Mode;
-	char pad4[0xc0 - 4];
-};
+#include "game/bruce.h"
+#include "game/video.h"
 
 extern int GGame;
 extern CBruce *MechList;
@@ -63,7 +52,7 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 		else
 			VInfo = &GVInfo1[1];
 
-		if (VInfo->Mode != 2) {
+		if (VInfo->VideoMode != 2) {
 			ticks = pBruce->mTime - XFrames;
 			mins = ticks / 3600;
 			secs = (ticks - mins * 3600) / 60;

@@ -4,38 +4,8 @@
    stance name and the first trick, then each further trick appended to the current line,
    wrapping when the line gets wider than the viewport allows. FUN_8008b900 = sprintf,
    Mess_TextWidth__FPCc = text width, FUN_8006e534 = "SWITCH " or "" prefix. */
-struct Message;
-
-class CBruce {
-  public:
-	char pad0[0x32c];
-	int m32C; /* 0x32c spin (half turns) */
-	char pad330[0x734 - 0x330];
-	int m734; /* 0x734 */
-	char pad738[0x92c - 0x738];
-	unsigned short mPlayer; /* 0x92c */
-};
-
-class CTrick {
-  public:
-	char *name;       /* 0x00 */
-	int point_value;  /* 0x04 */
-	int depreciate;   /* 0x08 */
-	int countdown;    /* 0x0c */
-	Message *message; /* 0x10 */
-};
-
-class CPanelData {
-  public:
-	CBruce *mpBruce; /* 0x000 */
-	char pad4[0x1f8 - 0x4];
-	CTrick mTQ[20];        /* 0x1f8 */
-	int mTQStack;          /* 0x388 */
-	char mTrickLine1[100]; /* 0x38c */
-	char mTrickLine2[100]; /* 0x3f0 */
-	char mTrickLine3[100]; /* 0x454 */
-	void TrickMessageRefresh();
-};
+#include "game/panel.h"
+#include "game/bruce.h"
 
 extern int ViewportMode;
 extern char s_d_800d1ea8[4]; /* "%d " */
@@ -58,17 +28,17 @@ void CPanelData::TrickMessageRefresh() {
 	int lineWidth;
 	int currLine;
 
-	mTrickLine2[0] = 0;
-	mTrickLine3[0] = 0;
+	mTrickName2[0] = 0;
+	mTrickName3[0] = 0;
 
-	if (mpBruce->m32C > 0 && (mpBruce->m734 != 2 || mpBruce->m32C >= 2))
-		p = mTrickLine1 + FUN_8008b900(mTrickLine1, s_d_800d1ea8, mpBruce->m32C * 180);
+	if (mpBruce->mNum180Spins > 0 && (mpBruce->mPhysicsState != 2 || mpBruce->mNum180Spins >= 2))
+		p = mTrickName + FUN_8008b900(mTrickName, s_d_800d1ea8, mpBruce->mNum180Spins * 180);
 	else
-		p = mTrickLine1;
+		p = mTrickName;
 
 	currLine = 0;
 
-	switch (ViewportMode * 2 + mpBruce->mPlayer) {
+	switch (ViewportMode * 2 + mpBruce->mPanel.mPlayerNum) {
 		case 2:
 		case 3:
 		case 6:
@@ -81,7 +51,7 @@ void CPanelData::TrickMessageRefresh() {
 	}
 
 	if (!mTQStack) {
-		mTrickLine1[0] = 0;
+		mTrickName[0] = 0;
 		return;
 	}
 
@@ -95,9 +65,9 @@ void CPanelData::TrickMessageRefresh() {
 			currLine++;
 
 			if (currLine == 1)
-				p = mTrickLine2;
+				p = mTrickName2;
 			else if (currLine == 2)
-				p = mTrickLine3;
+				p = mTrickName3;
 
 			if (currLine == 3) {
 				FUN_8008b900(p, s_s, p);

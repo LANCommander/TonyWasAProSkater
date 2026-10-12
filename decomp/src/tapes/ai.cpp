@@ -1,57 +1,12 @@
 /* AI__5CTapei (0x800733ec) */
 /* C++ (TAPES.CPP). Locals, their order and types come from the demo's MAIN.SYM; field offsets are THPS1's
    (its CBody is 0x2c bytes larger than the THPS2 demo's). */
-struct CVector {
-	int vx, vy, vz;
-};
-
-CVector operator+(const CVector &, const CVector &);
-CVector operator-(const CVector &, const CVector &);
-CVector operator*(const CVector &, const int &);
-CVector operator/(const CVector &, const int &);
-
-struct CSVector {
-	short vx, vy, vz;
-	void Set(short x, short y, short z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-};
-
-struct STapeMessage {
-	int essential;
-	char *Line1, *Line2, *Line3;
-};
-
-class CTape {
-  public:
-	char CBody_0[0x24];
-	CSVector mScale;
-	char CBody_2a[0x134 - 0x2a];
-	void *mpGlow;
-	unsigned short mGlowRadiusOrg, mGlowRadiusAmp;
-	STapeMessage *mMessageTable;
-	int mSessionTapeNum;
-	int mTapeNum;
-	int mTextX, mTextY;
-	int mSize, mSize1, mSize2;
-	CVector mVec1, mVec2;
-	unsigned char mHasNode, mIs3d, mDropping, mDropForever, mHoverHeight;
-	unsigned short mNodeIndex;
-	int mGroundY;
-	CVector mOrgPos;
-	unsigned short mT, mMaxWobbleAmplitude, mWobbleAmplitude, mWobbleSpeed, mLifetime;
-	unsigned int mTimer;
-
-	void AI(int tape_no);
-	void DoPhysics(void);
-	void CreateBit(void);
-};
+#include "game/tapes.h"
 
 extern CTape *GTape[5];
 
-int CTape_mOkayToDisplayTitle, CTape_mOkayToDisplayContinueButton;
+int CTape::mOkayToDisplayContinueButton, CTape::mOkayToDisplayTitle;
+
 
 void Mess_SetTextJustify(unsigned char);
 void Mess_SetScale(int);
@@ -62,14 +17,14 @@ void CTape::AI(int tape_no) {
 	mTimer++;
 
 	if (mTimer < 60)
-		CTape_mOkayToDisplayTitle = 1;
+		mOkayToDisplayTitle = 1;
 	else
-		CTape_mOkayToDisplayTitle = 0;
+		mOkayToDisplayTitle = 0;
 
 	if (mSessionTapeNum * 20 + 80 < mTimer)
-		CTape_mOkayToDisplayContinueButton = 1;
+		mOkayToDisplayContinueButton = 1;
 	else
-		CTape_mOkayToDisplayContinueButton = 0;
+		mOkayToDisplayContinueButton = 0;
 
 	if (mTimer > 60) {
 		int temptime = mTimer - 60;

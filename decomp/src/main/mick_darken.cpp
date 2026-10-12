@@ -8,14 +8,9 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
+#include "game/m3d.h"
 
-struct SOTBuffer {
-	char pad[0x88];
-	u_long OT;
-};
-
-extern SOTBuffer *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 
 uchar *PolyBufferEnd;

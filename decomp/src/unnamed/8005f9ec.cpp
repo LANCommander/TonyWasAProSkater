@@ -1,42 +1,10 @@
 /* FUN_8005f9ec (0x8005f9ec) */
-typedef unsigned char uchar;
+#include "game/shellutils.h"
+#include "game/pad.h"
+#include "game/vector.h"
+#include "game/career.h"
 
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	uchar AnaloguePotMapping[4];
-	uchar Raw[4];
-	char Analogue[4];
-	int Type;
-	int pad150[7];
-};
-
-struct CVector {
-	int vx, vy, vz;
-	CVector(int x, int y, int z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-};
-
-class Sprite {
-  public:
-	void draw(int, int, int, int, int, int);
-};
-
-extern int GPreferences[];
+extern SOptions GPreferences;
 extern SControl Pad[2];
 extern int SFXLEVEL;
 extern int XALEVEL;
@@ -46,21 +14,19 @@ Sprite *DAT_800d1d5c;
 Sprite *DAT_800d1d60;
 
 extern "C" {
-	int getSelected__12VerticalMenu(int);
 	void FUN_8002357c(int);
 	void SFX_PlayX__FUisi(int, int, int);
 	void FUN_80023168(int);
 	void FUN_80022aec(CVector *);
 }
 
-void Pad_ClearTriggers(SControl *);
 void GameFMV_StopFMV(void);
 void GameFMV_StartFMV(int);
 
-extern "C" void FUN_8005f9ec(int a) {
+extern "C" void FUN_8005f9ec(VerticalMenu *a) {
 	int v, w, u, i, dir;
-	XALEVEL = getSelected__12VerticalMenu(a) == 1 ? GPreferences[1] * 0x555 : 0;
-	SFXLEVEL = GPreferences[0] * 0x555;
+	XALEVEL = a->getSelected() == 1 ? GPreferences.MusicVolume * 0x555 : 0;
+	SFXLEVEL = GPreferences.SFXVolume * 0x555;
 
 	FUN_8002357c(0);
 
@@ -74,21 +40,21 @@ extern "C" void FUN_8005f9ec(int a) {
 		Pad_ClearTriggers(&Pad[0]);
 		Pad_ClearTriggers(&Pad[1]);
 
-		if (getSelected__12VerticalMenu(a) == 0) {
-			w = GPreferences[0] + 1;
+		if (a->getSelected() == 0) {
+			w = GPreferences.SFXVolume + 1;
 
 			if (dir)
-				w = GPreferences[0] - 1;
+				w = GPreferences.SFXVolume - 1;
 
-			GPreferences[0] = w;
+			GPreferences.SFXVolume = w;
 
 			if (w < 0)
-				GPreferences[0] = 0;
+				GPreferences.SFXVolume = 0;
 
-			v = GPreferences[0];
+			v = GPreferences.SFXVolume;
 
 			if (v >= 12) {
-				GPreferences[0] = 12;
+				GPreferences.SFXVolume = 12;
 				v = 12;
 			}
 
@@ -96,31 +62,31 @@ extern "C" void FUN_8005f9ec(int a) {
 			SFX_PlayX__FUisi(145, 8192, 0);
 		}
 
-		if (getSelected__12VerticalMenu(a) == 1) {
-			u = GPreferences[1] + 1;
+		if (a->getSelected() == 1) {
+			u = GPreferences.MusicVolume + 1;
 
 			if (dir)
-				u = GPreferences[1] - 1;
+				u = GPreferences.MusicVolume - 1;
 
-			GPreferences[1] = u;
+			GPreferences.MusicVolume = u;
 
 			if (u < 0)
-				GPreferences[1] = 0;
+				GPreferences.MusicVolume = 0;
 
-			if (GPreferences[1] >= 12)
-				GPreferences[1] = 12;
+			if (GPreferences.MusicVolume >= 12)
+				GPreferences.MusicVolume = 12;
 		}
 	}
 
 	if (Pad[0].Start.Triggered || Pad[1].Start.Triggered ||
 	    Pad[0].X.Triggered || Pad[1].X.Triggered) {
-		if (getSelected__12VerticalMenu(a) == 0) {
+		if (a->getSelected() == 0) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 			SFX_PlayX__FUisi(145, 8192, 0);
 		}
 
-		if (getSelected__12VerticalMenu(a) == 1) {
+		if (a->getSelected() == 1) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 			GameFMV_StopFMV();
@@ -137,14 +103,14 @@ extern "C" void FUN_8005f9ec(int a) {
 	for (i = 0; i < 12; i++) {
 		v = 32;
 
-		if (i < GPreferences[0])
+		if (i < GPreferences.SFXVolume)
 			v = 128;
 
 		DAT_800d1d5c->draw(i * 24 + 206, 204, 0, v, v, v);
 
 		v = 32;
 
-		if (i < GPreferences[1])
+		if (i < GPreferences.MusicVolume)
 			v = 128;
 
 		DAT_800d1d60->draw(i * 24 + 206, 284, 0, v, v, v);

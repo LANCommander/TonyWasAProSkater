@@ -9,7 +9,7 @@ extern "C" {
 	void printf(char *, ...);
 }
 
-typedef unsigned short ushort;
+#include "game/types.h"
 
 void *Mem_New(unsigned int, int, int);
 void Mem_Delete(void *);

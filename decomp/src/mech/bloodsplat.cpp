@@ -4,61 +4,9 @@ extern "C" {
 	#include <libgte.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int x, y, z;
-	CVector &operator+=(const CVector &);
-};
-
-struct CSVector {
-	short x, y, z;
-};
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct Item;
-
-struct SLineInfo {
-	Vector StartCoords;
-	Vector EndCoords;
-	Vector MinCoords;
-	Vector MaxCoords;
-	int iLo, iHi, jLo, jHi;
-	int Distance;
-	int Length;
-	MATRIX WorldCst;
-	Item *pItem;
-	Vector Position;
-	SVECTOR Normal;
-	uint *pFace;
-	int Model;
-	uchar RecordTriggerZoneHits;
-	uchar DropDown;
-	ushort Inquiry;
-	int tNear;
-	uint tNumtrLo;
-	int tNumtrHi;
-	uint tDenomLo;
-	int tDenomHi;
-	uint NormalOffset;
-};
-
-struct CSpark {
-	char pad0[0x24];
-	CVector mVel;
-	char pad1[0x58 - 0x30];
-	int mFloorY;
-};
-
-extern "C" {
-	void *__nw__4CBitUi(unsigned int);
-	void *__6CSparkR7CVectoriii(void *, CVector &, int, int, int);
-}
+#include "game/colij.h"
+#include "game/bruce.h"
+#include "game/bit.h"
 
 extern int Cheat_Blood;
 extern int BitCount;
@@ -75,13 +23,6 @@ int Mem_GetFree(char);
 void M3dColij_InitLineInfo(SLineInfo *);
 int M3dZone_LineToItem(SLineInfo *, int);
 
-struct CBruce {
-	char pad0[0x6c];
-	CVector mVel;
-	void GetHookPosition(CVector &, uchar);
-	void BloodSplat(int BodyPart, int MaxBloodBits);
-};
-
 void CBruce::BloodSplat(int BodyPart, int MaxBloodBits) {
 	if (Cheat_Blood) {
 		Video_BloodSplat(this, BodyPart, MaxBloodBits);
@@ -94,23 +35,23 @@ void CBruce::BloodSplat(int BodyPart, int MaxBloodBits) {
 			int FloorY;
 			SLineInfo BloodLine;
 
-			v.x = -1024;
-			v.y = 0;
-			v.z = 0;
+			v.vx = -1024;
+			v.vy = 0;
+			v.vz = 0;
 			Bit_SetSparkTrajectory(v);
 
 			if (BodyPart == 0) {
-				Cone.x = 1200;
-				Cone.y = 800;
-				Cone.z = 0;
+				Cone.vx = 1200;
+				Cone.vy = 800;
+				Cone.vz = 0;
 			} else if (BodyPart == 1) {
-				Cone.x = 1600;
-				Cone.y = 1600;
-				Cone.z = 0;
+				Cone.vx = 1600;
+				Cone.vy = 1600;
+				Cone.vz = 0;
 			} else {
-				Cone.x = 1200;
-				Cone.y = 800;
-				Cone.z = 0;
+				Cone.vx = 1200;
+				Cone.vy = 800;
+				Cone.vz = 0;
 			}
 
 			Bit_SetSparkTrajectoryCone(Cone);
@@ -125,22 +66,22 @@ void CBruce::BloodSplat(int BodyPart, int MaxBloodBits) {
 			if (MaxBloodBits < Bits)
 				Bits = MaxBloodBits;
 
-			BloodLine.StartCoords.vx = Pos.x;
-			BloodLine.StartCoords.vy = Pos.y - 163840;
-			BloodLine.StartCoords.vz = Pos.z;
-			BloodLine.EndCoords.vx = Pos.x;
-			BloodLine.EndCoords.vy = Pos.y + 3276800;
-			BloodLine.EndCoords.vz = Pos.z;
+			BloodLine.StartCoords.vx = Pos.vx;
+			BloodLine.StartCoords.vy = Pos.vy - 163840;
+			BloodLine.StartCoords.vz = Pos.vz;
+			BloodLine.EndCoords.vx = Pos.vx;
+			BloodLine.EndCoords.vy = Pos.vy + 3276800;
+			BloodLine.EndCoords.vz = Pos.vz;
 			M3dColij_InitLineInfo(&BloodLine);
 			M3dZone_LineToItem(&BloodLine, 1);
 
 			if (BloodLine.pItem) {
 				FloorY = BloodLine.Position.vy - 16384;
 			} else {
-				FloorY = Pos.y - 16384;
+				FloorY = Pos.vy - 16384;
 			}
 
-			Pos.y -= 122880;
+			Pos.vy -= 122880;
 
 			{
 				int i;
@@ -153,11 +94,7 @@ void CBruce::BloodSplat(int BodyPart, int MaxBloodBits) {
 
 					Bit_SetSparkSize((i & 1) + 1);
 
-					pSpark = (CSpark *)__nw__4CBitUi(92);
-
-					if (pSpark)
-						pSpark = (CSpark *)__6CSparkR7CVectoriii(pSpark, Pos, (i >> 2) + 14,
-						                                         10240 + i * 256, (i & 7) + 50);
+					pSpark = new CSpark(Pos, (i >> 2) + 14, 10240 + i * 256, (i & 7) + 50);
 
 					pSpark->mVel += mVel;
 					pSpark->mFloorY = FloorY;

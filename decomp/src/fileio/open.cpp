@@ -12,20 +12,13 @@
    variable set once gets the boost and loses the order (141-149); one also set in the
    early PRE return gets a1 but costs a copy there (152). The tail statement order was
    searched exhaustively. */
-#pragma interface
-
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
-
-class PREManager {
-  public:
-	char *getFile(char *, int *);
-};
+#include "game/pre.h"
 
 int CurrentPos;
 int FileOpen;

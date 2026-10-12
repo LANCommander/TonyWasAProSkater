@@ -1,7 +1,5 @@
 /* CVectorRotateToPlane__FP7CVectorP7SVECTORT0 (0x80030090) */
-struct CVector {
-	int x, y, z;
-};
+#include "game/vector.h"
 
 struct SVECTOR {
 	short vx, vy, vz, pad;
@@ -10,8 +8,6 @@ struct SVECTOR {
 int Mips_CVecDotProd(CVector *, CVector *);
 int M3dMaths_SquareRoot0(int);
 void ProjectCVectorToPlane(CVector *, SVECTOR);
-CVector operator*(const CVector &, const int &);
-CVector operator/(const CVector &, const int &);
 
 void CVectorRotateToPlane(CVector *InVector, SVECTOR *Normal, CVector *OutVector) {
 	int OldMag, NewMag;

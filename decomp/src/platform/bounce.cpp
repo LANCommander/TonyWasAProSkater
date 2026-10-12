@@ -1,48 +1,8 @@
 /* Bounce__9CPlatformP6CBruceRC7CVector (0x8003d820) */
 /* C++ (PLATFORM.CPP). Locals from the demo's MAIN.SYM. THPS1's CPlatform fields sit 8 bytes past
    the demo's; the CBaddy/CBody part is laid out by offset. */
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-	void Set(int a, int b, int c) {
-		vx = a;
-		vy = b;
-		vz = c;
-	}
-	int Length() const;
-};
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-class CBruce {
-  public:
-	void Vibrate(int, int, int);
-};
-
-class CPlatform {
-  public:
-	ushort mFlags; /* 0x000 */
-	ushort mInquiry;
-	CVector mPos;
-	CSVector mAngles; /* 0x010 */
-	char pad16[0x6c - 0x16];
-	CVector mVel; /* 0x06c */
-	char pad78[0x1ac - 0x78];
-	uint mBaddyFlags; /* 0x1ac */
-	char pad1b0[0x22a - 0x1b0];
-	ushort mNumBounces; /* 0x22a */
-	ushort mType;       /* 0x22c */
-	ushort mWidth;
-	ushort mHeight;
-	ushort mDepth;
-	ushort mDeathTimer;
-	CSVector mTargetAngles; /* 0x236 */
-	void Bounce(CBruce *pSkater, const CVector &Direction);
-};
+#include "game/platform.h"
+#include "game/bruce.h"
 
 int Rnd(int);
 void SFX_PlayX(unsigned int, short, int);
@@ -57,12 +17,12 @@ void CPlatform::Bounce(CBruce *pSkater, const CVector &Direction) {
 	int Speed;
 	CVector Dir;
 
-	if (mBaddyFlags & 0x10)
-		if (!(mBaddyFlags & 0x20)) {
+	if (mSpecificFlags & 0x10)
+		if (!(mSpecificFlags & 0x20)) {
 			Dir = Direction;
 			Dir.vy = 0;
 			Speed = Dir.Length();
-			mBaddyFlags |= 0x20;
+			mSpecificFlags |= 0x20;
 			mNumBounces = 0;
 			mFlags |= 0x20;
 			mTargetAngles.vy = Rnd(4096);

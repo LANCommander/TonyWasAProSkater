@@ -1,9 +1,6 @@
 /* RotateHeadingAndVelocity__6CBruceiii (0x80039cd0) */
 /* C++: CC1=D:/Tools/psyq4.5/CC1PLPSX.EXE match_sym.mjs ... "-O2 -fno-exceptions" */
-struct CVector {
-	int x, y, z;
-	int operator!=(const CVector &);
-};
+#include "game/vector.h"
 
 typedef CVector V;
 
@@ -61,18 +58,18 @@ void RotateHeadingAndVelocity__6CBruceiii(char *t, int a, int c, int b) {
 					m3 = *(MATRIX *)(t + 1900);
 					FUN_80093130(&m3, &m2);
 
-					tmp.x = m3.m[0][0];
-					tmp.y = m3.m[0][1];
-					tmp.z = m3.m[0][2];
-					r.x = Mips_CVecDotProd__FP7CVectorT0(&tmp, s1);
-					tmp.x = m3.m[1][0];
-					tmp.y = m3.m[1][1];
-					tmp.z = m3.m[1][2];
-					r.y = Mips_CVecDotProd__FP7CVectorT0(&tmp, s1);
-					tmp.x = m3.m[2][0];
-					tmp.y = m3.m[2][1];
-					tmp.z = m3.m[2][2];
-					r.z = Mips_CVecDotProd__FP7CVectorT0(&tmp, s1);
+					tmp.vx = m3.m[0][0];
+					tmp.vy = m3.m[0][1];
+					tmp.vz = m3.m[0][2];
+					r.vx = Mips_CVecDotProd__FP7CVectorT0(&tmp, s1);
+					tmp.vx = m3.m[1][0];
+					tmp.vy = m3.m[1][1];
+					tmp.vz = m3.m[1][2];
+					r.vy = Mips_CVecDotProd__FP7CVectorT0(&tmp, s1);
+					tmp.vx = m3.m[2][0];
+					tmp.vy = m3.m[2][1];
+					tmp.vz = m3.m[2][2];
+					r.vz = Mips_CVecDotProd__FP7CVectorT0(&tmp, s1);
 					*s1 = r;
 					l1 = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(s1, s1)) << 6;
 					l0 >>= 8;

@@ -77,7 +77,7 @@
 0x8009f6a0	__vt_11CSmokeTrail	exact	1/1	0x800e1e6c		
 0x8009f6b8	__vt_7CRibbon	exact	2/2	0x800e1e7c		
 0x8009f6e8	__vt_15CTexturedRibbon	exact	1/1	0x800b96cc		
-0x8009f708	__vt_17TextScreenElement	exact	1/1	0x800bc4cc		
+0x8009f708	__vt_14CGouraudRibbon	exact	1/1	0x800bc4cc		
 0x8009f728	__vt_5CFrag	exact	1/1	0x800e1e9c		
 0x8009f740	__vt_19CMotionBlurImmortal	exact	1/1	0x800e1eac		
 0x8009f758	__vt_11CMotionBlur	exact	2/2	0x800e1ebc		

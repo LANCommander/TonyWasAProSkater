@@ -1,7 +1,6 @@
 /* Card_Load__F9EFileTypePUlT1 (0x800149f4) */
 /* C++ (CARD.CPP). Demo twin. Reads a save/replay file from the memory card (two buffers for replays) and verifies the header checksums. The do{}while(0) makes the read-failure jumps loop exits (reorg predicts them not taken, filling their slots from the fall-through); every failure shares the sync-failure return. */
-typedef unsigned long ulong;
-enum EFileType { FILETYPE_A, FILETYPE_B, FILETYPE_C, FILETYPE_D };
+#include "game/card.h"
 
 extern char CARD_FNAME[];
 extern char CARD_VNAME[];

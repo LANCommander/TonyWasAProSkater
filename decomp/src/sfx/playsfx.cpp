@@ -61,9 +61,7 @@ extern "C" {
 	void FUN_80093e54(int, SpuVoiceAttr *);
 }
 
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
+#include "game/types.h"
 
 int Redbook_Rnd(int);
 int allocateVoice(void);

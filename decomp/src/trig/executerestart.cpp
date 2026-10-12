@@ -2,35 +2,7 @@
 /* C++ (TRIG.CPP). Fuzzy demo twin (0.82); locals from its MAIN.SYM. Puts every skater on the
    current restart node, runs its command list, and in mode 2 (unless state 7) nudges the skater
    and moves it to the restart node named s_RE_2P. */
-#pragma interface
-
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector &operator+=(const CVector &);
-};
-
-CVector operator*(const CVector &, const int &);
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-class CBody;
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos;     /* 0x04 */
-	CSVector mAngles; /* 0x10 */
-	char pad16[0x1c - 0x16];
-	CBruce *mNext; /* 0x1c */
-	char pad20[0xf0 - 0x20];
-	CVector mOldPos; /* 0xf0 */
-	char padfc[0x7d8 - 0xfc];
-	CVector m7D8; /* 0x7d8 */
-};
+#include "game/bruce.h"
 
 extern CBruce *MechList;
 extern int GNumberOfPlayers;
@@ -61,7 +33,7 @@ void Trig_ExecuteRestart() {
 
 	pAngles = Trig_GetPosition(StartPos, RestartNode);
 
-	for (MechListCopy = MechList; MechListCopy; MechListCopy = MechListCopy->mNext) {
+	for (MechListCopy = MechList; MechListCopy; MechListCopy = (CBruce *)MechListCopy->mNextItem) {
 		MechListCopy->mPos = StartPos;
 		MechListCopy->mOldPos = StartPos;
 		MechListCopy->mAngles = *pAngles;
@@ -83,7 +55,7 @@ void Trig_ExecuteRestart() {
 		int i;
 
 		pMan = MechList;
-		pMan->mPos += pMan->m7D8 * 100;
+		pMan->mPos += pMan->mFront * 100;
 
 		for (i = 0; i < NumNodes; i++) {
 			short *pNode = OffsetList[i];

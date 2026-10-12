@@ -12,27 +12,7 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-class SlicedImage {
-  public:
-	int **vf;
-	int width;
-	int height;
-	int slice_width;
-	int slice_height;
-	char *slicedBuffer;
-	RECT *sliceTab;
-	int num_slices_x;
-	int num_slices_y;
-	int bpp;
-	ushort clut;
-	int is_packed;
-	int m_removed_from_memory;
-	void packAt(int x, int y);
-	void removeFromMemory();
-};
+#include "game/shellutils.h"
 
 void *Mem_New(uint, int, int);
 
@@ -54,7 +34,7 @@ void SlicedImage::packAt(int x, int y) {
 
 	is_packed = 0;
 	sliceTab = (RECT *)Mem_New(num_slices_y * num_slices_x * sizeof(RECT), 1, 1);
-	data_col = (ushort *)slicedBuffer;
+	data_col = slicedBuffer;
 	numx = width / slice_width;
 	numy = height / slice_height;
 	remx = width - numx * slice_width;

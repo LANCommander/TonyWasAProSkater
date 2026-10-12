@@ -3,13 +3,8 @@
    anim packets for an anim by name (case-insensitive, up to 8 characters). The masks sit in the
    assignments (line table) and cross-jumping merges the two pairs; testing `!lettera` in the break
    (CSE turns it into letterb's register) lets jump threading send that exit straight to found = 1. */
-typedef unsigned int uint;
-struct SAnimFrame;
-
-struct AnimPacket {
-	uint *pData;
-	AnimPacket *pNext;
-};
+#include "game/m3d.h"
+#include "game/spool.h"
 
 AnimPacket *AnimPackets;
 
@@ -18,8 +13,8 @@ SAnimFrame *Spool_FindAnim(char *pName) {
 	AnimPacket *pPacketInfo;
 
 	for (pPacketInfo = AnimPackets; pPacketInfo; pPacketInfo = pPacketInfo->pNext) {
-		uint NumAnims = *pPacketInfo->pData;
-		char *pAnimName = (char *)(pPacketInfo->pData + 1);
+		uint NumAnims = *pPacketInfo->pPacket;
+		char *pAnimName = (char *)(pPacketInfo->pPacket + 1);
 		int found = 0;
 
 		{

@@ -9,23 +9,10 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
+#include "game/pad.h"
 
 struct CdlATV {
 	uchar val0, val1, val2, val3;
-};
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	char pad[14];
-};
-
-struct SControl {
-	SButton b[16];
-	char pad[0x16c - 0x100];
 };
 
 struct SMovie {
@@ -174,8 +161,8 @@ void GameFMV_PlayMovie(int track) {
 	strInit__Fv();
 	FUN_80070ff4();
 
-	Pad[0].b[14].Triggered = 0;
-	Pad[0].b[3].Triggered = 0;
+	Pad[0].Start.Triggered = 0;
+	Pad[0].X.Triggered = 0;
 
 	while (!strNextVlc(1))
 		;
@@ -235,10 +222,10 @@ void GameFMV_PlayMovie(int track) {
 
 		FUN_80070ff4();
 
-		if (Pad[0].b[14].Triggered)
+		if (Pad[0].Start.Triggered)
 			break;
 
-		if (Pad[0].b[3].Triggered)
+		if (Pad[0].X.Triggered)
 			break;
 	}
 end:

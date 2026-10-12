@@ -6,112 +6,11 @@
    Near-miss: retail loads the frame counter and sine-table base for mU, then copies them into the
    loop registers (t3/t4), as if the in-loop loads were hoisted and CSE'd. Ours never hoists a
    global load past a store in a loop, so the locals t/pTrig stand in (not in the demo SYM). */
-#pragma interface
+#include "game/bit.h"
+#include "game/ob.h"
+#include "game/trig.h"
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-CVector operator-(const CVector &, const CVector &);
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-struct CFriction {
-	uchar x, y, z;
-};
-
-struct SRibbonPoint {
-	CVector Pos;
-	uchar r, g, b;
-	ushort Width;
-	ushort WidthB;
-	uchar rB, gB, bB;
-	int Last1Scr;
-	int Last2Scr;
-	int Last3Scr;
-};
-
-struct SWidthWobble {
-	int TChange;
-	int TargetWidth;
-};
-
-struct STrig {
-	short s, c;
-};
-
-class CItem {
-  public:
-	ushort mFlags;
-	ushort mInquiry;
-	CVector mPos;
-	char pad10[0x48 - 0x10];
-	virtual void v0();
-	virtual void v1();
-	virtual void v2();
-	virtual void v3();
-	virtual void v4();
-	virtual int Hit(ushort, CVector &, int);
-};
-
-class CBody : public CItem {};
-
-class CBit {
-  public:
-	CBit *mPrevious;
-	CBit *mNext;
-	short mAge;
-	ushort mLifetime;
-	CVector mTweenPos;
-	CVector mPos;
-	CVector mVel;
-	CVector mAcc;
-	CFriction mFric;
-	uchar mDead;
-	ushort mFrigDeltaZ;
-	uchar mProtected;
-	uchar mType;
-	virtual ~CBit();
-};
-
-class CSpecialDisplay : public CBit {};
-
-class CTexturedRibbon : public CSpecialDisplay {
-  public:
-	uchar mTrail;
-	void *mpTex;
-	uchar mDontDisplay;
-	int mU;
-	int mV;
-	int mDv;
-	int mWibble;
-	int mNumPoints;
-	SRibbonPoint *mpPoints;
-};
-
-class CSmokeJet : public CTexturedRibbon {
-  public:
-	SWidthWobble mWidthWobble[10];
-	int mOrgX[10];
-	int mPhase[10];
-	int mFreq[10];
-	int mAmp[10];
-	uchar mScrollSpeed;
-	uchar mDamageBaddies;
-	ushort mDamage;
-	ushort mDamageTimer;
-	CSVector mAngles;
-	int mLength;
-	void Move();
-};
-
-extern STrig rcossin_tbl[1];
+extern SSinCos rcossin_tbl[1];
 extern int TTime;
 extern CBody *MechList;
 extern CBody *BaddyList;
@@ -119,7 +18,6 @@ extern CBody *BaddyList;
 int Redbook_Rnd(int);
 void Utils_CalcUnit(CVector &, const CVector &);
 CBody *M3dColij_LineToSphere(const CVector &, const CVector &, CVector &, CBody *, CBody *);
-extern "C" void Die__4CBit(CSmokeJet *);
 
 void CSmokeJet::Move() {
 	if (mLifetime == 0xffff) {
@@ -150,7 +48,7 @@ void CSmokeJet::Move() {
 		}
 	} else {
 		if (!mLifetime || !--mLifetime)
-			Die__4CBit(this);
+			Die();
 	}
 
 	mDontDisplay = 0;

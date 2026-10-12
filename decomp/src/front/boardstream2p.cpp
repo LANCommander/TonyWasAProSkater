@@ -4,22 +4,7 @@
    alternating players and cycling each player's column. The finished load is turned into a
    SlicedImage; the next file is picked outward from the column's current entry (offset 0, n-1, 1,
    n-2, ...) until the middle is reached. Sets DAT_800d22cc when both players' columns are done. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-class CItem {
-  public:
-	virtual ~CItem();
-	void *operator new(uint) throw();
-};
-
-class SlicedImage : public CItem {
-  public:
-	int m[12];
-	SlicedImage(char *, int, int, int, int, int, ushort);
-	void pack();
-};
+#include "game/shellutils.h"
 
 extern int Loading;
 extern int DAT_800d2c1c[3];             /* pictures per column (8 decks, 3 trucks, 15 wheels) */

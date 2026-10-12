@@ -10,53 +10,8 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct SCamera {
-	uint Style;
-	VECTOR Position;  /* 0x04 */
-	VECTOR Focus;     /* 0x14 */
-	int Distance;     /* 0x24 */
-	int Height;       /* 0x28 */
-	SVECTOR Angles;   /* 0x2c */
-	MATRIX Transform; /* 0x34 */
-	MATRIX Inverse;   /* 0x54 */
-	MATRIX View;      /* 0x74 */
-	VECTOR Up;        /* 0x94 */
-};
-
-struct SViewport {
-	ushort xR;
-	ushort yB;
-	ushort xL;
-	ushort yT;
-	ushort Hither;
-	ushort Yon;
-	ushort TanHalf;
-	ushort Zoom;
-	ushort xC;
-	ushort yC;
-};
-
-struct SVec {
-	short vx, vy, vz;
-};
-
-struct Texture {
-	uchar f0;
-	uchar f1;
-	ushort f2;
-	ushort f4;
-	ushort f6;
-};
-
-struct SScreen {
-	ushort pad0;
-	ushort y;
-};
+#include "game/m3d.h"
+#include "game/camera.h"
 
 int M3dMaths_SquareRoot0(int);
 void M3dMaths_TransposeMat(ushort *, ushort *);
@@ -65,10 +20,10 @@ void M3d_PreprocessPulsingColours(int);
 void M3d_PreprocessWibblyTextures(int);
 
 extern SVECTOR FrustumNormals[];
-extern SVec FrustumMatrix1[];
-extern SVec FrustumMatrix2[];
+extern SVector FrustumMatrix1[];
+extern SVector FrustumMatrix2[];
 extern int Xblanks;
-extern SScreen *pDoubleBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
 extern DR_AREA *pPoly;
 extern int EnvRegions;
 extern int EnvRegions_4;
@@ -103,7 +58,7 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot) {
 	pVP->Yon = DpqMax;
 	CurrentOrderingTable = ot;
 	Window.x = 0;
-	Window.y = pDoubleBuffer->y;
+	Window.y = *(ushort *)&pDoubleBuffer->Draw.clip.y;
 	Window.w = Xres;
 	Window.h = Yres;
 	pClipArea = pPoly;
@@ -197,9 +152,9 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot) {
 	}
 
 	pTex = Spool_FindTextureEntry(0xcce0187c);
-	RefMapClut = pTex->f2 << 16;
-	RefMapTpage = pTex->f6 << 16;
-	RefMapU0V0 = pTex->f0 | (pTex->f1 << 8);
+	RefMapClut = pTex->clut << 16;
+	RefMapTpage = pTex->tpage << 16;
+	RefMapU0V0 = pTex->u0 | (pTex->v0 << 8);
 	M3d_PreprocessPulsingColours(EnvRegions);
 	M3d_PreprocessPulsingColours(EnvRegions_4);
 	M3d_PreprocessPulsingColours(CurrentObjFileRegion);

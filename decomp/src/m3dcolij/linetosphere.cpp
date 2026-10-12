@@ -9,38 +9,10 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+#include "game/ob.h"
+#include "game/colij.h"
 
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector &operator<<=(const int &);
-	CVector &operator+=(const CVector &);
-};
-
-CVector operator-(const CVector &, const CVector &);
-CVector operator>>(const CVector &, const int &);
-CVector operator<<(const CVector &, const int &);
-CVector operator/(const CVector &, const int &);
-
-class CBody {
-  public:
-	char pad0[4];
-	CVector mPos; /* 0x04 */
-	char pad10[0x1c - 0x10];
-	CBody *mNextItem; /* 0x1c */
-	char pad20[0x52 - 0x20];
-	ushort mCBodyFlags; /* 0x52 */
-	char pad54[0xe0 - 0x54];
-	ushort mRadius; /* 0xe0 */
-};
-
-struct SColijInfo {
-	char pad0[32];
-	int BestDist; /* 0x20 */
-};
-
-extern SColijInfo NearestHit;
+extern SHit NearestHit;
 
 CBody *pBodyHit;
 
@@ -63,7 +35,7 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 	SVECTOR DirVecShort;
 
 	pBodyHit = 0;
-	NearestHit.BestDist = 0x7fffffff;
+	NearestHit.Dist = 0x7fffffff;
 	DirectionVec = (NewPos - OldPos) >> 12;
 	gte_ldlvl(&DirectionVec);
 	gte_sqr0();
@@ -103,7 +75,7 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 		MaxCoords.vz = OldPos.vz;
 	}
 
-	for (; pBody; pBody = pBody->mNextItem) {
+	for (; pBody; pBody = (CBody *)pBody->mNextItem) {
 		int Radius;
 		int RadiusSquared;
 
@@ -113,7 +85,7 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 		if (pBody == pIgnore)
 			continue;
 
-		Radius = pBody->mRadius << 12;
+		Radius = pBody->mRMinor << 12;
 
 		if (pBody->mPos.vx + Radius < MinCoords.vx || MaxCoords.vx < pBody->mPos.vx - Radius)
 			continue;
@@ -130,7 +102,7 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 		gte_sqr0();
 		gte_stlvnl(&SquareVec);
 
-		RadiusSquared = pBody->mRadius * pBody->mRadius;
+		RadiusSquared = pBody->mRMinor * pBody->mRMinor;
 
 		if (SquareVec.vx + SquareVec.vy + SquareVec.vz >= RadiusSquared)
 			continue;
@@ -139,7 +111,7 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 		gte_llv0();
 		gte_stlvnl0(&DotProd);
 
-		if (DotProd >= NearestHit.BestDist)
+		if (DotProd >= NearestHit.Dist)
 			continue;
 
 		if (DotProd < 0) {
@@ -160,12 +132,12 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 		}
 
 		pBodyHit = pBody;
-		NearestHit.BestDist = DotProd;
+		NearestHit.Dist = DotProd;
 	}
 
 	if (pBodyHit) {
 		gte_ldlvl(&DirectionVec);
-		gte_lddp(NearestHit.BestDist);
+		gte_lddp(NearestHit.Dist);
 		gte_gpf12();
 		gte_stlvnl(&ColijPos);
 		ColijPos <<= 12;

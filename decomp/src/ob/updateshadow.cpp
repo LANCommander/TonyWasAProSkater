@@ -1,60 +1,16 @@
 /* UpdateShadow__5CBody (0x80043b50) */
 /* C++ (OB.CPP). Exact demo twin; written from its MAIN.SYM (up/trans in the flag block). The
-   null-checked new is spelled out as the CBit pool allocator plus the CQuadBit ctor (cf. BloodSplat). */
+   shadow quad comes from CBit's pool allocator (operator new, null-checked). */
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct CSVector {
-	short vx, vy, vz;
-};
+#include "game/ob.h"
+#include "game/bit.h"
 
 extern int UseCacheForBits;
 extern char ShadowTextureName[];
-
-struct CBit {
-	char pad0[0x40];
-	ushort mFrigDeltaZ;
-	uchar mProtected;
-	uchar mType;
-};
-
-struct CQuadBit : CBit {
-	char pad44[0x9c - 0x44];
-	void SetTexture(char *, int);
-	void FlagOn(uchar);
-	void SetSemiTransparent();
-	void OrientUsing(const CVector &, const SVECTOR &, int, int, int);
-	void SetTransparency(uchar);
-};
-
-extern "C" {
-	void *__nw__4CBitUi(unsigned int);
-	CQuadBit *CQuadBit_ctor(CQuadBit *);
-}
-
-struct CBody {
-	char pad0[0x52];
-	ushort mCBodyFlags;
-	char pad54[0xbc - 0x54];
-	CVector mShadowPos;
-	CSVector mShadowNormal;
-	CQuadBit *mpShadow;
-	ushort mShadowScale;
-	short mShadowDist;
-	short mShadowThreshold;
-	void KillShadow();
-	void UpdateShadow();
-};
 
 void CBody::UpdateShadow() {
 	if (mCBodyFlags & 8) {
@@ -63,10 +19,7 @@ void CBody::UpdateShadow() {
 
 		if (!mpShadow) {
 			UseCacheForBits = 0;
-			CQuadBit *p = (CQuadBit *)__nw__4CBitUi(sizeof(CQuadBit));
-
-			if (p)
-				p = CQuadBit_ctor(p);
+			CQuadBit *p = new CQuadBit;
 
 			mpShadow = p;
 			UseCacheForBits = 1;

@@ -1,121 +1,10 @@
 /* AI__7CCamera (0x8007b7c4) flags=-fstructure-noalias */
 /* C++ (CAMERA.CPP). Demo twin (opcode-identical but for 3 spots); layout by THPS1 offsets
    (CCamera members = demo + 0x2c). Pad is the SControl[2] array at Pad. */
-#pragma interface
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-struct CFriction {
-	uchar x, y, z;
-};
-
-class CClass {
-  public:
-	virtual ~CClass() {}
-};
-
-class CQuat : public CClass {
-  public:
-	int x, y, z, w;
-};
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	char pad100[0x16c - 0x100];
-};
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos;
-	char pad10[0x70 - 0x10];
-	int mVelY; /* 0x70 */
-	char pad74[0x358 - 0x74];
-	int m358; /* 0x358 */
-	char pad35c[0x734 - 0x35c];
-	int m734; /* 0x734 */
-	char pad738[0x8fe - 0x738];
-	ushort m8fe; /* 0x8fe */
-};
-
-struct SViewport {
-	char pad0[14];
-	short mZoom;
-};
-
-class CCamera {
-  public:
-	char pad0[4];
-	CVector mPos;     /* 0x004 */
-	CSVector mAngles; /* 0x010 */
-	char pad16[0x134 - 0x16];
-	ushort mMikeIndex; /* 0x134 */
-	char pad136[0x420 - 0x136];
-	CBruce *mTripod; /* 0x420 */
-	CBruce *mOldTripod;
-	int mCalcTripod;       /* 0x428 */
-	CVector mOldTripodPos; /* 0x42c */
-	int new_focus;         /* 0x438 */
-	CVector mTripodPos;    /* 0x43c */
-	CVector mTripodPosIncrement;
-	uint mTripodTime;
-	CBruce *mFocus;       /* 0x458 */
-	int mCalcFocus;       /* 0x45c */
-	CVector mOldFocusPos; /* 0x460 */
-	CVector mFocusPos;    /* 0x46c */
-	CVector mFocusPosIncrement;
-	uint mFocusTime;
-	int mZoom;          /* 0x488 */
-	ushort mZoomTime;   /* 0x48c */
-	int mZoomIncrement; /* 0x490 */
-	char pad494[0x4b0 - 0x494];
-	short mPitchDamper;      /* 0x4b0 */
-	short mTripodPosYDamper; /* 0x4b2 */
-	char pad4b4[0x4c0 - 0x4b4];
-	CQuat mO; /* 0x4c0 */
-	char pad4d4[0x572 - 0x4d4];
-	CSVector mShakeAmplitude; /* 0x572 */
-	CFriction mShakeDecay;    /* 0x578 */
-	CSVector mShakeSpeed;     /* 0x57c */
-	int mCameraMode;          /* 0x584 */
-	int mCameraModeIncDir;
-	int mBossCamSpinRate;
-	uint mTimer; /* 0x590 */
-	char pad594[0x5f0 - 0x594];
-	int extra_YRot; /* 0x5f0 */
-	char pad5f4[0x628 - 0x5f4];
-	int jump_acc;     /* 0x628 */
-	int jump_uptimer; /* 0x62c */
-	char pad630[0x658 - 0x630];
-	uint mSpeed; /* 0x658 */
-	void AI();
-	void CM_Normal();
-	void CM_NoBigAir();
-	void CM_CompetitionIntro();
-	void MoveToDesiredPos(uint);
-	void LoadIntoMikeCamera();
-};
+#include "game/camera.h"
+#include "game/bruce.h"
+#include "game/pad.h"
+#include "game/m3d.h"
 
 struct SSinCos {
 	short s, c;
@@ -148,13 +37,6 @@ int old_camYOffset;
 int old_camDist;
 int old_camPitch;
 
-CVector operator<<(const CVector &, const int &);
-CVector operator+(const CVector &, const CVector &);
-CVector operator/(const CVector &, const int &);
-
-int operator==(const CVector &, const CVector &);
-
-CQuat operator*(const CQuat &, const CQuat &);
 CQuat Quat_FromXRot(short);
 CQuat Quat_FromYRot(short);
 CQuat Quat_FromZRot(short);
@@ -311,16 +193,16 @@ void CCamera::AI() {
 			mZoom += mZoomIncrement;
 		}
 
-		pCurrentViewport->mZoom = mZoom;
+		pCurrentViewport->Zoom = mZoom;
 		Utils_CalcAim(mAngles, mPos, mFocusPos);
 
-		if (mTripod->m8fe && mTripodPosYDamper) {
-			if (mTripod->mVelY < 0)
+		if (((CBruce *)mTripod)->m8FE && mTripodPosYDamper) {
+			if (mTripod->mVel.vy < 0)
 				jump_uptimer++;
 			else
 				jump_uptimer--;
 
-			jump_acc += (-mTripod->mVelY >> 12) * mTripodPosYDamper;
+			jump_acc += (-mTripod->mVel.vy >> 12) * mTripodPosYDamper;
 
 			if (jump_uptimer > 0)
 				mTripodPos.vy += jump_acc;
@@ -332,7 +214,7 @@ void CCamera::AI() {
 		short damp = mPitchDamper;
 
 		if (damp) {
-			int vy = mTripod->mVelY;
+			int vy = mTripod->mVel.vy;
 
 			if (vy < 0)
 				Camera_CamPitch -= damp;
@@ -355,13 +237,13 @@ void CCamera::AI() {
 				goto Done;
 		}
 
-		if (mTripod->m358)
+		if (((CBruce *)mTripod)->mInAir)
 			MoveToDesiredPos(311);
 		else if (mTripodPos == mOldTripodPos)
 			MoveToDesiredPos(151);
 		else if (mSpeed < 4)
 			MoveToDesiredPos(151);
-		else if (mTripod->m734 == 1) {
+		else if (((CBruce *)mTripod)->mPhysicsState == 1) {
 			if (mTimer < 18)
 				MoveToDesiredPos(311);
 			else
@@ -381,19 +263,19 @@ void CCamera::AI() {
 				CSVector oldamp = mShakeAmplitude;
 
 				if (mShakeAmplitude.vx < 0)
-					mShakeAmplitude.vx += mShakeDecay.x;
+					mShakeAmplitude.vx += mShakeDecay.vx;
 				else
-					mShakeAmplitude.vx -= mShakeDecay.x;
+					mShakeAmplitude.vx -= mShakeDecay.vx;
 
 				if (mShakeAmplitude.vy < 0)
-					mShakeAmplitude.vy += mShakeDecay.y;
+					mShakeAmplitude.vy += mShakeDecay.vy;
 				else
-					mShakeAmplitude.vy -= mShakeDecay.y;
+					mShakeAmplitude.vy -= mShakeDecay.vy;
 
 				if (mShakeAmplitude.vz < 0)
-					mShakeAmplitude.vz += mShakeDecay.z;
+					mShakeAmplitude.vz += mShakeDecay.vz;
 				else
-					mShakeAmplitude.vz -= mShakeDecay.z;
+					mShakeAmplitude.vz -= mShakeDecay.vz;
 
 				if (((ushort)oldamp.vx ^ (ushort)mShakeAmplitude.vx) & 0x8000)
 					mShakeAmplitude.vx = 0;

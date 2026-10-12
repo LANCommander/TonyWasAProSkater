@@ -4,68 +4,13 @@ extern "C" {
 	#include <libgte.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct Item;
-
-struct SLineInfo {
-	Vector StartCoords;
-	Vector EndCoords;
-	Vector MinCoords;
-	Vector MaxCoords;
-	int iLo, iHi, jLo, jHi;
-	int Distance;
-	int Length;
-	MATRIX WorldCst;
-	Item *pItem;
-	Vector Position;
-	SVECTOR Normal;
-	uint *pFace;
-	int Model;
-	uchar RecordTriggerZoneHits;
-	uchar DropDown;
-	ushort Inquiry;
-	int tNear;
-	uint tNumtrLo;
-	int tNumtrHi;
-	uint tDenomLo;
-	int tDenomHi;
-	uint NormalOffset;
-};
-
-struct SShadowRGB {
-	uchar r, g, b;
-};
+#include "game/colij.h"
+#include "game/bruce.h"
 
 extern int GNumberOfPlayers;
 
 void M3dColij_InitLineInfo(SLineInfo *);
 int M3dZone_LineToItem(SLineInfo *, int);
-
-struct CBruce {
-	int vf;
-	Vector mPos;
-	char pad0[0xbc - 0x10];
-	Vector mShadowPos;
-	char pad1[0xc8 - 0xc8 + 0];
-	short mShadowNormal[3];
-	char pad2[0x15a - 0xce];
-	uchar mShadowOn;
-	char pad3[0x160 - 0x15b];
-	SShadowRGB *mpShadow;
-	char pad4[0x734 - 0x164];
-	int mState;
-	char pad5[0x7f0 - 0x738];
-	Vector mUp;
-	void FRUVectorsFromRotMatrix();
-	void DoShadowCheck();
-};
 
 void CBruce::DoShadowCheck() {
 	SLineInfo line_info;
@@ -88,7 +33,7 @@ void CBruce::DoShadowCheck() {
 	M3dColij_InitLineInfo(&line_info);
 	M3dZone_LineToItem(&line_info, 1);
 
-	if (line_info.pItem && line_info.Normal.vy < -1900 && mState != 4 && mState != 8) {
+	if (line_info.pItem && line_info.Normal.vy < -1900 && mPhysicsState != 4 && mPhysicsState != 8) {
 		{
 			int _x = line_info.Position.vx;
 			int _y = line_info.Position.vy;
@@ -104,16 +49,16 @@ void CBruce::DoShadowCheck() {
 			int _z = line_info.Normal.vz;
 			int _y = line_info.Normal.vy;
 
-			mShadowNormal[0] = _x;
-			mShadowNormal[1] = _y;
-			mShadowNormal[2] = _z;
+			mShadowNormal.vx = _x;
+			mShadowNormal.vy = _y;
+			mShadowNormal.vz = _z;
 		}
 
 		if (GNumberOfPlayers == 1) {
-			mShadowOn = 1;
-			mpShadow->r = mpShadow->g = mpShadow->b = ((4300 - line_info.Distance) << 7) / 4000;
+			mShadowLights = 1;
+			mpShadowRGB->r = mpShadowRGB->g = mpShadowRGB->b = ((4300 - line_info.Distance) << 7) / 4000;
 		}
 	} else {
-		mShadowOn = 0;
+		mShadowLights = 0;
 	}
 }

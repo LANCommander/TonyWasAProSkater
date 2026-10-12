@@ -10,18 +10,8 @@ extern "C" {
 	#include <inline_c.h>
 }
 
-typedef unsigned int uint;
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-	CVector() {}
-	CVector(int x, int y, int z) {
-		vx = x;
-		vy = y;
-		vz = z;
-	}
-};
+#include "game/vector.h"
+#include "game/trig.h"
 
 struct SMikeCam {
 	int pad;
@@ -29,10 +19,6 @@ struct SMikeCam {
 	char pad10[0x74 - 0x10];
 	MATRIX Rot; /* 0x74 */
 	char pad94[164 - 0x94];
-};
-
-struct SSinCos {
-	short s, c;
 };
 
 extern SMikeCam MikeCamera[];

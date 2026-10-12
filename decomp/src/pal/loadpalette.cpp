@@ -10,17 +10,7 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct tag_S_Pal {
-	ushort Clut;     /* 0 */
-	uchar Slot;      /* 2 */
-	uchar Flags;     /* 3 */
-	ushort RefCount; /* 4 */
-	uchar Loaded;    /* 6 */
-};
+#include "game/m3d.h"
 
 int Pal16X;
 int Pal16Y;
@@ -43,7 +33,7 @@ tag_S_Pal *Pal_LoadPalette(uint checksum, uint *pData, uchar flags) {
 	transparent_index = 0;
 	pEntry = (ushort *)pData;
 	entries = 256;
-	pNew->Flags = flags;
+	pNew->flags = flags;
 	rec.h = 1;
 
 	if (flags & 1)
@@ -76,20 +66,20 @@ tag_S_Pal *Pal_LoadPalette(uint checksum, uint *pData, uchar flags) {
 	}
 
 	if (entries == 16) {
-		pNew->Slot = GetFree16Slot();
+		pNew->slot = GetFree16Slot();
 		rec.x = Pal16X;
-		rec.y = Pal16Y + pNew->Slot;
-		pNew->Clut = getClut(Pal16X, Pal16Y + pNew->Slot);
+		rec.y = Pal16Y + pNew->slot;
+		pNew->Clut = getClut(Pal16X, Pal16Y + pNew->slot);
 	} else {
-		pNew->Slot = GetFree256Slot();
+		pNew->slot = GetFree256Slot();
 		rec.x = Pal256X;
-		rec.y = Pal256Y + pNew->Slot;
-		pNew->Clut = getClut(Pal256X, Pal256Y + pNew->Slot);
+		rec.y = Pal256Y + pNew->slot;
+		pNew->Clut = getClut(Pal256X, Pal256Y + pNew->slot);
 	}
 
 	rec.w = entries;
 	FUN_8008c714(&rec, pData);
 
-	pNew->Loaded = 1;
+	pNew->InVRAM = 1;
 	return pNew;
 }

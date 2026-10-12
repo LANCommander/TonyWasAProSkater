@@ -1,15 +1,5 @@
 /* Pad_ActuatorOn__FUcUsUcUc (0x80070a80) */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-
-struct SControl {
-	char pad0[0x154];
-	uchar Motor[2];
-	uchar Lock;
-	uchar AlignCalled;
-	ushort MotorTimer[2];
-	char pad1[0x16c - 0x15c];
-};
+#include "game/pad.h"
 
 extern SControl Pad[];
 extern int GGame;
@@ -36,7 +26,7 @@ void Pad_ActuatorOn(uchar index, ushort time, uchar motor, uchar motor_value) {
 			Pad[checkIndex].AlignCalled = 0;
 
 		if (!Pad[checkIndex].AlignCalled) {
-			PadSetAct(index ? 16 : 0, &Pad[index].Motor[0], 2);
+			PadSetAct(index ? 16 : 0, &Pad[index].Motor0, 2);
 
 			if (state == 2)
 				Pad[checkIndex].AlignCalled = 1;
@@ -46,12 +36,12 @@ void Pad_ActuatorOn(uchar index, ushort time, uchar motor, uchar motor_value) {
 		}
 
 		{
-			uchar *p_motor_value = &Pad[index].Motor[motor];
+			uchar *p_motor_value = &(&Pad[index].Motor0)[motor];
 			ushort *p_motor_timer;
 			ushort *q;
 
 			*p_motor_value = motor_value;
-			q = &Pad[index].MotorTimer[0];
+			q = &Pad[index].Motor0Timer;
 			p_motor_timer = (ushort *)((motor << 1) + (int)q);
 			*p_motor_timer = time;
 		}

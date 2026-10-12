@@ -1,17 +1,7 @@
 /* spoolPRE__10PREManagerPc (0x8006623c) */
 /* C++ (PRE.CPP). Demo twin; locals from its MAIN.SYM. Loads a .PRE archive into the first free slot
    and records its name (THPS1 copies the name with an inline loop instead of strcpy). */
-class CClass {
-  public:
-	virtual ~CClass();
-};
-
-class PREManager : public CClass {
-  public:
-	char *mPre[16];        /* 0x04 (after the CClass vptr) */
-	char mPreName[16][16]; /* 0x44 */
-	void spoolPRE(char *pre_name);
-};
+#include "game/pre.h"
 
 extern char s_Out_of_PREManager_slots[];
 extern char s_Memory_error_loading_s[];

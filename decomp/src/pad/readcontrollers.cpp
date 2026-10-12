@@ -1,26 +1,9 @@
 /* ReadControllers__Fv (0x80070d10) */
 /* C++ (PAD.CPP). Demo twin. Multitap ports (type 0x80) read four controllers; otherwise read one and mark the other three absent. */
-typedef unsigned char uchar;
-
-struct ControllerData {
-	uchar status;
-	uchar type;
-	uchar button1;
-	uchar button2;
-	uchar analog0;
-	uchar analog1;
-	uchar analog2;
-	uchar analog3;
-};
-
-struct ControllerBuffer {
-	uchar pad[34];
-};
+#include "game/pad.h"
 
 extern ControllerBuffer controllers[2];
 extern ControllerData theControllers[8];
-
-void ReadController(ControllerData *, uchar *);
 
 void ReadControllers() {
 	int controller_port;

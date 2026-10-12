@@ -3,42 +3,20 @@
    competition screen: either the "no medal" text with three bronze placeholders, or the results
    text and the medals won on the ten tracked events, spun in place, then the continue prompt once
    the first medal has settled. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
+#include "game/competition.h"
+#include "game/powerup.h"
+#include "game/bruce.h"
+#include "game/career.h"
+
 enum EMedalType { MEDAL_0 };
 
-class CItem {
-  public:
-	char pad0[0x48];
-	virtual ~CItem();
-	virtual void m10();
-	virtual void Spin();
-};
+extern CBruce *GSkater;
 
-class CMedal : public CItem {
-  public:
-	char pad4c[0x160 - 0x4c];
-	uint mTimer; /* 0x160 */
-};
-
-struct SCompetition {
-	char pad0[0xc8];
-	CMedal *pMedal[3]; /* 0xc8 */
-	char padd4[0x12c - 0xd4];
-	int mWaitPrompt; /* 0x12c */
-};
-
-struct CBruce {
-	char pad0[0x2e8];
-	int mSkaterIndex; /* 0x2e8 */
-};
-
+/* GCareer.CharacterProgress[].Tapes viewed from its first Tapes byte (retail addresses it that way) */
 struct SCareerRecord {
 	uchar Flags[14];
 };
 
-extern SCompetition theCompetition;
-extern CBruce *GSkater;
 extern SCareerRecord GCareer_c[];
 extern char s_You_scored_all_golds[], s_Your_are_the_top_pro_skater[], s_Congratulations[], s_Watch_this_then_get_off_your[], s_couch_and_go_skate[];
 extern char s_Your_third_medal_Good_going[], s_You_just_might_become[], s_an_average_skater[], s_pro_skaters_get_all_golds[];
@@ -48,7 +26,7 @@ void Mess_DeleteAll();
 void Mess_SetScale(int);
 void Mess_SetRGB(uchar, uchar, uchar, int);
 void Front_PrintCentredPrompt(const char *);
-CMedal *Medal_Create(EMedalType, int, int, int, int, int);
+CPowerUp *Medal_Create(EMedalType, int, int, int, int, int);
 
 extern "C" {
 	void Mess_SetTextJustify__FUc(int);
@@ -57,7 +35,7 @@ extern "C" {
 }
 
 void Competition_EndGameDisplay() {
-	SCompetition *pComp = &theCompetition;
+	CCompetition *pComp = &theCompetition;
 
 	Mess_DeleteAll();
 	Mess_SetScale(256);
@@ -71,14 +49,14 @@ void Competition_EndGameDisplay() {
 		Mess_DrawText__FiiPCciUiib(256, 180, s_Watch_this_then_get_off_your, 0, 0, 256, 0);
 		Mess_DrawText__FiiPCciUiib(256, 200, s_couch_and_go_skate, 0, 0, 256, 0);
 
-		if (!pComp->pMedal[0])
-			pComp->pMedal[0] = Medal_Create((EMedalType)5, -30, 5, 140, 1536, 3);
+		if (!pComp->mMedal1)
+			pComp->mMedal1 = Medal_Create((EMedalType)5, -30, 5, 140, 1536, 3);
 
-		if (!pComp->pMedal[1])
-			pComp->pMedal[1] = Medal_Create((EMedalType)5, 0, 5, 140, 1536, 3);
+		if (!pComp->mMedal2)
+			pComp->mMedal2 = Medal_Create((EMedalType)5, 0, 5, 140, 1536, 3);
 
-		if (!pComp->pMedal[2])
-			pComp->pMedal[2] = Medal_Create((EMedalType)5, 30, 5, 140, 1536, 3);
+		if (!pComp->mMedal3)
+			pComp->mMedal3 = Medal_Create((EMedalType)5, 30, 5, 140, 1536, 3);
 	} else {
 		Mess_DrawText__FiiPCciUiib(256, 40, s_Your_third_medal_Good_going, 0, 0, 256, 0);
 		Mess_DrawText__FiiPCciUiib(256, 60, s_You_just_might_become, 0, 0, 256, 0);
@@ -101,31 +79,31 @@ void Competition_EndGameDisplay() {
 					m[n++] = (EMedalType)7;
 			}
 
-			if (!pComp->pMedal[0])
-				pComp->pMedal[0] = Medal_Create(m[0], -30, 5, 140, 1280, 5);
+			if (!pComp->mMedal1)
+				pComp->mMedal1 = Medal_Create(m[0], -30, 5, 140, 1280, 5);
 
-			if (!pComp->pMedal[1])
-				pComp->pMedal[1] = Medal_Create(m[1], 0, 5, 140, 1280, 5);
+			if (!pComp->mMedal2)
+				pComp->mMedal2 = Medal_Create(m[1], 0, 5, 140, 1280, 5);
 
-			if (!pComp->pMedal[2])
-				pComp->pMedal[2] = Medal_Create(m[2], 30, 5, 140, 1280, 5);
+			if (!pComp->mMedal3)
+				pComp->mMedal3 = Medal_Create(m[2], 30, 5, 140, 1280, 5);
 		}
 	}
 
-	pComp->pMedal[0]->Spin();
-	pComp->pMedal[1]->Spin();
-	pComp->pMedal[2]->Spin();
+	pComp->mMedal1->AI();
+	pComp->mMedal2->AI();
+	pComp->mMedal3->AI();
 
 	{
 		int Done = 1;
 
-		if (pComp->pMedal[0]) {
-			int c = pComp->pMedal[0]->mTimer < 40;
+		if (pComp->mMedal1) {
+			int c = pComp->mMedal1->mTimer < 40;
 
 			Done = c == 0;
 		}
 
-		if (Done && !pComp->mWaitPrompt)
+		if (Done && !pComp->mFading)
 			Front_PrintCentredPrompt(GameText_180[0]);
 	}
 }

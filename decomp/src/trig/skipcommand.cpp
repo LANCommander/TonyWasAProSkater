@@ -1,8 +1,7 @@
 /* SkipCommand__FPUs (0x8004601c) */
 /* C++ (TRIG.CPP). The case groups were fitted to retail's compare tree with tools/casetree.py; the
    empty groups (10-12, 0x88-0x89, 0x95 sharing the default label) only show up in its shape. */
-typedef unsigned short ushort;
-typedef unsigned int uint;
+#include "game/types.h"
 
 char *SkipString(char *p);
 

@@ -1,48 +1,10 @@
 /* Competition_ResetMarquee__Fv (0x8007657c) */
-typedef unsigned char uchar;
+#include "game/competition.h"
+#include "game/career.h"
 
-struct Msg {
-	int a;
-	int b;
-	char pad[120 - 8];
-};
-
-struct Slot {
-	char r10a;
-	char r30a;
-	char r10b;
-	char r30b;
-};
-
-struct Comp {
-	char p0[4];
-	uchar A[10];
-	char p1[2];
-	int f10, f14, f18;
-	char p2[0x2c - 0x1c];
-	struct {
-		uchar a, b, c, d;
-		int pad;
-	} S[5];
-	char p3[0x5c - 0x54];
-	uchar D[10];
-	char p4[0x66 - 0x66];
-	uchar C[10];
-	char p5[0x70 - 0x70];
-	short Aa[10][3];
-	short B[10];
-	char p6[0xc0 - 0xc0];
-	uchar flag;
-	char p7[0xd4 - 0xc1];
-	char *ptr;
-	char buf[0x124 - 0xd8];
-	int f124, f128, f12c;
-};
-
-extern Comp theCompetition;
 extern int Vblanks, SelectedSkater;
 extern const int GLevel;
-extern Msg Levels[];
+extern SLevel Levels[];
 extern char s_s_s_HEAT_d[];
 
 short HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
@@ -52,29 +14,29 @@ int Redbook_Rnd(int);
 extern "C" void FUN_8008b900(char *, char *, int, int, int);
 
 void Competition_ResetMarquee() {
-	Comp *c = &theCompetition;
+	CCompetition *c = &theCompetition;
 	int n;
 
-	if (c->flag == 0) {
-		c->f10 = 0;
-		c->f14 = 0;
-		c->f18 = 0;
-		c->f12c = 0;
+	if (c->mCurrentHeat == 0) {
+		c->mJudgeTimer = 0;
+		c->mLadderTimer = 0;
+		c->mWinLoseCheer = 0;
+		c->mFading = 0;
 		Redbook_InitialRand(Vblanks);
 
 		{
 			int i;
 
 			for (i = 0; i < 10; i++)
-				c->A[i] = i;
+				c->mCompetitorList[i] = i;
 		}
 
 		n = SelectedSkater;
-		c->f128 = n;
+		c->our_skater_num = n;
 
 		if (n == 10) {
-			c->f128 = Redbook_Rnd(10);
-			c->A[c->f128] = n;
+			c->our_skater_num = Redbook_Rnd(10);
+			c->mCompetitorList[c->our_skater_num] = n;
 		}
 
 		if (GLevel == 8) {
@@ -95,10 +57,10 @@ void Competition_ResetMarquee() {
 			uchar i;
 
 			for (i = 0; i < 5; i++) {
-				c->S[i].a = Redbook_Rnd(10);
-				c->S[i].c = Redbook_Rnd(10);
-				c->S[i].b = Redbook_Rnd(30);
-				c->S[i].d = Redbook_Rnd(30);
+				c->mJudges[i].mProPlayer = Redbook_Rnd(10);
+				c->mJudges[i].mConPlayer = Redbook_Rnd(10);
+				c->mJudges[i].mProBias = Redbook_Rnd(30);
+				c->mJudges[i].mConBias = Redbook_Rnd(30);
 			}
 		}
 
@@ -109,20 +71,20 @@ void Competition_ResetMarquee() {
 				uchar j;
 
 				for (j = 0; j < 3; j++)
-					c->Aa[i][j] = 0;
+					c->mScore[i][j] = 0;
 
-				c->B[i] = 0;
-				c->C[i] = i;
+				c->mTotalScore[i] = 0;
+				c->mOrdering[i] = i;
 			}
 		}
 
-		c->flag = 0;
+		c->mCurrentHeat = 0;
 
 		{
 			int i;
 
 			for (i = 0; i < 10; i++)
-				c->D[i] = 255;
+				c->mPlacing[i] = 255;
 		}
 
 		{
@@ -138,11 +100,11 @@ void Competition_ResetMarquee() {
 				while (slot >= j) {
 					k++;
 
-					if (c->D[k] == 255)
+					if (c->mPlacing[k] == 255)
 						j++;
 				}
 
-				c->D[k] = i;
+				c->mPlacing[k] = i;
 			}
 		}
 
@@ -150,17 +112,17 @@ void Competition_ResetMarquee() {
 			int i;
 
 			for (i = 0; i < 10; i++)
-				if (c->D[i] == 9)
-					c->D[i] = c->D[c->f128];
+				if (c->mPlacing[i] == 9)
+					c->mPlacing[i] = c->mPlacing[c->our_skater_num];
 		}
 
-		c->D[c->f128] = 255;
+		c->mPlacing[c->our_skater_num] = 255;
 	}
 
-	c->f124 = 0;
-	c->ptr = 0;
-	FUN_8008b900(c->buf, s_s_s_HEAT_d, Levels[GLevel].a, Levels[GLevel].b,
-	             c->flag + 1);
+	c->mMarqueeTimer = 0;
+	c->mMarqueeText = 0;
+	FUN_8008b900(c->mMarqueeTextBuf, s_s_s_HEAT_d, (int)Levels[GLevel].pLevelName, (int)Levels[GLevel].pCityName,
+	             c->mCurrentHeat + 1);
 
-	c->ptr = c->buf;
+	c->mMarqueeText = c->mMarqueeTextBuf;
 }

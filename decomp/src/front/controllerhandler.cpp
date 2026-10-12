@@ -18,67 +18,21 @@
    f = b + pl * 4;`), which puts the DAT_800bf260 `lui` ahead of `sll pl,4`. `f` is a block-local
    (set once per pseudo), so alias.c knows its base is DAT_800bf260 and lets the reload of *f move
    above the DAT_800d2350 byte store; one function-wide `f` set four times loses its base value. */
-typedef unsigned char uchar;
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	int Unk140[3];
-	int Connected; /* 0x14c */
-	int rest[7];
-};
-
-struct SOptions {
-	int SFXVolume;
-	int MusicVolume;
-	int OtherOptions[66];
-	int AutoKickEnabled[2];       /* 0x110 */
-	int VibrationEnabled[2];      /* 0x118 */
-	int ControllerFunction[2][4]; /* 0x120 */
-};
-
-struct SPadMap {
-	int Function[4];
-};
-
-struct SText {
-	char pad0[0x4c];
-	char *Autokick; /* 0x4c */
-	char pad50[0xf0 - 0x50];
-	char *On;  /* 0xf0: "on <off>" */
-	char *Off; /* 0xf4: "<on> off" */
-	char pad8[0x100 - 0xf8];
-	char *Vibration; /* 0x100 */
-};
-
-class VerticalMenu {
-  public:
-	int getSelected();
-	void setString(int, char *);
-};
+#include "game/career.h"
+#include "game/pad.h"
+#include "game/front.h"
+#include "game/shellutils.h"
 
 extern SControl Pad[2]; /* Pad */
 extern SOptions GPreferences;
 extern SPadMap DAT_800bf260[2]; /* edited mapping */
 extern SPadMap DAT_800bf280[2]; /* mapping before the last change */
-extern SText GameText;
+extern LocalText GameText;
 extern char s_s_s[]; /* "%s %s" */
 
 int DAT_800d1d28;   /* player being configured */
 uchar DAT_800d2350; /* row last changed with left/right */
 
-void Pad_ClearTriggers(SControl *);
 int SFX_PlayX(unsigned, short, int);
 
 extern "C" {
@@ -94,7 +48,7 @@ void FUN_8005eb78(VerticalMenu *menu) {
 	uchar left;
 	int sel;
 
-	if (pl == 1 && !Pad[1].Connected) {
+	if (pl == 1 && !Pad[1].Type) {
 		Pad[1].Triangle.Triggered = 1;
 		return;
 	}
@@ -248,8 +202,8 @@ void FUN_8005eb78(VerticalMenu *menu) {
 				SFX_PlayX(144, 8192, 0);
 
 			GPreferences.VibrationEnabled[pl] = left != 0;
-			FUN_8008b900(buf, s_s_s, GameText.Vibration,
-			             GPreferences.VibrationEnabled[pl] ? GameText.On : GameText.Off);
+			FUN_8008b900(buf, s_s_s, GameText.pVibration,
+			             GPreferences.VibrationEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
 			menu->setString(4, buf);
 		}
 
@@ -258,8 +212,8 @@ void FUN_8005eb78(VerticalMenu *menu) {
 				SFX_PlayX(144, 8192, 0);
 
 			GPreferences.AutoKickEnabled[pl] = left != 0;
-			FUN_8008b900(buf, s_s_s, GameText.Autokick,
-			             GPreferences.AutoKickEnabled[pl] ? GameText.On : GameText.Off);
+			FUN_8008b900(buf, s_s_s, GameText.pAutoKick,
+			             GPreferences.AutoKickEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
 			menu->setString(5, buf);
 			menu->setString(0, FUN_8005ea74(DAT_800bf260[pl].Function[0]));
 			menu->setString(1, FUN_8005ea74(DAT_800bf260[pl].Function[1]));
@@ -282,11 +236,11 @@ void FUN_8005eb78(VerticalMenu *menu) {
 			FUN_8005eb28(pl);
 
 			GPreferences.VibrationEnabled[pl] = 1;
-			FUN_8008b900(buf, s_s_s, GameText.Vibration, GameText.On);
+			FUN_8008b900(buf, s_s_s, GameText.pVibration, GameText.pBooleanOn);
 			menu->setString(4, buf);
 
 			GPreferences.AutoKickEnabled[pl] = 1;
-			FUN_8008b900(buf, s_s_s, GameText.Autokick, GameText.On);
+			FUN_8008b900(buf, s_s_s, GameText.pAutoKick, GameText.pBooleanOn);
 			menu->setString(5, buf);
 			menu->setString(0, FUN_8005ea74(DAT_800bf260[pl].Function[0]));
 			menu->setString(1, FUN_8005ea74(DAT_800bf260[pl].Function[1]));

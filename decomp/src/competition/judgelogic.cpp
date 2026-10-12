@@ -6,65 +6,10 @@
    a random dip, and the judge's bias for or against our skater. The run's score is the average of
    the three middle judges. Gold/Silver/Bronze are read into locals (not in the SYM) and each band
    formula is two statements, as in the old draft; the shapes decide register use and cross-jumping. */
-#pragma interface
+#include "game/competition.h"
+#include "game/career.h"
+#include "game/bruce.h"
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-class CClass {
-  public:
-	virtual ~CClass();
-};
-
-class CJudge : public CClass {
-  public:
-	uchar mProPlayer;
-	uchar mProBias;
-	uchar mConPlayer;
-	uchar mConBias;
-};
-
-class CCompetition : public CClass {
-  public:
-	uchar mCompetitorList[10];
-	uint mJudgeTimer; /* 0x10 */
-	uint mLadderTimer;
-	int mWinLoseCheer;
-	uchar mLastLadderEntry;
-	int mJudgeFullyDisplayed; /* 0x20 */
-	int mLadderFullyDisplayed;
-	CJudge mJudges[5];     /* 0x28 */
-	short mJudgesScore[5]; /* 0x50 */
-	uchar mHighScore;      /* 0x5a */
-	uchar mLowScore;       /* 0x5b */
-	uchar mPlacing[10];
-	uchar mOrdering[10];
-	ushort mScore[10][3]; /* 0x70 */
-	ushort mTotalScore[10];
-	uchar mCurrentHeat; /* 0xc0 */
-	char padc1[0x128 - 0xc1];
-	int our_skater_num; /* 0x128 */
-	int mFading;
-};
-
-struct SLevel {
-	char pad0[0x18];
-	uint Gold;   /* 0x18 */
-	uint Silver; /* 0x1c */
-	uint Bronze; /* 0x20 */
-	char pad24[120 - 0x24];
-};
-
-class CBruce {
-  public:
-	char pad0[0x928];
-	uint mScore; /* 0x928 */
-	char pad92c[0x930 - 0x92c];
-	ushort m930; /* 0x930 */
-};
-
-extern CCompetition theCompetition;
 extern SLevel Levels[];
 extern CBruce *MechList;
 extern int GLevel;
@@ -87,13 +32,13 @@ void Competition_JudgeLogic() {
 
 		pSkater = MechList;
 		c->mJudgeFullyDisplayed = 0;
-		score = pSkater->mScore;
+		score = pSkater->mPanel.mTotalScore;
 
 		{
 			int i;
 
 			for (i = 0; i < 5; i++) {
-				uint Gold = Levels[GLevel].Gold;
+				uint Gold = Levels[GLevel].GoldScore;
 
 				if (Gold * 2 < score) {
 					temp = ((score - Gold * 2) << 12) / (Gold * 3);
@@ -104,14 +49,14 @@ void Competition_JudgeLogic() {
 					temp = ((HOLYCOW_PLACE - FIRST_PLACE) * temp) >> 12;
 					temp += FIRST_PLACE;
 				} else {
-					uint Silver = Levels[GLevel].Silver;
+					uint Silver = Levels[GLevel].SilverScore;
 
 					if (Silver < score) {
 						temp = ((score - Silver) << 12) / (Gold - Silver);
 						temp = ((FIRST_PLACE - SECOND_PLACE) * temp) >> 12;
 						temp += SECOND_PLACE;
 					} else {
-						uint Bronze = Levels[GLevel].Bronze;
+						uint Bronze = Levels[GLevel].BronzeScore;
 
 						if (Bronze < score) {
 							temp = ((score - Bronze) << 12) / (Silver - Bronze);
@@ -126,7 +71,7 @@ void Competition_JudgeLogic() {
 				}
 
 				c->mJudgesScore[i] = temp;
-				temp = pSkater->m930 * (Redbook_Rnd(15) + 10);
+				temp = pSkater->mPanel.mNumBails * (Redbook_Rnd(15) + 10);
 
 				if (temp > 300)
 					temp = 300;

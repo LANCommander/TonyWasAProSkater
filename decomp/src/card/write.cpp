@@ -1,31 +1,16 @@
 /* Card_Write__F9EFileTypei (0x80014558) */
-typedef unsigned long ulong;
-enum EFileType { FILETYPE_A, FILETYPE_B, FILETYPE_C, FILETYPE_D };
-struct SCardHead;
-struct SVideoHead;
+#include "game/card.h"
+#include "game/career.h"
+#include "game/video.h"
 
 extern char CARD_FNAME[];
 extern char CARD_VNAME[];
 
-struct SReplay {
-	char pad[2094];
-	unsigned short mTime;
-	void SetTime(unsigned short t) {
-		mTime = t;
-	}
-};
-
-extern SReplay GCareer;
+extern SCareer GCareer;
 extern char Tape01IconPalette[];
 extern char Tape01IconTexture[];
 extern char Tony01IconPalette[];
 extern char Tony01IconTexture[];
-
-struct SVideoInfo {
-	int VideoMode;
-	ulong *pBlockStart;
-	char pad[0xc0 - 8];
-};
 
 extern SVideoInfo GVInfo1;
 extern SVideoInfo GVInfo2;
@@ -74,7 +59,7 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 	switch (FileType) {
 		case 0:
 			FUN_8001571c();
-			GCareer.SetTime(TimeStamp);
+			GCareer.TimeStamp = TimeStamp;
 
 			FName = CARD_FNAME;
 			DataSize = 2560;

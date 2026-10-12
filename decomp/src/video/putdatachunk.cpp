@@ -1,44 +1,14 @@
 /* PutDataChunk__FP6CBruce (0x80069974) */
 /* C++ (VIDEO.CPP). Locals, their order and types come from the demo's MAIN.SYM. */
+extern "C" {
 #include <sys/types.h>
 #include <libgte.h>
+}
 
-struct CVector {
-	int vx, vy, vz;
-};
-
-CVector operator>>(const CVector &, const int &);
+#include "game/video.h"
+#include "game/bruce.h"
 
 enum ESoundCmdType { SOUNDCMD_NONE, SOUNDCMD_PLAY, SOUNDCMD_STOP };
-
-struct SVideoInfo {
-	int VideoMode;
-	u_long *pBlockStart, *pStreamStart, *pStreamEnd, *pStream;
-	u_long Bits;
-	int BitsLeft;
-	u_long NumFrames, FramesLeft;
-	char pad24[0x78 - 0x24];
-	int OldPhysicsState, OldAnim, OldFrame;
-	SVECTOR Euler, OldEuler;
-	CVector OldPos, OldPos2;
-	int OldFlipAngle, FlipAngleDelta, OldXblanks, Yblanks, PlaybackFrozen;
-};
-
-struct CBruce {
-	char pad0[4];
-	CVector Pos;
-	char pad10[0x134 - 0x10];
-	u_long Flags;
-	char pad138[0x144 - 0x138];
-	short Frame;
-	ushort Anim;
-	char pad148[0x720 - 0x148];
-	int Flipping, FlipAngle;
-	char pad728[0x734 - 0x728];
-	int PhysicsState;
-	char pad738[0x78c - 0x738];
-	MATRIX Matrix;
-};
 
 extern SVideoInfo GVInfo1, GVInfo2;
 extern int PosBits[], EulerBits[], FlipAngleBits[], PrefixCode[], PrefixBits[];
@@ -76,11 +46,11 @@ void PutDataChunk(CBruce *pSkater) {
 	PredX = VInfo->OldPos.vx * 2 - VInfo->OldPos2.vx;
 	PredY = VInfo->OldPos.vy * 2 - VInfo->OldPos2.vy;
 	PredZ = VInfo->OldPos.vz * 2 - VInfo->OldPos2.vz;
-	DeltaX = (pSkater->Pos.vx >> 12) - PredX;
-	DeltaY = (pSkater->Pos.vy >> 12) - PredY;
-	DeltaZ = (pSkater->Pos.vz >> 12) - PredZ;
+	DeltaX = (pSkater->mPos.vx >> 12) - PredX;
+	DeltaY = (pSkater->mPos.vy >> 12) - PredY;
+	DeltaZ = (pSkater->mPos.vz >> 12) - PredZ;
 	VInfo->OldPos2 = VInfo->OldPos;
-	VInfo->OldPos = pSkater->Pos >> 12;
+	VInfo->OldPos = pSkater->mPos >> 12;
 	bx = BitsRequired(DeltaX);
 	by = BitsRequired(DeltaY);
 	bz = BitsRequired(DeltaZ);
@@ -100,7 +70,7 @@ void PutDataChunk(CBruce *pSkater) {
 	PutNBits(VInfo, DeltaY, PosBits[i]);
 	PutNBits(VInfo, DeltaZ, PosBits[i]);
 
-	Matrix2Euler(&pSkater->Matrix, &VInfo->Euler);
+	Matrix2Euler(&pSkater->mRotMatrix, &VInfo->Euler);
 
 	DeltaX = ((VInfo->Euler.vx & 0xfff) - VInfo->OldEuler.vx + 0x4000) & 0xfff;
 	DeltaY = ((VInfo->Euler.vy & 0xfff) - VInfo->OldEuler.vy + 0x4000) & 0xfff;
@@ -138,30 +108,30 @@ void PutDataChunk(CBruce *pSkater) {
 	PutNBits(VInfo, DeltaY, EulerBits[i]);
 	PutNBits(VInfo, DeltaZ, EulerBits[i]);
 
-	if (pSkater->PhysicsState == VInfo->OldPhysicsState)
+	if (pSkater->mPhysicsState == VInfo->OldPhysicsState)
 		PutNBits(VInfo, 0, 1);
 	else
-		PutNBits(VInfo, (pSkater->PhysicsState << 1) | 1, 5);
+		PutNBits(VInfo, (pSkater->mPhysicsState << 1) | 1, 5);
 
-	VInfo->OldPhysicsState = pSkater->PhysicsState;
+	VInfo->OldPhysicsState = pSkater->mPhysicsState;
 
-	if (pSkater->Anim == VInfo->OldAnim)
+	if (pSkater->mAnim == VInfo->OldAnim)
 		PutNBits(VInfo, 0, 1);
 	else
-		PutNBits(VInfo, (pSkater->Anim << 1) | 1, 8);
+		PutNBits(VInfo, (pSkater->mAnim << 1) | 1, 8);
 
-	VInfo->OldAnim = pSkater->Anim;
-	DeltaX = pSkater->Frame - VInfo->OldFrame;
+	VInfo->OldAnim = pSkater->mAnim;
+	DeltaX = pSkater->mFrame - VInfo->OldFrame;
 
 	if ((unsigned)DeltaX < 4)
 		PutNBits(VInfo, DeltaX << 1, 3);
 	else
-		PutNBits(VInfo, (pSkater->Frame << 1) | 1, 9);
+		PutNBits(VInfo, (pSkater->mFrame << 1) | 1, 9);
 
-	VInfo->OldFrame = pSkater->Frame;
-	PutNBits(VInfo, (pSkater->Flags >> 1) & 1, 1);
+	VInfo->OldFrame = pSkater->mFrame;
+	PutNBits(VInfo, (pSkater->mExtraFlags >> 1) & 1, 1);
 
-	if (!pSkater->Flipping) {
+	if (!pSkater->m720) {
 		PutNBits(VInfo, 0, 1);
 
 		VInfo->OldFlipAngle = 0;
@@ -172,7 +142,7 @@ void PutDataChunk(CBruce *pSkater) {
 		{
 			int Delta, Bits;
 
-			Delta = pSkater->FlipAngle - (VInfo->OldFlipAngle + VInfo->FlipAngleDelta);
+			Delta = pSkater->m724 - (VInfo->OldFlipAngle + VInfo->FlipAngleDelta);
 			Bits = 0;
 
 			if (Delta)
@@ -185,7 +155,7 @@ void PutDataChunk(CBruce *pSkater) {
 			PutNBits(VInfo, PrefixCode[i], PrefixBits[i]);
 			PutNBits(VInfo, Delta, FlipAngleBits[i]);
 
-			VInfo->OldFlipAngle = pSkater->FlipAngle;
+			VInfo->OldFlipAngle = pSkater->m724;
 			VInfo->FlipAngleDelta = Delta;
 		}
 	}

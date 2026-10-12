@@ -1,6 +1,6 @@
 /* DecompressStream__FPUcPsii (0x8001393c) */
 /* C++ (DECOMP.CPP). Locals, types and scopes from the demo's MAIN.SYM. */
-typedef unsigned char uchar;
+#include "game/types.h"
 
 uchar *DecompressStream(uchar *pSource, short *pDest, int StepSize, int StreamLength) {
 	uchar Type;

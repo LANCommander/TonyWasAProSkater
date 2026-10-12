@@ -10,12 +10,7 @@ extern "C" {
 }
 
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-CVector operator-(const CVector &, const CVector &);
+#include "game/bruce.h"
 
 static inline void SetVector(VECTOR *v, int _x, int _y, int _z) {
 	v->vx = _x;
@@ -23,38 +18,12 @@ static inline void SetVector(VECTOR *v, int _x, int _y, int _z) {
 	v->vz = _z;
 }
 
-class CBruce {
-  public:
-	char pad0[0x6c];
-	CVector mVel; /* 0x6c */
-	char pad78[0xf0 - 0x78];
-	CVector mOldPos; /* 0xf0 */
-	char padfc[0x134 - 0xfc];
-	int mFlags; /* 0x134 */
-	char pad138[0x150 - 0x138];
-	int m150; /* 0x150 */
-	char pad154[0x1b0 - 0x154];
-	CVector m1B0; /* 0x1b0 */
-	char pad1bc[0x21c - 0x1bc];
-	int mBails; /* 0x21c */
-	char pad220[0x24c - 0x220];
-	int m24C; /* 0x24c */
-	char pad250[0x7d8 - 0x250];
-	CVector mFront; /* 0x7d8 */
-	CVector mRight; /* 0x7e4 */
-	CVector mUp;    /* 0x7f0 */
-	void Flip();
-	void RotMatrixFromFRUVectors();
-	void HandleBailPerpendicular(SVECTOR Normal);
-};
-
 void ProjectCVectorToPlane(CVector *, SVECTOR);
 
 extern "C" {
 	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
 	void Bail__6CBrucei13ELimitBailVel(CBruce *, int);
 	int FUN_800934e4(VECTOR *, VECTOR *);
-	void Debug_RunAnim__6CBruceii(CBruce *, int, int);
 }
 
 void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
@@ -75,14 +44,14 @@ void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
 	if (ABS(Dot) >= 1638)
 		return;
 
-	Flip();
+	FlipToVelocity();
 
 	{
 		int RightDot = Mips_CVecDotProd__FP7CVectorT0(&InplaneVel, &mRight);
 
 		Bail__6CBrucei13ELimitBailVel(this, 0);
 
-		mBails++;
+		mPerpendicularBails++;
 
 		{
 			VECTOR v;
@@ -113,12 +82,12 @@ void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
 			RotMatrixFromFRUVectors();
 		}
 
-		if (mFlags & 2)
+		if (mExtraFlags & 2)
 			RightDot = -RightDot;
 
 		if (RightDot <= 0) {
-			m150 = 0x10000;
-			Debug_RunAnim__6CBruceii(this, 46, 1997);
+			mAnimSpeed = 0x10000;
+			Debug_RunAnim(46, 1997);
 
 			m24C = 5;
 		}

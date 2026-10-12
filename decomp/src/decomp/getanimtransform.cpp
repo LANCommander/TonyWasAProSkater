@@ -9,46 +9,11 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
+#include "game/m3d.h"
+#include "game/ob.h"
 
 #define MTC2(n, v) __asm__ volatile("mtc2 %0, $" #n : : "r"(v))
 #define CTC2(n, v) __asm__ volatile("ctc2 %0, $" #n : : "r"(v))
-
-struct SMatrix {
-	short m[3][3];
-	short t[3];
-};
-
-struct SEulerPivot {
-	short rx, ry, rz;
-	short tx, ty, tz;
-};
-
-struct SPSXRegion {
-	char pad0[16];
-	uint *pModels;   /* 0x10 */
-	uint *pItems;    /* 0x14 */
-	uint *pAnimFile; /* 0x18 */
-	ushort *pParent; /* 0x1c */
-	char pad20[64 - 0x20];
-};
-
-class CSuper {
-  public:
-	char pad0[0x1b];
-	uchar mType; /* 0x1b */
-	char pad1c[0x138 - 0x1c];
-	ushort *pOrder;         /* 0x138 */
-	SMatrix *pMats;         /* 0x13c */
-	ushort mRoot;           /* 0x140 */
-	uchar mLastAnim;        /* 0x142 */
-	signed char mLastFrame; /* 0x143 */
-	short mFrame;           /* 0x144 */
-	ushort mAnim;           /* 0x146 */
-};
 
 extern SPSXRegion PSXRegion[];
 extern SMatrix TweenBuffer[];
@@ -67,10 +32,10 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 	uint NumModels;
 	uint NumItems;
 
-	pRegion = &PSXRegion[pSuper->mType];
+	pRegion = &PSXRegion[pSuper->mRegion];
 	pAnimFile = pRegion->pAnimFile;
-	NumModels = pRegion->pModels[-1];
-	NumItems = pRegion->pItems[2];
+	NumModels = ((uint *)pRegion->ppModels)[-1];
+	NumItems = pRegion->pPSX[2];
 
 	switch (pAnimFile[-2]) {
 		case 42:
@@ -86,7 +51,7 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 			uint *pAnimHeader;
 			int NewAnim;
 
-			if (!pSuper->pMats) {
+			if (!pSuper->mpDecompressedFrame) {
 				{
 					uint *pHeader = pAnimFile + 1;
 					int NumAnims = pAnimFile[0];
@@ -102,31 +67,31 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 						pHeader++;
 					}
 
-					pSuper->pMats = (SMatrix *)Mem_NewX__FUiii(
+					pSuper->mpDecompressedFrame = (SMatrix *)Mem_NewX__FUiii(
 					    NumModels * sizeof(SMatrix) + MaxFrames * NumModels * sizeof(SEulerPivot),
 					    1, 1);
 				}
 
-				pSuper->pOrder = (ushort *)Mem_NewX__FUiii(NumModels * 2, 0, 1);
+				pSuper->mpCalculationOrder = (ushort *)Mem_NewX__FUiii(NumModels * 2, 0, 1);
 				pSuper->mRoot = 0xffff;
 
 				{
 					uint i;
 
 					for (i = 0; i < NumModels; i++)
-						if (pRegion->pParent[i] == i)
+						if (pRegion->pHierarchy[i] == i)
 							pSuper->mRoot = i;
 				}
 
-				pSuper->pOrder[0] = pSuper->mRoot;
+				pSuper->mpCalculationOrder[0] = pSuper->mRoot;
 
 				{
-					ushort *pParent = pSuper->pOrder;
+					ushort *pParent = pSuper->mpCalculationOrder;
 					ushort *pChild = pParent + 1;
 					int c = NumModels - 1;
 
 					while (c) {
-						ushort *pHi = pRegion->pParent;
+						ushort *pHi = pRegion->pHierarchy;
 						uint i;
 
 						for (i = 0; i < NumModels; i++, pHi++) {
@@ -146,8 +111,8 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 			NewAnim = 0;
 			pAnimHeader = &pAnimFile[pSuper->mAnim * 2 + 1];
 
-			if (pSuper->mLastAnim != pSuper->mAnim || NewBuffer) {
-				SEulerPivot *pEulerPivot = (SEulerPivot *)(pSuper->pMats + NumModels);
+			if (pSuper->mDecompressedAnim != pSuper->mAnim || NewBuffer) {
+				SEulerPivot *pEulerPivot = (SEulerPivot *)(pSuper->mpDecompressedFrame + NumModels);
 				uchar *pCompressedStream = (uchar *)pAnimFile + pAnimHeader[0];
 				int NumFrames = pAnimHeader[1];
 				int StepSize = NumModels * 6;
@@ -155,63 +120,63 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 
 				for (m = 0; m < NumModels; m++) {
 					pCompressedStream =
-					    DecompressStream(pCompressedStream, &pEulerPivot->rx, StepSize, NumFrames);
+					    DecompressStream(pCompressedStream, &pEulerPivot->vx, StepSize, NumFrames);
 					pCompressedStream =
-					    DecompressStream(pCompressedStream, &pEulerPivot->ry, StepSize, NumFrames);
+					    DecompressStream(pCompressedStream, &pEulerPivot->vy, StepSize, NumFrames);
 					pCompressedStream =
-					    DecompressStream(pCompressedStream, &pEulerPivot->rz, StepSize, NumFrames);
+					    DecompressStream(pCompressedStream, &pEulerPivot->vz, StepSize, NumFrames);
 					pCompressedStream =
-					    DecompressStream(pCompressedStream, &pEulerPivot->tx, StepSize, NumFrames);
+					    DecompressStream(pCompressedStream, &pEulerPivot->px, StepSize, NumFrames);
 					pCompressedStream =
-					    DecompressStream(pCompressedStream, &pEulerPivot->ty, StepSize, NumFrames);
+					    DecompressStream(pCompressedStream, &pEulerPivot->py, StepSize, NumFrames);
 					pCompressedStream =
-					    DecompressStream(pCompressedStream, &pEulerPivot->tz, StepSize, NumFrames);
+					    DecompressStream(pCompressedStream, &pEulerPivot->pz, StepSize, NumFrames);
 					pEulerPivot++;
 				}
 
-				pSuper->mLastAnim = pSuper->mAnim;
+				pSuper->mDecompressedAnim = pSuper->mAnim;
 				NewAnim = 1;
 			}
 
-			if (pSuper->mLastFrame != pSuper->mFrame || NewAnim) {
-				SEulerPivot *pEulerPivots = (SEulerPivot *)(pSuper->pMats + NumModels);
+			if ((signed char)pSuper->mDecompressedFrame != pSuper->mFrame || NewAnim) {
+				SEulerPivot *pEulerPivots = (SEulerPivot *)(pSuper->mpDecompressedFrame + NumModels);
 				SMatrix *pMat;
 				SEulerPivot *pRootEuler;
 
 				pEulerPivots += NumModels * pSuper->mFrame;
-				pMat = pSuper->pMats + pSuper->mRoot;
+				pMat = pSuper->mpDecompressedFrame + pSuper->mRoot;
 				pRootEuler = pEulerPivots + pSuper->mRoot;
 				ushort *pModel;
 				uint i;
 
 				FUN_8008b3d4(pRootEuler, pMat);
 
-				pMat->t[0] = pRootEuler->tx;
-				pMat->t[1] = pRootEuler->ty;
-				pMat->t[2] = pRootEuler->tz;
-				pModel = pSuper->pOrder + 1;
+				pMat->t[0] = pRootEuler->px;
+				pMat->t[1] = pRootEuler->py;
+				pMat->t[2] = pRootEuler->pz;
+				pModel = pSuper->mpCalculationOrder + 1;
 
 				for (i = 1; i < NumModels; i++) {
 					int m = *pModel++;
 					SMatrix *pParentMat;
 					SEulerPivot *pEulerPivot;
 
-					pMat = pSuper->pMats + m;
+					pMat = pSuper->mpDecompressedFrame + m;
 					pEulerPivot = pEulerPivots + m;
-					pParentMat = pSuper->pMats + pRegion->pParent[m];
+					pParentMat = pSuper->mpDecompressedFrame + pRegion->pHierarchy[m];
 					FUN_8008b3d4(pEulerPivot, pMat);
 
 					if (!((int)pEulerPivot & 3)) {
 						SVECTOR vec;
 
-						vec.vx = pEulerPivot->tx;
-						vec.vy = pEulerPivot->ty;
-						vec.vz = pEulerPivot->tz;
+						vec.vx = pEulerPivot->px;
+						vec.vy = pEulerPivot->py;
+						vec.vz = pEulerPivot->pz;
 						MTC2(0, *(int *)&vec.vx);
 						MTC2(1, *(int *)&vec.vz);
 					} else {
-						MTC2(0, *(int *)&pEulerPivot->tx);
-						MTC2(1, *(int *)&pEulerPivot->tz);
+						MTC2(0, *(int *)&pEulerPivot->px);
+						MTC2(1, *(int *)&pEulerPivot->pz);
 					}
 
 					CTC2(0, ((int *)pParentMat)[0]);
@@ -227,10 +192,10 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 					pMat->t[2] += pParentMat->t[2];
 				}
 
-				pSuper->mLastFrame = pSuper->mFrame;
+				pSuper->mDecompressedFrame = pSuper->mFrame;
 			}
 
-			return pSuper->pMats;
+			return pSuper->mpDecompressedFrame;
 		}
 	}
 }

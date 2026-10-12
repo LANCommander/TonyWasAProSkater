@@ -6,37 +6,14 @@
    runs the 8-entry menu (TRIANGLE, SQUARE, CIRCLE, X, VIBRATION, AUTOKICK, RESET TO DEFAULT,
    BACK TO OPTIONS; ids 1296..) with FUN_8005eb78 as the per-frame handler. Backing out restores
    the options background and returns -1. Called from the options menu FUN_80060274. */
-struct SOptions {
-	int SFXVolume;
-	int MusicVolume;
-	int OtherOptions[66];
-	int AutoKickEnabled[2];       /* 0x110 */
-	int VibrationEnabled[2];      /* 0x118 */
-	int ControllerFunction[2][4]; /* 0x120 */
-};
-
-struct SPadMap {
-	int Function[4];
-};
-
-struct SText {
-	char pad0[0x4c];
-	char *Autokick; /* 0x4c */
-	char pad50[0xf0 - 0x50];
-	char *On;  /* 0xf0: "on <off>" */
-	char *Off; /* 0xf4: "<on> off" */
-	char pad8[0x100 - 0xf8];
-	char *Vibration; /* 0x100 */
-};
-
-struct SLabels {
-	char *Name[8];
-};
+#include "game/career.h"
+#include "game/pad.h"
+#include "game/front.h"
 
 extern SOptions GPreferences;
 extern SPadMap DAT_800bf260[2];
 extern SPadMap DAT_800bf280[2];
-extern SText GameText;
+extern LocalText GameText;
 extern SLabels DAT_800a1d0c;
 extern char s_opt_ctr_bmp[];
 extern char s_options_bmp[];
@@ -103,13 +80,13 @@ extern "C" int FUN_8005f6bc(int a) {
 	labels.Name[2] = FUN_8005ea74(DAT_800bf260[pl].Function[2]);
 	labels.Name[3] = FUN_8005ea74(DAT_800bf260[pl].Function[3]);
 
-	FUN_8008b900(vib, s_s_s, GameText.Vibration,
-	             GPreferences.VibrationEnabled[pl] ? GameText.On : GameText.Off);
+	FUN_8008b900(vib, s_s_s, GameText.pVibration,
+	             GPreferences.VibrationEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
 
 	labels.Name[4] = vib;
 
-	FUN_8008b900(ak, s_s_s, GameText.Autokick,
-	             GPreferences.AutoKickEnabled[pl] ? GameText.On : GameText.Off);
+	FUN_8008b900(ak, s_s_s, GameText.pAutoKick,
+	             GPreferences.AutoKickEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
 
 	labels.Name[5] = ak;
 	DAT_800bf280[pl].Function[0] = DAT_800bf260[pl].Function[0];

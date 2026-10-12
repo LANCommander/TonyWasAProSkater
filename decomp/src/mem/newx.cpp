@@ -4,15 +4,7 @@
    DAT_800d1b40 and DAT_800d1b44: one block from the bottom, one from the top. The other heaps are
    first-fit free lists: a big enough block is split (its tail goes back on the free list) or
    taken whole. An allocated block's pNext holds the allocation serial number. */
-#pragma interface
-
-typedef unsigned int uint;
-
-struct SBlockHeader {
-	SBlockHeader *pNext;
-	uint Flags : 4;
-	uint Size : 28;
-};
+#include "game/mem.h"
 
 int LowMemory;
 uint CriticalBigHeapUsage;
@@ -24,10 +16,6 @@ char *DAT_800d1b40;
 char *DAT_800d1b44;
 SBlockHeader *DAT_800d1b48;
 SBlockHeader *DAT_800d1b4c;
-
-void Bang(unsigned char, unsigned char, unsigned char);
-void AddToFreeList(SBlockHeader *, int);
-void *Mem_NewTop(uint);
 
 void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 	SBlockHeader *pBlock;
@@ -132,7 +120,7 @@ void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 	else
 		FirstFreeBlock[Heap] = pBlock->pNext;
 
-	pBlock->Flags = Heap;
+	pBlock->ParentHeap = Heap;
 	pBlock->pNext = (SBlockHeader *)UniqueIndentifier;
 	Used[Heap] += pBlock->Size + 8;
 

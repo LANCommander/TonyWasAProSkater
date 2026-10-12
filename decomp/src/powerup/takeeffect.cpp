@@ -3,39 +3,8 @@
    power-up: letters and the tape hand out their panel message, the bonus types score a trick and
    pitch the pickup sound, then the item fires its trigger links and, if it did something, dies.
    THPS1 asks the skater whether a letter/tape counts (FUN_80042744) instead of always taking it. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-
-class CItem {
-  public:
-	ushort mFlags; /* 0x000 */
-	char pad2[0x3a - 2];
-	ushort mType; /* 0x03a */
-	char pad3c[0x48 - 0x3c];
-	virtual ~CItem();
-	virtual void Die();
-};
-
-class CBody : public CItem {};
-
-class CBruce : public CBody {
-  public:
-	char pad4c[0x358 - 0x4c];
-	int m358; /* 0x358 */
-	char pad35c[0x734 - 0x35c];
-	int m734; /* 0x734 */
-};
-
-class CPowerUp : public CBody {
-  public:
-	char pad4c[0xe6 - 0x4c];
-	short mGapValue; /* 0x0e6 */
-	char pade8[0x13c - 0xe8];
-	uchar mHasLinks; /* 0x13c */
-	char pad13d[0x142 - 0x13d];
-	ushort mNode; /* 0x142 */
-	void TakeEffect(CBruce *pMech);
-};
+#include "game/powerup.h"
+#include "game/bruce.h"
 
 struct SMessageProg;
 
@@ -59,8 +28,6 @@ extern "C" {
 	int FUN_80042744(CBruce *, short);
 	void Panel_Tape__Fi(int);
 	void FUN_8002f1a0(CBruce *);
-	void Trick_Trick__6CBruceiPcii(CBruce *, int, char *, int, int);
-	void Trick_Land__6CBruce(CBruce *);
 }
 
 void CPowerUp::TakeEffect(CBruce *pMech) {
@@ -81,7 +48,7 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 		case 14:
 		case 15:
 		case 16:
-			HadEffect = FUN_80042744(pMech, mGapValue);
+			HadEffect = FUN_80042744(pMech, mHealth);
 
 			if (!HadEffect)
 				break;
@@ -142,12 +109,12 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 		case 21:
 		case 22:
 		case 23:
-			if (pMech->m358)
+			if (pMech->mInAir)
 				break;
 
 			HadEffect = 1;
 
-			if (!pMech->m734)
+			if (!pMech->mPhysicsState)
 				FUN_8002f1a0(pMech);
 
 			{
@@ -155,28 +122,28 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 
 				switch (mType) {
 					case 21:
-						Trick_Trick__6CBruceiPcii(pMech, 76, s_Bonus_100, -100, 0);
+						pMech->Trick_Trick(76, s_Bonus_100, -100, 0);
 						SFX_SetVoicePitch(Pong, 900);
 						break;
 					case 22:
-						Trick_Trick__6CBruceiPcii(pMech, 76, s_Bonus_200, -200, 0);
+						pMech->Trick_Trick(76, s_Bonus_200, -200, 0);
 						SFX_SetVoicePitch(Pong, 1114);
 						break;
 					case 23:
-						Trick_Trick__6CBruceiPcii(pMech, 76, s_Bonus_500, -500, 0);
+						pMech->Trick_Trick(76, s_Bonus_500, -500, 0);
 						SFX_SetVoicePitch(Pong, 1500);
 						break;
 				}
 			}
 
-			if (!pMech->m734)
-				Trick_Land__6CBruce(pMech);
+			if (!pMech->mPhysicsState)
+				pMech->Trick_Land();
 
 			break;
 	}
 
-	if (mHasLinks)
-		Trig_SendPulse(Trig_GetLinksPointer(mNode));
+	if (mHasNode)
+		Trig_SendPulse(Trig_GetLinksPointer(mNodeIndex));
 
 	if (HadEffect) {
 		Die();

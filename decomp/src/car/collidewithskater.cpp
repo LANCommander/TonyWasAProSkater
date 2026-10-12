@@ -10,49 +10,13 @@ extern "C" {
 	#include <stdlib.h>
 }
 
-typedef unsigned short ushort;
-
 #define MTC2(n, v) __asm__ volatile("mtc2 %0, $" #n : : "r"(v))
 #define ABS(x)     (((x) ^ ((x) >> 31)) - ((x) >> 31))
 #define CTC2(n, v) __asm__ volatile("ctc2 %0, $" #n : : "r"(v))
 
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-class CCar {
-  public:
-	char pad0[4];
-	CVector mPos; /* 0x04 */
-	char pad10[0x3a - 0x10];
-	ushort mType; /* 0x3a */
-	char pad3c[0x6c - 0x3c];
-	CVector mVel; /* 0x6c */
-};
-
-class CBruce {
-  public:
-	char pad0[4];
-	CVector mPos;     /* 0x04 */
-	CSVector mAngles; /* 0x10 */
-	char pad16[0x6c - 0x16];
-	CVector mVel; /* 0x6c */
-	char pad78[0xf0 - 0x78];
-	CVector mOldPos; /* 0xf0 */
-	char padfc[0x1a0 - 0xfc];
-	CCar *mLastCar; /* 0x1a0 */
-	char pad1a4[0x358 - 0x1a4];
-	int mInAir; /* 0x358 */
-	char pad35c[0x734 - 0x35c];
-	int m734; /* 0x734 */
-	void Vibrate(int, int, int);
-	void SetAnglesFromHeading();
-	void BloodSplat(int, int);
-};
+#include "game/car.h"
+#include "game/bruce.h"
+#include "game/bit.h"
 
 extern int GameText_c0[];
 extern int BitCount;
@@ -66,10 +30,8 @@ void Bit_SetSparkTrajectory(const CSVector &);
 extern "C" {
 	void SFX_Grunt__FP6CBruce(CBruce *);
 	int SFX_PlayX__FUisi(int, short, int);
-	void Trick_Trick__6CBruceiPcii(CBruce *, int, int, int, int);
 	void Bit_SetSparkTrajectoryCone__FRC8CSVector(CSVector *);
-	void *__nw__4CBitUi(int);
-	void __11CGrindSparkP5CBodyR7CVectoriii(void *, CBruce *, char *, int, int, int);
+	/* CBruce::Bail(int, ELimitBailVel), called without its second argument (retail leaves a2 alone) */
 	void Bail__6CBrucei13ELimitBailVel(CBruce *, int);
 }
 
@@ -77,7 +39,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 	if (pCar == pSkater->mLastCar)
 		return;
 
-	if (pSkater->mInAir && pSkater->m734)
+	if (pSkater->mInAir && pSkater->mPhysicsState)
 		return;
 
 	if (Utils_CrapDist(pSkater->mPos, pCar->mPos) >= 500)
@@ -164,7 +126,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 			else if (pCar->mType == 216)
 				CarHeight = 0x64000;
 
-			if (!pSkater->mInAir && pSkater->m734 == 1 &&
+			if (!pSkater->mInAir && pSkater->mPhysicsState == 1 &&
 			    CarHeight < pCar->mPos.vy - pSkater->mPos.vy) {
 				pSkater->mVel.vx >>= 1;
 				pSkater->mVel.vy >>= 1;
@@ -173,7 +135,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 				pSkater->Vibrate(8, 1, 150);
 				SFX_Grunt__FP6CBruce(pSkater);
 				SFX_PlayX__FUisi(40, 0x2000, 0);
-				Trick_Trick__6CBruceiPcii(pSkater, 78, GameText_c0[0], -1000, 0);
+				pSkater->Trick_Trick(78, (char *)GameText_c0[0], -1000, 0);
 
 				{
 					int n = BitCount;
@@ -199,10 +161,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 					UseCacheForBits = 0;
 
 					for (i = 0; i < 20; i++) {
-						void *p = __nw__4CBitUi(120);
-
-						if (p)
-							__11CGrindSparkP5CBodyR7CVectoriii(p, pSkater, ZeroVector, -40, 4096, 5);
+						new CGrindSpark(pSkater, *(CVector *)ZeroVector, -40, 4096, 5);
 					}
 
 					UseCacheForBits = 1;

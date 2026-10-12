@@ -11,37 +11,7 @@ extern "C" {
 	#include <libgpu.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct tag_S_Pal {
-	ushort Clut;
-	ushort pad2;
-	ushort RefCount;
-};
-
-struct Texture {
-	uchar u0, v0;
-	ushort Clut; /* 2 */
-	uchar u1, v1;
-	ushort TPage; /* 6 */
-	uchar u2, v2;
-	uchar u3, v3;
-	uint Window;     /* 12 */
-	uint Flags;      /* 16 */
-	uint Checksum;   /* 20 */
-	tag_S_Pal *pPal; /* 24 */
-	short X;         /* 28 */
-	short Y;         /* 30 */
-};
-
-struct SPSXRegion {
-	char pad0[16];
-	uint *pModels; /* 0x10 */
-	uint *pPSX;    /* 0x14 */
-	char pad18[64 - 0x18];
-};
+#include "game/m3d.h"
 
 extern SPSXRegion PSXRegion[];
 
@@ -69,7 +39,7 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 
 	pPSX = PSXRegion[Region].pPSX;
 	pStuff = Spool_SkipPackets(pPSX);
-	pStuff += PSXRegion[Region].pModels[-1];
+	pStuff += ((uint *)PSXRegion[Region].ppModels)[-1];
 	Temp = *pStuff++;
 	TextureLookup = (Texture **)pStuff;
 	pStuff += Temp;
@@ -90,7 +60,7 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 		if (!pTextureEntry)
 			continue;
 
-		if (pTextureEntry->Flags & 0xf0000)
+		if (*(uint *)&pTextureEntry->Usage & 0xf0000)
 			continue;
 
 		if (pTextureEntry->Checksum == 0xcce0187c)
@@ -116,8 +86,8 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				ushort sx = x;
 				ushort sy = y;
 
-				pTextureEntry->X = sx;
-				pTextureEntry->Y = sy;
+				pTextureEntry->x = sx;
+				pTextureEntry->y = sy;
 				rec.x = sx;
 				rec.y = sy;
 				rec.w = AlignedWidth / 2;
@@ -134,8 +104,8 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				ushort sx = x;
 				ushort sy = y;
 
-				pTextureEntry->X = sx;
-				pTextureEntry->Y = sy;
+				pTextureEntry->x = sx;
+				pTextureEntry->y = sy;
 				rec.x = sx;
 				rec.y = sy;
 				rec.w = AlignedWidth / 4;
@@ -144,10 +114,10 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 			}
 
 			pPal = Pal_FindPaletteEntry(PaletteChecksum);
-			pPal->RefCount++;
-			pTextureEntry->pPal = pPal;
-			pTextureEntry->Clut = pPal->Clut;
-			pTextureEntry->TPage = FUN_8008f72c(NumColours == 256, 0, x, y);
+			pPal->Usage++;
+			pTextureEntry->pPalette = pPal;
+			pTextureEntry->clut = pPal->Clut;
+			pTextureEntry->tpage = FUN_8008f72c(NumColours == 256, 0, x, y);
 
 			{
 				int t = x & 63;
@@ -168,15 +138,15 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				pTextureEntry->v2 = v + Height - 1;
 				pTextureEntry->u3 = u + Width - 1;
 				pTextureEntry->v3 = v + Height - 1;
-				pTextureEntry->Window = ((v & 0xf8) << 12) | 0xe2000000 | ((u & 0xf8) << 7) |
+				pTextureEntry->TexWin = ((v & 0xf8) << 12) | 0xe2000000 | ((u & 0xf8) << 7) |
 				                        ((-Height & 0xf8) << 2) | ((-Width & 0xf8) >> 3);
 
 				{
-					uint f = pTextureEntry->Flags;
+					uint f = *(uint *)&pTextureEntry->Usage;
 
 					f &= 0xfff0ffff;
 					f |= 0x10000;
-					pTextureEntry->Flags = f;
+					*(uint *)&pTextureEntry->Usage = f;
 				}
 			}
 		}

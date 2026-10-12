@@ -8,239 +8,15 @@
    fold() moves a constant onto the *other* factor of a product: `temptime * 8000 * big_air_mph`
    shifts big_air_mph and multiplies by temptime, as retail does. Locals are declared where
    first used so their stack slots reuse the earlier blocks' slots. */
-#pragma interface
-
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <inline_c.h>
 }
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-	int Length() const;
-};
-
-struct CSVector {
-	short vx, vy, vz;
-};
-
-struct CFriction {
-	uchar x, y, z;
-};
-
-class CClass {
-  public:
-	virtual ~CClass() {}
-};
-
-class CQuat : public CClass {
-  public:
-	int x, y, z, w;
-	CQuat() {
-		x = 0;
-		y = 0;
-		z = 0;
-		w = 4096;
-	}
-};
-
-template <class T> class AnimParam : public CClass {
-  public:
-	uint *mTimer;
-	T mParam;
-	AnimParam(uint &timer) : mTimer(&timer) {}
-	virtual ~AnimParam();
-};
-
-class CamPos : public CClass {
-  public:
-	char pad[180];
-	CamPos();
-	virtual ~CamPos();
-};
-
-class CItem {
-  public:
-	short mType;      /* 0x000 */
-	CVector mPos;     /* 0x004 */
-	CSVector mAngles; /* 0x010 */
-	char pad16[0x3a - 0x16];
-	short m3a; /* 0x03a */
-	char pad3c[0x48 - 0x3c];
-	virtual ~CItem();
-};
-
-class CBody : public CItem {
-  public:
-	CBody **mppOriginalList; /* 0x04c */
-	ushort mInputFlags;      /* 0x050 */
-	ushort mCBodyFlags;      /* 0x052 */
-	char pad54[0x6c - 0x54];
-	CVector mVel; /* 0x06c */
-	char pad78[0xe0 - 0x78];
-	ushort mRMinor; /* 0x0e0 */
-	char pade2[0x134 - 0xe2];
-	CBody();
-	virtual ~CBody();
-	void AttachTo(CBody **);
-};
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	char pad40[364 - 64];
-};
-
-class CBruce : public CBody {
-  public:
-	char pad134[0x35c - 0x134];
-	int m35c; /* 0x35c */
-	char pad360[0x734 - 0x360];
-	int m734; /* 0x734 */
-	char pad738[0x740 - 0x738];
-	int m740; /* 0x740 */
-	char pad744[0x86c - 0x744];
-	SControl *mpPad; /* 0x86c */
-};
-
-struct SMike {
-	char pad0[24];
-	CSVector mAngles;
-};
-
-class CCamera : public CBody {
-  public:
-	ushort mMikeIndex; /* 0x134 */
-	CamPos mPosA;      /* 0x138 */
-	CamPos mLastPos;
-	CamPos mCurrentPos;
-	CamPos mPosB;
-	uint mCamPosDelta; /* 0x418 */
-	uint mCamPosRate;
-	CBruce *mTripod; /* 0x420 */
-	CBody *mOldTripod;
-	int mCalcTripod;       /* 0x428 */
-	CVector mOldTripodPos; /* 0x42c */
-	int new_focus;         /* 0x438 */
-	CVector mTripodPos;    /* 0x43c */
-	CVector mTripodPosIncrement;
-	uint mTripodTime;     /* 0x454 */
-	CBody *mFocus;        /* 0x458 */
-	int mCalcFocus;       /* 0x45c */
-	CVector mOldFocusPos; /* 0x460 */
-	CVector mFocusPos;    /* 0x46c */
-	CVector mFocusPosIncrement;
-	uint mFocusTime;    /* 0x484 */
-	int mZoom;          /* 0x488 */
-	ushort mZoomTime;   /* 0x48c */
-	int mZoomIncrement; /* 0x490 */
-	int mOnRail;        /* 0x494 */
-	CVector mRailStart; /* 0x498 */
-	CVector mRailEnd;
-	short mPitchDamper;      /* 0x4b0 */
-	short mTripodPosYDamper; /* 0x4b2 */
-	CVector mUp;             /* 0x4b4 */
-	CQuat mO;                /* 0x4c0 */
-	CQuat mDesiredO;
-	CQuat mPrevO;
-	CQuat mPreFocusO;
-	CQuat mStoppedO;
-	int mStoppedOValid;  /* 0x524 */
-	CSVector mCamAngles; /* 0x528 */
-	CVector mPosOffset;  /* 0x530 */
-	CVector mDesiredPos;
-	CVector mDesiredFocusPos;
-	int mCollisionRayLR; /* 0x554 */
-	int mCollisionRayBack;
-	short mCollisionAngLR; /* 0x55c */
-	short mCollisionAngBack;
-	short mCollisionBack;      /* 0x560 */
-	int saved_mCollisionRayLR; /* 0x564 */
-	int saved_mCollisionRayBack;
-	short saved_mCollisionAngLR;
-	short saved_mCollisionAngBack;
-	short saved_mCollisionBack;
-	CSVector mShakeAmplitude; /* 0x572 */
-	CFriction mShakeDecay;    /* 0x578 */
-	CSVector mShakeSpeed;     /* 0x57c */
-	int mCameraMode;          /* 0x584 */
-	int mCameraModeIncDir;
-	int mBossCamSpinRate;      /* 0x58c */
-	uint mTimer;               /* 0x590 */
-	AnimParam<CQuat> testQuat; /* 0x594 */
-	short mColAngBuffer[8];    /* 0x5b0 */
-	short mPrevColAngBuffer[8];
-	uchar mColCheckIndex; /* 0x5d0 */
-	uint mColCheckCycleCounter;
-	int mDownDist; /* 0x5d8 */
-	int mCompIntroTimer;
-	int mSpeedUpIntro; /* 0x5e0 */
-	CVector mCompIntroEndPos;
-	int extra_YRot; /* 0x5f0 */
-	CVector mVFront;
-	CVector mOldVFront;
-	int prev_speed_lag_dist; /* 0x60c */
-	int big_air;             /* 0x610 */
-	int big_air_timer;
-	int big_air_end_timer;
-	int big_air_mph;
-	int new_hang_time;
-	int in_pool_timer; /* 0x624 */
-	int jump_acc;
-	int jump_uptimer;
-	int max_jump_dist;
-	int max_jump_dist2;
-	int jump_timer;
-	int max_timer;
-	int landing_timer;
-	int landing_pos;
-	int turn_delay_timer;
-	CVector vFront; /* 0x64c */
-	uint mSpeed;    /* 0x658 */
-	int mSpeedBuffer[6];
-	short mStoppedExtraYRot; /* 0x674 */
-	VECTOR real_cam_offset;  /* 0x678 */
-	CQuat old_orientation;   /* 0x688 */
-	int old_offset[4];
-	int loose_cam_timer; /* 0x6ac */
-	CCamera(CBody *tripod, ushort mike_index);
-	virtual ~CCamera();
-	void LoadIntoMikeCamera();
-	void CM_CompetitionIntro();
-	void MoveToDesiredPos(uint);
-	void ReactToCollision();
-};
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct SLineInfo {
-	Vector StartCoords;
-	Vector EndCoords;
-	Vector MinCoords;
-	Vector MaxCoords;
-	int iLo, iHi, jLo, jHi;
-	int Distance;
-	int Length;
-	char pad48[104 - 72];
-	int m68; /* 104 */
-	char pad6c[136 - 108];
-	char m88; /* 136 */
-	char pad89[168 - 137];
-};
+#include "game/camera.h"
+#include "game/bruce.h"
+#include "game/colij.h"
 
 extern MATRIX tm;
 extern CVector Camera_CamOffset;
@@ -257,8 +33,6 @@ extern "C" int FUN_8008b5dc(int);
 extern "C" int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
 void M3dColij_InitLineInfo(SLineInfo *);
 void Utils_CalcUnit(CVector &, const CVector &);
-CVector operator-(const CVector &, const CVector &);
-CQuat operator*(const CQuat &, const CQuat &);
 CQuat Quat_FromXRot(short);
 void Quat_Slerp(CQuat, CQuat, int, CQuat &);
 
@@ -326,7 +100,7 @@ void CCamera::MoveToDesiredPos(uint normal_slerp) {
 	old_pos = mPos;
 	Dist = mTripod->mVel;
 
-	if (mTripod->m734 == 0 || mTripod->m734 == 4) {
+	if (((CBruce *)mTripod)->mPhysicsState == 0 || ((CBruce *)mTripod)->mPhysicsState == 4) {
 		{
 			int i;
 
@@ -384,17 +158,17 @@ void CCamera::MoveToDesiredPos(uint normal_slerp) {
 		line_info.EndCoords.vz = mTripodPos.vz + vCheck.vz;
 		M3dColij_InitLineInfo(&line_info);
 
-		line_info.m88 = 0;
+		line_info.RecordTriggerZoneHits = 0;
 		CameraCollisionCheck = 1;
 		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
 
 		CameraCollisionCheck = 0;
 
-		if (!line_info.m68)
+		if (!line_info.pItem)
 			mDesiredO = wouldbeO;
 	}
 
-	if ((big_air && mTripod->m35c) || big_air_timer > 0) {
+	if ((big_air && ((CBruce *)mTripod)->mDoingATrick) || big_air_timer > 0) {
 		ReactToCollision();
 
 		if (!big_air_timer)
@@ -459,11 +233,11 @@ void CCamera::MoveToDesiredPos(uint normal_slerp) {
 		mDesiredO = mDesiredO * Quat_FromXRot(Camera_CamPitch);
 		ReactToCollision();
 
-		if (mTripod->m740) {
-			if (mTripod->m734 == 3) {
+		if (((CBruce *)mTripod)->m740) {
+			if (((CBruce *)mTripod)->mPhysicsState == 3) {
 				loosen_up = 1;
 				loose_cam_timer = 20;
-			} else if (mTripod->m734 == 1) {
+			} else if (((CBruce *)mTripod)->mPhysicsState == 1) {
 				mDesiredO = mDesiredO * Quat_FromXRot(200);
 			}
 		}

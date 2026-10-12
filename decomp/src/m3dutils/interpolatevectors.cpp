@@ -1,23 +1,6 @@
 /* M3dUtils_InterpolateVectors__FiiPUiP4Itemii (0x800814b0) */
-typedef unsigned short ushort;
-typedef unsigned int uint;
-typedef unsigned char uchar;
-
-struct CSVector {
-	short x, y, z;
-};
-
-struct SMatrix {
-	short m[3][3];
-	short t[3];
-};
-
-struct Item {
-	char pad0[0x144];
-	short mFrame;
-	ushort mAnim;
-	uchar mAnimMode;
-};
+#include "game/m3d.h"
+#include "game/ob.h"
 
 extern SMatrix TweenBuffer[];
 
@@ -35,15 +18,15 @@ void M3dUtils_InterpolateVectors(int NumVectors, int Interval, uint *pAnimFile, 
 	CSVector *pTween;
 	CSVector *pAnim0;
 
-	Frame = pItem->mFrame;
+	Frame = ((CSuper *)pItem)->mFrame;
 	Frame0 = Frame - (Frame % Interval);
 	Frame1 = Frame0 + Interval;
-	Anim = pItem->mAnim;
+	Anim = ((CSuper *)pItem)->mAnim;
 	pAnims = (SMatrix *)((char *)pAnimFile + pAnimFile[Anim * 2 + 1]);
 	NumFrames = ((ushort *)pAnimFile)[Anim * 4 + 4];
 
 	if (Frame1 >= NumFrames) {
-		if (pItem->mAnimMode == 1) {
+		if (((CSuper *)pItem)->mAnimMode == 1) {
 			Frame1 = 0;
 			Alpha = ((Frame - Frame0) << 12) / (NumFrames - Frame0);
 		} else {
@@ -75,12 +58,12 @@ void M3dUtils_InterpolateVectors(int NumVectors, int Interval, uint *pAnimFile, 
 		__asm__ volatile("mtc2 %0, $8" : : "r"(Alpha));
 
 		for (i = 0; i < NumVectors; i++) {
-			int p0x = pAnim0->x;
-			int p0y = pAnim0->y;
-			int p0z = pAnim0->z;
-			int dx = pAnim1->x - p0x;
-			int dy = pAnim1->y - p0y;
-			int dz = pAnim1->z - p0z;
+			int p0x = pAnim0->vx;
+			int p0y = pAnim0->vy;
+			int p0z = pAnim0->vz;
+			int dx = pAnim1->vx - p0x;
+			int dy = pAnim1->vy - p0y;
+			int dz = pAnim1->vz - p0z;
 			__asm__ volatile("mtc2 %0, $25" : : "r"(p0x));
 			__asm__ volatile("mtc2 %0, $26" : : "r"(p0y));
 			__asm__ volatile("mtc2 %0, $27" : : "r"(p0z));

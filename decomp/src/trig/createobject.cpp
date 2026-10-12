@@ -2,44 +2,10 @@
 /* C++ (TRIG.CPP). Fuzzy demo twin (0.71); locals from its MAIN.SYM. Creates the object for a
    trigger node: baddies (203), cars (213-216) and platforms (402) from type-1/7 nodes, powerups
    from type-5 nodes. Objects not active at start are suspended out of their list. */
-#pragma interface
-
-typedef unsigned short ushort;
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-class CBody {
-  public:
-	char pad0[0x52];
-	ushort mCBodyFlags; /* 0x52 */
-	char pad54[0xae - 0x54];
-	ushort mSeed; /* 0xae */
-	char padb0[0xe2 - 0xb0];
-	ushort mNodeId; /* 0xe2 */
-	void *operator new(uint) throw();
-};
-
-class CScriptOnlyBaddy : public CBody {
-  public:
-	char pade4[568 - 0xe4];
-	CScriptOnlyBaddy(short *, int);
-};
-
-class CPlatform : public CBody {
-  public:
-	char pade4[600 - 0xe4];
-	CPlatform(short *, int);
-};
-
-class CCar : public CBody {
-  public:
-	char pade4[548 - 0xe4];
-	CCar(short *, int, int);
-};
+#include "game/ob.h"
+#include "game/baddy.h"
+#include "game/platform.h"
+#include "game/car.h"
 
 short **OffsetList;
 
@@ -56,7 +22,6 @@ CBody *PowerUp_Create(ushort, const CVector &, uint, int, CVector &);
 
 extern "C" {
 	void FUN_8001ff34(CBody *, int);
-	void Suspend__5CBodyPP5CBody(CBody *, CBody **);
 }
 
 CBody *Trig_CreateObject(int NodeIndex) {
@@ -122,7 +87,7 @@ CBody *Trig_CreateObject(int NodeIndex) {
 	}
 
 	if (NewObject) {
-		NewObject->mNodeId = NodeIndex;
+		NewObject->mNode = NodeIndex;
 		NewObject->mSeed = Seedable;
 
 		if (ManualSuspendControl)
@@ -143,7 +108,7 @@ CBody *Trig_CreateObject(int NodeIndex) {
 			if (NewObject == PowerUpList)
 				ppList = &PowerUpList;
 
-			Suspend__5CBodyPP5CBody(NewObject, ppList);
+			NewObject->Suspend(ppList);
 		}
 
 		return NewObject;

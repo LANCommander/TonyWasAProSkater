@@ -1,20 +1,5 @@
 /* FlashUpdate__5CItem (0x80043728) */
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CItem {
-	ushort mFlags;
-	char pad0[0x1e];
-	uint mRGB;
-	char pad1[0x10];
-	uint mStoredRGB;
-	char pad2[0x08];
-	ushort mFlashTimer;
-	short mFlash_dR;
-	short mFlash_dG;
-	short mFlash_dB;
-	void FlashUpdate();
-};
+#include "game/ob.h"
 
 void CItem::FlashUpdate() {
 	if (mFlashTimer) {

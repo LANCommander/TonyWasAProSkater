@@ -1,89 +1,16 @@
 /* GetDataChunk__FP6CBrucei (0x8006a158) flags=-fstructure-noalias */
 /* C++ (VIDEO.CPP). Locals, their order and types come from the demo's MAIN.SYM. */
+extern "C" {
 #include <sys/types.h>
 #include <libgte.h>
+}
 
-struct CVector {
-	int vx, vy, vz;
-	CVector &operator<<=(const int &);
-};
-
-CVector operator-(const CVector &, const CVector &);
-
-struct SVideoInfo {
-	int VideoMode;
-	u_long *pBlockStart, *pStreamStart, *pStreamEnd, *pStream;
-	u_long Bits;
-	int BitsLeft;
-	u_long NumFrames, FramesLeft;
-	char pad24[0x78 - 0x24];
-	int OldPhysicsState, OldAnim, OldFrame;
-	SVECTOR Euler, OldEuler;
-	CVector OldPos, OldPos2;
-	int OldFlipAngle, FlipAngleDelta, Xblanks, OldXblanks, PlaybackFrozen;
-};
-
-struct CBruce {
-	char pad0[4];
-	CVector Pos;
-	char pad10[0x6c - 0x10];
-	CVector Vel;
-	char pad78[0xf0 - 0x78];
-	CVector OldPos;
-	char padfc[0x134 - 0xfc];
-	u_long Flags;
-	char pad138[0x144 - 0x138];
-	short Frame;
-	ushort Anim;
-	char pad148[0x194 - 0x148];
-	u_long Flags2;
-	char pad198[0x2e8 - 0x198];
-	int Terrain;
-	char pad2ec[0x720 - 0x2ec];
-	int Flipping, FlipAngle;
-	char pad728[0x734 - 0x728];
-	int PhysicsState;
-	char pad738[0x78c - 0x738];
-	MATRIX Matrix;
-};
-
-struct CSuper;
-
-struct Item {
-	ushort Flags;
-	char pad2[0x20 - 2];
-	int Colour;
-};
-
-struct CTrickOb {
-	void *vptr;
-	u_long mChecksum;
-	ushort mNode;
-	u_char mState, mPlayer;
-	ushort mScore;
-	CTrickOb *mpNext;
-	Item *mpItem;
-};
-
-struct SLineInfo {
-	CVector StartCoords, EndCoords;
-	char pad18[0x88 - 0x18];
-	u_char RecordTriggerZoneHits;
-	char pad89[0xa4 - 0x89];
-};
-
-class CBody {
-  public:
-	char pad0[0x48];
-	virtual void f0();
-	virtual void Hit();
-};
-
-struct STerrain {
-	char pad0[0xc];
-	int Type;
-	char pad10[0x154 - 0x10];
-};
+#include "game/video.h"
+#include "game/bruce.h"
+#include "game/trickob.h"
+#include "game/m3d.h"
+#include "game/colij.h"
+#include "game/career.h"
 
 extern SVideoInfo GVInfo1, GVInfo2;
 extern int PosBits[], EulerBits[], FlipAngleBits[];
@@ -93,7 +20,7 @@ extern CTrickOb *TrickObList;
 extern int TrickPlayer;
 extern CBruce *pCurrentPlayer;
 extern int PowerUpList;
-extern STerrain Stats[];
+extern SStats Stats[];
 
 int ReplaySoundLockout;
 
@@ -102,11 +29,9 @@ int GetNBitsSigned(SVideoInfo *, int);
 u_long GetNBitsUnsigned(SVideoInfo *, int);
 extern "C" MATRIX *FUN_80095e50(SVECTOR *, MATRIX *);
 extern "C" void FUN_8008eebc(int);
-extern "C" void FRUVectorsFromRotMatrix__6CBruce(CBruce *);
 void M3d_BuildTransform(CSuper *);
 int SFX_PlayX(u_int, short, int);
 void SFX_Stop(u_int);
-extern "C" void BloodSplat__6CBruceii(CBruce *, int, int);
 Item *Spool_FindEnviroItem(u_int);
 u_short *Trig_GetLinksPointer(int);
 void Trig_SendPulse(u_short *);
@@ -115,8 +40,6 @@ void Trig_ResetCPCollisionFlags(int);
 void Trig_ResetCPExecutedFlags(int);
 void M3dZone_LineToItem(SLineInfo *, int);
 CBody *M3dColij_LineToSphere(const CVector &, const CVector &, CVector &, int, int);
-extern "C" void BoardOff__6CBruce(CBruce *);
-extern "C" void BoardOn__6CBruce(CBruce *);
 
 void GetDataChunk(CBruce *pSkater, int NChunks) {
 	int i;
@@ -128,22 +51,22 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 	else
 		VInfo = &GVInfo2;
 
-	pSkater->OldPos = pSkater->Pos;
+	pSkater->mOldPos = pSkater->mPos;
 
 	for (i = 0; i < 6; i++)
 		if (!GetBit(VInfo))
 			break;
 
-	pSkater->Pos.vx =
+	pSkater->mPos.vx =
 	    VInfo->OldPos.vx * 2 - VInfo->OldPos2.vx + GetNBitsSigned(VInfo, PosBits[i]);
-	pSkater->Pos.vy =
+	pSkater->mPos.vy =
 	    VInfo->OldPos.vy * 2 - VInfo->OldPos2.vy + GetNBitsSigned(VInfo, PosBits[i]);
-	pSkater->Pos.vz =
+	pSkater->mPos.vz =
 	    VInfo->OldPos.vz * 2 - VInfo->OldPos2.vz + GetNBitsSigned(VInfo, PosBits[i]);
 	VInfo->OldPos2 = VInfo->OldPos;
-	VInfo->OldPos = pSkater->Pos;
-	pSkater->Pos <<= 12;
-	pSkater->Vel = pSkater->Pos - pSkater->OldPos;
+	VInfo->OldPos = pSkater->mPos;
+	pSkater->mPos <<= 12;
+	pSkater->mVel = pSkater->mPos - pSkater->mOldPos;
 
 	for (i = 0; i < 6; i++)
 		if (!GetBit(VInfo))
@@ -158,42 +81,42 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 	VInfo->OldEuler = VInfo->Euler;
 
 	if (NChunks == 1) {
-		FUN_80095e50(&VInfo->Euler, &pSkater->Matrix);
+		FUN_80095e50(&VInfo->Euler, &pSkater->mRotMatrix);
 
-		pSkater->Matrix.m[0][1] = -pSkater->Matrix.m[0][1];
-		pSkater->Matrix.m[1][1] = -pSkater->Matrix.m[1][1];
-		pSkater->Matrix.m[2][1] = -pSkater->Matrix.m[2][1];
-		FRUVectorsFromRotMatrix__6CBruce(pSkater);
+		pSkater->mRotMatrix.m[0][1] = -pSkater->mRotMatrix.m[0][1];
+		pSkater->mRotMatrix.m[1][1] = -pSkater->mRotMatrix.m[1][1];
+		pSkater->mRotMatrix.m[2][1] = -pSkater->mRotMatrix.m[2][1];
+		pSkater->FRUVectorsFromRotMatrix();
 		M3d_BuildTransform((CSuper *)pSkater);
 	}
 
 	if (GetBit(VInfo) == 1)
-		pSkater->PhysicsState = GetNBitsUnsigned(VInfo, 4);
+		pSkater->mPhysicsState = (EPhysicsState)GetNBitsUnsigned(VInfo, 4);
 
 	if (GetBit(VInfo) == 1)
-		pSkater->Anim = GetNBitsUnsigned(VInfo, 7);
+		pSkater->mAnim = GetNBitsUnsigned(VInfo, 7);
 
-	VInfo->OldAnim = pSkater->Anim;
+	VInfo->OldAnim = pSkater->mAnim;
 
 	if (!GetBit(VInfo))
-		pSkater->Frame = VInfo->OldFrame + GetNBitsUnsigned(VInfo, 2);
+		pSkater->mFrame = VInfo->OldFrame + GetNBitsUnsigned(VInfo, 2);
 	else
-		pSkater->Frame = GetNBitsUnsigned(VInfo, 8);
+		pSkater->mFrame = GetNBitsUnsigned(VInfo, 8);
 
-	VInfo->OldFrame = pSkater->Frame;
+	VInfo->OldFrame = pSkater->mFrame;
 
 	if (GetBit(VInfo))
-		pSkater->Flags |= 2;
+		pSkater->mExtraFlags |= 2;
 	else
-		pSkater->Flags &= ~2;
+		pSkater->mExtraFlags &= ~2;
 
 	if (!GetBit(VInfo)) {
 		VInfo->OldFlipAngle = 0;
 		VInfo->FlipAngleDelta = 0;
-		pSkater->FlipAngle = 0;
-		pSkater->Flipping = 0;
+		pSkater->m724 = 0;
+		pSkater->m720 = 0;
 	} else {
-		pSkater->Flipping = 1000;
+		pSkater->m720 = 1000;
 
 		for (i = 0; i < 6; i++)
 			if (!GetBit(VInfo))
@@ -202,16 +125,16 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 		if (FlipAngleBits[i]) {
 			int Delta = GetNBitsSigned(VInfo, FlipAngleBits[i]);
 
-			pSkater->FlipAngle = VInfo->OldFlipAngle + VInfo->FlipAngleDelta + Delta;
-			VInfo->OldFlipAngle = pSkater->FlipAngle;
+			pSkater->m724 = VInfo->OldFlipAngle + VInfo->FlipAngleDelta + Delta;
+			VInfo->OldFlipAngle = pSkater->m724;
 			VInfo->FlipAngleDelta = Delta;
 		}
 	}
 
-	VInfo->OldXblanks += GetNBitsUnsigned(VInfo, 2) + 2;
+	VInfo->Yblanks += GetNBitsUnsigned(VInfo, 2) + 2;
 
 	if (NChunks == 1) {
-		int n = VInfo->OldXblanks - Xblanks;
+		int n = VInfo->Yblanks - Xblanks;
 
 		for (i = 0; i < n; i++)
 			FUN_8008eebc(0);
@@ -233,7 +156,7 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 
 	if (GetBit(VInfo)) {
 		if (GetBit(VInfo))
-			BloodSplat__6CBruceii(pSkater, GetNBitsUnsigned(VInfo, 2), 50);
+			pSkater->BloodSplat(GetNBitsUnsigned(VInfo, 2), 50);
 
 		if (GetBit(VInfo)) {
 			int TrickObIndex = GetNBitsUnsigned(VInfo, 8);
@@ -244,7 +167,7 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 
 			pTrickOb->mpItem = Spool_FindEnviroItem(pTrickOb->mChecksum);
 			pTrickOb->mpItem->Flags |= 0x400;
-			pTrickOb->mpItem->Colour = 0x202020;
+			pTrickOb->mpItem->RGB = 0x202020;
 			pTrickOb->mState = 1;
 
 			if (pSkater == MechList)
@@ -295,30 +218,30 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 		CBody *pBody = M3dColij_LineToSphere(Start, End, nearest, PowerUpList, 0);
 
 		if (pBody)
-			pBody->Hit();
+			pBody->Die();
 	}
 
-	switch (pSkater->Anim) {
+	switch (pSkater->mAnim) {
 		case 0x36:
-			if (pSkater->Frame >= 0x70)
+			if (pSkater->mFrame >= 0x70)
 				goto On;
 		case 0x37:
 		case 0x2c:
 		case 0x2e:
-			BoardOff__6CBruce(pSkater);
+			pSkater->BoardOff();
 			break;
 		default:
 		On:
-			BoardOn__6CBruce(pSkater);
+			pSkater->BoardOn();
 	}
 
-	if (Stats[pSkater->Terrain].Type == 0x4000) {
-		if (pSkater->Anim != 0x3f)
-			pSkater->Flags2 |= 0x1000;
+	if (Stats[pSkater->mSkaterIndex].ComboID == 0x4000) {
+		if (pSkater->mAnim != 0x3f)
+			pSkater->mSubObjectDisplayMask |= 0x1000;
 		else
-			pSkater->Flags2 &= ~0x1000;
+			pSkater->mSubObjectDisplayMask &= ~0x1000;
 	}
 
 	if (NChunks != 1)
-		VInfo->OldXblanks = Xblanks;
+		VInfo->Yblanks = Xblanks;
 }

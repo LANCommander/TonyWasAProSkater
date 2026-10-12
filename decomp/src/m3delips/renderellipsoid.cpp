@@ -1,47 +1,13 @@
 /* M3dElips_RenderEllipsoid__FP6SModelP6MATRIXUiiiP7Texture (0x8007e300) */
 /* C++ (M3DELIPS.CPP). Locals, their order and types come from the demo's MAIN.SYM. */
+extern "C" {
 #include <sys/types.h>
 #include <libgte.h>
 #include <libgpu.h>
 #include <inline_c.h>
-
-typedef unsigned int uint;
-
-struct Vec {
-	short vx, vy, vz;
-};
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct CVector {
-	int vx, vy, vz;
-};
-
-struct SModel {
-	ushort Flags, NumVertices, NumNormals, NumFaces;
-	int Radius;
-	Vector Box;
-	short zMax;
-	ushort NextLOD;
-	SVECTOR Vertices[1];
-};
-
-struct Texture {
-	u_char u0, v0;
-	ushort clut;
-	u_char u1, v1;
-	ushort tpage;
-	u_char u2, v2, u3, v3;
-};
-
-struct SCamera {
-	int pad;
-	Vector Pos;
-	char pad1[0x74 - 0x10];
-	MATRIX View;
-};
+}
+#include "game/m3d.h"
+#include "game/camera.h"
 
 #define Box ((short *)&pModel->Box)
 
@@ -56,7 +22,7 @@ void M3dMaths_CopyMat(ushort *, ushort *);
 void M3dMaths_TransposeMat(ushort *, ushort *);
 void M3dMaths_TransformLastVec(ushort *);
 int M3dMaths_LastVecMagnitude(void);
-void M3dMaths_CrossWithLastVec12(Vec *);
+void M3dMaths_CrossWithLastVec12(SVector *);
 void M3dMaths_NormaliseLastVec(void);
 void M3dMaths_ScaleLastVec12(int);
 
@@ -67,7 +33,7 @@ void M3dElips_RenderEllipsoid(SModel *pModel, MATRIX *pTransform, uint Rgb, int 
 	int d12;
 	int k;
 	short R[3][3], RT[3][3], d_Ainv[3][3];
-	Vec l, t, v, d_m, Scaled_q, e, f, Vertex, Centre;
+	SVector l, t, v, d_m, Scaled_q, e, f, Vertex, Centre;
 	CVector d_m_Squared;
 	POLY_FT4 *pQuad;
 	uint OTPos;
@@ -86,9 +52,9 @@ void M3dElips_RenderEllipsoid(SModel *pModel, MATRIX *pTransform, uint Rgb, int 
 	t.vx += pTransform->t[0];
 	t.vy += pTransform->t[1];
 	t.vz += pTransform->t[2];
-	t.vx -= pCurrentCamera->Pos.vx;
-	t.vy -= pCurrentCamera->Pos.vy;
-	t.vz -= pCurrentCamera->Pos.vz;
+	t.vx -= pCurrentCamera->Position.vx;
+	t.vy -= pCurrentCamera->Position.vy;
+	t.vz -= pCurrentCamera->Position.vz;
 	gte_ldsv(&t);
 	M3dMaths_NormaliseLastVec();
 	gte_stsv(&l);

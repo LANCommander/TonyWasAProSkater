@@ -7,41 +7,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct Item;
-
-struct SLineInfo {
-	Vector StartCoords;
-	Vector EndCoords;
-	Vector MinCoords;
-	Vector MaxCoords;
-	int iLo, iHi, jLo, jHi;
-	int Distance;
-	int Length;
-	MATRIX WorldCst;
-	Item *pItem;
-	Vector Position;
-	SVECTOR Normal;
-	uint *pFace;
-	int Model;
-	uchar RecordTriggerZoneHits;
-	uchar DropDown;
-	ushort Inquiry;
-	int tNear;
-	uint tNumtrLo;
-	int tNumtrHi;
-	uint tDenomLo;
-	int tDenomHi;
-	uint NormalOffset;
-};
+#include "game/colij.h"
 
 extern MATRIX Tfm;
 

@@ -12,67 +12,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct Vector {
-	int vx, vy, vz;
-};
-
-struct SModel {
-	ushort Flags;
-	ushort NumVertices;  /* 0x02 */
-	ushort NumNormals;   /* 0x04 */
-	ushort NumFaces;     /* 0x06 */
-	int Radius;          /* 0x08 */
-	Vector Box;          /* 0x0c */
-	short zMax;          /* 0x18 */
-	ushort NextLOD;      /* 0x1a */
-	SVECTOR Vertices[1]; /* 0x1c */
-};
-
-struct SPSXRegion {
-	char pad0[16];
-	SModel **pModels; /* 0x10 */
-	char pad14[64 - 0x14];
-};
-
-struct Item {
-	ushort Flags;      /* 0 */
-	ushort Inquiry;    /* 2 */
-	Vector Pos;        /* 4 */
-	short Angles[3];   /* 16 */
-	ushort ModelIndex; /* 22 */
-	char pad18[27 - 24];
-	uchar Region; /* 27 */
-};
-
-struct SLineInfo {
-	char pad0[0x44];
-	int Length;      /* 0x44 */
-	MATRIX WorldCst; /* 0x48 */
-	char pad68[0x8a - 0x68];
-	ushort Inquiry; /* 0x8a */
-};
-
-struct SColCache {
-	Item *pItem;
-	SModel *pModel;
-	int Faces;
-	int FirstFace;
-};
-
-struct SFaceCache {
-	int Flags;
-	int XMin;
-	int YMin;
-	int ZMin;
-	int XMax;
-	int YMax;
-	int ZMax;
-};
+#include "game/colij.h"
 
 extern SPSXRegion PSXRegion[];
 extern SColCache ItemCache[];
@@ -134,7 +74,7 @@ void M3dColij_LineToItemZoned(Item **ppItem, SLineInfo *pInfo) {
 				}
 
 				ItemCache[ItemCacheIndex].pItem = pItem;
-				pModel = PSXRegion[pItem->Region].pModels[pItem->ModelIndex];
+				pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
 				ItemCache[ItemCacheIndex].pModel = pModel;
 				Faces = pModel->NumFaces;
 				ItemCache[ItemCacheIndex].Faces = Faces;
@@ -150,9 +90,9 @@ void M3dColij_LineToItemZoned(Item **ppItem, SLineInfo *pInfo) {
 				pVertices = pModel->Vertices;
 				pFaceX = (uint *)(&pModel->Vertices[pModel->NumVertices] + pModel->NumNormals);
 				pFaceCache = &FaceCache[ItemCache[ItemCacheIndex].FirstFace];
-				ItemX = pItem->Pos.vx;
-				ItemY = pItem->Pos.vy;
-				ItemZ = pItem->Pos.vz;
+				ItemX = pItem->Position.vx;
+				ItemY = pItem->Position.vy;
+				ItemZ = pItem->Position.vz;
 				NumFaces = pModel->NumFaces;
 
 				for (int i = 0; i < NumFaces; i++) {

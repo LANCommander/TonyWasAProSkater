@@ -2,9 +2,7 @@
 /* C++ (PAL). Positional variant of FUN_8004b250: left/right volumes come from the spatial
    attenuation at pos (12 bits each, scaled by the global percentage SFXLEVEL). The
    attenuation's sign bit flips the left channel's phase. */
-struct CVector {
-	int vx, vy, vz;
-};
+#include "game/vector.h"
 
 extern int DAT_800b8a9c[];
 extern int SFXLEVEL;

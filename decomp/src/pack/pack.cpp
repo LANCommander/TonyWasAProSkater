@@ -6,23 +6,7 @@
    left, then from the right of a block, then any block with an aligned start), split it and
    return the new full block. AlignedX/AlignedW are one pair for the third search and the split
    after it, so AlignedW lives across the Pack_NewFree call in s0, as retail's does. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct TSPack {
-	ushort X;      /* 0 */
-	ushort Y;      /* 2 */
-	ushort W;      /* 4 */
-	ushort H;      /* 6 */
-	TSPack *pNext; /* 8 */
-	uchar Type;    /* 12 */
-	uchar Pass;    /* 13 */
-	uchar BPP;     /* 14 */
-	uchar Aligned; /* 15 */
-	short ReqW;    /* 16 */
-	short ReqH;    /* 18 */
-};
+#include "game/m3d.h"
 
 TSPack *Pack_pFree;
 int Pack_NoBottom;
@@ -128,10 +112,10 @@ TSPack *Pack_Pack(int Type, int WW, int H, int *X, int *Y, int BPP, int Aligned,
 
 		pPack->ReqW = WW;
 		pPack->ReqH = H;
-		pPack->BPP = BPP;
-		pPack->Aligned = Aligned;
+		pPack->bpp = BPP;
+		pPack->aligned = Aligned;
 		pPack->Type = Type;
-		pPack->Pass = Pack_NoBottom;
+		pPack->no_bottom = Pack_NoBottom;
 		return pPack;
 	}
 
@@ -261,10 +245,10 @@ TSPack *Pack_Pack(int Type, int WW, int H, int *X, int *Y, int BPP, int Aligned,
 			pPack = Pack_Pack(Type, WW, H, X, Y, BPP, 0, checksum);
 			pPack->ReqW = WW;
 			pPack->ReqH = H;
-			pPack->BPP = BPP;
-			pPack->Aligned = Aligned;
+			pPack->bpp = BPP;
+			pPack->aligned = Aligned;
 			pPack->Type = Type;
-			pPack->Pass = Pack_NoBottom;
+			pPack->no_bottom = Pack_NoBottom;
 			return pPack;
 		}
 
@@ -317,9 +301,9 @@ TSPack *Pack_Pack(int Type, int WW, int H, int *X, int *Y, int BPP, int Aligned,
 
 	pBest->ReqW = WW;
 	pBest->ReqH = H;
-	pBest->BPP = BPP;
-	pBest->Aligned = Aligned;
+	pBest->bpp = BPP;
+	pBest->aligned = Aligned;
 	pBest->Type = Type;
-	pBest->Pass = Pack_NoBottom;
+	pBest->no_bottom = Pack_NoBottom;
 	return pBest;
 }

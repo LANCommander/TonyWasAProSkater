@@ -5,50 +5,8 @@
    always sits at the screen-0 position, the menu input DAT_800bf104 is updated each frame,
    continuing (START/X) also sets DAT_800d1d80, triangle only eats its own triggers, and the
    tape-marker sprite DAT_800d1d00 is deleted too. */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct SButton {
-	uchar Pressed;
-	uchar Triggered;
-	int PressedTime;
-	int ReleasedTime;
-	int TriggeredTime;
-};
-
-struct SControl {
-	SButton Triangle, Square, Circle, X;
-	SButton LeftOne, LeftTwo, RightOne, RightTwo;
-	SButton Left, Right, Up, Down;
-	SButton AnalogueLeft, AnalogueRight, Start, Select;
-	SButton Crouch, Jump, SmartBomb, SelectWeapon;
-	int rest[11];
-};
-
-class CItem {
-  public:
-	virtual ~CItem();
-	void *operator new(uint) throw();
-};
-
-class SlicedImage;
-
-class Sprite : public CItem {
-  public:
-	int m_w;
-	int m_h;
-	int m_packed;
-	int m_bpp;
-	SlicedImage *m_image;
-	~Sprite();
-	void draw(int, int, int, int, int, int);
-};
-
-class PadBuffer : public CItem {
-  public:
-	int pad[(0x11c - 4) / 4];
-	void update();
-};
+#include "game/shellutils.h"
+#include "game/pad.h"
 
 extern SControl Pad[2];
 extern PadBuffer DAT_800bf104;
@@ -70,7 +28,6 @@ int DAT_800d1d14;     /* redraw picture */
 
 int SFX_PlayX(uint, short, int);
 void Pause(int);
-void Pad_ClearTriggers(SControl *);
 
 extern "C" {
 	void FUN_8008eebc(int);

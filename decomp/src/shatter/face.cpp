@@ -8,64 +8,13 @@ extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 }
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct CVector {
-	int vx, vy, vz;
-};
+#include "game/m3d.h"
 
 static inline void SetV(CVector *v, int _x, int _y, int _z) {
 	v->vx = _x;
 	v->vy = _y;
 	v->vz = _z;
 }
-
-struct Texture {
-	uchar u0, v0;
-	ushort Clut; /* 2 */
-	uchar u1, v1;
-	ushort TPage; /* 6 */
-	uchar u2, v2;
-	uchar u3, v3;
-	uint TextureWindow; /* 12 */
-};
-
-struct SFace {
-	ushort Flags; /* 0 */
-	ushort pad2;
-	uchar VertexNums[4]; /* 4 */
-	uint Colour;         /* 8 */
-	ushort NormalOffset; /* 12 */
-	ushort Flags2;       /* 14 */
-	Texture *pTexture;   /* 16, or the texture itself when Flags & 2 */
-};
-
-struct SModel {
-	short pad0;
-	ushort NumVerts; /* 2 */
-	char pad4[28 - 4];
-	SVECTOR Vertices[1]; /* 28 */
-};
-
-struct SPSXRegion {
-	char pad0[16];
-	SModel **pModels; /* 0x10 */
-	char pad14[0x24 - 0x14];
-	uint *pColours; /* 0x24 */
-	char pad28[64 - 0x28];
-};
-
-struct Item {
-	char pad0[4];
-	CVector Pos;       /* 4 */
-	short Angles[3];   /* 16 */
-	ushort ModelIndex; /* 22 */
-	char pad18[27 - 24];
-	uchar Region; /* 27 */
-};
 
 extern SPSXRegion PSXRegion[];
 extern CVector DAT_800d2574;
@@ -105,9 +54,9 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 	int retval;
 	SFace *f = (SFace *)pFace;
 
-	pModel = PSXRegion[pItem->Region].pModels[pItem->ModelIndex];
+	pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
 	pVertices = pModel->Vertices;
-	pNormals = pVertices + pModel->NumVerts;
+	pNormals = pVertices + pModel->NumVertices;
 	pVertexNums = (uchar *)(pFace + 1);
 
 	if (UseFlags) {
@@ -134,8 +83,8 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 			pTexture = f->pTexture;
 
 		{
-			int clut = pTexture->Clut;
-			int tpage = pTexture->TPage;
+			int clut = pTexture->clut;
+			int tpage = pTexture->tpage;
 
 			VRAMClut = clut;
 			VRAMTPage = tpage;
@@ -143,9 +92,9 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 	}
 
 	pNormal = (SVECTOR *)((char *)pNormals + (f->NormalOffset & ~7));
-	FUN_8008b3d4((SVECTOR *)pItem->Angles, &Transform);
+	FUN_8008b3d4((SVECTOR *)&pItem->Angles, &Transform);
 	FUN_8008f76c(&Transform);
-	FUN_80089f54(&pItem->Pos);
+	FUN_80089f54((CVector *)&pItem->Position);
 	TransformVertex(a, pVertices, pVertexNums, 0);
 	TransformVertex(b, pVertices, pVertexNums, 1);
 	TransformVertex(c, pVertices, pVertexNums, 2);
@@ -153,7 +102,7 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 	retval = 1;
 
 	if (f->Flags & 16) {
-		CalcRGB(f->Flags & 0x800, f->Colour, 3, PSXRegion[pItem->Region].pColours);
+		CalcRGB(f->Flags & 0x800, f->Colour, 3, PSXRegion[pItem->Region].pColourTable);
 
 		DAT_800d2574.vx = ((a.vx >> 12) + (b.vx >> 12) + (c.vx >> 12)) / 3 << 12;
 		DAT_800d2574.vy = ((a.vy >> 12) + (b.vy >> 12) + (c.vy >> 12)) / 3 << 12;
@@ -175,7 +124,7 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 			uint TextureWindow;
 
 			if (f->Flags & 32)
-				TextureWindow = pTexture->TextureWindow;
+				TextureWindow = pTexture->TexWin;
 			else
 				TextureWindow = 0;
 
@@ -187,7 +136,7 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 		CVector d;
 
 		TransformVertex(d, pVertices, pVertexNums, 3);
-		CalcRGB(f->Flags & 0x800, f->Colour, 4, PSXRegion[pItem->Region].pColours);
+		CalcRGB(f->Flags & 0x800, f->Colour, 4, PSXRegion[pItem->Region].pColourTable);
 
 		DAT_800d2574.vx = ((a.vx >> 12) + (b.vx >> 12) + (c.vx >> 12) + (d.vx >> 12)) >> 2 << 12;
 		DAT_800d2574.vy = ((a.vy >> 12) + (b.vy >> 12) + (c.vy >> 12) + (d.vy >> 12)) >> 2 << 12;
@@ -209,7 +158,7 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 			uint TextureWindow;
 
 			if (f->Flags & 32)
-				TextureWindow = pTexture->TextureWindow;
+				TextureWindow = pTexture->TexWin;
 			else
 				TextureWindow = 0;
 

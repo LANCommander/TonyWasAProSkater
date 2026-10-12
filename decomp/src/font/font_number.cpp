@@ -1,18 +1,5 @@
 /* Font_Number__FUsUsiUcUcUcUc (0x8004c20c) flags=-fstructure-noalias */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-
-struct SString {
-	int End;
-	ushort X;
-	ushort Y;
-	char *pString;
-	uint CodeBGR;
-	uchar Is3d;
-	uchar BigText;
-	int Pos[3];
-};
+#include "game/font.h"
 
 SString *BufferPos;
 uint CodeVal;

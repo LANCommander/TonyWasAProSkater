@@ -5,12 +5,7 @@
    lists (type 15 in a two-player game, else type 4) and parses the rest of the file. Two pointers
    are bumped in place (`pTable += 3`, `pNodeName += 6`): written as `base + n`, CSE keeps the base
    live and folds the offset into the following load, which retail doesn't. */
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-
-struct CVector {
-	int vx, vy, vz;
-};
+#include "game/vector.h"
 
 extern char s_trg[];
 extern char *CheatRestarts[];
