@@ -111,12 +111,11 @@ the water surfaces and shatterable glass on DC data.
   lines up with the PS1 XA decode (50 ms envelope correlation 1.0 at zero offset, RMS within
   1.5%), so no gain change. `platform/pc/tests/test_sfd.c` decodes a film to WAV and checks
   seek/rewind.
-- **Music**: `CdSearchFile` falls back to the film of an STR (`PC_AssetsFindFilm`: same name,
-  except ATVILOGO → `activision`, LOGO → `never`, BURNQUIS → `burnquist`), mounted at a virtual
-  LBA like an STR (2352-byte units). Streaming a mounted film (`hle_libcd.c`, `StreamSfd`) keeps
-  ~12k frames of decoded ADX queued in the CD input FIFO instead of pacing sectors; the position
-  advances through the file, so pause/resume continue and a Setloc elsewhere seeks. The game's
-  CdMix/MusicScale/pause/skip paths are unchanged. There is no STR video for the game's frame
+- **Music**: a movie-table name finds the film of an STR when there's no STR
+  (`PC_StreamFind` → `PC_AssetsFindFilm`: same name, except ATVILOGO → `activision`, LOGO →
+  `never`, BURNQUIS → `burnquist`), and it streams like an STR (`src/pc_stream.c`): ~12k frames
+  of decoded ADX stay queued in the music input instead of sectors being paced; pause/resume
+  carry on where it was. The game's mix/MusicScale/pause/skip paths are unchanged. There is no STR video for the game's frame
   counter, so at the end of a song's audio the stream stops and `PC_MusicStreamEnded` sets
   `GameFMV_RewindSwitch` (what `strNext` does at the end frame): the pump's `strKickCD`
   restarts it, gaplessly (verified with a truncated song). With DC data `Playlist.m3u` lists the

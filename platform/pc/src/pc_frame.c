@@ -6,11 +6,10 @@
 
 #include "pc_frame.h"
 #include "pc_gpu.h"
-#include "pc_hle.h"
-#include "pc_input.h"
 #include "pc_platform.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
+#include "pc_stream.h"
 
 #define FRAME_HZ 60
 
@@ -50,7 +49,7 @@ static void DebugHooks(void);
  * flips buffers from its handler and never waits for a frame while playing). */
 static void RunFrame(void) {
     s_frames++;
-    PC_CdStreamVBlank();
+    PC_StreamFrame();
     PC_GpuRunDueCallback();
     if (s_frameHandler && !s_inHandler) {
         s_inHandler = 1;

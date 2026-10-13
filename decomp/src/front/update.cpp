@@ -25,6 +25,9 @@
 #include "game/psyq.h"
 #include "game/competition.h"
 #include "game/gamefmv.h"
+#ifdef PC_PORT
+#include "pc_stream.h"
+#endif
 
 enum EPausedStatus {
 	STATUS_NORMAL,
@@ -380,8 +383,12 @@ void Front_Update() {
 				if (pPausedMenu->ChoiceIs(GameText.pChangeSoundLevels)) {
 					SoundEffect = 5;
 					Status = STATUS_SETSOUNDLEVELS;
+#ifdef PC_PORT
+					PC_StreamResume();
+#else
 					StSetMask(0, 0, -1);
 					CdRead2(480);
+#endif
 				}
 
 				if (pPausedMenu->ChoiceIs(GameText.pEndGame)) {
@@ -1257,8 +1264,12 @@ void Front_Update() {
 
 				Status = STATUS_PAUSEDMENU;
 				XALEVEL = GCareer.Options.MusicVolume * 0x555;
+#ifdef PC_PORT
+				PC_StreamPause();
+#else
 				StSetMask(1, 0, -1);
 				CdControlB(9, 0, 0);
+#endif
 			}
 
 			break;

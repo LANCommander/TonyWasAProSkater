@@ -4,8 +4,8 @@
  *
  * What is modelled: PS-ADPCM blocks (28 samples per 16 bytes, loop/end flags), pitch stepping with
  * linear interpolation, per-voice L/R volume, the ADSR envelope as linear ramps, key on/off, and
- * the master volume, and the CD audio input (decoded XA from hle_libcd.c's stream, at the CD
- * volume and CdMix levels, added after the master volume). Voices can also play PCM samples
+ * the master volume, and the CD audio input (the music: decoded XA or ADX from pc_stream.c, at the
+ * CD volume and the stream's mix levels, added after the master volume). Voices can also play PCM samples
  * (the Dreamcast's sound banks): see PC_SpuPcmAdd. Not modelled yet: reverb, sweep
  * volume, exponential ADSR curves, noise. Rates and timings are approximate, not bit-exact.
  *
@@ -18,7 +18,6 @@
 
 #include <SDL2/SDL.h>
 
-#include "pc_hle.h"
 #include "pc_runtime.h"
 #include "pc_spu.h"
 

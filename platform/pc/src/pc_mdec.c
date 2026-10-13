@@ -21,7 +21,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "pc_hle.h"
 #include "pc_runtime.h"
 
 #define EOB 0xfe00u

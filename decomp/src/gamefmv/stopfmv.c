@@ -1,5 +1,8 @@
 /* GameFMV_StopFMV__Fv (0x800233d0) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_stream.h"
+#endif
 
 typedef struct {
 	unsigned short x, y, w, h;
@@ -36,13 +39,21 @@ void GameFMV_StopFMV(void) {
 		p[1] = 0;
 		p[2] = 0;
 		p[3] = 0;
+#ifdef PC_PORT
+		PC_StreamMix(p);
+#else
 		CdMix(p);
+#endif
 
 		GameFMV_Active = 0;
 		DecDCToutCallback(0);
+#ifdef PC_PORT
+		PC_StreamStop();
+#else
 		StUnSetRing();
 		FUN_800912bc(GameFMV_StartSector, loc);
 		CdControl(22, loc, 0);
+#endif
 
 		if (pRingBuffer) {
 			Mem_Delete(pRingBuffer);

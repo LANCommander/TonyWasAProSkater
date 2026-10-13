@@ -15,9 +15,7 @@ extern void *pBMR;
 
 #ifdef PC_PORT
 #include "pc_assets.h"
-#ifdef PC_PORT
 #include "pc_frame.h"
-#endif
 #endif
 
 void DownloadBMP16x2(char *pData) {

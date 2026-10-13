@@ -1,8 +1,8 @@
 /* Movie pictures from a Dreamcast film (see pc_movie.h): the film's video stream, demultiplexed
  * by pc_sfd.c, goes to pl_mpeg's MPEG-1 video decoder (include/pl_mpeg, MIT). Each picture is
- * shown when the film's audio, which the CD stream is playing (PC_CdFilmTime), reaches its time;
+ * shown when the film's audio, which its stream is playing (PC_StreamFilmTime), reaches its time;
  * pictures that are late are dropped. Without audio (or once it has ended) the pictures keep time
- * on the vblank clock.
+ * on the frame clock.
  *
  * The pictures go where the PS1's MDEC put them, as 24-bit pixels at VRAM (0, 256), which the
  * screen shows in 24-bit mode (GameFMV_PlayMovie sets it up). A film smaller than 320x240 is
@@ -15,11 +15,12 @@
 #include "pl_mpeg/pl_mpeg.h"
 
 #include "pc_assets.h"
-#include "pc_hle.h"
+#include "pc_frame.h"
 #include "pc_movie.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_sfd.h"
+#include "pc_stream.h"
 
 #define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u)
 #define MOVIE_COUNT 26
@@ -27,20 +28,18 @@
 #define SCREEN_W 320
 #define SCREEN_H 240
 #define SCREEN_Y 256
-#define AUDIO_STALL 30      /* vblanks without audio progress before the vblank clock takes over */
+#define AUDIO_STALL 30      /* frames without audio progress before the frame clock takes over */
 
 typedef struct {
     short x, y, w, h;
 } PcRect;
 
 int LoadImage(PcRect *rect, const void *p);   /* hle_libgpu.c */
-#include "pc_frame.h"
 
 static PcSfd *s_sfd;
 static plm_buffer_t *s_buf;
 static plm_video_t *s_vid;
 static int s_gotVideo;
-static uint32_t s_lba;
 static plm_frame_t *s_next;      /* decoded, not shown yet */
 static uint8_t *s_rgb;           /* the screen's 24-bit pixels */
 static double s_clock, s_audio;
@@ -59,7 +58,7 @@ int PC_MovieAvailable(int track) {
 
 int PC_MovieWait(void) {
     PC_FrameWait(1);
-    return PC_CdStreamBusy();
+    return PC_StreamBusy();
 }
 
 static void OnVideo(void *ctx, const uint8_t *p, int n) {
@@ -80,18 +79,16 @@ static void LoadVideo(plm_buffer_t *b, void *user) {
 }
 
 int PC_MovieOpen(void) {
-    uint32_t lba = *(uint32_t *)PSX_PTR(GAMEFMV_START_SECTOR);
-    const char *path = PC_CdMountPath(lba);
-    size_t n = path ? strlen(path) : 0;
+    int id = *(int32_t *)PSX_PTR(GAMEFMV_START_SECTOR); /* the stream (pc_stream.h) */
+    const char *path = PC_StreamPath(id);
     PcRect r = {0, SCREEN_Y, SCREEN_W * 3 / 2, SCREEN_H};
-    if (n < 4 || _stricmp(path + n - 4, ".sfd") || !(s_sfd = PC_SfdOpen(path)))
+    if (!PC_StreamIsFilm(id) || !(s_sfd = PC_SfdOpen(path)))
         return 0;
     PC_SfdSetAudio(s_sfd, 0);
     PC_SfdSetVideo(s_sfd, OnVideo, NULL);
     s_buf = plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
     plm_buffer_set_load_callback(s_buf, LoadVideo, NULL);
     s_vid = plm_video_create_with_buffer(s_buf, 1);
-    s_lba = lba;
     s_next = NULL;
     s_clock = s_audio = 0.0;
     s_stall = 0;
@@ -147,12 +144,12 @@ int PC_MovieFrame(void) {
         s_next = NULL;
     }
     PC_FrameWait(1);
-    a = PC_CdFilmTime(s_lba);
+    a = PC_StreamFilmTime();
     if (a > s_audio) {
         s_audio = s_clock = a;
         s_stall = 0;
     } else if (++s_stall > AUDIO_STALL) {
-        /* no audio, or it has ended: vblanks keep the time */
+        /* no audio, or it has ended: frames keep the time */
         s_clock += 1.0 / 60.0;
     }
     return 1;

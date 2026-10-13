@@ -14,7 +14,6 @@
 #include "pc_gpu.h"
 #include "pc_gpu_gl.h"
 #include "pc_frame.h"
-#include "pc_hle.h"
 
 #define LINK(p) ((u_long)(uintptr_t)(p) & 0xffffffu)
 #define END_LINK 0x00ffffffu

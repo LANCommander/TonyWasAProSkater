@@ -1,4 +1,7 @@
 /* strKickCD__Fv (0x80023f44) */
+#ifdef PC_PORT
+#include "pc_stream.h"
+#endif
 int GameFMV_StartSector;
 
 unsigned char *FUN_800912bc(int, unsigned char *);
@@ -9,6 +12,11 @@ void strKickCD(void) {
 	unsigned char loc[4];
 	unsigned char param[4];
 
+#ifdef PC_PORT
+	/* PC: GameFMV_StartSector is the file's stream (pc_stream.h) */
+	PC_StreamPlay(GameFMV_StartSector);
+	return;
+#endif
 	param[0] = 0x80;
 	FUN_800912bc(GameFMV_StartSector, loc);
 

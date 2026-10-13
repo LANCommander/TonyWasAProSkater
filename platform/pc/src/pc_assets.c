@@ -29,8 +29,8 @@
 #include <string.h>
 
 #include "pc_assets.h"
+#include "pc_disc.h"
 #include "pc_gdrom.h"
-#include "pc_hle.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_sfd.h"
@@ -162,13 +162,13 @@ static void ExtractStr(const char *name, const char *dst) {
     uint32_t lba, size, sectors, done;
     FILE *f;
     snprintf(disc, sizeof disc, "\\%.63s;1", name);
-    if (!PC_CdFindDiscFile(disc, &lba, &size))
+    if (!PC_DiscFindFile(disc, &lba, &size))
         PC_Fatal("%s is not on the disc image. Is it Tony Hawk's Pro Skater (USA)?", name);
     sectors = (size + 2047) / 2048;
     f = Create(dst, part, sizeof part);
     for (done = 0; done < sectors;) {
         uint32_t n = sectors - done < COPY_SECTORS ? sectors - done : COPY_SECTORS;
-        if (!PC_CdReadDiscSectors(lba + done, n, buf))
+        if (!PC_DiscReadSectors(lba + done, n, buf))
             PC_Fatal("cannot read %s from the disc image (sector %u)", name, lba + done);
         if (fwrite(buf, 2352, n, f) != n)
             PC_Fatal("cannot write %s (disk full?)", part);
@@ -247,12 +247,12 @@ typedef struct {
 static uint8_t *ReadDiscFile(const char *name, uint32_t *size, uint32_t *lba) {
     uint32_t sectors, i;
     uint8_t *buf, raw[2352];
-    if (!PC_CdFindDiscFile(name, lba, size))
+    if (!PC_DiscFindFile(name, lba, size))
         PC_Fatal("%s is not on the disc image. Is it Tony Hawk's Pro Skater (USA)?", name);
     sectors = (*size + 2047) / 2048;
     buf = malloc((size_t)sectors * 2048);
     for (i = 0; i < sectors; i++) {
-        if (!PC_CdReadDiscSectors(*lba + i, 1, raw))
+        if (!PC_DiscReadSectors(*lba + i, 1, raw))
             PC_Fatal("cannot read %s from the disc image", name);
         memcpy(buf + i * 2048, raw + 24, 2048);
     }
@@ -341,7 +341,7 @@ static void ExtractWadFiles(void) {
     if (WadComplete())
         return;
     n = ListWadFiles(w);
-    if (!PC_CdFindDiscFile("\\CD.WAD;1", &wadLba, &wadSize))
+    if (!PC_DiscFindFile("\\CD.WAD;1", &wadLba, &wadSize))
         PC_Fatal("CD.WAD is not on the disc image. Is it Tony Hawk's Pro Skater (USA)?");
     for (i = 0; i < n; i++) {
         PC_AssetsPath(path, sizeof path, w[i].rel);
@@ -360,7 +360,7 @@ static void ExtractWadFiles(void) {
             buf = realloc(buf, cap);
         }
         for (s = 0; s < sectors; s++) {
-            if (!PC_CdReadDiscSectors(wadLba + w[i].offset / 2048 + s, 1, raw))
+            if (!PC_DiscReadSectors(wadLba + w[i].offset / 2048 + s, 1, raw))
                 PC_Fatal("cannot read %s from the disc image", w[i].name);
             memcpy(buf + s * 2048, raw + 24, 2048);
         }
@@ -768,7 +768,7 @@ void PC_AssetsInit(void) {
     /* the disc the files come from: what Manifest.txt says, else (first startup) the PS1 image
      * if there is one, else a Dreamcast .gdi */
     s_dc = ManifestIsDreamcast();
-    if (!s_dc && !WadComplete() && !PC_CdFindImage(path, sizeof path)) {
+    if (!s_dc && !WadComplete() && !PC_DiscFindImage(path, sizeof path)) {
         if (!FindGdi(path, sizeof path))
             PC_Fatal("The game data has to be extracted from your disc first, and no disc image "
                      "was found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro Skater "
@@ -780,7 +780,7 @@ void PC_AssetsInit(void) {
     if (s_dc) {
         ExtractDreamcast(e, n);
         WritePlaylist(e, n);
-        PC_CdSetNoDisc(1);
+        PC_DiscSetNone(1);
         pc_ram_top = PSX_RAM_BASE + PSX_RAM_MAPPED;
     } else {
         ExtractStrFiles(e, n);

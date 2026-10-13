@@ -16,6 +16,7 @@ extern "C" {
 #include "game/psyq.h"
 #ifdef PC_PORT
 #include "pc_frame.h"
+#include "pc_stream.h"
 #endif
 
 struct CdlATV {
@@ -156,7 +157,11 @@ void GameFMV_PlayMovie(int track) {
 			atv.val1 = fmv_level;
 		}
 
+#ifdef PC_PORT
+		PC_StreamMix(&atv.val0);
+#else
 		CdMix(&atv);
+#endif
 	}
 
 	strInit();
@@ -213,12 +218,14 @@ void GameFMV_PlayMovie(int track) {
 			uchar result[8];
 			int count;
 
+#ifndef PC_PORT /* PC: no disc lid */
 			CdControl(1, 0, result);
 
 			if (result[0] & 16) {
 				handleLidOpen();
 				break;
 			}
+#endif
 
 			count = 0x800000;
 
@@ -298,10 +305,16 @@ end:
 	atv.val1 = 0;
 	atv.val2 = 0;
 	atv.val3 = 0;
+#ifdef PC_PORT
+	PC_StreamMix(&atv.val0);
+	DecDCToutCallback(0);
+	PC_StreamStop();
+#else
 	CdMix(&atv);
 	DecDCToutCallback(0);
 	StUnSetRing();
 	CdControlB(9, 0, 0);
+#endif
 InsufficientMemory:
 	if (pRingBuffer) {
 		Mem_Delete(pRingBuffer);

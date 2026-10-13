@@ -24,7 +24,6 @@
 #include "pc_assets.h"
 #include "pc_gpu.h"
 #include "pc_gte.h"
-#include "pc_hle.h"
 #include "pc_input.h"
 #include "pc_platform.h"
 #include "pc_recomp.h"

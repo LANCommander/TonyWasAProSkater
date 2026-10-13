@@ -23,7 +23,6 @@
 #include "pc_assets.h"
 #include "pc_dcsound.h"
 #include "pc_dctex.h"
-#include "pc_hle.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
 

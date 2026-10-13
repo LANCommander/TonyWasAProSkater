@@ -117,7 +117,9 @@ void Competition_EndGameLogic(int *a, int *b) {
 			Pad_ActuatorOff(0, 0);
 			Pad_ActuatorOff(0, 1);
 			Mess_DeleteAll();
+#ifndef PC_PORT /* PC: no drive to stop (the stream stopped with GameFMV_StopFMV) */
 			CdControlB(8, 0, 0);
+#endif
 			Pause__Fi(10);
 			Mem_Delete(DoubleBuffer.a);
 			GameFMV_PlayMovie(-(*(int *)(GSkater + 744) + 12));

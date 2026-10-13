@@ -1,5 +1,8 @@
 /* GameFMV_SyncFMV__Fi (0x8002357c) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_stream.h"
+#endif
 
 typedef struct {
 	int x, y, z;
@@ -77,13 +80,21 @@ void GameFMV_SyncFMV(int a) {
 		if (GamePaused || GameFrozen || MusicStopped) {
 			if (alreadyHandledPause == 0) {
 				alreadyHandledPause = 1;
+#ifdef PC_PORT
+				PC_StreamPause();
+#else
 				StSetMask(1, 0, -1);
 				CdControlB(9, 0, 0);
+#endif
 			}
 		} else if (alreadyHandledPause) {
 			alreadyHandledPause = 0;
+#ifdef PC_PORT
+			PC_StreamResume();
+#else
 			StSetMask(0, 0, -1);
 			CdRead2(480);
+#endif
 		}
 	}
 }

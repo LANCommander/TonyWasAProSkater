@@ -4,6 +4,9 @@
 #include "game/gamefmv.h"
 #include "game/psyq.h"
 #include "game/vector.h"
+#ifdef PC_PORT
+#include "pc_stream.h"
+#endif
 
 struct CdlATV {
 	unsigned char val0, val1, val2, val3;
@@ -35,5 +38,9 @@ void GameFMV_SetCDMixForPos(const CVector &pos) {
 	atv.val3 = 0;
 	atv.val2 = 0;
 
+#ifdef PC_PORT
+	PC_StreamMix(&atv.val0);
+#else
 	CdMix(&atv);
+#endif
 }

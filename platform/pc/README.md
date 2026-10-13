@@ -65,7 +65,7 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 |---|---|
 | `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `inline_c.h`, `sys/types.h`) |
 | `include/pc_*.h` | interfaces between the port's subsystems |
-| `src/` | runtime: boot, memory map, frame clock, input, video, saves, and the remaining HLE libraries (GPU, GTE, CD, SPU, MDEC) |
+| `src/` | runtime: boot, memory map, frame clock, input, video, saves, streams, and the remaining HLE libraries (GPU, GTE, SPU, MDEC) |
 | `include/pc_platform.h`, `src/pc_platform.c` | what differs between Windows and Linux: paths, folders, files, clock |
 | `tools/` | build driver and code generators (`toolchain.py`: the host's compiler and object format) |
 
@@ -163,8 +163,9 @@ and the retail executable's movie table lists the STR files and which are songs.
 their raw 2352-byte sectors (XA audio intact; ffmpeg and jPSXdec play them).
 
 At runtime files are found by name anywhere under `Data/`. `src/pc_fileio.c` replaces the game's
-CD.WAD loader (FileIO_Open/Load/Continue/Sync) with plain file reads; STR files are mounted at
-virtual CD positions for the streaming code. Missing files are extracted again on the next start
+CD.WAD loader (FileIO_Open/Load/Continue/Sync) with plain file reads, and songs and movies stream
+from their files (`src/pc_stream.c`). The disc image is read only by the extraction
+(`src/pc_disc.c`). Missing files are extracted again on the next start
 (with the disc image present); the playlist is never overwritten (delete it to get the default
 back). Playlist entries are relative to `Data/Music` or absolute; an STR the game doesn't know
 plays with its first song's settings.
@@ -187,9 +188,8 @@ screen) and the pause logo (320x88 for the PS1's 256x44) are drawn scaled into t
 surfaces (`PC_GpuLoadImageHiRes`, `SlicedImage::drawScaled`).
 
 Its songs and movies are Sofdec films (`.sfd`: MPEG-1 video, CRI ADX audio; `src/pc_sfd.c`
-demultiplexes them and decodes the ADX). They mount at CD positions like the STR files
-(`ATVILOGO.STR` is `activision.sfd`, `LOGO.STR` `never.sfd`), so the game's own streaming code
-plays the 44.1 kHz stereo audio through the CD input; the playlist lists the `.sfd` songs, and a
+demultiplexes them and decodes the ADX). They stream like the STR files (`ATVILOGO.STR` is
+`activision.sfd`, `LOGO.STR` `never.sfd`): the 44.1 kHz stereo audio plays through the music input; the playlist lists the `.sfd` songs, and a
 song starts over at the end of its audio as the PS1's does at its end frame. The full-screen
 movies play (`src/pc_movie.c`: pl_mpeg decodes the 320x240 video into the 24-bit movie screen,
 timed to the audio; any button skips, as on the PS1); the songs' 96x64 thumbnail video is not
@@ -379,7 +379,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_INPUT=frame:mask,...` | scripted pad input for player 1 (PS1 button mask, pressed = 1, held from that frame; X is both Ollie and Menu Accept, Triangle Grind and Menu Back, Start is Pause) |
 | `THPS_KEYS=frame:Key+Key,...` | scripted keyboard (Settings.ini key names, held from that frame; `frame:` releases), read through the bindings |
 | `THPS_NOGAMEPAD=1` | ignore connected gamepads, so scripted runs navigate the menus the same way with or without one |
-| `THPS_TRACE=1` | log CD activity, the game's debug prints, and player 1's actions as they change |
+| `THPS_TRACE=1` | log streams (songs, movies), the game's debug prints, and player 1's actions as they change |
 | `THPS_FAST=1` | don't throttle to 60 Hz |
 | `THPS_MOVIES=0` | skip every movie |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
@@ -404,15 +404,15 @@ than they really take (harmless on MIPS, where the value stays in its register; 
 Boots through the front end (menus, skater/board/level select with 3D models) into a level, and
 the game plays with full 3D rendering. Sound effects and music play: `src/pc_spu.c` models the
 SPU (sound RAM, 24 ADPCM voices, ADSR, master volume, CD audio input) and mixes it to an SDL audio
-device. The songs are XA audio inside the soundtrack STR files; `src/hle_libcd.c` streams them like
-the drive does (from the extracted files, which it mounts at CD positions past the end of the
-image) and `src/pc_xa.c` decodes them. `src/pc_music.c` picks the next song from
+device. The songs are XA audio inside the soundtrack STR files; `src/pc_stream.c` streams them
+from the extracted files at the rate the drive read them (150 sectors a second) and `src/pc_xa.c`
+decodes them. `src/pc_music.c` picks the next song from
 `Data/Music/Playlist.m3u` instead of the game's fixed rotation. With the Dreamcast's data the
 music, movies and sound effects come from its films and sound banks (see above). The PS1's
 movies play through the game's own movie player (`GameFMV_PlayMovie`): `src/pc_mdec.c` is the
 MDEC (the game decodes the bitstream itself, `DecDCTvlc3`; this does the inverse DCT and colour
 conversion into the slices the game uploads), and the player's busy-waits wait a frame for the
-CD stream instead (PC branch, `PC_MovieWait`). The same decoder shows the songs' 96x64 video on
+stream instead (PC branch, `PC_MovieWait`). The same decoder shows the songs' 96x64 video on
 the levels' TV screens (the credits screen shows them the same way). Not done yet: SPU reverb,
 exact ADSR curves, 64-bit build. Running every game function as translated MIPS
 (`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase (the translation

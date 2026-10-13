@@ -1,5 +1,8 @@
 /* SFX_Unpause__Fv (0x8004b974) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_stream.h"
+#endif
 
 struct S {
 	int a, b, c, d, e;
@@ -32,6 +35,10 @@ void SFX_Unpause(void) {
 			q++;
 		}
 
+#ifdef PC_PORT
+		PC_StreamMute(0);
+#else
 		FUN_8008f3a0(12, 0);
+#endif
 	}
 }

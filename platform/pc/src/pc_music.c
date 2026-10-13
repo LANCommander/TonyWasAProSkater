@@ -11,16 +11,16 @@
  * the settings of the table's first song and loops at its last video frame.
  *
  * Entries can also be Dreamcast films (.sfd, pc_sfd.h): "goldfing.sfd" takes GOLDFING.STR's
- * settings. Their audio plays through the same CD stream (hle_libcd.c), which reports the end of
- * a song's audio here, and the song starts over as the PS1's does at its end frame. */
+ * settings. Their audio plays through the same stream (pc_stream.c), which reports the end of a
+ * song's audio here, and the song starts over as the PS1's does at its end frame. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "pc_assets.h"
-#include "pc_hle.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
+#include "pc_stream.h"
 
 #define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u)
 #define MOVIE_COUNT 26
@@ -107,29 +107,14 @@ static int FindEntry(const char *song) {
     return -1;
 }
 
-/* The frame number of a mounted STR's last video frame, or 0. */
-static int LastFrame(uint32_t lba, uint32_t sectors) {
-    uint8_t raw[2352];
-    uint32_t i;
-    for (i = sectors; i-- > 0 && sectors - i < 1024;) {
-        const uint8_t *u = raw + 24;
-        if (!PC_CdReadRawSector(lba + i, raw) || (raw[18] & 0x04))
-            continue;
-        if ((u[0] | u[1] << 8) == 0x0160)
-            return u[8] | u[9] << 8 | u[10] << 16 | u[11] << 24;
-    }
-    return 0;
-}
-
 /* Set up the next playable playlist entry; 0 if there is none. */
 static int NextSong(void) {
     int tries, i;
     for (tries = 0; tries < s_nsongs; tries++) {
         const char *song = s_songs[s_next];
         char path[MAX_PATH];
-        uint32_t lba, sectors;
         const MovieDetails *m;
-        int entry;
+        int entry, id;
         s_next = (s_next + 1) % s_nsongs;
         if (strchr(song, ':') || song[0] == '\\' || song[0] == '/') {
             snprintf(path, sizeof path, "%s", song);
@@ -138,7 +123,7 @@ static int NextSong(void) {
             snprintf(rel, sizeof rel, "Music\\%s", song);
             PC_AssetsPath(path, sizeof path, rel);
         }
-        if (!PC_CdMountFile(path, &lba, &sectors) || !sectors) {
+        if (!(id = PC_StreamFile(path))) {
             PC_Log("playlist: cannot open %s, skipped", path);
             continue;
         }
@@ -151,7 +136,7 @@ static int NextSong(void) {
             m = Entry(i);
             GameFMV_CurrentTrack = (uint8_t)i;
             /* a film's song loops at the end of its audio (PC_MusicStreamEnded) */
-            GameFMV_EndFrame = IsSfd(song) ? 0x7fffffff : LastFrame(lba, sectors);
+            GameFMV_EndFrame = IsSfd(song) ? 0x7fffffff : PC_StreamLastFrame(id);
             GameFMV_MusicScale = 128;
         } else {
             m = Entry(entry);
@@ -164,8 +149,8 @@ static int NextSong(void) {
         GameFMV_VLCBufferSize = m->vlcBufferSize;
         GameFMV_RingBufferSectors = m->ringBufferSectors;
         GameFMV_Is24Bit = (uint8_t)m->is24Bit;
-        GameFMV_StartSector = (int32_t)lba;
-        PC_Trace("playlist: %s (lba %u, end frame %d)", song, lba, GameFMV_EndFrame);
+        GameFMV_StartSector = id; /* the stream, where the PS1 kept the file's position */
+        PC_Trace("playlist: %s (stream %d, end frame %d)", song, id, GameFMV_EndFrame);
         return 1;
     }
     return 0;

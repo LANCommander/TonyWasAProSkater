@@ -31,9 +31,7 @@ void Options_SetPreferences(void);
 
 #ifdef PC_PORT
 #include "pc_saves.h"
-#ifdef PC_PORT
 #include "pc_frame.h"
-#endif
 #endif
 
 int FUN_800154f4(void) {

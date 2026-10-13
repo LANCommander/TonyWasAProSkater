@@ -3,7 +3,6 @@
 #include <stdlib.h>
 
 #include "pc_frame.h"
-#include "pc_hle.h"
 #include "pc_movie.h"
 #include "pc_runtime.h"
 

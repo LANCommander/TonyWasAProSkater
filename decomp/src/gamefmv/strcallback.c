@@ -22,11 +22,13 @@ void strCallback(void) {
 	RECT r;
 	int p;
 
+#ifndef PC_PORT /* PC: no CD interrupt to catch up on */
 	if (GameFMV_Is24Bit && StCdIntrFlag) {
 		FUN_8008f79c();
 
 		StCdIntrFlag = 0;
 	}
+#endif
 
 	r = decodeSlice;
 	p = decodeSliceBuffer[currentDecodeBuffer];

@@ -44,7 +44,6 @@
 #include "pc_gpu.h"
 #include "pc_gpu_gl.h"
 #include "pc_gte.h"
-#include "pc_hle.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
 
