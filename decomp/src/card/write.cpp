@@ -72,7 +72,21 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 			DataSize = 2560;
 			pHeaderBuf = GVInfo1.pBlockStart;
 			HeaderSize = 640;
+#ifdef PC_PORT
+			/* retail saves 2560 bytes from GCareer: SCareer and the start of the globals after
+			   it (AnimNames: pointers, native in the port). The port saves zeros after SCareer;
+			   loading reads back only SCareer. */
+			{
+				static ulong CareerBuf[2560 / 4];
+
+				for (int i = 0; i < (int)(sizeof(SCareer) / 4); i++)
+					CareerBuf[i] = ((ulong *)&GCareer)[i];
+
+				pDataBuf = CareerBuf;
+			}
+#else
 			pDataBuf = (ulong *)&GCareer;
+#endif
 			pHeaderBuf2 = 0;
 			HeaderSize2 = 0;
 			pDataBuf2 = 0;

@@ -4,7 +4,6 @@
 int DAT_800d13ec;
 
 extern int GNumberOfPlayers;
-extern char s_demo_mode[];
 
 void Mess_SetTextJustify(int);
 void Mess_SetScale(int);
@@ -20,13 +19,13 @@ void Front_PrintDemo(void) {
 			Mess_SetTextJustify(0);
 			Mess_SetScale(255);
 			Mess_SetRGB(150, 100, 25, 0);
-			Mess_DrawText(128, 35, s_demo_mode, 1, 0, 256, 0);
-			Mess_DrawText(384, 35, s_demo_mode, 1, 0, 256, 0);
+			Mess_DrawText(128, 35, "demo mode", 1, 0, 256, 0);
+			Mess_DrawText(384, 35, "demo mode", 1, 0, 256, 0);
 		} else {
 			Mess_SetTextJustify(0);
 			Mess_SetScale(255);
 			Mess_SetRGB(150, 100, 25, 0);
-			Mess_DrawText(256, 35, s_demo_mode, 1, 0, 256, 0);
+			Mess_DrawText(256, 35, "demo mode", 1, 0, 256, 0);
 		}
 	}
 }

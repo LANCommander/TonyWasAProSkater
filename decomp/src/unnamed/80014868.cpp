@@ -7,10 +7,6 @@
 
 extern SVideoInfo GVInfo1;
 extern SVideoInfo GVInfo2;
-extern char s_Writing_the_header_buffer_size_d[];
-extern char s_Writing_the_data_buffer_size_d[];
-extern char s_Writing_the_2_player_header_buff[];
-extern char s_Writing_the_2_player_data_buffer[];
 
 unsigned short CalcChecksum(ulong *, ulong);
 void Video_SetHeader(SVideoHead *, int);
@@ -65,15 +61,15 @@ extern "C" int FUN_80014868(EFileType FileType, char *FName) {
 	fd = PCcreat(FName, 0);
 
 	PClseek(fd, 0, 0);
-	printf(s_Writing_the_header_buffer_size_d, HeaderSize);
+	printf("\nWriting the header buffer, size %d", HeaderSize);
 	PCwrite(fd, (char *)pHeaderBuf, HeaderSize);
-	printf(s_Writing_the_data_buffer_size_d, DataSize);
+	printf("\nWriting the data buffer, size %d", DataSize);
 	PCwrite(fd, (char *)pDataBuf, DataSize);
 
 	if (pHeaderBuf2) {
-		printf(s_Writing_the_2_player_header_buff, 640);
+		printf("\nWriting the 2 player header buffer, size %d", 640);
 		PCwrite(fd, (char *)pHeaderBuf2, 640);
-		printf(s_Writing_the_2_player_data_buffer, DataSize2);
+		printf("\nWriting the 2 player data buffer, size %d", DataSize2);
 		PCwrite(fd, (char *)pDataBuf2, DataSize2);
 	}
 

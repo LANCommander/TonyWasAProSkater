@@ -85,7 +85,8 @@ int PC_TickVBlank(void) {
 
 /* Automated runs: THPS_SHOT="f1,f2,..." dumps the display (and VRAM) at those VSync(0) counts to
  * THPS_SHOTDIR (default "."); THPS_FRAMES=n exits after n presented frames; THPS_POKE=
- * "addr:value,..." stores those words every vblank (0x800d1708:1 = Cheat_LevelSelect). */
+ * "addr:value,..." stores those words every vblank (0x800d1708:1 = Cheat_LevelSelect; a
+ * decompiled global by its retail address, PC_Data). */
 static void DebugHooks(void) {
     static int frames, maxFrames = -1;
     static const char *shots, *pokes;
@@ -99,7 +100,7 @@ static void DebugHooks(void) {
         char *e;
         uint32_t a = strtoul(p, &e, 0), v = *e == ':' ? strtoul(e + 1, &e, 0) : 0;
         if (a >= PSX_RAM_BASE && a < PSX_RAM_BASE + PSX_RAM_MAPPED && !(a & 3))
-            *(uint32_t *)PSX_PTR(a) = v;
+            *(uint32_t *)PC_Data(a) = v;
         p = strchr(e, ',') ? strchr(e, ',') + 1 : "";
     }
     frames++;

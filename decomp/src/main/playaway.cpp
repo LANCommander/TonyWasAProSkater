@@ -28,16 +28,13 @@ extern "C" {
 	extern unsigned GameFade;         /* GameFade */
 	extern int GamePaused;
 	extern int M3d_WireframeMode;
-	extern short M3d_OTPushback;          /* M3d_OTPushback */
-	extern SVideoRestart GVideoRestart;   /* GVideoRestart */
-	extern SVideoInfo GVInfo1;            /* GVInfo1 */
-	extern SVideoInfo GVInfo2;            /* GVInfo2 */
-	extern uchar DemoName[];              /* DemoName */
-	extern SLevel Levels[];               /* Levels */
-	extern SControl Pad[2];               /* Pad */
-	extern char s_ingame1_fnt_8009f584[]; /* "ingame1.fnt" */
-	extern char s_memory_card_error[];    /* "memory card error" */
-	extern char s_press_x_to_continue[];  /* "press x to continue" */
+	extern short M3d_OTPushback;        /* M3d_OTPushback */
+	extern SVideoRestart GVideoRestart; /* GVideoRestart */
+	extern SVideoInfo GVInfo1;          /* GVInfo1 */
+	extern SVideoInfo GVInfo2;          /* GVInfo2 */
+	extern uchar DemoName[];            /* DemoName */
+	extern SLevel Levels[];             /* Levels */
+	extern SControl Pad[2];             /* Pad */
 
 	int EndCode;          /* EndCode */
 	int GGame;            /* GGame */
@@ -176,7 +173,7 @@ void PlayAway(void) {
 		VblankUpdateBar = 0;
 
 		if (LoadError) {
-			Mess_SetCurrentFont__FPc(s_ingame1_fnt_8009f584);
+			Mess_SetCurrentFont__FPc("ingame1.fnt");
 			FUN_8006b240();
 			FUN_80061ea0();
 			SetClippingBox__Fiiii(0, 0, 512, 240);
@@ -187,9 +184,9 @@ void PlayAway(void) {
 #ifdef PC_PORT
 			Mess_DrawText__FiiPCciUiib(256, 110, (char *)"load failed", 1, 0, 256, 0);
 #else
-			Mess_DrawText__FiiPCciUiib(256, 110, s_memory_card_error, 1, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(256, 110, "memory card error", 1, 0, 256, 0);
 #endif
-			Mess_DrawText__FiiPCciUiib(256, 130, s_press_x_to_continue, 1, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(256, 130, "press x to continue", 1, 0, 256, 0);
 			FUN_8006b26c();
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);

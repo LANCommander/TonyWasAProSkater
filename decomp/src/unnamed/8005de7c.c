@@ -20,8 +20,6 @@ extern R GCareer_8[];
 
 int DAT_800d1d24;
 
-extern char s_main_h_bmp[], s_mainf_fnt_800a1be0[], s_levbut2_bmp[], s_levbut1_bmp[];
-
 struct O *DAT_800d2358;
 struct O *DAT_800d235c;
 
@@ -62,20 +60,20 @@ int FUN_8005de7c(int a) {
 		}
 	}
 
-	FUN_80061714(FUN_8005ca3c(s_main_h_bmp));
-	Mess_LoadFont__FPcT0iii(s_mainf_fnt_800a1be0, FUN_8005ca3c(s_mainf_fnt_800a1be0), -1, -1, -1);
+	FUN_80061714(FUN_8005ca3c("main_h.bmp"));
+	Mess_LoadFont__FPcT0iii("mainf.fnt", FUN_8005ca3c("mainf.fnt"), -1, -1, -1);
 	Mess_SetFontScale(200);
 
 	o = __nw__6CClassUi(24);
 
 	if (o)
-		o = __6SpritePciii(o, s_levbut2_bmp, 1, 32, 128);
+		o = __6SpritePciii(o, "levbut2.bmp", 1, 32, 128);
 
 	DAT_800d2358 = o;
 	p = __nw__6CClassUi(24);
 
 	if (p)
-		p = __6SpritePciii(p, s_levbut1_bmp, 1, 32, 128);
+		p = __6SpritePciii(p, "levbut1.bmp", 1, 32, 128);
 
 	DAT_800d235c = p;
 	FUN_8005c8dc(1);

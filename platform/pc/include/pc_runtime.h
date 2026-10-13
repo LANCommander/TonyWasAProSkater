@@ -34,6 +34,26 @@ extern const PcFunc pc_recomp_funcs[];
 extern const PcFunc pc_hle_funcs[];
 extern const PcFunc pc_stub_funcs[];
 
+/* The decompiled data (decomp/data) is native globals, not PS1 RAM: the build's table of them,
+ * by retail address, ends with {0, 0, 0}. */
+typedef struct {
+    uint32_t start, end;
+    char *p;
+} PcData;
+extern const PcData pc_data[];
+
+/* The global data at a retail address: where the native global holding it is, else PS1 RAM
+ * (.bss, fixed data, a --mips build). For runtime code that reads a game global by address. */
+void *PC_Data(uint32_t addr);
+/* The same as a number for the PSX_PTR arithmetic runtime code does, looked up once per use. */
+#define PSX_DATA_ADDR(addr)                                                                        \
+    ({                                                                                             \
+        static uint32_t pc_data_addr_;                                                             \
+        if (!pc_data_addr_)                                                                        \
+            pc_data_addr_ = (uint32_t)(uintptr_t)PC_Data(addr);                                    \
+        pc_data_addr_;                                                                             \
+    })
+
 /* Logging: PC_Log always prints; PC_Trace only with THPS_TRACE=1. */
 void PC_Log(const char *fmt, ...);
 void PC_Trace(const char *fmt, ...);

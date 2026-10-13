@@ -13,7 +13,6 @@ extern int Cheat_Fire;
 extern int GVInfo1[];
 extern int GVInfo2[];
 extern char DAT_800d25f0[];
-extern char s_d_d_d_d[];
 
 typedef struct E {
 	char p[0xc];
@@ -155,7 +154,7 @@ void FUN_80042d04(char *a) {
 					a2 = Cheat_StatsOverride;
 					t0 = a2;
 					p1 = DAT_800d25f0;
-					p2 = s_d_d_d_d;
+					p2 = "%d %d %d %d";
 
 					if (a2 == 0) {
 						e = Stats[I(0x2e8)].f18;

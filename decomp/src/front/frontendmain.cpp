@@ -66,13 +66,8 @@ extern "C" {
 	extern int GNumberOfPlayers; /* GNumberOfPlayers */
 	extern int DAT_800d1d80;
 	extern int DAT_800d1dc0;
-	extern int GVideoReplay;             /* GVideoReplay */
-	extern int GLevel;                   /* GLevel */
-	extern SName s_demoA_rec;            /* "demoA.rec" */
-	extern char s_mainf_fnt_800a1938[];  /* s_mainf_fnt_800a1938 */
-	extern char s_Start_1_fnt[];         /* s_Start_1_fnt */
-	extern char s_stats2_fnt_800a1950[]; /* s_stats2_fnt_800a1950 */
-	extern char s_shell_vab[];           /* s_shell_vab */
+	extern int GVideoReplay;  /* GVideoReplay */
+	extern int GLevel;        /* GLevel */
 
 	int StartScreen; /* screen to return to */
 	short DAT_800d1ca0;
@@ -141,7 +136,7 @@ restart:
 		FUN_8005c678();
 	}
 
-	DemoName = s_demoA_rec;
+	DemoName = *(SName *)"demoA.rec";
 	DAT_800d1cb4 = 1;
 	Front_ClearGVideoRestartData();
 	Career_Init__Fv();
@@ -190,7 +185,7 @@ top:
 
 	if (StartScreen) {
 		FUN_8005c734(157);
-		Mess_LoadFont(s_mainf_fnt_800a1938, -1, -1, -1);
+		Mess_LoadFont("mainf.fnt", -1, -1, -1);
 		Mess_SetRGB(128, 128, 128, 0);
 		Mess_SetFontScale(256);
 		Mess_SetTextJustify__FUc(1);
@@ -260,7 +255,7 @@ top:
 					FUN_800642d4(1);
 
 				choice = GLevel;
-				Mess_SetCurrentFont(s_mainf_fnt_800a1938);
+				Mess_SetCurrentFont("mainf.fnt");
 				Mess_UnloadFont();
 				FUN_8005cae8();
 				goto launch;
@@ -275,7 +270,7 @@ title:
 	if (DAT_800d1cb8)
 		goto reset;
 
-	Mess_SetCurrentFont(s_Start_1_fnt);
+	Mess_SetCurrentFont("Start_1.fnt");
 	Mess_UnloadFont();
 
 	if (!DemoTimer)
@@ -403,9 +398,9 @@ skater2:
 	if (DAT_800d1cb8)
 		goto reset;
 
-	Mess_SetCurrentFont(s_stats2_fnt_800a1950);
+	Mess_SetCurrentFont("stats2.fnt");
 	Mess_UnloadFont();
-	Mess_SetCurrentFont(s_mainf_fnt_800a1938);
+	Mess_SetCurrentFont("mainf.fnt");
 
 	if (skater == -1)
 		goto mainmenu;
@@ -443,7 +438,7 @@ level:
 			goto board2;
 	}
 
-	Mess_SetCurrentFont(s_mainf_fnt_800a1938);
+	Mess_SetCurrentFont("mainf.fnt");
 	Mess_UnloadFont();
 	FUN_8005cae8();
 launch:
@@ -466,7 +461,7 @@ launch:
 	Init_Restart(PACK_1, 16);
 	FUN_8006b01c(0);
 	FUN_800161d8();
-	FUN_8004b09c(s_shell_vab);
+	FUN_8004b09c("shell.vab");
 	FUN_800171f0();
 
 	if (DAT_800d1cb8) {

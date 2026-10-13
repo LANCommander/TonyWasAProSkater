@@ -55,18 +55,14 @@ extern char *GameText_34[];
 extern char *GameText_1f4[];
 extern char *GameText_23c[];
 extern char *GameText_240[];
-extern char s_no_space_do_you_want_to_delete_b[];
-extern char s_loading_video_file[];
 extern char SaveGameName[];
-extern char DAT_800d112c[];
-extern char DAT_800d1130[];
-extern char DAT_800d1134[];
 
 typedef struct {
 	char a, b, c;
 } T3;
 
 extern char DAT_800d1138[];
+
 extern O *pYesNoMenu;
 extern int TTime;
 
@@ -155,11 +151,10 @@ void Front_MemCardDisplay(void) {
 			Mess_DrawText(s2, 67, GameText.f208, 0, 0, 256, 0);
 			Mess_DrawText(s2, 85, GameText.f20c, 0, 0, 256, 0);
 			Mess_DrawText(s2, 103, GameText.f210, 0, 0, 256, 0);
-			FUN_8008b900(buf, GameText.f214, SaveNeedBlocks,
-			             SaveNeedBlocks == 1 ? DAT_800d112c : DAT_800d1130);
+			FUN_8008b900(buf, GameText.f214, SaveNeedBlocks, SaveNeedBlocks == 1 ? "" : "s");
 			Mess_DrawText(s2, 121, buf, 0, 0, 256, 0);
 			FUN_8008b900(buf, GameText.f218, SaveNeedBlocks - SaveFreeBlocks,
-			             SaveNeedBlocks - SaveFreeBlocks == 1 ? DAT_800d112c : DAT_800d1130);
+			             SaveNeedBlocks - SaveFreeBlocks == 1 ? "" : "s");
 			Mess_DrawText(s2, 139, buf, 0, 0, 256, 0);
 			Mess_DrawText(s2, 157, GameText.f21c, 0, 0, 256, 0);
 			Front_PrintCentredPrompt(GameText.f180);
@@ -212,7 +207,7 @@ void Front_MemCardDisplay(void) {
 				else
 					Mess_SetRGB(122, 122, 122, 0);
 
-				Mess_DrawText(s2 - 150 + s0 * 30, 100, DAT_800d1134, 0, 0, 256, 0);
+				Mess_DrawText(s2 - 150 + s0 * 30, 100, "_", 0, 0, 256, 0);
 
 				if (s0 == CursorPos)
 					Mess_SetScale(SizeUp * 6 + 256);
@@ -229,7 +224,7 @@ void Front_MemCardDisplay(void) {
 			Front_PrintGoBackSelect();
 			break;
 		case 14:
-			Mess_DrawText(s2, 100, s_no_space_do_you_want_to_delete_b, 0, 0, 256, 0);
+			Mess_DrawText(s2, 100, "no space do you want to delete blah blah", 0, 0, 256, 0);
 			break;
 		case 19:
 			RGBRed();
@@ -250,7 +245,7 @@ void Front_MemCardDisplay(void) {
 			break;
 		case 21:
 			FUN_80011214();
-			Mess_DrawText(s2, 110, s_loading_video_file, 0, 0, 256, 0);
+			Mess_DrawText(s2, 110, "loading video file", 0, 0, 256, 0);
 #ifndef PC_PORT
 			RGBRed();
 			Mess_DrawText(s2, 140, GameText.f1f8, 0, 0, 256, 0);

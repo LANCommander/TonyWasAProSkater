@@ -15,9 +15,6 @@ extern SPadMap DAT_800bf260[2];
 extern SPadMap DAT_800bf280[2];
 extern LocalText GameText;
 extern SLabels DAT_800a1d0c;
-extern char s_opt_ctr_bmp[];
-extern char s_options_bmp[];
-extern char s_s_s[];
 
 int DAT_800d1d28;
 
@@ -171,7 +168,7 @@ extern "C" int FUN_8005f6bc(int a) {
 
 	FUN_8005c97c(11);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(s_options_bmp));
+	FUN_80061714(FUN_8005ca3c("options.bmp"));
 	DrawSync(0);
 
 	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
@@ -352,7 +349,7 @@ extern "C" int FUN_8005f6bc(int a) {
 					int value = r->kind == ROW_AUTOKICK ? GPreferences.AutoKickEnabled[pl]
 					                                    : GPreferences.VibrationEnabled[pl];
 
-					FUN_8008b900(buf, s_s_s,
+					FUN_8008b900(buf, "%s %s",
 					             r->kind == ROW_AUTOKICK ? GameText.pAutoKick : GameText.pVibration,
 					             value ? GameText.pBooleanOn : GameText.pBooleanOff);
 					SetColour(on, 0);
@@ -399,12 +396,12 @@ extern "C" int FUN_8005f6bc(int a) {
 			Text(600, ROW_TOP + (VISIBLE_ROWS - 1) * ROW_HEIGHT + 7 + 22, 2, "MORE");
 
 		if (capturing)
-			FUN_8008b900(buf, s_s_s, gamepad ? "PRESS A BUTTON FOR" : "PRESS A KEY FOR",
+			FUN_8008b900(buf, "%s %s", gamepad ? "PRESS A BUTTON FOR" : "PRESS A KEY FOR",
 			             PC_InputActionLabel((PcAction)s_rows[sel].action));
 		else if (s_rows[sel].kind == ROW_ACTION)
-			FUN_8008b900(buf, s_s_s, "ACCEPT TO CHANGE", "   DELETE OR X TO CLEAR");
+			FUN_8008b900(buf, "%s %s", "ACCEPT TO CHANGE", "   DELETE OR X TO CLEAR");
 		else if (s_rows[sel].kind == ROW_DEVICE && pl == 0)
-			FUN_8008b900(buf, s_s_s, "LEFT OR RIGHT", "TO SWITCH DEVICE");
+			FUN_8008b900(buf, "%s %s", "LEFT OR RIGHT", "TO SWITCH DEVICE");
 		else
 			buf[0] = 0;
 
@@ -484,9 +481,9 @@ static int StepDistance(int cur, int d, int n) {
 /* the menu font has letters and digits only */
 static void DistanceLabel(char *buf, int pct) {
 	if (pct == PC_DISTANCE_FULL)
-		FUN_8008b900(buf, s_s_s, "ENTIRE", "LEVEL");
+		FUN_8008b900(buf, "%s %s", "ENTIRE", "LEVEL");
 	else if (pct == 100)
-		FUN_8008b900(buf, s_s_s, "NORMAL", "");
+		FUN_8008b900(buf, "%s %s", "NORMAL", "");
 	else if (pct % 100 == 0)
 		FUN_8008b900(buf, (char *)"%dX", pct / 100);
 	else
@@ -549,7 +546,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 	FUN_8005c97c(11);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(s_options_bmp));
+	FUN_80061714(FUN_8005ca3c("options.bmp"));
 	DrawSync(0);
 
 	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
@@ -732,19 +729,19 @@ extern "C" void PC_GraphicsOptions(int a) {
 			Text(NAME_X, ROW_TOP + (GFX_ROWS + 2) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
 			FUN_8008b900(buf, (char *)"ACCEPT TO KEEP   BACK TO UNDO   %d", (keep + 59) / 60);
 		} else if (sel == GFX_MODE || (sel == GFX_RESOLUTION && edit.mode != PC_VIDEO_BORDERLESS)) {
-			FUN_8008b900(buf, s_s_s, "LEFT OR RIGHT TO CHANGE", "");
+			FUN_8008b900(buf, "%s %s", "LEFT OR RIGHT TO CHANGE", "");
 		} else if (sel == GFX_RESOLUTION) {
-			FUN_8008b900(buf, s_s_s, "BORDERLESS USES THE", "DESKTOP RESOLUTION");
+			FUN_8008b900(buf, "%s %s", "BORDERLESS USES THE", "DESKTOP RESOLUTION");
 		} else if (sel == GFX_WIDESCREEN) {
-			FUN_8008b900(buf, s_s_s, "MORE OF THE WORLD AT THE", "SIDES OF WIDE SCREENS");
+			FUN_8008b900(buf, "%s %s", "MORE OF THE WORLD AT THE", "SIDES OF WIDE SCREENS");
 		} else if (sel == GFX_DRAW_DISTANCE) {
-			FUN_8008b900(buf, s_s_s, "HOW FAR AWAY THE LEVEL", "AND ITS FOG ARE DRAWN");
+			FUN_8008b900(buf, "%s %s", "HOW FAR AWAY THE LEVEL", "AND ITS FOG ARE DRAWN");
 		} else if (sel == GFX_OBJECT_DISTANCE) {
-			FUN_8008b900(buf, s_s_s, "HOW FAR OBJECTS STAY", "DETAILED AND VISIBLE");
+			FUN_8008b900(buf, "%s %s", "HOW FAR OBJECTS STAY", "DETAILED AND VISIBLE");
 		} else if (sel == GFX_FOG) {
-			FUN_8008b900(buf, s_s_s, "LIGHT FOGS ONLY THE", "FARTHEST PART");
+			FUN_8008b900(buf, "%s %s", "LIGHT FOGS ONLY THE", "FARTHEST PART");
 		} else if (sel == GFX_APPLY && !SameSettings(&edit, &cur)) {
-			FUN_8008b900(buf, s_s_s, "ACCEPT TO SWITCH", "");
+			FUN_8008b900(buf, "%s %s", "ACCEPT TO SWITCH", "");
 		} else {
 			buf[0] = 0;
 		}
@@ -780,7 +777,7 @@ extern "C" int FUN_8005f6bc(int a) {
 
 	FUN_8005c97c(13);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(s_opt_ctr_bmp));
+	FUN_80061714(FUN_8005ca3c("opt_ctr.bmp"));
 
 	labels = DAT_800a1d0c;
 	disabled[0] = 0;
@@ -816,12 +813,12 @@ extern "C" int FUN_8005f6bc(int a) {
 	labels.Name[2] = FUN_8005ea74(DAT_800bf260[pl].Function[2]);
 	labels.Name[3] = FUN_8005ea74(DAT_800bf260[pl].Function[3]);
 
-	FUN_8008b900(vib, s_s_s, GameText.pVibration,
+	FUN_8008b900(vib, "%s %s", GameText.pVibration,
 	             GPreferences.VibrationEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
 
 	labels.Name[4] = vib;
 
-	FUN_8008b900(ak, s_s_s, GameText.pAutoKick,
+	FUN_8008b900(ak, "%s %s", GameText.pAutoKick,
 	             GPreferences.AutoKickEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
 
 	labels.Name[5] = ak;
@@ -834,7 +831,7 @@ extern "C" int FUN_8005f6bc(int a) {
 	if (r == -1 || r == 1304) {
 		FUN_8005c97c(11);
 		FUN_8005ca64();
-		FUN_80061714(FUN_8005ca3c(s_options_bmp));
+		FUN_80061714(FUN_8005ca3c("options.bmp"));
 
 		r = -1;
 	}

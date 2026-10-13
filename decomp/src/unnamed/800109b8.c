@@ -13,7 +13,6 @@ typedef struct {
 
 extern E Levels[];
 extern S Crowd[];
-extern char s_Pitch_d[];
 extern int GLevel;
 extern int GGame;
 
@@ -32,7 +31,7 @@ void FUN_800109b8(void) {
 
 			for (i = 0; i < 1; i++) {
 				Crowd[i].a0 = SFX_PlayX(44, 0, 0);
-				FUN_8008c190(s_Pitch_d, SFX_GetVoicePitch(Crowd[i].a0));
+				FUN_8008c190("Pitch = %d \n", SFX_GetVoicePitch(Crowd[i].a0));
 
 				Crowd[i].a1 = Crowd[i].a3 = Crowd[i].a4 = Crowd[i].a2 = 0;
 			}

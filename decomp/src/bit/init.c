@@ -20,7 +20,6 @@ int pShadowTexture;
 
 extern int ButtonsAnim __attribute__((section(".data")));
 
-extern char s_Buttons[];
 extern char *AnimNames[];
 extern int QuickAnimLookup[];
 
@@ -51,6 +50,6 @@ void Bit_Init(void) {
 	for (i = 0; i < 6; i++)
 		QuickAnimLookup[i] = Spool_FindAnim(AnimNames[i]);
 
-	ButtonsAnim = Spool_FindAnim(s_Buttons);
+	ButtonsAnim = Spool_FindAnim("Buttons");
 	pShadowTexture = Spool_FindTextureEntry(0x2a3b2550);
 }

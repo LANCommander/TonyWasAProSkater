@@ -5,7 +5,6 @@
 extern int Vblanks, SelectedSkater;
 extern const int GLevel;
 extern SLevel Levels[];
-extern char s_s_s_HEAT_d[];
 
 short HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
 
@@ -121,7 +120,7 @@ void Competition_ResetMarquee() {
 
 	c->mMarqueeTimer = 0;
 	c->mMarqueeText = 0;
-	FUN_8008b900(c->mMarqueeTextBuf, s_s_s_HEAT_d, (int)Levels[GLevel].pLevelName,
+	FUN_8008b900(c->mMarqueeTextBuf, "%s %s - HEAT %d", (int)Levels[GLevel].pLevelName,
 	             (int)Levels[GLevel].pCityName, c->mCurrentHeat + 1);
 
 	c->mMarqueeText = c->mMarqueeTextBuf;

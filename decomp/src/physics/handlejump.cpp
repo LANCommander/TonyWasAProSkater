@@ -34,8 +34,6 @@ int Cheat_StatsOverride;
 extern int Cheat_Fire;
 extern int XFrames;
 extern int GState;
-extern char s_FASTPLANT[];
-extern char s_NOLLIE[];
 
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride                                                                           \
@@ -336,13 +334,13 @@ void CBruce::HandleJump() {
 
 					if (m268 == 1 && XFrames - m26C < 35) {
 						FUN_8002f1a0(this);
-						Trick_Trick(65, s_FASTPLANT, 250, 0);
+						Trick_Trick(65, "FASTPLANT", 250, 0);
 
 						mVel.vy -= 0x5000;
 						Debug_RunAnim1(45, 16, 6508);
 					} else {
 						FUN_8002f1a0(this);
-						Trick_Trick(75, s_NOLLIE, 200, 0);
+						Trick_Trick(75, "NOLLIE", 200, 0);
 						Debug_RunAnim(13, 6515);
 					}
 

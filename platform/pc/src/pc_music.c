@@ -22,7 +22,7 @@
 #include "pc_platform.h"
 #include "pc_runtime.h"
 
-#define MOVIE_DETAILS 0x800a63e8u
+#define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u)
 #define MOVIE_COUNT 26
 #define MUSIC_WIDTH 96
 #define MAX_SONGS 256
@@ -34,18 +34,18 @@ typedef struct {
     int32_t vlcBufferSize, ringBufferSectors, is24Bit, startSector, musicScale;
 } MovieDetails;
 
-#define GameFMV_Active (*(int32_t *)PSX_PTR(0x800d1634))
-#define GameFMV_CurrentTrack (*(uint8_t *)PSX_PTR(0x800d167d))
-#define GameFMV_Width (*(uint16_t *)PSX_PTR(0x800d1672))
-#define GameFMV_Height (*(uint16_t *)PSX_PTR(0x800d1674))
-#define GameFMV_EndFrame (*(int32_t *)PSX_PTR(0x800d1660))
-#define GameFMV_VLCBufferSize (*(int32_t *)PSX_PTR(0x800d1664))
-#define GameFMV_RingBufferSectors (*(int32_t *)PSX_PTR(0x800d1668))
-#define GameFMV_Is24Bit (*(uint8_t *)PSX_PTR(0x800d167c))
-#define GameFMV_MusicScale (*(int32_t *)PSX_PTR(0x800d1680))
-#define GameFMV_StartSector (*(int32_t *)PSX_PTR(0x800d165c))
-#define GameFMV_IsMovie (*(int32_t *)PSX_PTR(0x800d162c))
-#define GameFMV_RewindSwitch (*(int32_t *)PSX_PTR(0x800d1630))
+#define GameFMV_Active (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1634)))
+#define GameFMV_CurrentTrack (*(uint8_t *)PSX_PTR(PSX_DATA_ADDR(0x800d167d)))
+#define GameFMV_Width (*(uint16_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1672)))
+#define GameFMV_Height (*(uint16_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1674)))
+#define GameFMV_EndFrame (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1660)))
+#define GameFMV_VLCBufferSize (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1664)))
+#define GameFMV_RingBufferSectors (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1668)))
+#define GameFMV_Is24Bit (*(uint8_t *)PSX_PTR(PSX_DATA_ADDR(0x800d167c)))
+#define GameFMV_MusicScale (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1680)))
+#define GameFMV_StartSector (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d165c)))
+#define GameFMV_IsMovie (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d162c)))
+#define GameFMV_RewindSwitch (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1630)))
 
 static char *s_songs[MAX_SONGS];
 static int s_nsongs, s_next, s_loaded;

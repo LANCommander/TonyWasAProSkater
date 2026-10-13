@@ -2,8 +2,6 @@
 #include "names.h"
 
 extern int GPreferences[];
-extern char s_HORSE[];
-extern char s_AAA[];
 extern int SFXLEVEL, XALEVEL;
 
 int FUN_8008b900(char *, char *);
@@ -27,8 +25,8 @@ void Options_Init(void) {
 		GPreferences[75 + i * 4] = 3;
 	}
 
-	FUN_8008b900((char *)&GPreferences[100], s_HORSE);
+	FUN_8008b900((char *)&GPreferences[100], "HORSE");
 
 	GPreferences[99] = 5;
-	FUN_8008b900((char *)&GPreferences[100] - 80, s_AAA);
+	FUN_8008b900((char *)&GPreferences[100] - 80, "AAA");
 }

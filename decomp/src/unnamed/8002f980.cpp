@@ -11,8 +11,6 @@ extern "C" {
 
 struct Message;
 
-extern char s_WALL_RIDE[];
-
 int Mips_FixMul(int, int);
 
 void CBruce::StateTransition(EPhysicsState NewState, int) {
@@ -44,7 +42,7 @@ void CBruce::StateTransition(EPhysicsState NewState, int) {
 	}
 
 	if (mPhysicsState == PHYSICS_IN_WALLRIDE && NewState == PHYSICS_IN_AIR) {
-		Trick_Trick(64, s_WALL_RIDE, 500, 0);
+		Trick_Trick(64, "WALL RIDE", 500, 0);
 
 		int Flipped = (mExtraFlags & 2) != 0;
 

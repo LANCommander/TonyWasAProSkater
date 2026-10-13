@@ -14,7 +14,6 @@ int Num_fonts, Current_font;
 u_short Clut;
 
 extern int Pack_NoBottom, Pack_NoRight, Pal16X, Pal16Y;
-extern char s_memory_error[];
 
 void Mess_SetNewFont(u_char);
 void *Mem_New(u_int, int, int);
@@ -90,7 +89,7 @@ int Mess_LoadFont(char *filename, char *file_buffer, int char_sep, int shadow_of
 	Font_table[this_font].mFont_scale = 256;
 
 	if (!Font_table[this_font].mChar_table)
-		printf(s_memory_error);
+		printf("\nmemory error");
 
 	db = file_buffer + (Font_table[this_font].mNum_chars * 16 + 4) + 32;
 	char *tb = file_buffer + 4;

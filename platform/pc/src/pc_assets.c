@@ -35,7 +35,7 @@
 #include "pc_runtime.h"
 #include "pc_sfd.h"
 
-#define MOVIE_DETAILS 0x800a63e8u /* movieDetails[26], 32 bytes each */
+#define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u) /* movieDetails[26], 32 bytes each */
 #define MOVIE_COUNT 26
 #define MUSIC_WIDTH 96            /* soundtrack entries carry a 96x64 video */
 #define STREAM_RATE 150           /* sectors/s: the songs stream at 2x */
@@ -385,7 +385,7 @@ static void ExtractWadFiles(void) {
 /* ---- the Dreamcast disc --------------------------------------------------------------------- */
 
 #define DC_MANIFEST_TAG "source: dreamcast"
-#define STATS 0x800a44fc  /* Stats[]: skaters (SStats, 0x154 bytes): PSXName, PSXName2, FrontName */
+#define STATS PSX_DATA_ADDR(0x800a44fcu) /* Stats[]: skaters (SStats, 0x154 bytes): PSXName, PSXName2, FrontName */
 #define STATS_SIZE 0x154
 #define STATS_COUNT 14
 
@@ -659,8 +659,7 @@ static void DreamcastFixups(void) {
         uint32_t e = STATS + i * STATS_SIZE, full, front;
         memcpy(&full, PSX_PTR(e), 4);
         memcpy(&front, PSX_PTR(e + 8), 4);
-        if (full < PSX_EXE_BASE || full >= PSX_RAM_BASE + PSX_RAM_SIZE || front < PSX_EXE_BASE ||
-            front >= PSX_RAM_BASE + PSX_RAM_SIZE || !*(const char *)PSX_PTR(front))
+        if (!full || !front || !*(const char *)PSX_PTR(front))
             continue;
         snprintf(name, sizeof name, "%.50s.psx", (const char *)PSX_PTR(front));
         if (PC_AssetsFind(name, path, sizeof path))

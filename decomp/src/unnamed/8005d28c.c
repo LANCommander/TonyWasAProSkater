@@ -2,8 +2,6 @@
 #include "names.h"
 #include "game/padbuttons.h"
 
-extern char s_loadingv_bmp[];
-extern char s_Bckgrnd2_bmp[];
 extern char Pad[];
 
 char *DAT_800d1d0c;
@@ -28,13 +26,13 @@ void FUN_8005d28c(void) {
 	FUN_8005c8dc(8);
 	FUN_8005c97c(8);
 	FUN_8005ca64();
-	FUN_80061a10(FUN_8005ca3c(s_loadingv_bmp));
+	FUN_80061a10(FUN_8005ca3c("loadingv.bmp"));
 	FUN_8005dc58(6);
 
 	p = __nw__6CClassUi(24);
 
 	if (p) {
-		p = FUN_80063a5c(p, 8, FUN_8005ca3c(s_Bckgrnd2_bmp), 0, 458, 64, 128);
+		p = FUN_80063a5c(p, 8, FUN_8005ca3c("Bckgrnd2.bmp"), 0, 458, 64, 128);
 	}
 
 	DAT_800d1d0c = p;

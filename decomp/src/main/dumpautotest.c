@@ -2,8 +2,6 @@
 int GAutoLevela, GAutoPlayer1a, GAutoPlayer2a, GAutoGamea;
 int GAutoLevel, GAutoPlayer1, GAutoPlayer2, GAutoGame;
 
-extern char s_L_d_P1_d_P2_d_G_d[];
-
 int FUN_8008c3d0(int);
 int FUN_8008c314(int);
 int FUN_8009153c(int, int);
@@ -29,7 +27,8 @@ void DumpAutoTest(void) {
 	FUN_8008c468(0);
 	FUN_80092e70(env, 0, 0, 512, 240);
 	FUN_8008c94c(env);
-	FUN_8008b900(buf, s_L_d_P1_d_P2_d_G_d, GAutoLevela, GAutoPlayer1a, GAutoPlayer2a, GAutoGamea);
+	FUN_8008b900(buf, "L-%d, P1-%d, P2-%d, G-%d", GAutoLevela, GAutoPlayer1a, GAutoPlayer2a,
+	             GAutoGamea);
 	FUN_80091bb0(buf);
 	FUN_80091894(id);
 

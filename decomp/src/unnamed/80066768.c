@@ -13,7 +13,6 @@ extern int Loading;
 int DAT_800d2360, DAT_800d2374, DAT_800d2378, DAT_800d237c, DAT_800d2380, DAT_800d2390;
 
 extern int DAT_800d3810[], DAT_800d3840[];
-extern char s_File_s_not_found_800a21cc[];
 
 void FileIO_Continue(void);
 int FileIO_Load(int);
@@ -60,7 +59,7 @@ void FUN_80066768(void) {
 		n = FileIO_Open(buf);
 
 		if (n <= 0) {
-			FUN_8008c190(s_File_s_not_found_800a21cc, buf);
+			FUN_8008c190("\nFile %s not found", buf);
 			return;
 		}
 

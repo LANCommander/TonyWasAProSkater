@@ -280,8 +280,8 @@ u32 hle_8008ea48(u32 event) { /* EnableEvent */
 }
 
 /* __main (libsn): runs the static constructors listed after the linker's ctor table, once. */
-#define CTORS_DONE 0x800ce490u
-#define CTOR_TABLE 0x800d101cu
+#define CTORS_DONE PSX_DATA_ADDR(0x800ce490u)
+#define CTOR_TABLE PSX_DATA_ADDR(0x800d101cu)
 #define CTOR_COUNT 19
 void hle_80092044(void) {
     int i;

@@ -7,7 +7,6 @@
 struct SMessageProg;
 
 extern SLevel Levels[];
-extern char s_d_OF_5_s[];
 extern SMessageProg Messprog_Zoom;
 extern char Msg[];
 extern int GGame;
@@ -33,6 +32,6 @@ extern "C" void FUN_8006e454(void) {
 		return;
 	}
 
-	FUN_8008b900(Msg, s_d_OF_5_s, n, Levels[GLevel].pGoalName);
+	FUN_8008b900(Msg, "%d OF 5 %s", n, Levels[GLevel].pGoalName);
 	Mess_Message(Msg, &Messprog_Zoom, 1, 0, 0);
 }

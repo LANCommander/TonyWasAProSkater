@@ -6,8 +6,6 @@ struct E {
 };
 
 extern struct E Stats[];
-extern char DAT_800d1ea4[];
-extern char s_SWITCH_800d1e9c[];
 
 char *FUN_8006e534(char *p) {
 	int r = 0;
@@ -21,7 +19,7 @@ char *FUN_8006e534(char *p) {
 		r = 1;
 
 	if (b != r)
-		return s_SWITCH_800d1e9c;
+		return "SWITCH ";
 
-	return DAT_800d1ea4;
+	return "";
 }

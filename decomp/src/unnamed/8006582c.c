@@ -13,8 +13,6 @@ typedef struct C {
 	E e[8];
 } C;
 
-extern char s_fe[], s_FE[], DAT_800d1dac[], DAT_800d1db0[], s_pre[], s_PRE[], s_File_s_not_found[],
-    s_Not_enough_memory_to_load_s[];
 extern int SpoolerBlocksFileIO;
 
 int FileIO_Open(char *);
@@ -50,8 +48,8 @@ void FUN_8006582c(C *a) {
 		s++;
 		ok = 0;
 
-		if (!FUN_8008f6fc(s, s_fe) || !FUN_8008f6fc(s, s_FE) || !FUN_8008f6fc(s, DAT_800d1dac) ||
-		    !FUN_8008f6fc(s, DAT_800d1db0))
+		if (!FUN_8008f6fc(s, "fe") || !FUN_8008f6fc(s, "FE") || !FUN_8008f6fc(s, "f") ||
+		    !FUN_8008f6fc(s, "F"))
 			ok = 1;
 
 		if (ok)
@@ -67,7 +65,7 @@ void FUN_8006582c(C *a) {
 		s++;
 		ok = 0;
 
-		if (!FUN_8008f6fc(s, s_pre) || !FUN_8008f6fc(s, s_PRE))
+		if (!FUN_8008f6fc(s, "pre") || !FUN_8008f6fc(s, "PRE"))
 			ok = 1;
 
 		if (ok)
@@ -95,14 +93,14 @@ void FUN_8006582c(C *a) {
 			n = FileIO_Open(a->e[a->cur].s);
 
 			if (n <= 0) {
-				FUN_8008c190(s_File_s_not_found, a->e[a->cur].s);
+				FUN_8008c190("\nFile %s not found", a->e[a->cur].s);
 				return;
 			}
 
 			a->e[a->cur].p = Mem_NewX(n, 1, 1);
 
 			if (a->e[a->cur].p == 0) {
-				FUN_8008c190(s_Not_enough_memory_to_load_s, a->e[a->cur].s);
+				FUN_8008c190("\nNot enough memory to load %s", a->e[a->cur].s);
 				return;
 			}
 

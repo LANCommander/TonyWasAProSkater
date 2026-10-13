@@ -24,7 +24,6 @@ extern int DAT_800d1cb8;
 extern int Loading;
 extern int Cheat_LevelSelect;
 extern PREManager *SpoolerBlocksFileIO;
-extern char s_mainf_fnt_800a21c0[]; /* "mainf.fnt" */
 
 int DAT_800d1dc4 = 0; /* chosen level */
 int DAT_800d1dc8 = -1;
@@ -270,7 +269,7 @@ extern "C" void FUN_80066d7c() {
 
 	strcpy(text[0], Levels[cur].pLevelName);
 	strcpy(text[1], Levels[cur].pCityName);
-	Mess_SetCurrentFont(s_mainf_fnt_800a21c0);
+	Mess_SetCurrentFont("mainf.fnt");
 
 	tw[0] = Mess_TextWidth__FPCc(text[0]);
 	tw[1] = Mess_TextWidth__FPCc(text[1]);
@@ -428,7 +427,7 @@ extern "C" void FUN_80066d7c() {
 			}
 		}
 
-		Mess_SetCurrentFont(s_mainf_fnt_800a21c0);
+		Mess_SetCurrentFont("mainf.fnt");
 
 		for (int i = 0; i < 2; i++)
 			Mess_DrawText__FiiPCciUiib(tx[i], ty[i], text[i], 0, 0, 256, 0);
@@ -514,7 +513,7 @@ extern "C" void FUN_80066d7c() {
 					strcpy(text[1], Levels[sel].pCityName);
 				}
 
-				Mess_SetCurrentFont(s_mainf_fnt_800a21c0);
+				Mess_SetCurrentFont("mainf.fnt");
 
 				tw[0] = Mess_TextWidth__FPCc(text[0]);
 				tw[1] = Mess_TextWidth__FPCc(text[1]);

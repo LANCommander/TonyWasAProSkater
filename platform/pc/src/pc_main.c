@@ -280,6 +280,25 @@ static void InstallTrampolines(void) {
            counts[1], counts[2], counts[3]);
 }
 
+void *PC_Data(uint32_t addr) {
+    static int n = -1;
+    int lo = 0, hi;
+    if (n < 0)
+        for (n = 0; pc_data[n].start; n++)
+            ;
+    hi = n - 1;
+    while (lo <= hi) {
+        int m = (lo + hi) / 2;
+        if (addr < pc_data[m].start)
+            hi = m - 1;
+        else if (addr >= pc_data[m].end)
+            lo = m + 1;
+        else
+            return pc_data[m].p + (addr - pc_data[m].start);
+    }
+    return PSX_PTR(addr);
+}
+
 uint32_t PC_MissingFunction(uint32_t addr) {
     static uint32_t seen[512];
     static int nseen;
@@ -537,9 +556,9 @@ const char *PC_UserDir(void) {
 }
 #endif
 
-/* The game's data (initialised globals, tables, strings, vtables), embedded in thps.exe by the
- * build from the decompiled data (decomp/data, tools/data_image.py), goes to its PS1 address. The
- * game directory (PC_DataDir) is the one thps.exe is in. */
+/* The game's data that stays in PS1 RAM (decomp/data/fixed: vtables, DoubleBuffer; the rest is
+ * native data, tools/data_image.py), embedded in thps.exe by the build, goes to its PS1 address.
+ * The game directory (PC_DataDir) is the one thps.exe is in. */
 extern const uint8_t pc_image[], pc_image_end[];
 
 static void LoadImage0(void) {
@@ -553,8 +572,8 @@ static void Crt0(void) {
     /* the linker's stack top is an 8 MB dev-kit address; on a 2 MB console it is mirrored: the
      * stack goes at the top of the RAM the game uses */
     u32 ram = pc_ram_top - PSX_RAM_BASE;
-    u32 stackTop = (((MEM32(EXE_STACK_TOP_VAR) - 1) & (ram - 1)) + 1) | 0x80000000u;
-    u32 stackSize = MEM32(EXE_STACK_SIZE_VAR);
+    u32 stackTop = (((*(u32 *)PC_Data(EXE_STACK_TOP_VAR) - 1) & (ram - 1)) + 1) | 0x80000000u;
+    u32 stackSize = *(u32 *)PC_Data(EXE_STACK_SIZE_VAR);
     u32 sp = (stackTop - 8) | 0x80000000u;
     u32 heap = EXE_BSS_END;
     u32 size = (stackTop - 8) - stackSize - heap;

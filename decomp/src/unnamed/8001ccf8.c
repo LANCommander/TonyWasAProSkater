@@ -2,12 +2,6 @@
 #include "names.h"
 
 extern char *TrigFileName;
-extern char s_skate2_vab[];
-extern char s_scorep_bmp[];
-extern char s_special_bmp[];
-extern char s_spec_bar_bmp[];
-extern char s_paused_bmp[];
-extern char s_SkMedals[];
 
 typedef struct {
 	char *a;
@@ -35,8 +29,6 @@ typedef struct {
 
 extern B PSXRegion[];
 extern int SelectedSkater;
-extern char s_bits[];
-extern char s_items[];
 extern int GGame;
 extern int SelectedSkater2;
 extern int Cheat_BigHead;
@@ -85,39 +77,39 @@ void FUN_8001ccf8(char *p) {
 	TrigFileName = p + 4;
 	Redbook_InitialRand(0x12a6cc58);
 	FUN_8004c740(2000);
-	FUN_8004b09c(s_skate2_vab);
+	FUN_8004b09c("skate2.vab");
 	FUN_8004b0e4(Levels[GLevel].f8);
 	SFX_SetReverbType(0);
 
 	a = __nw__6CClassUi(24);
 
 	if (a)
-		a = __6SpritePciii(a, s_scorep_bmp, 1, 256, 256);
+		a = __6SpritePciii(a, "scorep.bmp", 1, 256, 256);
 
 	pScoreSprite = a;
 	a = __nw__6CClassUi(24);
 
 	if (a)
-		a = __6SpritePciii(a, s_special_bmp, 1, 256, 256);
+		a = __6SpritePciii(a, "special.bmp", 1, 256, 256);
 
 	pSpecialSprite = a;
 	a = __nw__6CClassUi(24);
 
 	if (a)
-		a = __6SpritePciii(a, s_spec_bar_bmp, 1, 256, 256);
+		a = __6SpritePciii(a, "spec_bar.bmp", 1, 256, 256);
 
 	pBarSprite = a;
 	b = __nw__6CClassUi(24);
 
 	if (b)
-		b = __6SpritePciii(b, s_paused_bmp, 1, 64, 256);
+		b = __6SpritePciii(b, "paused.bmp", 1, 64, 256);
 
 	DAT_800d1858 = b;
-	i1 = Spool_PSX(s_bits, 0, 0);
+	i1 = Spool_PSX("bits", 0, 0);
 	bt = (char *)PSXRegion;
 	tb = (B *)(bt + i1 * 64);
 	tb->f = 1;
-	s2 = Spool_PSX(s_items, 0, 0);
+	s2 = Spool_PSX("items", 0, 0);
 	tb2 = (B *)(bt + s2 * 64);
 	tb2->f = 1;
 	CurrentItemsFileRegion = s2;
@@ -129,7 +121,7 @@ void FUN_8001ccf8(char *p) {
 	Spool_ClearAllPSXs();
 
 	if (Levels[GLevel].fc && GGame == 1)
-		s2 = Spool_PSX(s_SkMedals, 0, 0);
+		s2 = Spool_PSX("SkMedals", 0, 0);
 
 	CurrentMedalsFileRegion = s2;
 

@@ -15,6 +15,13 @@
 
 class CPowerUp;
 
+/* the lines shown when a competition medal unlocks something (MedalMessage[3]) */
+struct SMedalMessage {
+	char *Line1; /* 0x0 */
+	char *Line2; /* 0x4 */
+	char *Line3; /* 0x8 */
+};
+
 class CJudge : public CClass {
   public:
 	uchar mProPlayer; /* 0x4 */

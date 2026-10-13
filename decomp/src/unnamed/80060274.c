@@ -16,7 +16,6 @@ typedef struct {
 extern T DAT_800a1df8;
 extern Q GameText;
 extern D GPreferences;
-extern char s_s_s[], s_options_bmp[], s_main_h_bmp[];
 
 int DAT_800d1d28;
 
@@ -48,7 +47,7 @@ int FUN_80060274(int a) {
 
 	FUN_8005c97c(11);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(s_options_bmp));
+	FUN_80061714(FUN_8005ca3c("options.bmp"));
 
 	for (;;) {
 		for (i = 0; i < 5; i++)
@@ -61,10 +60,10 @@ int FUN_80060274(int a) {
 		for (i = 0; i < 8; i++)
 			k[i] = 0;
 
-		FUN_8008b900(A, s_s_s, GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
+		FUN_8008b900(A, "%s %s", GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
 
 		t[3] = (int)A;
-		FUN_8008b900(B, s_s_s, GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
+		FUN_8008b900(B, "%s %s", GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
 
 		t[4] = (int)B;
 		v = FUN_8005e0e0((T *)t, k, 8, 80, &a, FUN_8005ffac, 0, 0, 0);
@@ -72,7 +71,7 @@ int FUN_80060274(int a) {
 		if (v == -1 || v == 88) {
 			FUN_8005c97c(0);
 			FUN_8005ca64();
-			FUN_80061714(FUN_8005ca3c(s_main_h_bmp));
+			FUN_80061714(FUN_8005ca3c("main_h.bmp"));
 
 			return -1;
 		}
@@ -110,7 +109,7 @@ int FUN_80060274(int a) {
 
 	FUN_8005c97c(11);
 	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c(s_options_bmp));
+	FUN_80061714(FUN_8005ca3c("options.bmp"));
 
 	for (;;) {
 		t = DAT_800a1df8;
@@ -121,10 +120,10 @@ int FUN_80060274(int a) {
 		k[4] = 0;
 		k[5] = 0;
 		k[6] = 0;
-		FUN_8008b900(A, s_s_s, GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
+		FUN_8008b900(A, "%s %s", GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
 
 		t.w[3] = (int)A;
-		FUN_8008b900(B, s_s_s, GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
+		FUN_8008b900(B, "%s %s", GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
 
 		t.w[4] = (int)B;
 		v = FUN_8005e0e0(&t, k, 7, 80, &a, FUN_8005ffac, 0, 0, 0);
@@ -132,7 +131,7 @@ int FUN_80060274(int a) {
 		if (v == -1 || v == 87) {
 			FUN_8005c97c(0);
 			FUN_8005ca64();
-			FUN_80061714(FUN_8005ca3c(s_main_h_bmp));
+			FUN_80061714(FUN_8005ca3c("main_h.bmp"));
 
 			v = -1;
 		} else {

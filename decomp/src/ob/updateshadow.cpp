@@ -10,7 +10,6 @@ extern "C" {
 #include "game/bit.h"
 
 extern int UseCacheForBits;
-extern char ShadowTextureName[];
 
 void CBody::UpdateShadow() {
 	if (mCBodyFlags & 8) {
@@ -23,7 +22,7 @@ void CBody::UpdateShadow() {
 
 			mpShadow = p;
 			UseCacheForBits = 1;
-			p->SetTexture(ShadowTextureName, 0);
+			p->SetTexture("Shadow", 0);
 			mpShadow->FlagOn(4);
 			mpShadow->SetSemiTransparent();
 

@@ -7,8 +7,6 @@ int Rnd(int);
 short Spool_GetModel(uint, int);
 int Career_Got(int);
 
-extern char s_items_800d1fb0[];
-extern char s_skmedals_800a3050[];
 extern STapeMessage TapeMessage[];
 extern CBody *PowerUpList;
 extern int GGame;
@@ -40,23 +38,23 @@ CTape::CTape(ushort PowerupType, const CVector &Pos, const CVector &Pos2, int Si
 	mMaxWobbleAmplitude = 50;
 	mWobbleAmplitude = 50;
 	mRMinor = 300;
-	InitItem(s_items_800d1fb0);
+	InitItem("items");
 
 	switch (mType) {
 		case 0x664:
-			InitItem(s_skmedals_800a3050);
+			InitItem("skmedals");
 
 			mIs3d = 1;
 			mModel = Spool_GetModel(0x54636518, CurrentMedalsFileRegion);
 			break;
 		case 0x665:
-			InitItem(s_skmedals_800a3050);
+			InitItem("skmedals");
 
 			mIs3d = 1;
 			mModel = Spool_GetModel(0xba6d0434, CurrentMedalsFileRegion);
 			break;
 		case 0x666:
-			InitItem(s_skmedals_800a3050);
+			InitItem("skmedals");
 
 			mIs3d = 1;
 			mModel = Spool_GetModel(0x2364558e, CurrentMedalsFileRegion);

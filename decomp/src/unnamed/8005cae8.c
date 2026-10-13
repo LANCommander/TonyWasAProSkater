@@ -11,13 +11,12 @@ struct O {
 };
 
 extern struct O *SpoolerBlocksFileIO;
-extern char s_No_PREMgr_to_delete[];
 
 void FUN_8008c190(char *a);
 
 void FUN_8005cae8(void) {
 	if (SpoolerBlocksFileIO)
-		FUN_8008c190(s_No_PREMgr_to_delete);
+		FUN_8008c190("\nNo PREMgr to delete");
 
 	if (SpoolerBlocksFileIO)
 		SpoolerBlocksFileIO->vt->fn((char *)SpoolerBlocksFileIO + SpoolerBlocksFileIO->vt->off, 3);

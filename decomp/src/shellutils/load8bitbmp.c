@@ -1,9 +1,6 @@
 /* Load8BitBMP__FPcPPcPiT2PUs (0x80061654) */
 #include "names.h"
 
-extern char s_File_s_not_found[];
-extern char s_Not_enough_memory_to_load_s[];
-
 int FileIO_Open(char *);
 char *Mem_NewX(int, int, int);
 void FileIO_Load(char *);
@@ -16,7 +13,7 @@ int Load8BitBMP(char *name, char **a, int *b, int *c, unsigned short *d) {
 	char *p;
 
 	if (r <= 0) {
-		FUN_8008c190(s_File_s_not_found, name);
+		FUN_8008c190("\nFile %s not found", name);
 		return 0;
 	}
 
@@ -29,6 +26,6 @@ int Load8BitBMP(char *name, char **a, int *b, int *c, unsigned short *d) {
 		return 1;
 	}
 
-	FUN_8008c190(s_Not_enough_memory_to_load_s, name);
+	FUN_8008c190("\nNot enough memory to load %s", name);
 	return 0;
 }

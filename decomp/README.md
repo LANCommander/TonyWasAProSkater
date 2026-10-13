@@ -178,25 +178,51 @@ leading-zero counter. For those the faithful source is a `.s` file:
 ## Data (`data/`)
 
 The initialised globals (retail `.rodata`, `.data`, `.sdata`; 0x8009d0e0-0x800d21c8, plus the
-table in `.text` at 0x80071fa4 and the free-memory pointer after `.bss` at 0x800dc94c) are C in
-`data/<module>.c`, one file per `src/` module that uses them. Each global is defined at its
-retail address with `PSX_DATA(addr)` (`data/psxdata.h`), under the name the decompiled code
-uses (its `.syms.json`), else `data_names.tsv`, else `D_<addr>`; strings are literals, pointers
-are references to their targets (`(int)s_hawk`, `(int)Die__6CBaddy` in a class table), struct
-arrays are laid out one element per group of lines with their retail type and count in a comment
-(`/* SStats[11] (THPS2 demo: SStats[14]) */`).
+table in `.text` at 0x80071fa4 and the free-memory pointer after `.bss` at 0x800dc94c) are C++ in
+`data/<module>.cpp`, one file per `src/` module that uses them (C++, as Neversoft's sources were,
+so they can use the game's types from `include/game`). Each global carries its retail address,
+`PSX_DATA(addr)` (`data/psxdata.h`), under the name the decompiled code uses (its `.syms.json`),
+else `data_names.tsv`, else `D_<addr>`.
 
-These files are compiled only for the port (native gcc; the matching build declares what it uses
-itself). `platform/pc/tools/data_image.py` places every global at its address and resolves the
-pointers, building the port's data image, and `--check` compares it with `SLUS_008.60`: equal
-except the code and what `data/omitted.tsv` leaves out (Psy-Q library data the port doesn't use,
-MIPS switch jump tables, the memory card icons). The port build runs that check and fails if a
-data file stops matching, or if decompiled code names a global the image leaves out.
+**No globals for text.** Text is a string literal where it's used: in the code
+(`Font_String(x, y, "Follow", ...)`) and in the tables, which have the game's types
+(`SLevel Levels[10] = {{"Warehouse", "Woodland Hills", "ware", ...}, ...}`, `char *AnimNames[6]`).
+The only `char` arrays left are buffers the game writes to (`SaveGameName`, `CARD_FNAME`). Other
+pointers name their targets (`(SFoo *)D_800a1234`, a function's name in a vtable). Tables nothing
+types yet are still word arrays, one element per group of lines with the retail type in a comment
+(`/* THPS2 demo: CTape*[5] */`). **`python tools/type_data.py Name 'Type' [--include game/x.h]`**
+types one: it reads the table's bytes as they are and the type's layout from the DWARF of a probe
+compiled with the headers, and rewrites the definition as a typed initialiser, string literals
+for the text it points at (`type_data.py Stats 'SStats[11]' --include game/career.h`). It can't
+change the data: the check below compares the result with the retail bytes.
 
-`tools/gen_data.py` generated the files (from `SLUS_008.60`, the names, the `.syms.json`
-references, and the struct sizes of a `platform/pc/tools/layouts.py` snapshot, `--layouts`); they
-are edited by hand from now on (typed struct initialisers are the obvious next step). They keep
-their own layout: `data/.clang-format` turns clang-format off there.
+These files are compiled only for the port (the matching build declares what it uses itself), and
+in the port they're ordinary native data: `platform/pc/tools/data_image.py` lays the globals out
+in their retail layout (the decompiled code relies on it: a struct it names as several globals,
+an index from one table into the next) as `gen/data.s`, with native pointers and literals, and
+the code's references by retail address (`psx_<addr>`) link to them. Only `data/fixed/`
+(`PSX_FIXED`: the vtables, whose addresses the port stores as numbers, and `DoubleBuffer`, whose
+GPU packets have 24-bit links) stays in PS1 RAM. `data_image.py --check` compares every global,
+laid out at its retail address, with `SLUS_008.60`: equal bytes, a pointer to a literal where
+retail points at the same text, and retail text no global holds any more must be a literal in the
+data or in `src/`. Left out: the code and `data/omitted.tsv` (Psy-Q library data the port doesn't
+use, MIPS switch jump tables, the memory card icons, debug text no code in the port prints). The
+port build runs that check and fails if a data file stops matching, or if decompiled code names a
+global the image leaves out.
+
+The matchers place a TU's string literals at the retail addresses the code names, piece by piece
+(`tools/psyq.mjs` `link`, `tools/match_div.py`), with retail's bytes there checked against the
+literal; a one-function source's literals match wherever retail's whole-file TU put them, so the
+source writes `"Follow"`, not `extern char s_Follow[]`. A load of a constant string's bytes is an
+inlined copy: `strcpy(p->name, "")` (`8006613c.c`). egcs merges equal literals in a TU, so two
+retail strings with the same text that one function uses can't both be literals: they're buffers
+(`s_800a42dc`/`s_800a42e8`, the saved names; `DAT_800d1138` in `memcarddisplay.c`).
+
+`tools/gen_data.py` generated the first version of the files (from `SLUS_008.60`, the names, the
+`.syms.json` references, and the struct sizes of a `platform/pc/tools/layouts.py` snapshot,
+`--layouts`): word arrays, text as globals. They have been reworked by hand since (native, typed,
+literals) and are edited by hand from now on; don't regenerate them. They keep their own layout:
+`data/.clang-format` turns clang-format off there.
 
 ## Demo twins: start here for any named function
 

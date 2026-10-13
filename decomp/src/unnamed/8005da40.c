@@ -16,7 +16,6 @@ typedef struct {
 extern unsigned char Pad[];
 extern char DAT_800c0a79[];
 extern int DAT_800bf0dc[], DAT_800bf0e8[];
-extern char s_ingame1_fnt_800a1b84[], s_Loading_Memory_Card_Data[];
 extern int GameFade, DemoTimer;
 
 int DAT_800d1ce8, DAT_800d1cec, BackOut, DAT_800d1d14;
@@ -83,15 +82,15 @@ void FUN_8005da40(void) {
 			return;
 		}
 
-		Mess_LoadFont__FPciii(s_ingame1_fnt_800a1b84, -1, -1, -1);
+		Mess_LoadFont__FPciii("ingame1.fnt", -1, -1, -1);
 		FUN_8006b240();
 		FUN_80061ea0();
 		Mess_SetTextJustify(0);
 		Mess_SetScale(255);
 		Mess_SetRGB(150, 100, 25, 0);
 #ifndef PC_PORT /* PC: a saved replay is a file, read at once (pc_saves.h) */
-		Mess_DrawText(256, 110, s_Loading_Memory_Card_Data, 1, 0, 256, 0);
-		Mess_DrawText(256, 130, s_Loading_Memory_Card_Data + 32, 1, 0, 256, 0);
+		Mess_DrawText(256, 110, "Loading Memory Card Data...", 1, 0, 256, 0);
+		Mess_DrawText(256, 130, "Loading Memory Card Data..." + 32, 1, 0, 256, 0);
 #endif
 		FUN_8006b26c();
 		Mess_UnloadFont();

@@ -29,7 +29,6 @@ extern long FileType[];
 extern char CARD_FNAME_5[];
 extern char CARD_VNAME_5[];
 extern struct DIRENTRY SLOT_DIR[];
-extern char s_bu_1d_1d[];
 
 int Card_GetDirAndFreeBlocks(int cnct, int slot) {
 	long i;
@@ -40,7 +39,7 @@ int Card_GetDirAndFreeBlocks(int cnct, int slot) {
 	for (i = 0; i < 15; i++)
 		FileType[i] = 3;
 
-	sprintf(key, s_bu_1d_1d, cnct, slot);
+	sprintf(key, "bu%1d%1d:*", cnct, slot);
 
 	d = SLOT_DIR;
 	i = 0;

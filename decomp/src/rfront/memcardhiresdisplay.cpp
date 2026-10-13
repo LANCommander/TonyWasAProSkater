@@ -12,9 +12,6 @@ extern "C" {
 	extern LocalText GameText;
 	extern char *GameText_180[];
 	extern char *VertMenuItem[];
-	extern char s_loading_video_file[];
-	extern char s_loading_saved_game[];
-	extern char s_Video_loaded[];
 	extern char msg[];
 	extern int TTime;
 }
@@ -63,7 +60,7 @@ void Front_MemCardHiResDisplay() {
 				FUN_8006b26c();
 			}
 
-			load = s_loading_saved_game;
+			load = "loading saved game";
 			FUN_8008c468(0);
 
 			for (i = 0; i < 4; i++) {
@@ -187,7 +184,7 @@ void Front_MemCardHiResDisplay() {
 			break;
 		case 21:
 			FUN_80011214();
-			Front_DirtyRectText(XMid, 220, s_loading_video_file);
+			Front_DirtyRectText(XMid, 220, "loading video file");
 			RGBRed();
 			Front_DirtyRectText(XMid, 280, GameText.pDoNotRemove1);
 			Front_DirtyRectText(XMid, 332, GameText.pDoNotRemove2);
@@ -202,7 +199,7 @@ void Front_MemCardHiResDisplay() {
 			break;
 		case 23:
 			RGBRed();
-			Front_DirtyRectText(XMid, 220, s_Video_loaded);
+			Front_DirtyRectText(XMid, 220, "Video loaded");
 
 			if (MCResolution == 512)
 				Front_PrintCentredPrompt(GameText_180[0]);

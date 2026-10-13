@@ -3,8 +3,6 @@
    is copied where retail copies it. Layout by THPS1 offsets; callees keep their linker names. */
 #include "game/powerup.h"
 
-extern char s_skmedals[];
-extern char s_items_800d161c[];
 extern int GGame;
 extern CPowerUp *GPowS;
 extern CPowerUp *GPowK;
@@ -61,23 +59,23 @@ CPowerUp::CPowerUp(ushort a1, const CVector &a2_, const CVector &a3_, uint a4, i
 	ShadowOn();
 
 	this->mShadowThreshold = 300;
-	InitItem(s_items_800d161c);
+	InitItem("items");
 
 	switch (this->mType) {
 		case 0x664:
-			InitItem(s_skmedals);
+			InitItem("skmedals");
 
 			this->mIs3d = 1;
 			this->mModel = Spool_GetModel__FUii(0x54636518, CurrentMedalsFileRegion);
 			break;
 		case 0x665:
-			InitItem(s_skmedals);
+			InitItem("skmedals");
 
 			this->mIs3d = 1;
 			this->mModel = Spool_GetModel__FUii(0xba6d0434, CurrentMedalsFileRegion);
 			break;
 		case 0x666:
-			InitItem(s_skmedals);
+			InitItem("skmedals");
 
 			this->mIs3d = 1;
 			this->mModel = Spool_GetModel__FUii(0x2364558e, CurrentMedalsFileRegion);

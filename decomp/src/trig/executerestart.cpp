@@ -1,13 +1,12 @@
 /* Trig_ExecuteRestart__Fv (0x80044c84) */
 /* C++ (TRIG.CPP). Fuzzy demo twin (0.82); locals from its MAIN.SYM. Puts every skater on the
    current restart node, runs its command list, and in mode 2 (unless state 7) nudges the skater
-   and moves it to the restart node named s_RE_2P. */
+   and moves it to the restart node named "RE_2P". */
 #include "game/bruce.h"
 
 extern CBruce *MechList;
 extern int GNumberOfPlayers;
 extern int GGame;
-extern char s_RE_2P[];
 
 int RestartNode;
 short **OffsetList;
@@ -20,8 +19,6 @@ int Utils_CompareStrings(const char *, const char *, unsigned int);
 extern "C" {
 	void FUN_8008c190(void *, int, int, int);
 	void ExecuteCommandList__FPUsii(ushort *, int, int);
-
-	extern char s_d_d_d[];
 }
 
 void Trig_ExecuteRestart() {
@@ -37,7 +34,7 @@ void Trig_ExecuteRestart() {
 		MechListCopy->mPos = StartPos;
 		MechListCopy->mOldPos = StartPos;
 		MechListCopy->mAngles = *pAngles;
-		FUN_8008c190(s_d_d_d, MechListCopy->mAngles.vx, MechListCopy->mAngles.vy,
+		FUN_8008c190("%d,%d,%d\n", MechListCopy->mAngles.vx, MechListCopy->mAngles.vy,
 		             MechListCopy->mAngles.vz);
 		FudgeAngles(MechListCopy);
 	}
@@ -62,7 +59,7 @@ void Trig_ExecuteRestart() {
 			CVector Dummy;
 
 			if (*pNode == 8 &&
-			    Utils_CompareStrings((char *)(Trig_GetPosition(Dummy, i) + 1), s_RE_2P, -1)) {
+			    Utils_CompareStrings((char *)(Trig_GetPosition(Dummy, i) + 1), "RE_2P", -1)) {
 				CVector StartPos;
 
 				pAngles = Trig_GetPosition(StartPos, i);

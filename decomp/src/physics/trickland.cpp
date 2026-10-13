@@ -6,8 +6,6 @@
 #include "game/bruce.h"
 
 extern int GGame;
-extern char s_180_OLLIE[], s_360_OLLIE[], s_540_OLLIE[], s_720_OLLIE[], s_900_OLLIE[],
-    s_1080_OLLIE[], s_MEGA_OLLIE[], s_Setting_Playtime_to_0[];
 
 extern "C" {
 	void FUN_8006e20c(CBruce *);
@@ -45,25 +43,25 @@ void CBruce::Trick_Land() {
 
 			switch (n) {
 				case 1:
-					Trick_Trick(74, s_180_OLLIE, -50, 0);
+					Trick_Trick(74, "180 OLLIE", -50, 0);
 					break;
 				case 2:
-					Trick_Trick(74, s_360_OLLIE, -100, 0);
+					Trick_Trick(74, "360 OLLIE", -100, 0);
 					break;
 				case 3:
-					Trick_Trick(74, s_540_OLLIE, -150, 0);
+					Trick_Trick(74, "540 OLLIE", -150, 0);
 					break;
 				case 4:
-					Trick_Trick(74, s_720_OLLIE, -200, 0);
+					Trick_Trick(74, "720 OLLIE", -200, 0);
 					break;
 				case 5:
-					Trick_Trick(74, s_900_OLLIE, -250, 0);
+					Trick_Trick(74, "900 OLLIE", -250, 0);
 					break;
 				case 6:
-					Trick_Trick(74, s_1080_OLLIE, -300, 0);
+					Trick_Trick(74, "1080 OLLIE", -300, 0);
 					break;
 				case 7:
-					Trick_Trick(74, s_MEGA_OLLIE, -350, 0);
+					Trick_Trick(74, "MEGA OLLIE", -350, 0);
 					break;
 			}
 
@@ -81,7 +79,7 @@ void CBruce::Trick_Land() {
 		}
 
 		if (m364 && GGame == 7) {
-			FUN_8008c190(s_Setting_Playtime_to_0);
+			FUN_8008c190("Setting Playtime to 0\n");
 
 			mTime = 0;
 		}

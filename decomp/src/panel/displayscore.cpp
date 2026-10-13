@@ -25,8 +25,6 @@ extern CBruce *GSkater;
 extern int GLevel;
 extern volatile unsigned Xblanks;
 extern int GHorseLetters[2];
-extern char s_Yowza[];
-extern char s_ld_800d1e88[];
 extern SLevel Levels[];
 
 void Horse_DisplayWords(int *);
@@ -141,7 +139,7 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 		char score[15];
 
 		if (pBruce->mPanel.mTotalScore > 999999) {
-			FUN_8008b900(score, s_Yowza, pBruce->mPanel.mTotalScore);
+			FUN_8008b900(score, "Yowza!", pBruce->mPanel.mTotalScore);
 			Mess_SetRGB((Xblanks % 20) * 12, 100, 100, 0);
 		} else {
 			Mess_SetRGB(128, 128, 128, 0);
@@ -154,7 +152,7 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 					GraffitiColor(pBruce);
 				}
 
-				FUN_8008b900(score, s_ld_800d1e88, Value);
+				FUN_8008b900(score, "%ld", Value);
 			}
 		}
 

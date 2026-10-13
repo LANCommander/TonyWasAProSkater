@@ -11,7 +11,8 @@ typedef struct {
 } X;
 
 extern char DAT_800a2120[];
-extern unsigned char DAT_800d1dbc[];
+
+char *strcpy(char *, const char *);
 
 X *FUN_8006613c(X *p) {
 	int i;
@@ -20,7 +21,7 @@ X *FUN_8006613c(X *p) {
 
 	for (i = 0; i < 16; i++) {
 		p->a[i] = 0;
-		p->e[i].b = DAT_800d1dbc[0];
+		strcpy((char *)&p->e[i].b, "");
 	}
 
 	return p;

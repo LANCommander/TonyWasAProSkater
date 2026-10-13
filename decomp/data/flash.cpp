@@ -1,0 +1,19 @@
+/* Decompiled data: the retail executable's initialised globals that src/flash/ uses, each at
+ * its retail address (psxdata.h). Text is string literals where it's used and the tables have
+ * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+#include "psxdata.h"
+
+/* THPS2 demo: uchar */
+PSX_DATA(0x800d1604) unsigned char CurrentImportance[4];
+
+/* THPS2 demo: int */
+PSX_DATA(0x800d1608) int FlashSort[1];
+
+/* THPS2 demo: int */
+PSX_DATA(0x800d160c) int FlashCountdown[1];
+
+/* THPS2 demo: int */
+PSX_DATA(0x800d1610) int Fading[1];
+
+/* THPS2 demo: int */
+PSX_DATA(0x800d1614) int FadeCountdown[1];

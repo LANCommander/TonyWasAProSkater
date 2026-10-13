@@ -19,19 +19,20 @@
 #include <inline_c.h>
 
 #include "pc_gte.h"
+#include "pc_runtime.h"
 
 /* rcossin_tbl: 4096 entries of {short sin, short cos} for angles 0..4095 (4096 = 360 degrees). */
-#define RCOSSIN_TBL 0x800c9670u
+#define RCOSSIN_TBL PSX_DATA_ADDR(0x800c9670u)
 /* ratan_tbl: 1025 shorts, the angle (1024 = 90 degrees) whose tangent is i/1024. */
-#define RATAN_TBL 0x800ce704u
+#define RATAN_TBL PSX_DATA_ADDR(0x800ce704u)
 /* K_cor_tbl: 12 longs, the angle of atan(2^-i) for the CORDIC steps of catan. */
-#define K_COR_TBL 0x800ce6d4u
+#define K_COR_TBL PSX_DATA_ADDR(0x800ce6d4u)
 /* SquareRoot0's table: shorts for normalised inputs 64..255, 4096 * sqrt(n / 64)-ish values;
  * the entry for n is at this address + (n - 64) * 2. */
-#define SQRT_TBL 0x800d0a9cu
+#define SQRT_TBL PSX_DATA_ADDR(0x800d0a9cu)
 /* VectorNormal's table: shorts for normalised squared lengths 64..255, 4096 / sqrt-ish values;
  * the entry for n is at this address + (n - 64) * 2. */
-#define RSQRT_TBL 0x800ce548u
+#define RSQRT_TBL PSX_DATA_ADDR(0x800ce548u)
 
 static int16_t TableShort(uint32_t addr)
 {

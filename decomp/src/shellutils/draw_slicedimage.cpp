@@ -11,7 +11,6 @@ extern "C" {
 #include "game/shellutils.h"
 #include "game/m3d.h"
 
-extern char s_OT_entry_is_d[];
 extern SDoubleBuffer *pDoubleBuffer;
 extern char *pPoly;
 
@@ -36,7 +35,7 @@ void SlicedImage::drawScaled(int x, int y, int w, int h, int otFront, int r, int
 	u_long *ot;
 
 	if ((u_int)OT_entry >= 0x2000)
-		FUN_8008c190(s_OT_entry_is_d, OT_entry);
+		FUN_8008c190("\nOT_entry is %d", OT_entry);
 
 	if (otFront)
 		ot = &pDoubleBuffer->OT2D;

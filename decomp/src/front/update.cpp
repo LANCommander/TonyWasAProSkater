@@ -81,16 +81,15 @@ extern char *CheatRestarts[];            /* CheatRestarts */
 extern char *HorseRestarts[];            /* HorseRestarts */
 extern CTape *GTape[];                   /* GTape */
 extern FallingTextEffect DAT_800a5b28[]; /* GHorseFallingText */
-extern char s_de[];
-extern CBruce *MechList;      /* MechList */
-extern CBruce *GSkater;       /* GSkater[0] */
-extern CBruce *DAT_800d17cc;  /* GSkater[1] */
-extern volatile uint Vblanks; /* Vblanks */
-extern volatile int Xblanks;  /* Xblanks */
-extern int EndCode;           /* EndCode */
-extern int GameFrozen;        /* GameFrozen */
-extern int GNumberOfPlayers;  /* GNumberOfPlayers */
-extern int DemoTimer;         /* DemoTimer */
+extern CBruce *MechList;                 /* MechList */
+extern CBruce *GSkater;                  /* GSkater[0] */
+extern CBruce *DAT_800d17cc;             /* GSkater[1] */
+extern volatile uint Vblanks;            /* Vblanks */
+extern volatile int Xblanks;             /* Xblanks */
+extern int EndCode;                      /* EndCode */
+extern int GameFrozen;                   /* GameFrozen */
+extern int GNumberOfPlayers;             /* GNumberOfPlayers */
+extern int DemoTimer;                    /* DemoTimer */
 extern int XFrames;
 extern int GLevel;               /* GLevel */
 extern int GGame;                /* GGame */
@@ -428,7 +427,7 @@ void Front_Update() {
 					head[2] = CheatRestarts[i][2];
 					head[3] = 0;
 
-					if (!Utils_CompareStrings(head, s_de, -1))
+					if (!Utils_CompareStrings(head, "de_", -1))
 						pRestartsMenu->AddEntry(CheatRestarts[i]);
 				}
 

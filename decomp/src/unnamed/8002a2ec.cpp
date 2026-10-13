@@ -3,10 +3,8 @@
    to (r, g, b) at the head, each fading at 8 per frame. */
 #include "game/bit.h"
 
-extern char s_Ribbon[];
-
 CSmokeTrail::CSmokeTrail(CVector &pos, int numbits, int r, int g, int b)
-    : CRibbon(pos, numbits, 2, s_Ribbon, s_Ribbon, 400, 1) {
+    : CRibbon(pos, numbits, 2, "Ribbon", "Ribbon", 400, 1) {
 	int dr = r / mNumBits;
 	int dg = g / mNumBits;
 	int db = b / mNumBits;

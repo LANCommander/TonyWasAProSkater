@@ -2,9 +2,6 @@
 #include "names.h"
 #include "game/padbuttons.h"
 
-extern char s_music_txt[];
-extern char s_credits_txt[];
-extern char s_credits_fnt[];
 extern char Pad[];
 
 int DAT_800d1b98[1];
@@ -56,10 +53,10 @@ void FUN_8004fe28(int a0, int a1) {
 	Pack_DefragmentFully();
 
 	if (a0 == 0)
-		s0i = FileIO_Open(s_music_txt);
+		s0i = FileIO_Open("music.txt");
 
 	if (a0 == 1)
-		s0i = FileIO_Open(s_credits_txt);
+		s0i = FileIO_Open("credits.txt");
 
 	s0 = Mem_NewX(s0i, 1, 1);
 	FileIO_Load(s0);
@@ -112,7 +109,7 @@ void FUN_8004fe28(int a0, int a1) {
 	}
 
 	Mem_Delete(s0);
-	Mess_LoadFont__FPciii(s_credits_fnt, -1, -1, -1);
+	Mess_LoadFont__FPciii("credits.fnt", -1, -1, -1);
 	Mess_SetTextJustify(0);
 	Mess_SetScale(255);
 	Mess_SetRGB(150, 100, 25, 0);

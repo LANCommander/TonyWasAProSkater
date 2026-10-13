@@ -14,7 +14,6 @@ extern SStats Stats[];
 int Cheat_StatsOverride; /* stats cheat override */
 
 extern int Cheat_Fire;
-extern char s_FOOTPLANT[];
 
 #define GetStat(n)                                                                                 \
 	(Cheat_StatsOverride                                                                           \
@@ -23,7 +22,7 @@ extern char s_FOOTPLANT[];
 		       mpStatBonus[n])
 
 void CBruce::DoFootPlantPhysics() {
-	Trick_Trick(65, s_FOOTPLANT, 100, 0);
+	Trick_Trick(65, "FOOTPLANT", 100, 0);
 
 	mJumpStrength = 15 - (GetStat(0) + GetStat(2)) / 2;
 	StateTransition(PHYSICS_IN_AIR, 5587);

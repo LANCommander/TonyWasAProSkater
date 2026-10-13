@@ -32,10 +32,8 @@ int NumSectors;
 int Start;
 
 extern RECT DAT_800d1b20[];
-extern char s_d_800d1b28[];
 extern uchar Pad_50[];
 extern uchar Directory[];
-extern char s_fileio_cpp[];
 
 extern "C" {
 	void FUN_80047774(const char *, int, char *);
@@ -49,7 +47,7 @@ int FileIO_Open(const char *filename) {
 	int len;
 
 	CurrentPos = 0;
-	FUN_80047774(filename, 299, s_fileio_cpp);
+	FUN_80047774(filename, 299, "fileio.cpp");
 
 	LoadFromPRE = 0;
 
@@ -63,7 +61,7 @@ int FileIO_Open(const char *filename) {
 		}
 	}
 
-	FUN_80047774(filename, 323, s_fileio_cpp);
+	FUN_80047774(filename, 323, "fileio.cpp");
 
 	header = (char *)Directory;
 	Opening = filename;
@@ -132,8 +130,8 @@ int FileIO_Open(const char *filename) {
 	FileOpen = 1;
 
 	if (Pad_50[0])
-		FUN_8008c190(s_d_800d1b28);
+		FUN_8008c190("(%d) ");
 
-	FUN_80047774(filename, 495, s_fileio_cpp);
+	FUN_80047774(filename, 495, "fileio.cpp");
 	return FileSize;
 }

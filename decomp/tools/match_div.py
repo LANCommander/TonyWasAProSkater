@@ -162,7 +162,8 @@ def sym_addr(sid):
 
 
 # Other sections (a switch's .rdata jump table) sit at their retail address: from syms.json
-# (".rdata": "0x…") or inferred from retail's own HI16/LO16 pair that addresses the section.
+# (".rdata": "0x…") or inferred from retail's own HI16/LO16 pair that addresses the section (or
+# piece by piece, below).
 retail_img = open(RETAIL, "rb").read()
 rword = lambda a: struct.unpack_from("<I", retail_img, a - TEXT_ADDR + HDR)[0]
 base = {text: addr}
@@ -195,10 +196,14 @@ def via_symbol(sec, off):
     return None if best is None else int(syms[names[best[0]]], 16) + off - best[1]
 
 
+pieces = {}  # section id -> {offset: retail address}, when placed piece by piece (below)
+
+
 def ev(e):
     if e[0] == "const": return e[1]
     ref = sect_ref(e)
-    if ref and ref[0] not in base and via_symbol(*ref) is not None: return via_symbol(*ref)
+    if ref and ref[1] in pieces.get(ref[0], {}): return pieces[ref[0]][ref[1]]
+    if ref and (ref[0] in pieces or ref[0] not in base) and via_symbol(*ref) is not None: return via_symbol(*ref)
     if e[0] == "sym": return sym_addr(e[1])
     if e[0] == "sect":
         if e[1] in base: return base[e[1]]
@@ -219,13 +224,61 @@ def patch(sec, data, limit):
         struct.pack_into("<I", data, off, w)
 
 
+# A data section the code references at several places can be placed piece by piece, as in
+# psyq.mjs link: each reference resolves to the address retail's own instruction encodes there, if
+# retail has the same bytes at that address (each piece, from its reference to the next one,
+# checked on its own), so a one-function source's string literals match wherever retail's
+# whole-file TU put them.
+def simm(v): return v - 0x10000 if v & 0x8000 else v
+
+
+refs = {}
+for sec, t, off, e in patches:
+    ref = sect_ref(e)
+    if sec != text or not ref or ref[0] == text: continue
+    if t == 100: a = (gp + simm(rword(addr + off) & 0xFFFF)) & 0xFFFFFFFF
+    elif t in (82, 84):
+        pair = lambda k: off if t == k else next((o for s2, t2, o, e2 in patches if s2 == text and t2 == k and e2 == e), None)
+        hi, lo = pair(82), pair(84)
+        if hi is None or lo is None: continue
+        a = (((rword(addr + hi) & 0xFFFF) << 16) + simm(rword(addr + lo) & 0xFFFF)) & 0xFFFFFFFF
+    else: continue
+    m = refs.setdefault(ref[0], {})
+    m[ref[1]] = a if m.get(ref[1], a) == a else None
+for sid, m in refs.items():
+    if None in m.values() or not code.get(sid): continue
+    b = base.get(sid)
+    if b is not None and all(a == b + o for o, a in m.items()): continue   # one base does it
+    # a global the source defines there is a piece of its own, at its syms.json address (its
+    # value isn't checked, as without pieces)
+    globs = {o2: int(syms[names[s2id]], 16) for s2id, (s2, o2) in local.items()
+             if s2 == sid and names.get(s2id) in syms}
+    if any(o in m and m[o] != a for o, a in globs.items()): continue
+    d = bytearray(code[sid]); patch(sid, d, len(d))
+    bounds = sorted(set(m) | set(globs))
+    ok = True
+    for k, o in enumerate(bounds):
+        if o not in m or o in globs: continue
+        piece = d[o:bounds[k + 1] if k + 1 < len(bounds) else len(d)]
+        n = len(piece.rstrip(bytes(1)))
+        need = n + 1 if n < len(piece) else n      # trailing padding isn't compared, a string's NUL is
+        a = m[o]
+        at = a - TEXT_ADDR + HDR
+        if not (TEXT_ADDR <= a and a + need <= TEXT_ADDR + len(retail_img) - HDR) or \
+                retail_img[at:at + need] != bytes(piece[:need]):
+            ok = False
+            break
+    if ok: pieces[sid] = {**m, **globs}
+
 patch(text, buf, size)
 got = list(struct.unpack_from(f"<{size//4}I", buf, 0))
 
 # byte-check placed data sections (jump tables) against retail too
 data_ok = True
+for sid, m in pieces.items():
+    print(f"{sect_names[sid]}: {len(m)} pieces (string literals...) at the retail addresses the code names, bytes match")
 for sid, b in base.items():
-    if sid == text or not code.get(sid): continue
+    if sid == text or not code.get(sid) or sid in pieces: continue
     if not (TEXT_ADDR <= b and b + len(code[sid]) <= TEXT_ADDR + len(retail_img) - HDR):
         print(f"{sect_names[sid]}: not placed in the retail image (compiler-emitted data such as a vtable), not checked")
         continue

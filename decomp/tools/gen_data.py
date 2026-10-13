@@ -19,8 +19,9 @@ Left out, and listed in decomp/data/omitted.tsv (data_image.py --check skips the
   * MIPS switch jump tables (compiler output: code addresses only the retail code uses);
   * the memory card icons (art; the port writes saves without the card header).
 
-This is a one-off: the generated files are the source from then on, edited by hand like the
-rest of decomp/src. Re-running it overwrites them.
+This was a one-off: it wrote the first version of decomp/data (as .c files, text as globals),
+which has been reworked by hand since (.cpp, text as literals, typed tables, decomp/data/fixed;
+README.md, Data). Don't re-run it over decomp/data.
 """
 import argparse
 import collections

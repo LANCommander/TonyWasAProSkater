@@ -11,17 +11,19 @@ by absolute address, and a data image full of MIPS addresses (vtables, pointer t
 lists). Instead of rewriting all of that, the port keeps the PS1 address space:
 
 - The executable is a **32-bit** program (large-address-aware on Windows). At startup it maps PS1
-  main RAM at `0x80000000` (2 MB) and the scratchpad at `0x1f800000` (1 KB), then copies the
-  game's data to `0x80010000`: the image `tools/data_image.py` builds from the decompiled data
-  (`decomp/data`: every initialised global at its retail address, pointers resolved to PS1
-  addresses), embedded in `thps.exe`. It is the retail image without the code, the switch jump
-  tables and the Psy-Q libraries' own data (`decomp/data/omitted.tsv`), which the build checks
-  byte for byte against `SLUS_008.60`. So the port doesn't need `SLUS_008.60` to run. Every
-  pointer in the data is a valid native pointer, and struct layouts are unchanged (int, long and
-  pointers are all 4 bytes).
+  main RAM at `0x80000000` (2 MB) and the scratchpad at `0x1f800000` (1 KB). The game's
+  initialised data (`decomp/data`) is native data in the exe, in its retail layout:
+  `tools/data_image.py` writes it as `gen/data.s` (native pointers, string literals) and the code's
+  references by retail address (`psx_<addr>`, `psx_syms.ld`) resolve into it; runtime code that
+  reads a game global by address goes through `PC_Data` (`PSX_DATA_ADDR`). Only
+  `decomp/data/fixed` (vtables, `DoubleBuffer`) is copied to its address in PS1 RAM at startup.
+  The build checks the data against `SLUS_008.60` (`decomp/README.md`, Data), but the port
+  doesn't need `SLUS_008.60` to run. Every pointer in the data is a valid native pointer, and
+  struct layouts are unchanged (int, long and pointers are all 4 bytes).
 - **Globals.** Each decompiled TU is compiled natively, then its symbols are rewritten to the
-  absolute PS1 addresses recorded in its `.syms.json`. Data lives in the data image (in PS1 RAM), not in
-  the TUs' own sections.
+  PS1 addresses recorded in its `.syms.json` (`psx_<addr>`). The link resolves those: an
+  initialised global is its place in the native data (`decomp/data`), anything else (`.bss`,
+  the fixed data) its address in PS1 RAM. Data never lives in the TUs' own sections.
 - **Functions.** Every function keeps its PS1 address as its identity. At startup a 5-byte
   `jmp` to the native code is written over the start of each function's (now unused) MIPS
   code. So `&Func`, vtable entries and callback tables in the retail data all work as native

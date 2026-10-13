@@ -10,9 +10,6 @@ struct SMessageProg;
 
 extern SMessageProg Messprog_Zoom;
 extern char *GameText_25c[];
-extern char s_Bonus_100[];
-extern char s_Bonus_200[];
-extern char s_Bonus_500[];
 extern int GNumberOfPlayers;
 extern CBruce *MechList;
 
@@ -122,15 +119,15 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 
 				switch (mType) {
 					case 21:
-						pMech->Trick_Trick(76, s_Bonus_100, -100, 0);
+						pMech->Trick_Trick(76, "Bonus 100", -100, 0);
 						SFX_SetVoicePitch(Pong, 900);
 						break;
 					case 22:
-						pMech->Trick_Trick(76, s_Bonus_200, -200, 0);
+						pMech->Trick_Trick(76, "Bonus 200", -200, 0);
 						SFX_SetVoicePitch(Pong, 1114);
 						break;
 					case 23:
-						pMech->Trick_Trick(76, s_Bonus_500, -500, 0);
+						pMech->Trick_Trick(76, "Bonus 500", -500, 0);
 						SFX_SetVoicePitch(Pong, 1500);
 						break;
 				}

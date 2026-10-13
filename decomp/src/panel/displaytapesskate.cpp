@@ -3,11 +3,6 @@
 
 extern CBruce *MechList;
 extern uint Xblanks;
-extern char DAT_800d1e6c[];
-extern char DAT_800d1e70[];
-extern char DAT_800d1e74[];
-extern char DAT_800d1e78[];
-extern char DAT_800d1e7c[];
 
 int TAPES_Display;
 int TAPES_Pos;
@@ -36,19 +31,19 @@ void DisplayTapesSkate(void) {
 			Mess_SetScale(255);
 
 			if (pSkater->mPanel.SKATE[0])
-				Mess_DrawPanelText(SKATE_Pos, 80, DAT_800d1e6c, 0, 0, 256);
+				Mess_DrawPanelText(SKATE_Pos, 80, "S", 0, 0, 256);
 
 			if (pSkater->mPanel.SKATE[1])
-				Mess_DrawPanelText(SKATE_Pos, 105, DAT_800d1e70, 0, 0, 256);
+				Mess_DrawPanelText(SKATE_Pos, 105, "K", 0, 0, 256);
 
 			if (pSkater->mPanel.SKATE[2])
-				Mess_DrawPanelText(SKATE_Pos, 130, DAT_800d1e74, 0, 0, 256);
+				Mess_DrawPanelText(SKATE_Pos, 130, "A", 0, 0, 256);
 
 			if (pSkater->mPanel.SKATE[3])
-				Mess_DrawPanelText(SKATE_Pos, 155, DAT_800d1e78, 0, 0, 256);
+				Mess_DrawPanelText(SKATE_Pos, 155, "T", 0, 0, 256);
 
 			if (pSkater->mPanel.SKATE[4])
-				Mess_DrawPanelText(SKATE_Pos, 180, DAT_800d1e7c, 0, 0, 256);
+				Mess_DrawPanelText(SKATE_Pos, 180, "E", 0, 0, 256);
 		}
 
 		if (TAPES_Display) {

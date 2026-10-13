@@ -36,10 +36,6 @@ extern "C" {
 	extern char SLOT_DIR[][40];
 	extern LocalText GameText;
 
-	extern char s_demoX_rec[] __attribute__((aligned(4)));
-
-	extern char s_Saving_Replay_s[];
-
 	void *memcpy(void *, const void *, unsigned int);
 	void FUN_800117b4(void);
 	int FUN_80012600(void);
@@ -477,10 +473,10 @@ int Front_MemCardUpdate() {
 			{
 				char save_name[16];
 
-				memcpy(save_name, s_demoX_rec, 10);
+				memcpy(save_name, "demoX.rec", 10);
 
 				save_name[4] = SaveGameName[0];
-				FUN_8008c190(s_Saving_Replay_s, save_name);
+				FUN_8008c190("Saving Replay %s", save_name);
 				FUN_80014868(1, save_name);
 
 				MCState = 7;

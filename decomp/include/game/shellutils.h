@@ -159,6 +159,13 @@ class VerticalDialog : public VerticalMenu {
 	virtual void draw();           /* slot 1: 0x80065394 */
 };
 
+/* a front-end screen's files (DAT_800be478[15]; FUN_8005c8dc hands one to FileLoader::setFiles)
+   (THPS1-only, no demo twin) */
+struct SScreenFiles {
+	char *pName[32]; /* 0x00 */
+	int Num;         /* 0x80 */
+};
+
 /* one file of a FileLoader set (THPS1-only, no demo twin; names from fileloader_setfiles) */
 struct SLoadEntry {
 	void *pData;   /* 0x00 */

@@ -33,9 +33,9 @@ static int TracePsx(void) {
 void hleov_8006f290(int region) { /* ProcessNewPSX */
     extern void pcfn_8006f290(int);
     if (TracePsx()) {
-        uint32_t *psx = *(uint32_t **)PSX_PTR(0x800bf7a8 + region * 64 + 0x14);
+        uint32_t *psx = *(uint32_t **)PSX_PTR(PSX_DATA_ADDR(0x800bf7a8) + region * 64 + 0x14);
         PC_Log("ProcessNewPSX(%d) pPSX=%08x name=%.9s", region, (unsigned)(uintptr_t)psx,
-               (char *)PSX_PTR(0x800bf7a8 + region * 64));
+               (char *)PSX_PTR(PSX_DATA_ADDR(0x800bf7a8) + region * 64));
     }
     pcfn_8006f290(region);
 }
@@ -60,7 +60,7 @@ void hleov_8004ce28(int r, int g, int b) {
     uint32_t heap;
     PC_Log("Bang(%d, %d, %d): the game hit a fatal error (out of memory if from Mem_New*)", r, g, b);
     for (heap = 0; heap < 2; heap++) {
-        uint32_t blk = *(uint32_t *)PSX_PTR(0x800d1b64 + heap * 4), total = 0, n = 0, big = 0;
+        uint32_t blk = *(uint32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1b64) + heap * 4), total = 0, n = 0, big = 0;
         while (blk && n < 100000) {
             uint32_t size = *(uint32_t *)PSX_PTR(blk + 4) >> 4;
             total += size;
@@ -70,7 +70,7 @@ void hleov_8004ce28(int r, int g, int b) {
             n++;
         }
         PC_Log("  heap %u: %u free blocks, %u bytes free, largest %u; used %d", heap, n, total, big,
-               *(int *)PSX_PTR(0x800d1b5c + heap * 4));
+               *(int *)PSX_PTR(PSX_DATA_ADDR(0x800d1b5c) + heap * 4));
     }
     PC_Backtrace("Bang");
     PC_Fatal("Bang(%d, %d, %d)", r, g, b);
@@ -79,7 +79,7 @@ void hleov_8004ce28(int r, int g, int b) {
 /* Pause(n): spins until the VSync callback has bumped Vblanks n times. On the PS1 the interrupt
  * runs during the spin; here vblanks only happen when the port polls, so poll while waiting. */
 void hleov_800478f4(int n) {
-    volatile uint32_t *vblanks = PSX_PTR(0x800d1a20);
+    volatile uint32_t *vblanks = PSX_PTR(PSX_DATA_ADDR(0x800d1a20));
     uint32_t t = *vblanks + (uint32_t)n;
     while (*vblanks < t)
         PC_TickVBlank();
@@ -168,7 +168,7 @@ uint32_t hleov_800858ac(uint32_t list, uint32_t flags) {
             }
             prev_n = (int)n;
         }
-        uint32_t cam = *(uint32_t *)PSX_PTR(0x800d217c);
+        uint32_t cam = *(uint32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d217c));
         PC_Log("cull f%u list %08x: %u items, %u culled (%u before), flags %x", pc_heartbeat, list, n,
                culled, before, flags);
         if (cam && list)
@@ -178,7 +178,7 @@ uint32_t hleov_800858ac(uint32_t list, uint32_t flags) {
                    *(int32_t *)PSX_PTR(list + 4) >> 12, *(int32_t *)PSX_PTR(list + 8) >> 12,
                    *(int32_t *)PSX_PTR(list + 12) >> 12);
         {
-            uint32_t sk = *(uint32_t *)PSX_PTR(0x800d19a4);
+            uint32_t sk = *(uint32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d19a4));
             if (sk)
                 PC_Log("   skater %08x pos %d %d %d", sk, *(int32_t *)PSX_PTR(sk + 4) >> 12,
                        *(int32_t *)PSX_PTR(sk + 8) >> 12, *(int32_t *)PSX_PTR(sk + 12) >> 12);

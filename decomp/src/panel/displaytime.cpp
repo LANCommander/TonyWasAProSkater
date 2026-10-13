@@ -15,7 +15,6 @@ extern int XFrames;
 extern uint Xblanks;
 extern int GStartTime;
 extern int GSkaterRegion;
-extern char s_ld_02ld[];
 
 int Urgent;
 
@@ -62,7 +61,7 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 				mins = 0;
 			}
 
-			FUN_8008b900(time, s_ld_02ld, mins, secs);
+			FUN_8008b900(time, "%ld:%02ld", mins, secs);
 			Mess_SetRGB(128, 0, 0, 0);
 			Mess_SetTextJustify(0);
 			Mess_SetScale(256);

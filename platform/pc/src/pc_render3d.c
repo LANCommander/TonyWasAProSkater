@@ -61,16 +61,16 @@ void PC_RenderTrace(const char *what, uint32_t ret);
 #define SCR(o) (0x1f800000u + (uint32_t)(o))
 
 /* game globals */
-#define G_PPOLY        0x800d1a54u   /* pPoly */
-#define G_POLYBUFEND   0x800d177cu   /* PolyBufferEnd */
-#define G_PROJECTED    0x800d2160u   /* ProjectedVertices */
-#define G_ROTATED      0x800d2164u   /* RotatedVertices */
-#define G_FREESTITCH   0x800d2198u   /* FreeStitchVertex */
-#define G_COLOURTABLE  0x800d219cu   /* pColourTable */
-#define G_CURRENT_OT   0x800d21a0u   /* CurrentOrderingTable */
-#define G_TESTTHEWATER 0x800d21b8u   /* TestTheWater */
-#define G_VIEWPORT     0x800d2178u   /* pCurrentViewport: xR, yB, xL, yT, Hither, Yon... */
-#define G_XRES         0x800d2188u   /* Xres */
+#define G_PPOLY        PSX_DATA_ADDR(0x800d1a54u)   /* pPoly */
+#define G_POLYBUFEND   PSX_DATA_ADDR(0x800d177cu)   /* PolyBufferEnd */
+#define G_PROJECTED    PSX_DATA_ADDR(0x800d2160u)   /* ProjectedVertices */
+#define G_ROTATED      PSX_DATA_ADDR(0x800d2164u)   /* RotatedVertices */
+#define G_FREESTITCH   PSX_DATA_ADDR(0x800d2198u)   /* FreeStitchVertex */
+#define G_COLOURTABLE  PSX_DATA_ADDR(0x800d219cu)   /* pColourTable */
+#define G_CURRENT_OT   PSX_DATA_ADDR(0x800d21a0u)   /* CurrentOrderingTable */
+#define G_TESTTHEWATER PSX_DATA_ADDR(0x800d21b8u)   /* TestTheWater */
+#define G_VIEWPORT     PSX_DATA_ADDR(0x800d2178u)   /* pCurrentViewport: xR, yB, xL, yT, Hither, Yon... */
+#define G_XRES         PSX_DATA_ADDR(0x800d2188u)   /* Xres */
 
 /* scratchpad words the renderer shares with its callers */
 #define S_DPQMIN     0x284   /* fog starts here (view z) */
@@ -676,9 +676,9 @@ static void put_vert(PC_GlVert *o, const Corner *c, uint16_t clut, uint16_t info
  * y axis (pCurrentCamera->Transform row 1) and the water level relative to the camera
  * (WaterNormal.pad). d = how far below the water a view-space point is; WaterClipValue says which
  * side is drawn (0xffff the part above, 0 the part below). */
-#define G_CAMERA     0x800d217cu   /* pCurrentCamera */
-#define G_WATERNORM  0x800d2180u   /* WaterNormal */
-#define G_WATERCLIP  0x800d2140u   /* WaterClipValue */
+#define G_CAMERA     PSX_DATA_ADDR(0x800d217cu)   /* pCurrentCamera */
+#define G_WATERNORM  PSX_DATA_ADDR(0x800d2180u)   /* WaterNormal */
+#define G_WATERCLIP  PSX_DATA_ADDR(0x800d2140u)   /* WaterClipValue */
 
 typedef struct {
     float m0, m1, m2, level;

@@ -7,7 +7,6 @@
    live and folds the offset into the following load, which retail doesn't. */
 #include "game/vector.h"
 
-extern char s_trg[];
 extern char *CheatRestarts[];
 extern char *HorseRestarts[];
 extern int GNumberOfPlayers;
@@ -36,7 +35,7 @@ void Trig_InitialParseTRGFile(char *pName) {
 	int Found;
 
 	{
-		char *pExt = s_trg;
+		char *pExt = ".trg";
 		char *pDest = Name;
 
 		while (*pName)

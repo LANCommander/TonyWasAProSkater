@@ -7,8 +7,6 @@
 
 int DAT_800d1ec4; /* points x10 cheat */
 
-extern char s_Unexpected_trick_status_d[]; /* "Unexpected trick status: %d\n" */
-
 extern "C" int FUN_8008c190(const char *, ...);
 
 void CPanelData::Trick(char *pName, int Points, int Dep) {
@@ -37,7 +35,7 @@ void CPanelData::Trick(char *pName, int Points, int Dep) {
 
 			break;
 		default:
-			FUN_8008c190(s_Unexpected_trick_status_d, mTrickStatus);
+			FUN_8008c190("Unexpected trick status: %d\n", mTrickStatus);
 			break;
 	}
 

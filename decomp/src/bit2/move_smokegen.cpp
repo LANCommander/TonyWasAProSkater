@@ -7,8 +7,6 @@
 
 int Rnd(int n);
 
-extern char s_Smoke[];
-
 void CSmokeGenerator::Move() {
 	CVector upvel(0, 0, 0);
 	int i;
@@ -17,7 +15,7 @@ void CSmokeGenerator::Move() {
 		CMotionBlur *foo;
 
 		upvel.vy = -(mVBase + Rnd(mVRandom)) << 12;
-		foo = new CMotionBlur(mPos, upvel, s_Smoke, mScaleBase + Rnd(mScaleRandom), 0, 10);
+		foo = new CMotionBlur(mPos, upvel, "Smoke", mScaleBase + Rnd(mScaleRandom), 0, 10);
 
 		foo->SetFrigDeltaZ(100);
 		foo->SetAngle(Rnd(4096));

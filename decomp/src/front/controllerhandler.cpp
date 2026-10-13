@@ -28,7 +28,6 @@ extern SOptions GPreferences;
 extern SPadMap DAT_800bf260[2]; /* edited mapping */
 extern SPadMap DAT_800bf280[2]; /* mapping before the last change */
 extern LocalText GameText;
-extern char s_s_s[]; /* "%s %s" */
 
 int DAT_800d1d28;   /* player being configured */
 uchar DAT_800d2350; /* row last changed with left/right */
@@ -202,7 +201,7 @@ void FUN_8005eb78(VerticalMenu *menu) {
 				SFX_PlayX(144, 8192, 0);
 
 			GPreferences.VibrationEnabled[pl] = left != 0;
-			FUN_8008b900(buf, s_s_s, GameText.pVibration,
+			FUN_8008b900(buf, "%s %s", GameText.pVibration,
 			             GPreferences.VibrationEnabled[pl] ? GameText.pBooleanOn
 			                                               : GameText.pBooleanOff);
 			menu->setString(4, buf);
@@ -213,7 +212,7 @@ void FUN_8005eb78(VerticalMenu *menu) {
 				SFX_PlayX(144, 8192, 0);
 
 			GPreferences.AutoKickEnabled[pl] = left != 0;
-			FUN_8008b900(buf, s_s_s, GameText.pAutoKick,
+			FUN_8008b900(buf, "%s %s", GameText.pAutoKick,
 			             GPreferences.AutoKickEnabled[pl] ? GameText.pBooleanOn
 			                                              : GameText.pBooleanOff);
 			menu->setString(5, buf);
@@ -238,11 +237,11 @@ void FUN_8005eb78(VerticalMenu *menu) {
 			FUN_8005eb28(pl);
 
 			GPreferences.VibrationEnabled[pl] = 1;
-			FUN_8008b900(buf, s_s_s, GameText.pVibration, GameText.pBooleanOn);
+			FUN_8008b900(buf, "%s %s", GameText.pVibration, GameText.pBooleanOn);
 			menu->setString(4, buf);
 
 			GPreferences.AutoKickEnabled[pl] = 1;
-			FUN_8008b900(buf, s_s_s, GameText.pAutoKick, GameText.pBooleanOn);
+			FUN_8008b900(buf, "%s %s", GameText.pAutoKick, GameText.pBooleanOn);
 			menu->setString(5, buf);
 			menu->setString(0, FUN_8005ea74(DAT_800bf260[pl].Function[0]));
 			menu->setString(1, FUN_8005ea74(DAT_800bf260[pl].Function[1]));

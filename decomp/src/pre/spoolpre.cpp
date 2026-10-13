@@ -3,9 +3,6 @@
    and records its name (THPS1 copies the name with an inline loop instead of strcpy). */
 #include "game/pre.h"
 
-extern char s_Out_of_PREManager_slots[];
-extern char s_Memory_error_loading_s[];
-
 int FileIO_Open(const char *);
 
 extern "C" {
@@ -22,14 +19,14 @@ void PREManager::spoolPRE(char *pre_name) {
 			break;
 
 	if (slot == 16) {
-		FUN_8008c190(s_Out_of_PREManager_slots);
+		FUN_8008c190("\nOut of PREManager slots");
 		return;
 	}
 
 	if ((mPre[slot] = Mem_NewTop__FUi(FileIO_Open(pre_name))))
 		FileIO_Load__FPv(mPre[slot]);
 	else
-		FUN_8008c190(s_Memory_error_loading_s, pre_name);
+		FUN_8008c190("\nMemory error loading %s", pre_name);
 
 	{
 		char *d = (char *)(slot * 16 + (int)this);

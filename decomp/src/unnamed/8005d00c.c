@@ -18,7 +18,7 @@ typedef struct {
 } SC;
 
 extern SC GCareer[];
-extern char s_Pressx_bmp[], s_check2_bmp[], Pad[];
+extern char Pad[];
 
 int DAT_800d1cf4, DAT_800d234c;
 int DAT_800d1d0c, DAT_800d1d04, DAT_800d1d00;
@@ -70,14 +70,14 @@ void FUN_8005d00c(void) {
 	o2 = __nw__6CClassUi(24);
 
 	if (o2)
-		o2 = FUN_80063a5c(o2, 8, FUN_8005ca3c(s_Pressx_bmp), 0, 440, 64, 128);
+		o2 = FUN_80063a5c(o2, 8, FUN_8005ca3c("Pressx.bmp"), 0, 440, 64, 128);
 
 	DAT_800d1d04 = o2;
 	DAT_800d1d18 = GCareer[DAT_800d234c].Tapes[DAT_800d1cf4];
 	o3 = __nw__6CClassUi(24);
 
 	if (o3)
-		o3 = FUN_80063a5c(o3, 8, FUN_8005ca3c(s_check2_bmp), 0, 256, 64, 128);
+		o3 = FUN_80063a5c(o3, 8, FUN_8005ca3c("check2.bmp"), 0, 256, 64, 128);
 
 	DAT_800d1d00 = o3;
 	FUN_8006b240();

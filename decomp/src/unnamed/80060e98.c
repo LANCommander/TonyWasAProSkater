@@ -26,8 +26,6 @@ struct X {
 	char *s;
 };
 
-extern char s_Start_1_fnt_800a1fb8[];
-extern char s_title_h_bmp[];
 extern struct C30 DAT_800a1fd0;
 extern struct C28 DAT_800a1ff0;
 extern struct X GameText;
@@ -80,10 +78,10 @@ void FUN_80060e98(void) {
 	char *p;
 
 	Pack_DefragmentFully();
-	Mess_LoadFont__FPciii(s_Start_1_fnt_800a1fb8, -1, -1, -1);
+	Mess_LoadFont__FPciii("Start_1.fnt", -1, -1, -1);
 	Mess_SetFontScale(256);
 
-	v = Mem_NewX(FileIO_Open(s_title_h_bmp), 1, 1);
+	v = Mem_NewX(FileIO_Open("title_h.bmp"), 1, 1);
 
 	if (v) {
 		FileIO_Load(v);

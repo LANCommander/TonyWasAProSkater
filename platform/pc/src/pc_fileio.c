@@ -27,7 +27,7 @@
 #include "pc_platform.h"
 #include "pc_runtime.h"
 
-#define VAR(type, addr) (*(type *)PSX_PTR(addr))
+#define VAR(type, addr) (*(type *)PSX_PTR(PSX_DATA_ADDR(addr)))
 #define Loading VAR(int32_t, 0x800d1afc)
 #define LastLoading VAR(int32_t, 0x800d1b34)
 #define WadStart VAR(int32_t, 0x800d2258)

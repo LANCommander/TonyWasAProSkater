@@ -8,7 +8,6 @@
 
 extern SPSXRegion PSXRegion[40];
 extern SQueue SpoolQ[20];
-extern char s_psx[];
 
 int FreePos;
 
@@ -78,7 +77,7 @@ int Spool_PSX(char *Name, int IsEnviro, int WhichHeap) {
 		*pDest = 0;
 	}
 
-	LoadNameExt(Name, s_psx);
+	LoadNameExt(Name, ".psx");
 
 	if (IsEnviro != 2)
 		SpoolQ[FreePos].FileType = IsEnviro != 0;

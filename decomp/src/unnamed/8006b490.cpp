@@ -4,7 +4,6 @@
    the road segment that node links to. */
 #include "game/car.h"
 
-extern char s_c_taxi[], s_c_van[], s_c_cable[], s_c_police[];
 extern CBody *BaddyList;
 
 int CarVol;
@@ -21,21 +20,21 @@ CCar::CCar(short *p_info, int node, int type) {
 
 	switch (type) {
 		case 0xd5:
-			InitItem(s_c_taxi);
+			InitItem("c_taxi");
 
 			mLoopingSound = SFX_PlayX(0x71, 0, 0);
 			break;
 		case 0xd6:
 			mLoopingSoundUpdate = 0;
-			InitItem(s_c_police);
+			InitItem("c_police");
 			break;
 		case 0xd7:
-			InitItem(s_c_van);
+			InitItem("c_van");
 
 			mLoopingSound = SFX_PlayX(0x81, 0, 0);
 			break;
 		case 0xd8:
-			InitItem(s_c_cable);
+			InitItem("c_cable");
 
 			mLoopingSound = SFX_PlayX(0x86, 0, 0);
 			break;

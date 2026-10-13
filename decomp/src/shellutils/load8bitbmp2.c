@@ -18,7 +18,6 @@ typedef struct {
 	unsigned char pal[1];
 } BMP;
 
-extern char s_Not_8_bits_per_pixel_is_d_bits_p[];
 extern int Pal256X, Pal256Y;
 
 int FUN_8008c190(char *, ...);
@@ -43,7 +42,7 @@ int Load8BitBMP2(char *file, char **out, int *pw, int *ph, unsigned short *pclut
 	bpp = b->bpp;
 
 	if (bpp != 8) {
-		FUN_8008c190(s_Not_8_bits_per_pixel_is_d_bits_p, bpp);
+		FUN_8008c190("\nNot 8 bits per pixel, is %d bits per pixel", bpp);
 		return 0;
 	}
 

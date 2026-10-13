@@ -11,8 +11,7 @@ typedef struct {
 } E;
 
 extern E Levels[];
-extern char s_loadingg_bmp[], s_loadingt_bmp[], s_load_hor_bmp[], s_Bckgrnd1_bmp[], s_Pressx_bmp[],
-    Pad[];
+extern char Pad[];
 
 int DAT_800d1cf4, DAT_800d1cf8, DAT_800d1d04, DAT_800d1d0c, DAT_800d1cec, DAT_800d1d14;
 
@@ -39,19 +38,19 @@ void FUN_8005cd14(void) {
 		FUN_8005c8dc(7);
 		FUN_8005c97c(7);
 		FUN_8005ca64();
-		FUN_80061a10(FUN_8005ca3c(s_loadingg_bmp));
+		FUN_80061a10(FUN_8005ca3c("loadingg.bmp"));
 		FUN_8005dc58(8);
 	} else if (DAT_800d1cf8 == 1) {
 		FUN_8005c8dc(5);
 		FUN_8005c97c(5);
 		FUN_8005ca64();
-		FUN_80061a10(FUN_8005ca3c(s_loadingt_bmp));
+		FUN_80061a10(FUN_8005ca3c("loadingt.bmp"));
 		FUN_8005dc58(8);
 	} else if (DAT_800d1cf8 == 5) {
 		FUN_8005c8dc(14);
 		FUN_8005c97c(14);
 		FUN_8005ca64();
-		FUN_80061a10(FUN_8005ca3c(s_load_hor_bmp));
+		FUN_80061a10(FUN_8005ca3c("load_hor.bmp"));
 		FUN_8005dc58(8);
 	}
 
@@ -59,7 +58,7 @@ void FUN_8005cd14(void) {
 		o = __nw__6CClassUi(24);
 
 		if (o)
-			o = FUN_80063a5c(o, 8, FUN_8005ca3c(s_Bckgrnd1_bmp), 0, 458, 64, 128);
+			o = FUN_80063a5c(o, 8, FUN_8005ca3c("Bckgrnd1.bmp"), 0, 458, 64, 128);
 
 		DAT_800d1d0c = o;
 	} else if (Levels[DAT_800d1cf4].fc != 0) {
@@ -96,7 +95,7 @@ void FUN_8005cd14(void) {
 	s0 = __nw__6CClassUi(24);
 
 	if (s0)
-		s0 = FUN_80063a5c(s0, 8, FUN_8005ca3c(s_Pressx_bmp), 0, 440, 64, 128);
+		s0 = FUN_80063a5c(s0, 8, FUN_8005ca3c("Pressx.bmp"), 0, 440, 64, 128);
 
 	DAT_800d1d04 = s0;
 	Pad[PAD_MENU_START + PAD_TRIGGERED] = 0;

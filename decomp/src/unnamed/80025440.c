@@ -4,7 +4,7 @@
 extern int GamePaused;
 extern int Xblanks;
 extern int DAT_800a7214[];
-extern char DAT_800d2580[], s_d_FPS[];
+extern char DAT_800d2580[];
 
 int DAT_800d1750, LastXblanks, Cheat_SlowMo, TimeScale, XFramesShifted, XFrames, TimeScaleSquared,
     Cheat_FPS, DAT_800d2230, GameFrozen;
@@ -53,7 +53,7 @@ int FUN_80025440(void) {
 
 	if (Cheat_FPS) {
 		DAT_800d2230 = (DAT_800d2230 + 10) & 127;
-		FUN_8008b900(DAT_800d2580, s_d_FPS, s1);
+		FUN_8008b900(DAT_800d2580, " %d FPS", s1);
 
 		if (GameFrozen == 0) {
 			if (s1 >= 25)

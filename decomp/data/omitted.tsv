@@ -4,6 +4,8 @@
 0x8009d1d8	0x8009d20c	jtbl_8009d1d8	jump table
 0x8009d210	0x8009d280	jtbl_8009d210	jump table
 0x8009d280	0x8009d2c0	jtbl_8009d280	jump table
+0x8009d2c0	0x8009d2cc	s_size_is_d	unused text (no code in the port prints it)
+0x8009d2cc	0x8009d2e5	s_memory_allocated_at_x	unused text (no code in the port prints it)
 0x8009e16c	0x8009e18c	Tape01IconPalette	memory card icon (art; the port writes no card header)
 0x8009e18c	0x8009e20c	Tape01IconTexture	memory card icon (art; the port writes no card header)
 0x8009e20c	0x8009e22c	Tony01IconPalette	memory card icon (art; the port writes no card header)
@@ -61,6 +63,10 @@
 0x800a30d8	0x800a310c	jtbl_800a30d8	jump table
 0x800a3110	0x800a3124	jtbl_800a3110	jump table
 0x800a3128	0x800a313c	jtbl_800a3128	jump table
+0x800a34ec	0x800a34f9	s_big_air_over	unused text (no code in the port prints it)
+0x800a34fc	0x800a3505	s_reseting	unused text (no code in the port prints it)
+0x800a3508	0x800a351a	s_jump_compensation	unused text (no code in the port prints it)
+0x800a351c	0x800a3526	s_loose_cam	unused text (no code in the port prints it)
 0x800a35d4	0x800a3600	jtbl_800a35d4	jump table
 0x800a3604	0x800a3630	jtbl_800a3604	jump table
 0x800a3634	0x800a3648	s_0123456789ABCDEF	Psy-Q library data (the port has its own libraries)
@@ -181,6 +187,7 @@
 0x800a4068	0x800a407c	s_wait_dmaf_clear_W	Psy-Q library data (the port has its own libraries)
 0x800a4084	0x800a40a0	s_DMA_bus_error_code_08x	Psy-Q library data (the port has its own libraries)
 0x800a40a0	0x800a40b0	s_MADR_d_08x	Psy-Q library data (the port has its own libraries)
+0x800bf240	0x800bf253	s_Do_not_remove_card	unused text (no code in the port prints it)
 0x800c94a0	0x800c94a8	D_800c94a0	Psy-Q library data (the port has its own libraries)
 0x800c94a8	0x800c94e8	D_800c94a8	Psy-Q library data (the port has its own libraries)
 0x800c94e8	0x800c94ec	D_800c94e8	Psy-Q library data (the port has its own libraries)

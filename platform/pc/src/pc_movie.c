@@ -21,9 +21,9 @@
 #include "pc_runtime.h"
 #include "pc_sfd.h"
 
-#define MOVIE_DETAILS 0x800a63e8u
+#define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u)
 #define MOVIE_COUNT 26
-#define GAMEFMV_START_SECTOR 0x800d165cu
+#define GAMEFMV_START_SECTOR PSX_DATA_ADDR(0x800d165cu)
 #define SCREEN_W 320
 #define SCREEN_H 240
 #define SCREEN_Y 256

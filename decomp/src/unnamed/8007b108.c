@@ -11,8 +11,6 @@ extern char Pad[];
 
 unsigned short DAT_800d2068, DAT_800d206a;
 
-extern char s_Pos_A[];
-extern char s_Pos_B[];
 extern int DAT_800a35c4[];
 
 void CamPos_DisplayLabels(int, int, int, int, int);
@@ -38,11 +36,11 @@ void FUN_8007b108(char *a) {
 	char *s4;
 
 	CamPos_DisplayLabels(100, 50, 200, 200, 200);
-	Font_String(200, 40, s_Pos_A, 200, 200, 200, 0);
+	Font_String(200, 40, "Pos A", 200, 200, 200, 0);
 
 	s4 = a + 0x138;
 	CamPos_Display(s4, 200, 50, 80, 0, 0);
-	Font_String(300, 40, s_Pos_B, 200, 200, 200, 0);
+	Font_String(300, 40, "Pos B", 200, 200, 200, 0);
 
 	s1 = a + 0x360;
 	CamPos_Display(s1, 300, 50, 80, 0, 0);
