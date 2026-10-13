@@ -22,7 +22,6 @@ extern "C" {
  * fixed_scale times the PS1 resolution when that is > 0 (1: exactly the PS1's pixels). */
 int  PC_GlInit(int fixed_scale, int out_w, int out_h);
 void PC_GlShutdown(void);
-int  PC_GlActive(void);
 
 /* A VRAM area the game uses as a whole screen (from PutDispEnv/PutDrawEnv): drawing there goes
  * to a display surface at the output resolution. Surfaces it overlaps are dropped. */

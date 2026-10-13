@@ -16,8 +16,8 @@ void PC_HleInit(void) {
     PC_AssetsInit();
     PC_GpuInit(scale > 0 ? scale : 3);
     if (PC_AssetsDreamcast() && !R3d_Native())
-        PC_Log("note: the Dreamcast models and textures need the OpenGL renderer's native 3D "
-               "(not THPS_RENDERER=sw or THPS_RENDER3D=psx): they will look wrong");
+        PC_Log("note: the Dreamcast models and textures need the native 3D renderer (not "
+               "THPS_RENDER3D=psx): they will look wrong");
     PC_InputInit();
     PC_SpuInit();
 }

@@ -460,11 +460,6 @@ void PC_GlShutdown(void)
     s_active = 0;
 }
 
-int PC_GlActive(void)
-{
-    return s_active;
-}
-
 /* ---------------------------------------------------------------------------------------------
  * Cell bookkeeping */
 

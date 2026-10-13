@@ -17,6 +17,7 @@
 #include "pc_assets.h"
 #include "pc_hle.h"
 #include "pc_movie.h"
+#include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_sfd.h"
 

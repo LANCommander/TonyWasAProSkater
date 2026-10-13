@@ -1,10 +1,8 @@
-/* Software PS1 GPU: GP0/GP1 command processing over a 1024x512 16-bit VRAM (psx-spx "GPU").
+/* The PS1 GPU: GP0/GP1 command processing over a 1024x512 16-bit VRAM (psx-spx "GPU").
  *
- * The triangle rasteriser is the integer DDA of the Mednafen/DuckStation software renderer, as
- * adapted in the Vandal Hearts PC port's pc_raster.c (HalmyLyseas/VandalHearts-PcPort, GPL-2.0):
- * 32.32 fixed-point edges, attributes with 12+12 fraction bits evaluated at integer pixel positions,
- * top-left fill convention. This file extends it with Gouraud shading, lines, rectangles, mask bits
- * and the complete command set, and takes real GP0 words instead of VH's packet tokens. */
+ * Commands are decoded here and drawn by OpenGL (pc_gpu_gl.c): polygons, lines, rectangles and
+ * fills go to its render targets. VRAM transfers and copies are done on the CPU copy of VRAM kept
+ * here, which pc_gpu_gl.c keeps in sync with what it drew (PC_GlSyncRead / PC_GlWritten). */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,34 +58,6 @@ static struct {
     int field;
 } gs;
 
-static int s_dither_force_off = -1;
-static uint8_t s_dither_lut[4][4][512];
-static int s_lut_ready;
-
-static const int8_t k_dither[4][4] = {
-    { -4, 0, -3, 1 },
-    { 2, -2, 3, -1 },
-    { -3, 1, -4, 0 },
-    { 3, -1, 2, -2 },
-};
-
-static void init_tables(void)
-{
-    if (s_lut_ready)
-        return;
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            for (int v = 0; v < 512; v++) {
-                int d = (v + k_dither[i][j]) >> 3;
-                s_dither_lut[i][j][v] = (uint8_t)(d < 0 ? 0 : d > 31 ? 31 : d);
-            }
-    if (s_dither_force_off < 0) {
-        const char *e = getenv("THPS_GPU_DITHER");
-        s_dither_force_off = (e && e[0] == '0') ? 1 : 0;
-    }
-    s_lut_ready = 1;
-}
-
 static inline int sext11(uint32_t v)
 {
     return (int)((v & 0x7ff) ^ 0x400) - 0x400;
@@ -99,10 +69,10 @@ uint16_t *PC_GpuVram(void)
 }
 
 /* ---------------------------------------------------------------------------------------------
- * Pixel pipeline */
+ * Primitives */
 
 typedef struct {
-    int textured, raw, semi, abr, dither;
+    int textured, raw, semi, abr;
     int tp_x, tp_y, depth;
     int clut_x, clut_y;
 } Prim;
@@ -122,213 +92,12 @@ static void prim_from_state(Prim *p, int textured, int raw, int semi, uint16_t c
     p->depth = (dm >> 7) & 3;
     p->clut_x = (clut & 0x3f) * 16;
     p->clut_y = (clut >> 6) & 0x1ff;
-    p->dither = 0;
 }
-
-static inline uint16_t sample_texel(const Prim *p, unsigned u, unsigned v)
-{
-    u = (u & gs.tw_and_x) | gs.tw_or_x;
-    v = (v & gs.tw_and_y) | gs.tw_or_y;
-    switch (p->depth) {
-    case 0: {
-        uint16_t w = VRAM(p->tp_x + (int)(u >> 2), p->tp_y + (int)v);
-        unsigned idx = (w >> ((u & 3) * 4)) & 0xf;
-        return VRAM(p->clut_x + (int)idx, p->clut_y);
-    }
-    case 1: {
-        uint16_t w = VRAM(p->tp_x + (int)(u >> 1), p->tp_y + (int)v);
-        unsigned idx = (w >> ((u & 1) * 8)) & 0xff;
-        return VRAM(p->clut_x + (int)idx, p->clut_y);
-    }
-    default:
-        return VRAM(p->tp_x + (int)u, p->tp_y + (int)v);
-    }
-}
-
-/* Semi-transparency on packed BGR555 (blargg's parallel channel math); fg carries bit 15. */
-static inline uint16_t blend(uint32_t fg, uint32_t bg, int abr)
-{
-    uint32_t c;
-    switch (abr) {
-    case 0:
-        bg |= 0x8000u;
-        c = ((fg + bg) - ((fg ^ bg) & 0x0421u)) >> 1;
-        break;
-    case 1: {
-        bg &= ~0x8000u;
-        uint32_t sum = fg + bg;
-        uint32_t carry = (sum - ((fg ^ bg) & 0x8421u)) & 0x8420u;
-        c = (sum - carry) | (carry - (carry >> 5));
-        break;
-    }
-    case 2: {
-        bg |= 0x8000u;
-        fg &= ~0x8000u;
-        uint32_t diff = bg - fg + 0x108420u;
-        uint32_t borrow = (diff - ((bg ^ fg) & 0x108420u)) & 0x108420u;
-        c = (diff - borrow) & (borrow - (borrow >> 5));
-        break;
-    }
-    default: {
-        bg &= ~0x8000u;
-        fg = ((fg >> 2) & 0x1ce7u) | 0x8000u;
-        uint32_t sum = fg + bg;
-        uint32_t carry = (sum - ((fg ^ bg) & 0x8421u)) & 0x8420u;
-        c = (sum - carry) | (carry - (carry >> 5));
-        break;
-    }
-    }
-    return (uint16_t)c;
-}
-
-/* THPS_GPUDUMP pixel-level stats: how many pixels a triangle's scanline loop attempted vs how many
- * bailed out on a transparent (zero) texel, reset per-triangle by draw_triangle. */
-uint32_t g_tex_attempts, g_tex_skips;
-int g_tex_stat_on;
-
-/* THPS_GPUDUMP + THPS_GPUDUMPBOX="x0,y0,x1,y1": count every shade_pixel entry (regardless of
- * transparency outcome) whose (x,y) falls in the box, to tell "nothing ever targeted this pixel"
- * apart from "something targeted it but bailed." */
-static void coverage_hit(int x, int y)
-{
-    static int from = -2, to = -2, bx0, by0, bx1, by1;
-    static uint32_t frame = ~0u, n;
-    if (from == -2) {
-        const char *e = getenv("THPS_GPUDUMP");
-        if (!e || sscanf(e, "%d-%d", &from, &to) != 2)
-            from = to = -1;
-        const char *b = getenv("THPS_GPUDUMPBOX");
-        if (!b || sscanf(b, "%d,%d,%d,%d", &bx0, &by0, &bx1, &by1) != 4)
-            bx0 = by0 = bx1 = by1 = 0;
-    }
-    if (from < 0 || (int)pc_heartbeat < from || (int)pc_heartbeat > to)
-        return;
-    if (frame != pc_heartbeat) {
-        if (frame != ~0u)
-            fprintf(stderr, "coverage f%u: %u shade_pixel calls hit box %d,%d-%d,%d\n", frame, n, bx0,
-                    by0, bx1, by1);
-        frame = pc_heartbeat;
-        n = 0;
-    }
-    if (x >= bx0 && x <= bx1 && y >= by0 && y <= by1)
-        n++;
-}
-
-static inline void shade_pixel(const Prim *p, int x, int y, unsigned r, unsigned g, unsigned b,
-                               unsigned u, unsigned v)
-{
-    uint16_t color;
-    int dy = p->dither ? (y & 3) : 2, dx = p->dither ? (x & 3) : 3;
-    const uint8_t *lut = s_dither_lut[dy][dx];
-
-    coverage_hit(x, y);
-
-    if (p->textured) {
-        uint16_t t = sample_texel(p, u & 0xff, v & 0xff);
-        if (g_tex_stat_on) {
-            g_tex_attempts++;
-            if (t == 0)
-                g_tex_skips++;
-        }
-        static int opaque_dbg = -1;
-        if (opaque_dbg < 0)
-            opaque_dbg = getenv("THPS_DBG_OPAQUE") && atoi(getenv("THPS_DBG_OPAQUE"));
-        if (t == 0 && opaque_dbg)
-            t = 0x8000u | 0x1ce7u; /* mid-gray, non-transparent: bisection probe */
-        if (t == 0)
-            return;
-        if (p->raw) {
-            color = t;
-        } else {
-            color = (uint16_t)(lut[((t & 31u) * r) >> 4] | (lut[(((t >> 5) & 31u) * g) >> 4] << 5) |
-                               (lut[(((t >> 10) & 31u) * b) >> 4] << 10) | (t & 0x8000u));
-        }
-    } else {
-        color = (uint16_t)(lut[r] | (lut[g] << 5) | (lut[b] << 10));
-    }
-
-    uint16_t *dst = &VRAM(x, y);
-    uint16_t bg = *dst;
-    if (p->semi && (!p->textured || (color & 0x8000u))) {
-        color = blend((uint32_t)color | 0x8000u, bg, p->abr);
-        if (!p->textured)
-            color &= 0x7fffu;
-    }
-    if (gs.mask_check && (bg & 0x8000u))
-        return;
-    *dst = (uint16_t)(color | (gs.mask_set ? 0x8000u : 0));
-}
-
-/* ---------------------------------------------------------------------------------------------
- * Triangles */
 
 typedef struct {
     int x, y;
     uint8_t r, g, b, u, v;
 } Vtx;
-
-#define FBS 12  /* attribute fraction bits */
-#define FPP 12  /* extra post-padding for u/v */
-
-typedef struct { uint32_t u, v, r, g, b; } IGroup;
-typedef struct {
-    uint32_t du_dx, dv_dx, dr_dx, dg_dx, db_dx;
-    uint32_t du_dy, dv_dy, dr_dy, dg_dy, db_dy;
-} IDeltas;
-
-static inline void ig_step_x(IGroup *ig, const IDeltas *d, int n)
-{
-    uint32_t k = (uint32_t)n;
-    ig->u += d->du_dx * k; ig->v += d->dv_dx * k;
-    ig->r += d->dr_dx * k; ig->g += d->dg_dx * k; ig->b += d->db_dx * k;
-}
-
-static inline void ig_step_y(IGroup *ig, const IDeltas *d, int n)
-{
-    uint32_t k = (uint32_t)n;
-    ig->u += d->du_dy * k; ig->v += d->dv_dy * k;
-    ig->r += d->dr_dy * k; ig->g += d->dg_dy * k; ig->b += d->db_dy * k;
-}
-
-static inline int64_t xfp_make(int x)
-{
-    return (int64_t)((uint64_t)(int64_t)x << 32) + ((INT64_C(1) << 32) - (1 << 11));
-}
-
-static inline int64_t xfp_step(int dx, int dy)
-{
-    int64_t bias = dx < 0 ? -(int64_t)(dy - 1) : dx > 0 ? (int64_t)(dy - 1) : 0;
-    return ((int64_t)((uint64_t)(int64_t)dx << 32) + bias) / dy;
-}
-
-static inline int xfp_int(int64_t v)
-{
-    return (int)(v >> 32);
-}
-
-static void draw_span(const Prim *p, int y, int x_start, int x_bound, IGroup ig, const IDeltas *d)
-{
-    int width = x_bound - x_start;
-    int x = x_start;
-    if (x < gs.clip_l) {
-        int k = gs.clip_l - x;
-        x_start += k;
-        x += k;
-        width -= k;
-    }
-    if (x + width > gs.clip_r + 1)
-        width = gs.clip_r + 1 - x;
-    if (width <= 0)
-        return;
-    ig_step_x(&ig, d, x_start);
-    ig_step_y(&ig, d, y);
-    do {
-        shade_pixel(p, x, y, (ig.r >> FBS) & 0xff, (ig.g >> FBS) & 0xff, (ig.b >> FBS) & 0xff,
-                    (ig.u >> (FBS + FPP)) & 0xff, (ig.v >> (FBS + FPP)) & 0xff);
-        x++;
-        ig_step_x(&ig, d, 1);
-    } while (--width > 0);
-}
 
 static int tri_too_big(const Vtx *a, const Vtx *b, const Vtx *c)
 {
@@ -372,238 +141,6 @@ static int gpudump_active(void)
         }
     }
     return from >= 0 && (int)pc_heartbeat >= from && (int)pc_heartbeat <= to;
-}
-
-static void draw_triangle(const Prim *p, int gouraud, const Vtx *v0, const Vtx *v1, const Vtx *v2)
-{
-    const Vtx *t;
-    unsigned cv;
-    int dump = gpudump_active();
-    const Vtx *o0 = v0, *o1 = v1, *o2 = v2;
-
-    if (tri_too_big(v0, v1, v2)) {
-        if (dump)
-            fprintf(stderr, "tri f%u (%d,%d,rgb%02x%02x%02x)-(%d,%d)-(%d,%d) -> TOO_BIG\n",
-                    pc_heartbeat, o0->x, o0->y, o0->r, o0->g, o0->b, o1->x, o1->y, o2->x, o2->y);
-        return;
-    }
-
-    /* sort by y, tracking which vertex is the top-left "core" vertex */
-    if (v1->x <= v0->x)
-        cv = (v2->x <= v1->x) ? 4 : 2;
-    else if (v2->x < v0->x)
-        cv = 4;
-    else
-        cv = 1;
-    if (v2->y < v1->y) {
-        t = v1; v1 = v2; v2 = t;
-        cv = ((cv >> 1) & 2) | ((cv << 1) & 4) | (cv & 1);
-    }
-    if (v1->y < v0->y) {
-        t = v0; v0 = v1; v1 = t;
-        cv = ((cv >> 1) & 1) | ((cv << 1) & 2) | (cv & 4);
-    }
-    if (v2->y < v1->y) {
-        t = v1; v1 = v2; v2 = t;
-        cv = ((cv >> 1) & 2) | ((cv << 1) & 4) | (cv & 1);
-    }
-    cv >>= 1;
-
-    if (v0->y == v2->y) {
-        if (dump)
-            fprintf(stderr, "tri f%u (%d,%d)-(%d,%d)-(%d,%d) -> FLAT_Y\n", pc_heartbeat, o0->x,
-                    o0->y, o1->x, o1->y, o2->x, o2->y);
-        return;
-    }
-
-    int64_t base_coord = xfp_make(v0->x);
-    int64_t base_step = xfp_step(v2->x - v0->x, v2->y - v0->y);
-    int64_t bound_us, bound_ls;
-    int right_facing;
-    if (v1->y == v0->y) {
-        bound_us = 0;
-        right_facing = v1->x > v0->x;
-    } else {
-        bound_us = xfp_step(v1->x - v0->x, v1->y - v0->y);
-        right_facing = bound_us > base_step;
-    }
-    bound_ls = (v2->y == v1->y) ? 0 : xfp_step(v2->x - v1->x, v2->y - v1->y);
-
-    /* attribute gradients: det(A, B) over the screen-space determinant */
-#define CALCIS(A, B) ((int64_t)(v1->A - v0->A) * (v2->B - v1->B) - (int64_t)(v2->A - v1->A) * (v1->B - v0->B))
-    int64_t denom = CALCIS(x, y);
-    if (denom == 0) {
-        if (dump)
-            fprintf(stderr, "tri f%u (%d,%d)-(%d,%d)-(%d,%d) -> ZERO_AREA\n", pc_heartbeat, o0->x,
-                    o0->y, o1->x, o1->y, o2->x, o2->y);
-        return;
-    }
-    {
-        static long mindenom_dbg = -1;
-        if (mindenom_dbg < 0) {
-            const char *e = getenv("THPS_DBG_MINDENOM");
-            mindenom_dbg = e ? atol(e) : 0;
-        }
-        if (mindenom_dbg && (denom < mindenom_dbg && denom > -mindenom_dbg)) {
-            if (dump)
-                fprintf(stderr, "tri f%u (%d,%d)-(%d,%d)-(%d,%d) denom=%lld -> MINDENOM_SKIP\n",
-                        pc_heartbeat, o0->x, o0->y, o1->x, o1->y, o2->x, o2->y, (long long)denom);
-            return;
-        }
-    }
-    IDeltas d;
-    memset(&d, 0, sizeof d);
-    if (gouraud) {
-        d.dr_dx = (uint32_t)(int32_t)(CALCIS(r, y) * (1 << FBS) / denom);
-        d.dg_dx = (uint32_t)(int32_t)(CALCIS(g, y) * (1 << FBS) / denom);
-        d.db_dx = (uint32_t)(int32_t)(CALCIS(b, y) * (1 << FBS) / denom);
-        d.dr_dy = (uint32_t)(int32_t)(CALCIS(x, r) * (1 << FBS) / denom);
-        d.dg_dy = (uint32_t)(int32_t)(CALCIS(x, g) * (1 << FBS) / denom);
-        d.db_dy = (uint32_t)(int32_t)(CALCIS(x, b) * (1 << FBS) / denom);
-    }
-    if (p->textured) {
-        d.du_dx = (uint32_t)(int32_t)(CALCIS(u, y) * (1 << FBS) / denom) << FPP;
-        d.dv_dx = (uint32_t)(int32_t)(CALCIS(v, y) * (1 << FBS) / denom) << FPP;
-        d.du_dy = (uint32_t)(int32_t)(CALCIS(x, u) * (1 << FBS) / denom) << FPP;
-        d.dv_dy = (uint32_t)(int32_t)(CALCIS(x, v) * (1 << FBS) / denom) << FPP;
-        if (dump)
-            fprintf(stderr,
-                    "  tex f%u (%d,%d)-(%d,%d)-(%d,%d) denom=%lld du_dx=%d du_dy=%d dv_dx=%d "
-                    "dv_dy=%d u=%d,%d,%d v=%d,%d,%d\n",
-                    pc_heartbeat, o0->x, o0->y, o1->x, o1->y, o2->x, o2->y, (long long)denom,
-                    (int32_t)d.du_dx, (int32_t)d.du_dy, (int32_t)d.dv_dx, (int32_t)d.dv_dy, o0->u,
-                    o1->u, o2->u, o0->v, o1->v, o2->v);
-    }
-#undef CALCIS
-
-    if (dump)
-        fprintf(stderr, "tri f%u (%d,%d)-(%d,%d)-(%d,%d) clip %d,%d-%d,%d -> drawn\n", pc_heartbeat,
-                o0->x, o0->y, o1->x, o1->y, o2->x, o2->y, gs.clip_l, gs.clip_t, gs.clip_r, gs.clip_b);
-
-    const Vtx *vs[3] = { v0, v1, v2 };
-    const Vtx *core = vs[cv];
-    IGroup ig;
-    ig.u = (((uint32_t)core->u << FBS) + (1u << (FBS - 1))) << FPP;
-    ig.v = (((uint32_t)core->v << FBS) + (1u << (FBS - 1))) << FPP;
-    ig.r = ((uint32_t)core->r << FBS) + (1u << (FBS - 1));
-    ig.g = ((uint32_t)core->g << FBS) + (1u << (FBS - 1));
-    ig.b = ((uint32_t)core->b << FBS) + (1u << (FBS - 1));
-    ig_step_x(&ig, &d, -core->x);
-    ig_step_y(&ig, &d, -core->y);
-
-    struct {
-        int64_t x[2], step[2];
-        int y, y_bound, dec;
-    } part[2];
-    unsigned vo = (cv != 0) ? 1 : 0;
-    unsigned vp = (cv == 2) ? 3 : 0;
-    int rf = right_facing ? 1 : 0;
-
-    part[vo].y = vs[0 ^ vo]->y;
-    part[vo].y_bound = vs[1 ^ vo]->y;
-    part[vo].x[rf] = xfp_make(vs[0 ^ vo]->x);
-    part[vo].step[rf] = bound_us;
-    part[vo].x[!rf] = base_coord + (int64_t)(vs[vo]->y - vs[0]->y) * base_step;
-    part[vo].step[!rf] = base_step;
-    part[vo].dec = (int)vo;
-
-    part[vo ^ 1].y = vs[1 ^ vp]->y;
-    part[vo ^ 1].y_bound = vs[2 ^ vp]->y;
-    part[vo ^ 1].x[rf] = xfp_make(vs[1 ^ vp]->x);
-    part[vo ^ 1].step[rf] = bound_ls;
-    part[vo ^ 1].x[!rf] = base_coord + (int64_t)(vs[1 ^ vp]->y - vs[0]->y) * base_step;
-    part[vo ^ 1].step[!rf] = base_step;
-    part[vo ^ 1].dec = vp != 0;
-
-    g_tex_stat_on = dump && p->textured;
-    g_tex_attempts = g_tex_skips = 0;
-
-    for (int i = 0; i < 2; i++) {
-        int y = part[i].y, yb = part[i].y_bound;
-        int64_t lc = part[i].x[0], ls = part[i].step[0];
-        int64_t rc = part[i].x[1], rs = part[i].step[1];
-        if (part[i].dec) {
-            while (y > yb) {
-                y--;
-                lc -= ls;
-                rc -= rs;
-                if (y < gs.clip_t)
-                    break;
-                if (y > gs.clip_b)
-                    continue;
-                draw_span(p, y, xfp_int(lc), xfp_int(rc), ig, &d);
-            }
-        } else {
-            while (y < yb) {
-                if (y > gs.clip_b)
-                    break;
-                if (y >= gs.clip_t)
-                    draw_span(p, y, xfp_int(lc), xfp_int(rc), ig, &d);
-                y++;
-                lc += ls;
-                rc += rs;
-            }
-        }
-    }
-
-    if (g_tex_stat_on) {
-        fprintf(stderr, "  pix f%u (%d,%d)-(%d,%d)-(%d,%d) attempts=%u zero_skips=%u\n", pc_heartbeat,
-                o0->x, o0->y, o1->x, o1->y, o2->x, o2->y, g_tex_attempts, g_tex_skips);
-        g_tex_stat_on = 0;
-    }
-}
-
-/* ---------------------------------------------------------------------------------------------
- * Lines (both endpoints drawn) */
-
-static void draw_line(const Prim *p, int gouraud, const Vtx *a, const Vtx *b)
-{
-    int dx = abs(b->x - a->x), dy = abs(b->y - a->y);
-    int k = dx > dy ? dx : dy;
-    if (dx >= 1024 || dy >= 512)
-        return;
-    if (a->x >= b->x && k > 0) {
-        const Vtx *t = a;
-        a = b;
-        b = t;
-    }
-
-    int64_t sx = 0, sy = 0;
-    int32_t sr = 0, sg = 0, sb = 0;
-    if (k) {
-        int64_t ddx = (int64_t)((uint64_t)(int64_t)(b->x - a->x) << 32);
-        int64_t ddy = (int64_t)((uint64_t)(int64_t)(b->y - a->y) << 32);
-        if (ddx < 0) ddx -= k - 1;
-        if (ddx > 0) ddx += k - 1;
-        if (ddy < 0) ddy -= k - 1;
-        if (ddy > 0) ddy += k - 1;
-        sx = ddx / k;
-        sy = ddy / k;
-        if (gouraud) {
-            sr = (int32_t)((((int32_t)b->r - a->r) * (1 << 12)) / k);
-            sg = (int32_t)((((int32_t)b->g - a->g) * (1 << 12)) / k);
-            sb = (int32_t)((((int32_t)b->b - a->b) * (1 << 12)) / k);
-        }
-    }
-    int64_t cx = (int64_t)((uint64_t)(int64_t)a->x << 32) | (INT64_C(1) << 31);
-    int64_t cy = (int64_t)((uint64_t)(int64_t)a->y << 32) | (INT64_C(1) << 31);
-    cx -= 1024;
-    if (sy < 0)
-        cy -= 1024;
-    uint32_t cr = ((uint32_t)a->r << 12) | (1u << 11);
-    uint32_t cg = ((uint32_t)a->g << 12) | (1u << 11);
-    uint32_t cb = ((uint32_t)a->b << 12) | (1u << 11);
-
-    for (int i = 0; i <= k; i++) {
-        int x = (int)((cx >> 32) & 2047), y = (int)((cy >> 32) & 2047);
-        if (x >= gs.clip_l && x <= gs.clip_r && y >= gs.clip_t && y <= gs.clip_b)
-            shade_pixel(p, x, y, (cr >> 12) & 0xff, (cg >> 12) & 0xff, (cb >> 12) & 0xff, 0, 0);
-        cx += sx;
-        cy += sy;
-        cr += (uint32_t)sr;
-        cg += (uint32_t)sg;
-        cb += (uint32_t)sb;
-    }
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -689,23 +226,14 @@ static void gl_precise(PC_GlVertex *gv, const uint32_t *xy, int n)
     }
 }
 
-static void line_out(const Prim *p, int gouraud, const Vtx *a, const Vtx *b)
+static void line_out(const Prim *p, const Vtx *a, const Vtx *b)
 {
-    if (PC_GlActive()) {
-        PC_GlPrim gp;
-        PC_GlVertex ga, gb;
-        gl_prim(&gp, p);
-        gl_vertex(&ga, a);
-        gl_vertex(&gb, b);
-        PC_GlLine(&gp, &ga, &gb);
-        return;
-    }
-    draw_line(p, gouraud, a, b);
-}
-
-static int dither_on(void)
-{
-    return ((gs.drawmode >> 9) & 1) && !s_dither_force_off;
+    PC_GlPrim gp;
+    PC_GlVertex ga, gb;
+    gl_prim(&gp, p);
+    gl_vertex(&ga, a);
+    gl_vertex(&gb, b);
+    PC_GlLine(&gp, &ga, &gb);
 }
 
 static void cmd_polygon(const uint32_t *w)
@@ -769,8 +297,6 @@ static void cmd_polygon(const uint32_t *w)
 
     Prim p;
     prim_from_state(&p, tex, raw, semi, clut);
-    int shaded = gouraud && !p.raw;
-    p.dither = dither_on() && (shaded || (tex && !p.raw));
     /* THPS_GPUBT="frame,x0,y0,x1,y1": one-shot native backtrace the first time a triangle with a
      * vertex in that box is submitted on that exact heartbeat -- to identify which (possibly
      * unnamed/hand-written-MIPS) caller submits a specific piece of geometry. */
@@ -802,28 +328,21 @@ static void cmd_polygon(const uint32_t *w)
                 pc_heartbeat, quad, tex, semi, p.abr, raw, v[0].x, v[0].y, v[0].r, v[0].g, v[0].b,
                 v[1].x, v[1].y, v[1].r, v[1].g, v[1].b, v[2].x, v[2].y, v[2].r, v[2].g, v[2].b,
                 quad ? " +quad" : "");
-    if (PC_GlActive()) {
-        PC_GlPrim gp;
-        PC_GlVertex gv[4];
-        gl_prim(&gp, &p);
-        for (int i = 0; i < n; i++)
-            gl_vertex(&gv[i], &v[i]);
-        gl_precise(gv, xy, n);
-        if (!tri_too_big(&v[0], &v[1], &v[2]))
-            PC_GlTriangle(&gp, &gv[0], &gv[1], &gv[2]);
-        if (quad && !tri_too_big(&v[1], &v[2], &v[3]))
-            PC_GlTriangle(&gp, &gv[1], &gv[2], &gv[3]);
-        return;
-    }
-    draw_triangle(&p, shaded, &v[0], &v[1], &v[2]);
-    if (quad)
-        draw_triangle(&p, shaded, &v[1], &v[2], &v[3]);
+    PC_GlPrim gp;
+    PC_GlVertex gv[4];
+    gl_prim(&gp, &p);
+    for (int i = 0; i < n; i++)
+        gl_vertex(&gv[i], &v[i]);
+    gl_precise(gv, xy, n);
+    if (!tri_too_big(&v[0], &v[1], &v[2]))
+        PC_GlTriangle(&gp, &gv[0], &gv[1], &gv[2]);
+    if (quad && !tri_too_big(&v[1], &v[2], &v[3]))
+        PC_GlTriangle(&gp, &gv[1], &gv[2], &gv[3]);
 }
 
 static void line_prim(Prim *p, uint32_t op)
 {
     prim_from_state(p, 0, 0, (op & 2) != 0, 0);
-    p->dither = dither_on() && (op & 0x10);
 }
 
 static void cmd_line(const uint32_t *w)
@@ -838,7 +357,7 @@ static void cmd_line(const uint32_t *w)
         vtx_from_words(&b, w[3], w[2]);
     else
         vtx_from_words(&b, w[2], w[0]);
-    line_out(&p, gouraud, &a, &b);
+    line_out(&p, &a, &b);
 
     if (op & 8) {
         gs.mode = MODE_POLYLINE;
@@ -874,7 +393,7 @@ static void polyline_word(uint32_t word)
     a.b = (uint8_t)(gs.pl_col >> 16);
     a.u = a.v = 0;
     vtx_from_words(&b, word, newcol);
-    line_out(&p, gouraud, &a, &b);
+    line_out(&p, &a, &b);
     gs.pl_x = sext11(word);
     gs.pl_y = sext11(word >> 16);
     gs.pl_col = newcol;
@@ -913,45 +432,17 @@ static void cmd_rect(const uint32_t *w)
     unsigned r = w[0] & 0xff, g = (w[0] >> 8) & 0xff, b = (w[0] >> 16) & 0xff;
     int flip_x = (gs.drawmode >> 12) & 1, flip_y = (gs.drawmode >> 13) & 1;
 
-    if (PC_GlActive()) {
-        PC_GlPrim gp;
-        gl_prim(&gp, &p);
-        PC_GlRect(&gp, x, y, width, height, (uint8_t)r, (uint8_t)g, (uint8_t)b, (int)u0, (int)v0,
-                  flip_x, flip_y);
-        return;
-    }
-    for (int oy = 0; oy < height; oy++) {
-        int py = y + oy;
-        if (py < gs.clip_t || py > gs.clip_b)
-            continue;
-        unsigned tv = (flip_y ? v0 - (unsigned)oy : v0 + (unsigned)oy) & 0xff;
-        for (int ox = 0; ox < width; ox++) {
-            int px = x + ox;
-            if (px < gs.clip_l || px > gs.clip_r)
-                continue;
-            unsigned tu = (flip_x ? u0 - (unsigned)ox : u0 + (unsigned)ox) & 0xff;
-            shade_pixel(&p, px, py, r, g, b, tu, tv);
-        }
-    }
-}
-
-static inline uint16_t rgb24_to_15(uint32_t c)
-{
-    return (uint16_t)(((c >> 3) & 0x1f) | (((c >> 11) & 0x1f) << 5) | (((c >> 19) & 0x1f) << 10));
+    PC_GlPrim gp;
+    gl_prim(&gp, &p);
+    PC_GlRect(&gp, x, y, width, height, (uint8_t)r, (uint8_t)g, (uint8_t)b, (int)u0, (int)v0,
+              flip_x, flip_y);
 }
 
 static void cmd_fill(const uint32_t *w)
 {
-    uint16_t c = rgb24_to_15(w[0]);
     int x = (int)(w[1] & 0x3f0), y = (int)((w[1] >> 16) & 0x1ff);
     int width = (int)(((w[2] & 0x3ff) + 0xf) & ~0xfu), height = (int)((w[2] >> 16) & 0x1ff);
-    if (PC_GlActive()) {
-        PC_GlFill(x, y, width, height, w[0]);
-        return;
-    }
-    for (int j = 0; j < height; j++)
-        for (int i = 0; i < width; i++)
-            VRAM(x + i, y + j) = c;
+    PC_GlFill(x, y, width, height, w[0]);
 }
 
 static void cmd_copy(const uint32_t *w)
@@ -1165,10 +656,8 @@ void PC_GpuWriteGP0(uint32_t word)
         polyline_word(word);
         return;
     }
-    if (gs.fifo_n == 0) {
-        init_tables();
+    if (gs.fifo_n == 0)
         gs.fifo_need = gp0_size(word >> 24);
-    }
     gs.fifo[gs.fifo_n++] = word;
     if (gs.fifo_n >= gs.fifo_need) {
         gs.fifo_n = 0;
@@ -1356,7 +845,7 @@ int PC_GpuDrawState(int *ofs_x, int *ofs_y, int clip[4])
     clip[1] = gs.clip_t;
     clip[2] = gs.clip_r;
     clip[3] = gs.clip_b;
-    return PC_GlActive() ? PC_GlWideClip(clip) : 0;
+    return PC_GlWideClip(clip);
 }
 
 static void draw_chain(const uint32_t *first)
@@ -1404,7 +893,6 @@ static void draw_chain(const uint32_t *first)
 
 void PC_GpuReset(void)
 {
-    init_tables();
     memset(s_vram, 0, sizeof s_vram);
     PC_GlWritten(0, 0, VRAM_W, VRAM_H);
     gp1_reset();
@@ -1413,20 +901,13 @@ void PC_GpuReset(void)
 
 void PC_GpuFillRect(int x, int y, int w, int h, uint32_t rgb24)
 {
-    uint16_t c = rgb24_to_15(rgb24);
     int x1 = x + w, y1 = y + h;
     if (x < 0) x = 0;
     if (y < 0) y = 0;
     if (x1 > VRAM_W) x1 = VRAM_W;
     if (y1 > VRAM_H) y1 = VRAM_H;
-    if (PC_GlActive()) {
-        if (x1 > x && y1 > y)
-            PC_GlFill(x, y, x1 - x, y1 - y, rgb24);
-        return;
-    }
-    for (int j = y; j < y1; j++)
-        for (int i = x; i < x1; i++)
-            s_vram[j * VRAM_W + i] = c;
+    if (x1 > x && y1 > y)
+        PC_GlFill(x, y, x1 - x, y1 - y, rgb24);
 }
 
 void PC_GpuGetDisplay(PC_GpuDisplay *d)

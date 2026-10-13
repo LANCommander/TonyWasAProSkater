@@ -1,6 +1,8 @@
 /* M3dAsm_BoundingSpherePreprocessing (0x800858ac) -- C interpretation of hand-written assembly (M3DASM) */
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
+#include <stddef.h>
+
 #include "vertex.h"
 
 /* the fields of M3D's Item, SModel, SPSXRegion and SCamera used here (decomp/include/game) */

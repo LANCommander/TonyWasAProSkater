@@ -1,4 +1,4 @@
-/* Psy-Q libgpu reimplemented on the software GPU (pc_gpu.h). Every operation runs synchronously:
+/* Psy-Q libgpu reimplemented on the GPU (pc_gpu.h). Every operation runs synchronously:
  * the command queue is always empty, DrawSync returns at once, and a DrawSync callback runs after
  * each DrawOTag. Packets are real GP0 words in PS1 RAM (mapped at 0x80000000), linked by 24-bit
  * addresses, exactly as the hardware DMA walks them. */
@@ -188,17 +188,7 @@ int LoadImage(RECT *rect, u_long *p)
 
 void PC_GpuLoadImageHiRes(int x, int y, int w, int h, const uint16_t *src, int sw, int sh)
 {
-    if (PC_GlActive()) {
-        PC_GlHiResImage(x, y, w, h, src, sw, sh);
-        return;
-    }
-    uint16_t *pix = malloc((size_t)w * h * 2 + 2);
-    for (int j = 0; j < h; j++)
-        for (int i = 0; i < w; i++)
-            pix[j * w + i] = src[(j * sh / h) * sw + i * sw / w];
-    RECT r = { (short)x, (short)y, (short)w, (short)h };
-    LoadImage(&r, (u_long *)pix);
-    free(pix);
+    PC_GlHiResImage(x, y, w, h, src, sw, sh);
 }
 
 int StoreImage(RECT *rect, u_long *p)

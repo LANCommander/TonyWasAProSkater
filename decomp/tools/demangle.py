@@ -12,8 +12,15 @@ import os
 import subprocess
 import sys
 
-DEMANGLER = os.environ.get(
-    "GNU_DEMANGLER", r"D:\Tools\ghidra\GPL\DemanglerGnu\os\win_x86_64\demangler_gnu_v2_24.exe")
+def _ghidra_demangler():
+    """The one in a Ghidra install (GHIDRA_INSTALL_DIR, default D:\\Tools\\ghidra), for this OS."""
+    ghidra = os.environ.get("GHIDRA_INSTALL_DIR", r"D:\Tools\ghidra")
+    plat = {"win32": "win_x86_64", "darwin": "mac_x86_64"}.get(sys.platform, "linux_x86_64")
+    exe = "demangler_gnu_v2_24" + (".exe" if sys.platform == "win32" else "")
+    return os.path.join(ghidra, "GPL", "DemanglerGnu", "os", plat, exe)
+
+
+DEMANGLER = os.environ.get("GNU_DEMANGLER") or _ghidra_demangler()
 HERE = os.path.dirname(os.path.abspath(__file__))
 TSV = os.path.join(HERE, "..", "functions.tsv")
 

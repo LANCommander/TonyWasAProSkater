@@ -1,12 +1,10 @@
 /* The game window and presentation of the PS1 display area, 4:3 letterboxed, plus BMP dumps of
  * VRAM and the display for headless debugging. The window has an OpenGL 3.3 context and the GPU
  * draws through pc_gpu_gl.c, the screens at the window's resolution (or at THPS_GL_SCALE times the
- * PS1's). Windowed, borderless or fullscreen comes from Settings.ini (pc_video.h). With
- * THPS_RENDERER=sw, or without OpenGL, the software GPU draws and an SDL_Renderer streaming
- * texture shows its VRAM (always windowed). THPS_HEADLESS=1 skips the window and uses the
- * software GPU, unless THPS_RENDERER=gl (then OpenGL draws into a hidden window of THPS_SCALE
- * times 320x240, whatever Settings.ini says). THPS_FILTER=1 selects linear scaling. Event pumping
- * is the input layer's job; it hands window events to PC_VideoEvent. */
+ * PS1's). Windowed, borderless or fullscreen comes from Settings.ini (pc_video.h). OpenGL 3.3 is
+ * required. THPS_HEADLESS=1 draws into a hidden window of THPS_SCALE times 320x240, whatever
+ * Settings.ini says. THPS_FILTER=1 selects linear scaling. Event pumping is the input layer's
+ * job; it hands window events to PC_VideoEvent. */
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -27,10 +25,7 @@
 #define TEX_H 512
 
 static SDL_Window *s_window;
-static SDL_Renderer *s_renderer;
-static SDL_Texture *s_texture;
 static SDL_GLContext s_glctx;
-static uint32_t *s_pixels;
 static int s_headless;
 static int s_video_inited;
 
@@ -432,7 +427,7 @@ void PC_VideoEvent(const void *sdl_event)
 
 /* ---- creation ---- */
 
-/* The OpenGL window and renderer; 0 when the software path has to be used instead. */
+/* The OpenGL window and renderer; 0 if there is no OpenGL 3.3. */
 static int init_gl(int scale)
 {
     const char *e = getenv("THPS_GL_SCALE");
@@ -469,7 +464,6 @@ static int init_gl(int scale)
         SDL_GL_DeleteContext(s_glctx);
         s_glctx = NULL;
     }
-    fprintf(stderr, "[video] no OpenGL 3.3 (%s): using the software renderer\n", SDL_GetError());
     if (s_window)
         SDL_DestroyWindow(s_window);
     s_window = NULL;
@@ -478,15 +472,10 @@ static int init_gl(int scale)
 
 void PC_GpuInit(int scale)
 {
-    const char *h = getenv("THPS_HEADLESS"), *r = getenv("THPS_RENDERER");
-    int gl = !(r && strcmp(r, "sw") == 0);
+    const char *h = getenv("THPS_HEADLESS");
     PC_GpuReset();
     s_headless = h && h[0] && h[0] != '0';
-    if (s_headless && !(r && strcmp(r, "gl") == 0))
-        gl = 0;
-    if (!s_pixels)
-        s_pixels = (uint32_t *)calloc((size_t)TEX_W * TEX_H, sizeof(uint32_t));
-    if ((s_headless && !gl) || s_window)
+    if (s_window)
         return;
     if (scale < 1)
         scale = 2;
@@ -494,34 +483,12 @@ void PC_GpuInit(int scale)
 
     /* sizes in pixels, not scaled by the desktop's DPI setting: 640x480 is 640x480 */
     SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
-    if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
-        fprintf(stderr, "[video] SDL video init failed: %s (running headless)\n", SDL_GetError());
-        s_headless = 1;
-        return;
-    }
+    if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0)
+        PC_Fatal("Cannot open a window (SDL: %s).", SDL_GetError());
     s_video_inited = 1;
-    if (gl && init_gl(scale))
-        return;
-    if (s_headless)
-        return;
-    const char *f = getenv("THPS_FILTER");
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, (f && f[0] == '1') ? "1" : "0");
-
-    s_window = SDL_CreateWindow("Tony Hawk's Pro Skater", SDL_WINDOWPOS_CENTERED,
-                                SDL_WINDOWPOS_CENTERED, 320 * scale, 240 * scale,
-                                SDL_WINDOW_RESIZABLE);
-    if (s_window)
-        s_renderer = SDL_CreateRenderer(s_window, -1, SDL_RENDERER_ACCELERATED);
-    if (s_window && !s_renderer)
-        s_renderer = SDL_CreateRenderer(s_window, -1, SDL_RENDERER_SOFTWARE);
-    if (s_renderer)
-        s_texture = SDL_CreateTexture(s_renderer, SDL_PIXELFORMAT_ARGB8888,
-                                      SDL_TEXTUREACCESS_STREAMING, TEX_W, TEX_H);
-    if (!s_texture) {
-        fprintf(stderr, "[video] window setup failed: %s (running headless)\n", SDL_GetError());
-        PC_GpuShutdown();
-        s_headless = 1;
-    }
+    if (!init_gl(scale))
+        PC_Fatal("Tony Hawk's Pro Skater needs a graphics card with OpenGL 3.3 (%s). Updating "
+                 "the graphics driver may help.", SDL_GetError());
 }
 
 void PC_GpuShutdown(void)
@@ -531,14 +498,8 @@ void PC_GpuShutdown(void)
         SDL_GL_DeleteContext(s_glctx);
         s_glctx = NULL;
     }
-    if (s_texture)
-        SDL_DestroyTexture(s_texture);
-    if (s_renderer)
-        SDL_DestroyRenderer(s_renderer);
     if (s_window)
         SDL_DestroyWindow(s_window);
-    s_texture = NULL;
-    s_renderer = NULL;
     s_window = NULL;
     if (s_video_inited) {
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
@@ -568,38 +529,7 @@ void PC_GpuPresent(void)
 
     PC_GpuDisplay d;
     PC_GpuGetDisplay(&d);
-    if (PC_GlActive()) {
-        PC_GlPresent(s_window, d.x, d.y, d.w, d.h, d.rgb24, d.enabled);
-        return;
-    }
-    if (s_headless || !s_texture)
-        return;
-
-    int w, h;
-    PC_GpuDisplayToARGB(s_pixels, TEX_W, TEX_W, TEX_H, &w, &h);
-    if (!d.enabled)
-        memset(s_pixels, 0, (size_t)TEX_W * TEX_H * sizeof(uint32_t));
-
-    SDL_Rect src = { 0, 0, w, h };
-    SDL_UpdateTexture(s_texture, &src, s_pixels, TEX_W * (int)sizeof(uint32_t));
-
-    int ow, oh;
-    SDL_GetRendererOutputSize(s_renderer, &ow, &oh);
-    SDL_Rect dst;
-    if (ow * 3 > oh * 4) {
-        dst.h = oh;
-        dst.w = oh * 4 / 3;
-    } else {
-        dst.w = ow;
-        dst.h = ow * 3 / 4;
-    }
-    dst.x = (ow - dst.w) / 2;
-    dst.y = (oh - dst.h) / 2;
-
-    SDL_SetRenderDrawColor(s_renderer, 0, 0, 0, 255);
-    SDL_RenderClear(s_renderer);
-    SDL_RenderCopy(s_renderer, s_texture, &src, &dst);
-    SDL_RenderPresent(s_renderer);
+    PC_GlPresent(s_window, d.x, d.y, d.w, d.h, d.rgb24, d.enabled);
 }
 
 /* ---- BMP dumps (24-bit, bottom-up) ---- */
@@ -682,7 +612,7 @@ int PC_GpuDumpDisplay(const char *path)
     PC_GpuDisplay d;
     PC_GpuGetDisplay(&d);
     int hw = 0, hh = 0;
-    uint32_t *hi = PC_GlActive() && !d.rgb24 ? PC_GlReadArea(d.x, d.y, w, h, &hw, &hh) : NULL;
+    uint32_t *hi = !d.rgb24 ? PC_GlReadArea(d.x, d.y, w, h, &hw, &hh) : NULL;
     if (hi && hw == w && hh == h) {
         free(hi);
         hi = NULL;

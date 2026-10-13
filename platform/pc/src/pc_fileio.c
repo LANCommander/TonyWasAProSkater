@@ -24,6 +24,7 @@
 #include "pc_dcsound.h"
 #include "pc_dctex.h"
 #include "pc_hle.h"
+#include "pc_platform.h"
 #include "pc_runtime.h"
 
 #define VAR(type, addr) (*(type *)PSX_PTR(addr))
@@ -170,7 +171,7 @@ int hleov_8004c8a4(const char *name) { /* FileIO_Open */
         size_t n = strlen(name);
         if (!PC_AssetsDreamcast() || n < 4 || _stricmp(name + n - 4, ".vab"))
             PC_Fatal("The game asked for %s, which is not in the Data folder. Delete "
-                     "Data\\Manifest.txt to extract the game files from the disc again.", name);
+                     "Data" PC_SEP "Manifest.txt to extract the game files from the disc again.", name);
         free(s_image);
         if ((s_image = PC_DcSoundVab(name, &s_size))) {
             snprintf(s_path, sizeof s_path, "%s (from its .kat)", name);

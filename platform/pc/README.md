@@ -1,7 +1,8 @@
-# THPS1 native Windows port (`platform/pc/`)
+# THPS1 native Windows and Linux port (`platform/pc/`)
 
 The native PC port of Tony Hawk's Pro Skater (PS1, `SLUS_008.60`), built on the matching
-decompilation in `decomp/`. Windows only for now (MSYS2 `mingw32` toolchain, SDL2).
+decompilation in `decomp/`. Windows (MSYS2 `mingw32` toolchain) and Linux (the system's
+multilib GCC), with SDL2 and OpenGL on both.
 
 ## Architecture: PS1 memory at its original addresses
 
@@ -63,15 +64,16 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 | `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `inline_c.h`, `sys/types.h`) |
 | `include/pc_*.h` | interfaces between the port's subsystems |
 | `src/` | runtime: boot, memory map, HLE libraries, GTE, GPU, input, video |
-| `tools/` | build driver and code generators |
+| `include/pc_platform.h`, `src/pc_platform.c` | what differs between Windows and Linux: paths, folders, files, clock |
+| `tools/` | build driver and code generators (`toolchain.py`: the host's compiler and object format) |
 
 ## Building
 
 Needs MSYS2 with the `mingw32` (i686) toolchain and SDL2
 (`pacman -S mingw-w64-i686-gcc mingw-w64-i686-SDL2`), Python 3, and your own copies of:
 
-- `extern/thps1_retail/SLUS_008.60` (the USA executable), for the build only: its data goes into
-  `thps.exe`, and the build takes function layouts from it; and
+- `extern/thps1_retail/SLUS_008.60` (the USA executable), for the build only: the build takes
+  function layouts from it and checks the decompiled data against it; and
 - a disc for the first startup, which the game data is extracted from: `extern/thps1_disc/thps1.bin`,
   a raw MODE2/2352 image of the USA disc (`chdman extractcd -i "Tony Hawk's Pro Skater (USA).chd"
   -o thps1.cue -ob thps1.bin`), or the Dreamcast disc (below). `thps.exe` looks for it next to
@@ -82,6 +84,59 @@ python tools/psyq_sigmatch.py          # once: names the Psy-Q library functions
 python platform/pc/tools/build.py      # -> build/pc/thps.exe (--mips: plus translated retail code, for debugging)
 build/pc/thps.exe
 ```
+
+`build.py --release` makes the distributable build in `build/pc/release/`: `thps.exe` linked as
+a GUI program (the log goes to `thps.log` in the player's folder when there is no console), its
+debug information split into `thps.debug`; and `thps-windows.zip` with the exe,
+`dist/README.txt`, the repository's LICENSE and the third-party notices.
+
+A `--mips` build runs translated retail code, which also uses what the decompiled data leaves
+out (jump tables, library data), so it embeds the retail image instead (`tools/embed_image.py`:
+`SLUS_008.60` with its code cleared).
+
+The build also runs Ghidra's GNU v2 demangler (`decomp/tools/demangle.py`; it finds it in the
+Ghidra install `GHIDRA_INSTALL_DIR` names, default `D:\Tools\ghidra`, or takes `GNU_DEMANGLER`).
+
+### Linux
+
+The same build runs on x86 Linux with a GCC that can build 32-bit programs, binutils, Python 3,
+pkg-config and the 32-bit SDL2 development files; on Debian or Ubuntu:
+
+```
+sudo dpkg --add-architecture i386 && sudo apt update
+sudo apt install gcc-multilib g++-multilib pkg-config python3 libsdl2-dev:i386
+python3 platform/pc/tools/build.py     # -> build/pc-linux/thps
+build/pc-linux/thps
+```
+
+(Fedora: `gcc gcc-c++ glibc-devel.i686 libstdc++-devel.i686 SDL2-devel.i686`; Arch: `multilib`
+with `gcc lib32-gcc-libs lib32-sdl2`.) `build.py` finds SDL2 through pkg-config's 32-bit
+directories, or takes `THPS_SDL_CFLAGS`/`THPS_SDL_LIBS`; `THPS_TOOLBIN` points at another
+toolchain, `THPS_BUILD_DIR` moves the output (`tools/toolchain.py`). Running needs the 32-bit SDL2
+and OpenGL libraries (`libsdl2-2.0-0:i386 libgl1:i386 libgl1-mesa-dri:i386`).
+`build.py --release` makes `build/pc-linux/release/thps-linux.tar.gz`: the stripped `thps`,
+`dist/README-linux.txt`, the LICENSE and the notices (SDL2 and the C library are the system's,
+linked dynamically, so build releases on an old distribution for an old enough glibc).
+
+How the Linux build differs:
+
+- The compiler emits ELF instead of PE/COFF. Game TUs are compiled with `-fleading-underscore`,
+  so their symbols look like MinGW's and the renaming pipeline is the same on both systems;
+  `build.py` takes the `_` off at the end. `-freg-struct-return` keeps the Windows ABI's 8-byte
+  struct returns in registers (the decomp declares some functions both ways; see Calling
+  convention). Static constructors (`.init_array`, Windows `.ctors`) are dropped: the game runs
+  them from its own table. `data_image.py` reads ELF objects as well as COFF.
+- PS1 RAM is one `memfd` mapped at `0x80000000`, `0xa0000000` and at its KUSEG addresses from
+  `0x10000` (Linux keeps the first 64 KB unmapped, `vm.mmap_min_addr`). Low-memory accesses, the
+  MIPS division results and crash reports come from signal handlers (`SIGSEGV`, `SIGFPE`,
+  `SIGTRAP` for the single step) instead of a vectored exception handler, on the same decoders
+  (`src/pc_main.c`). The hang watchdog asks the main thread for its backtrace with `SIGUSR2`.
+  `THPS_WATCH` (debug-register watchpoints) is Windows-only: use a gdb watchpoint.
+- Gamepads are SDL game controllers (XInput on Windows), mapped onto the same Xbox-style inputs.
+- The player's folder is `$XDG_DATA_HOME/Neversoft/Tony Hawk's Pro Skater` (default
+  `~/.local/share/...`); the log stays on stderr. Paths in `Data/Manifest.txt` and the code keep
+  backslashes; `PC_AssetsPath` turns them into slashes, so a `Data` folder moves between the
+  systems unchanged.
 
 On the first startup the port extracts the game data from the disc image into `Data/` next to
 `thps.exe` (`src/pc_assets.c`) and from then on reads only those files: after that the disc image
@@ -153,11 +208,13 @@ replays each snapshot (default: all under `build/pc/snaps`) through the retail M
 scratchpad, native stack, GTE registers and return value. Paths the game rarely takes are covered
 by snapshots edited to take them. Exceptions (scratch words only the retail code's register saves
 use, pointers the port keeps in KSEG0) are listed in the sources as `test_asm:` comments.
+`test_asm` builds and runs on Windows only for now.
 
 ## Saves
 
 There's no memory card. Each career and each replay is its own file, named after the name the
-player gives it, in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`:
+player gives it, in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves` (Linux:
+`~/.local/share/Neversoft/Tony Hawk's Pro Skater/Saves`):
 `Careers\<name>.career` and `Replays\<name>.replay` (`src/pc_saves.c`). The game's save and load
 screens are its own; its card layer (`decomp/src/card`, PC branches) reads and writes these files
 and is always ready, so there's no card check, formatting, block count or "do not remove" text.
@@ -217,9 +274,7 @@ polygon's vertices up again and draws it at sub-pixel positions with perspective
 fade-to-colour mode of some levels) still go through the retail code and that lookup.
 `THPS_RENDER3D=psx` draws all 3D the PS1 way. With that and the lookup turned off
 (`THPS_RENDER3D=psx THPS_GL_PRECISE=0 THPS_GL_PERSPECTIVE=0`), OpenGL at 1x samples the same
-points the PS1 rasteriser does, and the result matches the software renderer almost pixel for
-pixel. That renderer (a Mednafen-style rasteriser) is still there for comparison and for when
-OpenGL is unavailable: `THPS_RENDERER=sw`.
+points the PS1 rasteriser does.
 
 The build compiles every TU in `decomp/matched.tsv` (and the near-miss sources in
 `decomp/nearmiss.tsv`), translates the remaining MIPS with `tools/mips2c.py`, generates the glue in
@@ -229,6 +284,7 @@ The build compiles every TU in `decomp/matched.tsv` (and the near-miss sources i
 
 Keys and gamepad buttons are bound to game actions (`src/pc_input.c`). Each action takes two keys
 and two gamepad buttons, kept in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Settings.ini`
+(Linux: `~/.local/share/Neversoft/Tony Hawk's Pro Skater/Settings.ini`)
 (written with the defaults on the first startup). The keyboard plays player 1; each player has
 their own gamepad bindings (`[Skate Gamepad]`/`[Menu Gamepad]` for player 1, `... Gamepad 2` for
 player 2).
@@ -298,14 +354,13 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 |---|---|
 | `THPS_DISC` | the disc image for the first-startup extraction (else found next to the exe or in `extern/`); a `.gdi` is the Dreamcast disc |
 | `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
-| `THPS_SAVE_DIR` | the saves folder (default `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`) |
+| `THPS_SAVE_DIR` | the saves folder (default `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`; Linux `~/.local/share/Neversoft/Tony Hawk's Pro Skater/Saves`) |
 | `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |
 | `THPS_WINDOW=WxH` | a window of that size (drawing area), whatever Settings.ini says; headless too |
 | `THPS_WIDESCREEN=0\|1` | widescreen off or on, whatever Settings.ini says |
 | `THPS_DRAWDIST=pct\|full`, `THPS_OBJDIST=pct`, `THPS_FOG=0\|1\|2` | draw distance (50-400, or the entire level), object distance (50-400) and fog (normal, light, off), whatever Settings.ini says |
 | `THPS_FAR_RANGE=n` | entire level: items reaching beyond n (default 30000) take the double-precision path; a small n compares it with the PS1 transforms on near items |
-| `THPS_HEADLESS=1` | no window (for automated runs; uses the software renderer unless `THPS_RENDERER=gl`) |
-| `THPS_RENDERER=gl\|sw` | OpenGL (default) or the software rasteriser |
+| `THPS_HEADLESS=1` | no visible window (for automated runs: OpenGL draws into a hidden one) |
 | `THPS_GL_SCALE=n` | OpenGL: draw the screens at n times the PS1 resolution (default: the window's resolution) |
 | `THPS_GL_PRECISE=0` | OpenGL: draw 3D polygons at the PS1's whole-pixel positions (default: sub-pixel, from the GTE) |
 | `THPS_GL_PERSPECTIVE=0` | OpenGL: affine texturing like the PS1 (default: perspective-correct) |
@@ -373,8 +428,8 @@ that still compile to the same bytes. `node decomp/tools/check_all.mjs` must sta
 
 ## License
 
-The port layer (`platform/pc/`) is GPL-2.0: parts of it are adapted from the Vandal Hearts PC
-port (`HalmyLyseas/VandalHearts-PcPort`, GPL-2.0), credited in each file that uses them.
+The port layer (`platform/pc/`) is MIT, like the rest of the project (see the repository's LICENSE).
 `include/pl_mpeg/pl_mpeg.h` is Dominic Szablewski's PL_MPEG (MIT, see its header). The
-decompiled game code and all game data remain © Activision / Neversoft. Nothing copyrighted is
-committed; the build reads your own `SLUS_008.60`, and the game your own disc.
+decompiled game code and data, and all game assets, remain © Activision / Neversoft. No assets
+or original executables are committed; the build reads your own `SLUS_008.60` (to check against),
+and the game your own disc.

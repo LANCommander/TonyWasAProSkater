@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "pc_gdrom.h"
+#include "pc_platform.h"
 #include "pc_runtime.h"
 
 #define MAX_TRACKS 8
@@ -40,7 +41,7 @@ static int read_sector(uint32_t lba, uint8_t *dst)
         Track *t = &s_tracks[i];
         if (!t->data || lba < t->lba || lba >= t->lba + t->count)
             continue;
-        _fseeki64(t->f, (long long)(lba - t->lba) * t->ssize + (t->ssize == 2352 ? 16 : 0),
+        PC_FSEEK(t->f, (long long)(lba - t->lba) * t->ssize + (t->ssize == 2352 ? 16 : 0),
                   SEEK_SET);
         return fread(dst, 1, 2048, t->f) == 2048;
     }
@@ -108,11 +109,11 @@ int PC_GdOpen(const char *gdi)
             PC_GdClose();
             return 0;
         }
-        _fseeki64(t->f, 0, SEEK_END);
+        PC_FSEEK(t->f, 0, SEEK_END);
         t->lba = lba;
         t->ssize = ssize;
         t->data = type == 4;
-        t->count = (uint32_t)(_ftelli64(t->f) / ssize);
+        t->count = (uint32_t)(PC_FTELL(t->f) / ssize);
         s_ntracks++;
     }
     fclose(f);

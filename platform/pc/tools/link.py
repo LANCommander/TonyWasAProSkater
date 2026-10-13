@@ -5,19 +5,26 @@ Generated into build/pc/gen/:
   hle_table.c    pc_hle_funcs: runtime functions that implement a Psy-Q entry point
   game_table.c   pc_game_funcs: the decompiled functions (pcfn_<addr>)
   recomp.c       translated MIPS (build.py --mips only; else recomp_none.c: empty tables)
-  image.bin/.s   the retail image's data, code cleared (embed_image.py), linked into thps.exe
+  image.bin/.s   the game's data built from decomp/data (data_image.py), linked into thps.exe
+                 (--mips: the retail image, code cleared, embed_image.py)
   stubs.c        pc_stub_funcs: everything else that is a known function entry
   thunks.s       virtual-dispatch thunks and destructor-call adapters
   names.c        PC_SymbolName for logs
 """
 import concurrent.futures as cf
 import glob
+import io
 import os
 import re
+import shlex
 import subprocess
 import sys
+import tarfile
+import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from toolchain import EXE_NAME, USCORE, WINDOWS, tool  # noqa: E402
 PC = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(PC))
 EXE = os.path.join(ROOT, "extern", "thps1_retail", "SLUS_008.60")
@@ -54,20 +61,127 @@ def jal_targets(img):
     return out
 
 
-def link(ctx, metas, out, toolbin, mips=False):
-    gcc = os.path.join(toolbin, "gcc.exe")
-    nm = os.path.join(toolbin, "nm.exe")
+LINUX_NOTICES_HEAD = """Third-party software in thps
+============================
+
+thps has these libraries built into it. Their copyright and license notices follow.
+
+  PL_MPEG               MIT license             https://github.com/phoboslab/pl_mpeg
+  glad (OpenGL loader)  CC0-1.0 / WTFPL, with   https://github.com/Dav1dde/glad
+                        Khronos API data under
+                        Apache-2.0
+  GCC runtime (libgcc)  GPL-3.0 with the GCC Runtime Library Exception (no notice required)
+
+It also uses the system's SDL 2 (zlib license, https://libsdl.org), C library and OpenGL
+driver, which are not part of this download.
+
+"""
+
+
+def package(out, toolbin):
+    """The release download, build/pc/release/thps-windows.zip: thps.exe, the player's README,
+    the project's LICENSE and the third-party notices (the SDL2 and MinGW-w64 runtime ones from
+    the toolchain that was linked). On Linux, build/pc-linux/release/thps-linux.tar.gz: thps,
+    dist/README-linux.txt as README.txt, the LICENSE, and the notices of what is built in (SDL2
+    and the C library are the system's)."""
+    dist = os.path.join(PC, "dist")
+    lic = os.path.join(os.path.dirname(toolbin), "share", "licenses")
+    notices = [open(os.path.join(dist, "THIRD-PARTY-NOTICES.txt"), encoding="utf-8").read()]
+    if WINDOWS:
+        extra = [("SDL 2", os.path.join(lic, "SDL2", "LICENSE.txt")),
+                 ("MinGW-w64 runtime", os.path.join(lic, "crt", "COPYING.MinGW-w64-runtime.txt"))]
+    else:
+        # the notices file's head lists the Windows build's contents
+        notices[0] = LINUX_NOTICES_HEAD + notices[0][notices[0].index("-" * 96):]
+        extra = []
+    for title, path in extra + [("Apache License 2.0",
+                                 os.path.join(dist, "licenses", "Apache-2.0.txt"))]:
+        notices.append("\n\n%s\n%s\n%s\n\n%s" % ("-" * 96, title, "-" * 96,
+                                                  open(path, encoding="utf-8").read().strip()))
+    readme = "README.txt" if WINDOWS else "README-linux.txt"
+    files = {EXE_NAME: open(os.path.join(out, EXE_NAME), "rb").read(),
+             "README.txt": open(os.path.join(dist, readme), "rb").read(),
+             "THIRD-PARTY-NOTICES.txt": "".join(notices).replace("\r\n", "\n").encode("utf-8")}
+    for name in ("LICENSE", "LICENSE.txt", "LICENSE.md"):
+        if os.path.exists(os.path.join(ROOT, name)):
+            files["LICENSE.txt"] = open(os.path.join(ROOT, name), "rb").read()
+            break
+    else:
+        print("package: no LICENSE in the repository root; the download has none")
+    for name, data in files.items():
+        if name != EXE_NAME:
+            data = data.replace(b"\r\n", b"\n")
+            if WINDOWS:
+                data = data.replace(b"\n", b"\r\n")  # Windows line endings for Notepad
+            open(os.path.join(out, name), "wb").write(data)
+            files[name] = data
+    if WINDOWS:
+        zpath = os.path.join(out, "thps-windows.zip")
+        with zipfile.ZipFile(zpath + ".tmp", "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+            for name, data in files.items():
+                z.writestr(name, data)
+    else:
+        zpath = os.path.join(out, "thps-linux.tar.gz")
+        with tarfile.open(zpath + ".tmp", "w:gz", compresslevel=9) as z:
+            for name, data in files.items():
+                info = tarfile.TarInfo(name)
+                info.size = len(data)
+                info.mode = 0o755 if name == EXE_NAME else 0o644
+                z.addfile(info, io.BytesIO(data))
+    os.replace(zpath + ".tmp", zpath)
+    print("packaged %s: %s" % (zpath, ", ".join(files)))
+
+
+def sdl_flags():
+    """(compile flags, link flags) for SDL2: the MinGW toolchain's on Windows; elsewhere the 32-bit
+    one pkg-config knows (THPS_SDL_CFLAGS / THPS_SDL_LIBS override)."""
+    if WINDOWS:
+        return None
+    cflags, libs = os.environ.get("THPS_SDL_CFLAGS"), os.environ.get("THPS_SDL_LIBS")
+    if cflags is None or libs is None:
+        env = dict(os.environ)
+        # Debian/Ubuntu multiarch and Fedora/Arch lib32 locations of the i386 .pc files
+        dirs = [d for d in ("/usr/lib/i386-linux-gnu/pkgconfig", "/usr/lib32/pkgconfig",
+                            "/usr/lib/pkgconfig") if os.path.isdir(d)]
+        if dirs and "PKG_CONFIG_LIBDIR" not in env:
+            env["PKG_CONFIG_LIBDIR"] = os.pathsep.join(dirs + ["/usr/share/pkgconfig"])
+        try:
+            if cflags is None:
+                cflags = subprocess.run(["pkg-config", "--cflags", "sdl2"], env=env, check=True,
+                                        capture_output=True, text=True).stdout
+            if libs is None:
+                libs = subprocess.run(["pkg-config", "--libs", "sdl2"], env=env, check=True,
+                                      capture_output=True, text=True).stdout
+        except (OSError, subprocess.CalledProcessError):
+            cflags = cflags if cflags is not None else "-I/usr/include/SDL2 -D_REENTRANT"
+            libs = libs if libs is not None else "-lSDL2"
+    return shlex.split(cflags), shlex.split(libs)
+
+
+def link(ctx, metas, out, toolbin, mips=False, release=False):
+    gcc = tool("gcc")
+    objroot = out
+    if release:
+        out = os.path.join(out, "release")
+    nm = tool("nm")
     gen = os.path.join(out, "gen")
     rt = os.path.join(out, "runtime")
     os.makedirs(gen, exist_ok=True)
     os.makedirs(rt, exist_ok=True)
-    sdl_cflags = ["-I" + os.path.join(os.path.dirname(toolbin), "include", "SDL2"),
-                  "-I" + os.path.join(os.path.dirname(toolbin), "include"), "-Dmain=SDL_main"]
-    sdl_cflags = sdl_cflags[:2]
+    if WINDOWS:
+        sdl_cflags = ["-I" + os.path.join(os.path.dirname(toolbin), "include", "SDL2"),
+                      "-I" + os.path.join(os.path.dirname(toolbin), "include")]
+        sdl_libs = []
+    else:
+        sdl_cflags, sdl_libs = sdl_flags()
     rt_flags = ["-m32", "-O2", "-g", "-std=gnu11", "-fno-strict-aliasing", "-fwrapv",
                 "-fno-omit-frame-pointer", "-Wall", "-Wno-unused-function",
                 "-Wno-unused-variable", "-Werror=implicit-function-declaration", "-I" + os.path.join(PC, "include"),
                 "-I" + os.path.join(PC, "include", "psyq")] + sdl_cflags
+    if not WINDOWS:
+        # absolute addresses (no PIE), the Windows ABI's small-struct returns (as the game code,
+        # build.py), 64-bit file offsets (disc images are bigger than 2 GB)
+        rt_flags += ["-fno-pic", "-fno-pie", "-freg-struct-return", "-D_FILE_OFFSET_BITS=64"]
     img = ctx.image[0x800:]
 
     # ---- 1. runtime -------------------------------------------------------------------------
@@ -89,7 +203,7 @@ def link(ctx, metas, out, toolbin, mips=False):
         for line in run([nm, "-g", "--defined-only", o]).splitlines():
             p = line.split()
             if len(p) == 3 and p[1] == "T":
-                defined.add(p[2][1:] if p[2].startswith("_") else p[2])
+                defined.add(p[2][len(USCORE):] if p[2].startswith(USCORE) else p[2])
 
     # ---- 2. which addresses have which implementation ----------------------------------------
     psyq = {}
@@ -345,12 +459,18 @@ def link(ctx, metas, out, toolbin, mips=False):
         if base + ":" in asm:
             k = asm.index(base + ":")
             asm[k:k] = ["\t.globl %s" % al, "%s:" % al]
-    write_if_changed(os.path.join(gen, "thunks.s"), "\n".join(asm) + "\n")
+    asm_text = "\n".join(asm) + "\n"
+    if not WINDOWS:
+        # the names above are PE's (`_pcvt_...`, `_pc_delete_marked`); ELF has no '_' prefix
+        asm_text = re.sub(r"(?<![\w$.])_(?=pc)", "", asm_text)
+        asm_text += "\t.section .note.GNU-stack,\"\",@progbits\n"
+    write_if_changed(os.path.join(gen, "thunks.s"), asm_text)
 
     syms = set()
     for m in metas:
         syms.update(m.get("psx_syms", []))
-    ld = "".join("%s = 0x%s;\n" % (s, s[5:13]) for s in sorted(syms))
+    # (the TU metadata spells them as PE does, `_psx_80012345`)
+    ld = "".join("%s = 0x%s;\n" % (s[1:] if not WINDOWS else s, s[5:13]) for s in sorted(syms))
     write_if_changed(os.path.join(gen, "psx_syms.ld"), ld)
 
     # ---- 5. compile generated sources and link ------------------------------------------------
@@ -366,44 +486,76 @@ def link(ctx, metas, out, toolbin, mips=False):
     run([gcc, "-m32", "-c", os.path.join(gen, "thunks.s"), "-o", th_o])
     gen_objs.append(th_o)
 
-    # the retail image's data (its code cleared), copied to 0x80010000 at startup (pc_main.c)
-    img_bin = os.path.join(gen, "image.bin")
-    if not os.path.exists(img_bin) or any(os.path.getmtime(img_bin) < os.path.getmtime(p) for p in
-                                          (EXE, os.path.join(HERE, "embed_image.py"),
-                                           os.path.join(ROOT, "decomp", "functions.tsv"))):
-        sys.stdout.write(run([sys.executable, os.path.join(HERE, "embed_image.py"), EXE,
-                              img_bin]))
+    # the game's data, copied to 0x80010000 at startup (pc_main.c): built from the decompiled
+    # data (decomp/data, data_image.py), which must stay the same as the retail data. A --mips
+    # build runs translated retail code, which also needs what that leaves out (jump tables,
+    # library data): it takes the retail image, code cleared (embed_image.py)
+    img_bin = os.path.join(gen, "image_retail.bin" if mips else "image.bin")
+    if mips:
+        if not os.path.exists(img_bin) or any(os.path.getmtime(img_bin) < os.path.getmtime(p) for p in
+                                              (EXE, os.path.join(HERE, "embed_image.py"),
+                                               os.path.join(ROOT, "decomp", "functions.tsv"))):
+            sys.stdout.write(run([sys.executable, os.path.join(HERE, "embed_image.py"), EXE,
+                                  img_bin]))
+    else:
+        r = subprocess.run([sys.executable, os.path.join(HERE, "data_image.py"), img_bin,
+                            "--check", EXE], capture_output=True, text=True)
+        sys.stdout.write(r.stdout)
+        if r.returncode:
+            sys.stderr.write(r.stderr)
+            raise SystemExit("link: decomp/data doesn't build the retail data (data_image.py)")
     write_if_changed(os.path.join(gen, "image.s"),
-                     "\t.section .rdata,\"dr\"\n\t.p2align 4\n\t.globl _pc_image\n_pc_image:\n"
-                     "\t.incbin \"image.bin\"\n\t.globl _pc_image_end\n_pc_image_end:\n")
+                     ("\t.section .rdata,\"dr\"\n" if WINDOWS else "\t.section .rodata\n") +
+                     "\t.p2align 4\n\t.globl %spc_image\n%spc_image:\n"
+                     "\t.incbin \"%s\"\n\t.globl %spc_image_end\n%spc_image_end:\n"
+                     % (USCORE, USCORE, os.path.basename(img_bin), USCORE, USCORE) +
+                     ("" if WINDOWS else "\t.section .note.GNU-stack,\"\",@progbits\n"))
     img_o = os.path.join(gen, "image.o")
-    if not os.path.exists(img_o) or os.path.getmtime(img_o) < os.path.getmtime(img_bin):
+    if not os.path.exists(img_o) or os.path.getmtime(img_o) < max(
+            os.path.getmtime(img_bin), os.path.getmtime(os.path.join(gen, "image.s"))):
         run([gcc, "-m32", "-c", os.path.join(gen, "image.s"), "-o", img_o], cwd=gen)
     gen_objs.append(img_o)
 
-    # application icon: SDL2 gives the window the exe's first icon, so this also sets the taskbar
-    # and title-bar icon
-    ico = os.path.join(ROOT, "icon.ico")
-    write_if_changed(os.path.join(gen, "thps.rc"),
-                     '1 ICON "%s"\n' % ico.replace("\\", "/"))
-    res_o = os.path.join(gen, "thps_res.o")
-    if not os.path.exists(res_o) or os.path.getmtime(res_o) < max(
-            os.path.getmtime(ico), os.path.getmtime(os.path.join(gen, "thps.rc"))):
-        run([os.path.join(toolbin, "windres.exe"), "-F", "pe-i386",
-             os.path.join(gen, "thps.rc"), "-o", res_o])
-    gen_objs.append(res_o)
+    if WINDOWS:
+        # application icon: SDL2 gives the window the exe's first icon, so this also sets the
+        # taskbar and title-bar icon
+        ico = os.path.join(ROOT, "icon.ico")
+        write_if_changed(os.path.join(gen, "thps.rc"),
+                         '1 ICON "%s"\n' % ico.replace("\\", "/"))
+        res_o = os.path.join(gen, "thps_res.o")
+        if not os.path.exists(res_o) or os.path.getmtime(res_o) < max(
+                os.path.getmtime(ico), os.path.getmtime(os.path.join(gen, "thps.rc"))):
+            run([tool("windres"), "-F", "pe-i386",
+                 os.path.join(gen, "thps.rc"), "-o", res_o])
+        gen_objs.append(res_o)
 
-    game_objs = [os.path.join(out, "obj", os.path.splitext(m["src"])[0] + ".o") for m in metas]
+    game_objs = [os.path.join(objroot, "obj", os.path.splitext(m["src"])[0] + ".o") for m in metas]
     rsp = os.path.join(gen, "objs.rsp")
     open(rsp, "w").write("\n".join('"%s"' % o.replace("\\", "/") for o in
                                    rt_objs + gen_objs + game_objs) + "\n")
-    exe = os.path.join(out, "thps.exe")
-    libs = ["-lmingw32", "-lSDL2", "-lm", "-ldinput8", "-ldxguid", "-ldxerr8",
-            "-luser32", "-lgdi32", "-lwinmm", "-limm32", "-lole32", "-loleaut32", "-lshell32",
-            "-lsetupapi", "-lversion", "-luuid", "-lopengl32", "-static"]
-    run([gcc, "-m32", "-g", "@" + rsp, "-o", exe, "-mconsole",
-         "-Wl,--large-address-aware", "-Wl,--disable-dynamicbase", "-Wl,--image-base=0x400000",
-         "-Wl," + os.path.join(gen, "psx_syms.ld").replace("\\", "/")] + libs)
+    exe = os.path.join(out, EXE_NAME)
+    if WINDOWS:
+        # everything but Windows itself is linked in (SDL2, libgcc, libstdc++, winpthreads)
+        libs = ["-lmingw32", "-lSDL2", "-lm", "-ldinput8", "-ldxguid", "-ldxerr8",
+                "-luser32", "-lgdi32", "-lwinmm", "-limm32", "-lole32", "-loleaut32", "-lshell32",
+                "-lsetupapi", "-lversion", "-luuid", "-lopengl32", "-static"]
+        # release: a GUI program (no console window; the log goes to thps.log, pc_main.c)
+        ldflags = ["-mwindows" if release else "-mconsole", "-Wl,--large-address-aware",
+                   "-Wl,--disable-dynamicbase", "-Wl,--image-base=0x400000"]
+    else:
+        # SDL2 and the C library are the system's; OpenGL comes through SDL. Not position
+        # independent: the image sits at its default 0x08048000, far below PS1 RAM
+        libs = sdl_libs + ["-lm", "-lpthread"]
+        ldflags = ["-no-pie", "-Wl,-z,noexecstack"]
+    run([gcc, "-m32", "-g", "@" + rsp, "-o", exe] + ldflags +
+        ["-Wl," + os.path.join(gen, "psx_syms.ld").replace("\\", "/")] + libs)
+    if release:
+        # the debug info goes to thps.debug (for symbolize.py; not shipped)
+        dbg = os.path.join(out, "thps.debug")
+        run([tool("objcopy"), "--only-keep-debug", exe, dbg])
+        run([tool("strip"), "--strip-all", exe])
+        run([tool("objcopy"), "--add-gnu-debuglink=thps.debug", exe], cwd=out)
+        package(out, toolbin)
     print("linked %s: %d decompiled, %d HLE, %d translated, %d stubs%s" % (
         exe, len(game), len(allh), len(recomp_addrs), len(stubs),
         "" if mips else " (no MIPS: build.py --mips translates the retail code for debugging)"))

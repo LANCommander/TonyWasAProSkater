@@ -23,7 +23,6 @@
  * PS1 layout's size with all their pixels (PC_ImageLayoutSize). The first line of Manifest.txt
  * says which disc the files came from; with the Dreamcast's, the game gets more RAM (its files are bigger), never opens a PS1
  * disc image, and the skaters' front-end models (the Dreamcast has none) are their full ones. */
-#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -32,6 +31,7 @@
 #include "pc_assets.h"
 #include "pc_gdrom.h"
 #include "pc_hle.h"
+#include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_sfd.h"
 
@@ -70,26 +70,25 @@ static const struct {
 static char s_root[MAX_PATH];
 static int s_dc;   /* Data/ holds the Dreamcast version's files */
 
-static int Exists(const char *p) {
-    DWORD a = GetFileAttributesA(p);
-    return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY);
-}
+#define Exists PC_FileExists
 
 static const char *Root(void) {
     if (!s_root[0]) {
-        char *slash;
         if (getenv("THPS_DATA_DIR")) {
             snprintf(s_root, sizeof s_root, "%s", getenv("THPS_DATA_DIR"));
         } else {
-            GetModuleFileNameA(NULL, s_root, sizeof s_root - 8);
-            slash = strrchr(s_root, '\\');
-            strcpy(slash ? slash + 1 : s_root, "Data");
+            PC_ExeDir(s_root, sizeof s_root - 8);
+            strcat(s_root, PC_SEP "Data");
         }
     }
     return s_root;
 }
 
-void PC_AssetsPath(char *out, int n, const char *rel) { snprintf(out, n, "%s\\%s", Root(), rel); }
+/* Relative paths are spelled with backslashes (as in Manifest.txt) on every system. */
+void PC_AssetsPath(char *out, int n, const char *rel) {
+    snprintf(out, n, "%s" PC_SEP "%s", Root(), rel);
+    PC_PathFix(out);
+}
 
 /* "\\SUICIDE.STR;1" -> "SUICIDE.STR" */
 static void BaseName(const char *discName, char *out, int n) {
@@ -104,23 +103,12 @@ static void BaseName(const char *discName, char *out, int n) {
 }
 
 static void MakeDirs(const char *rel) {
-    char p[MAX_PATH], *s;
+    char p[MAX_PATH];
     PC_AssetsPath(p, sizeof p, rel);
-    CreateDirectoryA(Root(), NULL);
-    for (s = p + strlen(Root()) + 1; (s = strchr(s, '\\')); s++) {
-        *s = 0;
-        CreateDirectoryA(p, NULL);
-        *s = '\\';
-    }
-    CreateDirectoryA(p, NULL);
+    PC_MakeDirs(p);
 }
 
-static long long FileSize(const char *p) {
-    WIN32_FILE_ATTRIBUTE_DATA a;
-    if (!GetFileAttributesExA(p, GetFileExInfoStandard, &a))
-        return 0;
-    return (long long)a.nFileSizeHigh << 32 | a.nFileSizeLow;
-}
+#define FileSize PC_FileSize
 
 /* Write `dst` through a .part file, so an interrupted extraction is redone next time instead of
  * leaving a truncated file behind. */
@@ -134,7 +122,7 @@ static FILE *Create(const char *dst, char *part, int n) {
 }
 
 static void Commit(FILE *f, const char *part, const char *dst) {
-    if (fclose(f) || !MoveFileExA(part, dst, MOVEFILE_REPLACE_EXISTING))
+    if (fclose(f) || !PC_ReplaceFile(part, dst))
         PC_Fatal("cannot write %s (disk full?)", dst);
 }
 
@@ -421,52 +409,47 @@ static int ManifestIsDreamcast(void) {
 /* A .gdi: THPS_DISC, else next to thps.exe (or in a folder there), or at the top
  * of the repository (development layout). */
 static int FindGdiIn(const char *dir, char *out, int n, int depth) {
-    char pat[MAX_PATH];
-    WIN32_FIND_DATAA fd;
-    HANDLE h;
-    snprintf(pat, sizeof pat, "%s\\*.gdi", dir);
-    h = FindFirstFileA(pat, &fd);
-    if (h != INVALID_HANDLE_VALUE) {
-        snprintf(out, n, "%s\\%s", dir, fd.cFileName);
-        FindClose(h);
-        return 1;
-    }
-    if (!depth)
+    PcDirEntry fd;
+    PcDir *h = PC_DirOpen(dir);
+    if (!h)
         return 0;
-    snprintf(pat, sizeof pat, "%s\\*", dir);
-    h = FindFirstFileA(pat, &fd);
-    if (h == INVALID_HANDLE_VALUE)
-        return 0;
-    do {
-        char sub[MAX_PATH];
-        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fd.cFileName[0] == '.' ||
-            !_stricmp(fd.cFileName, "Data"))
-            continue;
-        snprintf(sub, sizeof sub, "%s\\%s", dir, fd.cFileName);
-        if (FindGdiIn(sub, out, n, depth - 1)) {
-            FindClose(h);
+    while (PC_DirNext(h, &fd)) {
+        size_t len = strlen(fd.name);
+        if (!fd.isDir && len >= 4 && !_stricmp(fd.name + len - 4, ".gdi")) {
+            snprintf(out, n, "%s" PC_SEP "%s", dir, fd.name);
+            PC_DirClose(h);
             return 1;
         }
-    } while (FindNextFileA(h, &fd));
-    FindClose(h);
+    }
+    PC_DirClose(h);
+    if (!depth || !(h = PC_DirOpen(dir)))
+        return 0;
+    while (PC_DirNext(h, &fd)) {
+        char sub[MAX_PATH];
+        if (!fd.isDir || fd.name[0] == '.' || !_stricmp(fd.name, "Data"))
+            continue;
+        snprintf(sub, sizeof sub, "%s" PC_SEP "%s", dir, fd.name);
+        if (FindGdiIn(sub, out, n, depth - 1)) {
+            PC_DirClose(h);
+            return 1;
+        }
+    }
+    PC_DirClose(h);
     return 0;
 }
 
 static int FindGdi(char *out, int n) {
-    char exeDir[MAX_PATH], dir[MAX_PATH], *slash;
+    char exeDir[MAX_PATH], dir[MAX_PATH];
     const char *e = getenv("THPS_DISC");
     if (e) {
         size_t len = strlen(e);
         snprintf(out, n, "%s", e);
         return len >= 4 && !_stricmp(e + len - 4, ".gdi") && Exists(out);
     }
-    GetModuleFileNameA(NULL, exeDir, sizeof exeDir);
-    slash = strrchr(exeDir, '\\');
-    if (slash)
-        *slash = 0;
+    PC_ExeDir(exeDir, sizeof exeDir);
     if (FindGdiIn(exeDir, out, n, 1) || FindGdiIn(PC_DataDir(), out, n, 1))
         return 1;
-    snprintf(dir, sizeof dir, "%s\\..\\..", exeDir);
+    snprintf(dir, sizeof dir, "%s" PC_SEP ".." PC_SEP "..", exeDir);
     return FindGdiIn(dir, out, n, 1);
 }
 
@@ -589,7 +572,7 @@ static void ExtractDreamcast(const StrFile *str, int nstr) {
     if (!FindGdi(gdi, sizeof gdi))
         PC_Fatal("The Dreamcast disc image is gone, and some files are missing from the Data "
                  "folder. Put the .gdi of Tony Hawk's Pro Skater (Dreamcast) and its track files "
-                 "next to thps.exe, or set THPS_DISC to the .gdi.");
+                 "next to " PC_EXE_NAME ", or set THPS_DISC to the .gdi.");
     if (!PC_GdOpen(gdi))
         PC_Fatal("%s is not a Dreamcast disc image of Tony Hawk's Pro Skater", gdi);
     PC_GdList(DcAdd, &l);
@@ -697,18 +680,16 @@ static IndexEntry *s_index;
 static int s_nindex, s_capindex;
 
 static void IndexDir(const char *dir) {
-    char pat[MAX_PATH], sub[MAX_PATH];
-    WIN32_FIND_DATAA fd;
-    HANDLE h;
-    snprintf(pat, sizeof pat, "%s\\*", dir);
-    h = FindFirstFileA(pat, &fd);
-    if (h == INVALID_HANDLE_VALUE)
+    char sub[MAX_PATH];
+    PcDirEntry fd;
+    PcDir *h = PC_DirOpen(dir);
+    if (!h)
         return;
-    do {
-        if (fd.cFileName[0] == '.')
+    while (PC_DirNext(h, &fd)) {
+        if (fd.name[0] == '.')
             continue;
-        snprintf(sub, sizeof sub, "%s\\%s", dir, fd.cFileName);
-        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+        snprintf(sub, sizeof sub, "%s" PC_SEP "%s", dir, fd.name);
+        if (fd.isDir) {
             IndexDir(sub);
             continue;
         }
@@ -716,11 +697,11 @@ static void IndexDir(const char *dir) {
             s_capindex = s_capindex ? s_capindex * 2 : 1024;
             s_index = realloc(s_index, sizeof *s_index * s_capindex);
         }
-        s_index[s_nindex].name = _strdup(fd.cFileName);
+        s_index[s_nindex].name = _strdup(fd.name);
         s_index[s_nindex].path = _strdup(sub);
         s_nindex++;
-    } while (FindNextFileA(h, &fd));
-    FindClose(h);
+    }
+    PC_DirClose(h);
 }
 
 static int CmpIndex(const void *a, const void *b) {
@@ -792,8 +773,8 @@ void PC_AssetsInit(void) {
         if (!FindGdi(path, sizeof path))
             PC_Fatal("The game data has to be extracted from your disc first, and no disc image "
                      "was found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro Skater "
-                     "(USA) for the PlayStation next to thps.exe as thps1.bin, or the .gdi "
-                     "and track files of the Dreamcast version next to thps.exe; or set "
+                     "(USA) for the PlayStation next to " PC_EXE_NAME " as thps1.bin, or the .gdi "
+                     "and track files of the Dreamcast version next to " PC_EXE_NAME "; or set "
                      "THPS_DISC to either.");
         s_dc = 1;
     }

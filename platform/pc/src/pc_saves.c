@@ -1,11 +1,11 @@
 /* Saves: a file per career and per replay, see pc_saves.h. Saved Games\Neversoft\Tony Hawk's Pro
  * Skater\Saves (THPS_SAVE_DIR overrides it) has a folder per type. */
-#include <windows.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_saves.h"
 
@@ -40,27 +40,16 @@ static char s_selected[PC_SAVE_NAME_LEN + 1];
 
 static int ValidType(int type) { return type == PC_SAVE_CAREER || type == PC_SAVE_REPLAY; }
 
-static void MakeDirs(char *dir) {
-    char *s;
-    for (s = strchr(dir + 3, '\\'); s; s = strchr(s + 1, '\\')) {
-        *s = 0;
-        CreateDirectoryA(dir, NULL);
-        *s = '\\';
-    }
-    CreateDirectoryA(dir, NULL);
-}
+#define MakeDirs PC_MakeDirs
 
 static const char *RootDir(void) {
     static char dir[MAX_PATH];
     if (!dir[0]) {
-        char *s;
         if (getenv("THPS_SAVE_DIR"))
             snprintf(dir, sizeof dir, "%s", getenv("THPS_SAVE_DIR"));
         else
-            snprintf(dir, sizeof dir, "%s\\Saves", PC_UserDir());
-        for (s = dir; *s; s++)
-            if (*s == '/')
-                *s = '\\';
+            snprintf(dir, sizeof dir, "%s" PC_SEP "Saves", PC_UserDir());
+        PC_PathFix(dir);
         MakeDirs(dir);
         PC_Log("saves: %s", dir);
     }
@@ -71,7 +60,7 @@ static const char *TypeDir(int type) {
     static char dirs[2][MAX_PATH];
     char *dir = dirs[type];
     if (!dir[0]) {
-        snprintf(dir, MAX_PATH, "%s\\%s", RootDir(), s_typeDir[type]);
+        snprintf(dir, MAX_PATH, "%s" PC_SEP "%s", RootDir(), s_typeDir[type]);
         MakeDirs(dir);
     }
     return dir;
@@ -110,7 +99,7 @@ static int SavePath(int type, const char *name, char *out, int n) {
     for (i = 0; clean[i]; i++)
         if (strchr("\\/:*?\"<>|.", clean[i]) || (unsigned char)clean[i] < 32)
             clean[i] = '_';
-    snprintf(out, n, "%s\\%s%s%s", TypeDir(type), clean, Reserved(clean) ? "_" : "", s_typeExt[type]);
+    snprintf(out, n, "%s" PC_SEP "%s%s%s", TypeDir(type), clean, Reserved(clean) ? "_" : "", s_typeExt[type]);
     return 1;
 }
 
@@ -138,10 +127,10 @@ static int WriteFile_(const char *path, int type, int n, const PCSaveChunk *chun
         ok = fwrite(chunks[i].p, 1, chunks[i].n, f) == chunks[i].n;
     ok &= fclose(f) == 0;
     if (ok)
-        ok = MoveFileExA(tmp, path, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
+        ok = PC_ReplaceFile(tmp, path);
     if (!ok) {
         PC_Log("saves: writing %s failed", path);
-        DeleteFileA(tmp);
+        PC_DeleteFile(tmp);
     }
     return ok;
 }
@@ -219,11 +208,11 @@ static void ImportMcs(const char *path) {
     }
 
     SavePath(type, name, dest, sizeof dest);
-    if (GetFileAttributesA(dest) != INVALID_FILE_ATTRIBUTES)
+    if (PC_PathExists(dest))
         PC_Log("saves: %s not imported: %s already exists", path, dest);
     else if (WriteFile_(dest, type, n, chunks)) {
         snprintf(done, sizeof done, "%s.imported", path);
-        MoveFileExA(path, done, MOVEFILE_REPLACE_EXISTING);
+        PC_ReplaceFile(path, done);
         PC_Log("saves: imported %s as %s", path, dest);
     }
     free(d);
@@ -231,42 +220,42 @@ static void ImportMcs(const char *path) {
 
 static void ImportPs1Saves(void) {
     static int done;
-    char pattern[MAX_PATH], path[MAX_PATH];
-    WIN32_FIND_DATAA fd;
-    HANDLE h;
+    char path[MAX_PATH];
+    PcDirEntry fd;
+    PcDir *h;
     if (done)
         return;
     done = 1;
-    snprintf(pattern, sizeof pattern, "%s\\*.mcs", RootDir());
-    h = FindFirstFileA(pattern, &fd);
-    if (h == INVALID_HANDLE_VALUE)
+    h = PC_DirOpen(RootDir());
+    if (!h)
         return;
-    do {
-        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    while (PC_DirNext(h, &fd)) {
+        size_t len = strlen(fd.name);
+        if (fd.isDir || len < 4 || _stricmp(fd.name + len - 4, ".mcs"))
             continue;
-        snprintf(path, sizeof path, "%s\\%s", RootDir(), fd.cFileName);
+        snprintf(path, sizeof path, "%s" PC_SEP "%s", RootDir(), fd.name);
         ImportMcs(path);
-    } while (FindNextFileA(h, &fd));
-    FindClose(h);
+    }
+    PC_DirClose(h);
 }
 
 /* ---- the game's card layer ----------------------------------------------------------------- */
 
 typedef struct {
     char name[PC_SAVE_NAME_LEN + 1];
-    FILETIME written;
+    long long written;
 } Found;
 
 static int NewestFirst(const void *a, const void *b) {
     const Found *x = a, *y = b;
-    int c = CompareFileTime(&y->written, &x->written);
+    int c = (y->written > x->written) - (y->written < x->written);
     return c ? c : strcmp(x->name, y->name);
 }
 
 int PC_SaveListDir(int type, void *slotDir, int32_t *fileTypes) {
-    char pattern[MAX_PATH], path[MAX_PATH];
-    WIN32_FIND_DATAA fd;
-    HANDLE h;
+    char path[MAX_PATH];
+    PcDirEntry fd;
+    PcDir *h;
     Found *found = NULL;
     int n = 0, cap = 0, i;
 
@@ -278,19 +267,17 @@ int PC_SaveListDir(int type, void *slotDir, int32_t *fileTypes) {
     s_listType = type;
     ImportPs1Saves();
 
-    snprintf(pattern, sizeof pattern, "%s\\*%s", TypeDir(type), s_typeExt[type]);
-    h = FindFirstFileA(pattern, &fd);
-    if (h != INVALID_HANDLE_VALUE) {
-        do {
+    h = PC_DirOpen(TypeDir(type));
+    if (h) {
+        while (PC_DirNext(h, &fd)) {
             char stem[MAX_PATH];
-            size_t len = strlen(fd.cFileName), ext = strlen(s_typeExt[type]);
+            size_t len = strlen(fd.name), ext = strlen(s_typeExt[type]);
             Header hd;
             FILE *f;
-            if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || len <= ext ||
-                _stricmp(fd.cFileName + len - ext, s_typeExt[type]))
+            if (fd.isDir || len <= ext || _stricmp(fd.name + len - ext, s_typeExt[type]))
                 continue;
             len -= ext;
-            memcpy(stem, fd.cFileName, len);
+            memcpy(stem, fd.name, len);
             stem[len] = 0;
             if (len > 1 && stem[len - 1] == '_') {
                 stem[len - 1] = 0;
@@ -301,10 +288,10 @@ int PC_SaveListDir(int type, void *slotDir, int32_t *fileTypes) {
             }
             stem[len] = 0;
             if (len == 0 || len > PC_SAVE_NAME_LEN) {
-                PC_Trace("saves: %s left out (name longer than %d)", fd.cFileName, PC_SAVE_NAME_LEN);
+                PC_Trace("saves: %s left out (name longer than %d)", fd.name, PC_SAVE_NAME_LEN);
                 continue;
             }
-            snprintf(path, sizeof path, "%s\\%s", TypeDir(type), fd.cFileName);
+            snprintf(path, sizeof path, "%s" PC_SEP "%s", TypeDir(type), fd.name);
             f = OpenSave(path, type, &hd);
             if (!f) {
                 PC_Log("saves: %s isn't a save", path);
@@ -316,10 +303,10 @@ int PC_SaveListDir(int type, void *slotDir, int32_t *fileTypes) {
                 found = realloc(found, (size_t)cap * sizeof *found);
             }
             strcpy(found[n].name, stem);
-            found[n].written = fd.ftLastWriteTime;
+            found[n].written = fd.mtime;
             n++;
-        } while (FindNextFileA(h, &fd));
-        FindClose(h);
+        }
+        PC_DirClose(h);
     }
     qsort(found, (size_t)n, sizeof *found, NewestFirst);
     if (n > DIR_ENTRIES) {
@@ -356,7 +343,7 @@ void PC_SaveCardHeader(void *head, int type, const char *name) {
 
 int PC_SaveExists(int type, const char *name) {
     char path[MAX_PATH];
-    return SavePath(type, name, path, sizeof path) && GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
+    return SavePath(type, name, path, sizeof path) && PC_PathExists(path);
 }
 
 int PC_SaveWrite(int type, const char *name, int n, const PCSaveChunk *chunks) {

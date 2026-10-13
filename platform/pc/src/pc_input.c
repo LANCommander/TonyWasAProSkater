@@ -5,8 +5,41 @@
  * from PC_InputActionDown once per game frame. Skating and the menus read different slots, so
  * their bindings are independent. The controls screen (decomp/src/front/controlleroptions.cpp)
  * edits the bindings through the PC_InputBind family. */
+#ifdef _WIN32
 #include <windows.h>
 #include <xinput.h>
+#else
+#include <stdint.h>
+/* No XInput: SDL's game controllers, read into XInput's state (LoadXInput below) */
+typedef uint32_t DWORD;
+typedef uint16_t WORD;
+typedef struct {
+    WORD wButtons;
+    uint8_t bLeftTrigger, bRightTrigger;
+    int16_t sThumbLX, sThumbLY, sThumbRX, sThumbRY;
+} XINPUT_GAMEPAD;
+typedef struct {
+    DWORD dwPacketNumber;
+    XINPUT_GAMEPAD Gamepad;
+} XINPUT_STATE;
+#define WINAPI
+#define ERROR_SUCCESS 0
+#define XINPUT_GAMEPAD_DPAD_UP 0x0001
+#define XINPUT_GAMEPAD_DPAD_DOWN 0x0002
+#define XINPUT_GAMEPAD_DPAD_LEFT 0x0004
+#define XINPUT_GAMEPAD_DPAD_RIGHT 0x0008
+#define XINPUT_GAMEPAD_START 0x0010
+#define XINPUT_GAMEPAD_BACK 0x0020
+#define XINPUT_GAMEPAD_LEFT_THUMB 0x0040
+#define XINPUT_GAMEPAD_RIGHT_THUMB 0x0080
+#define XINPUT_GAMEPAD_LEFT_SHOULDER 0x0100
+#define XINPUT_GAMEPAD_RIGHT_SHOULDER 0x0200
+#define XINPUT_GAMEPAD_A 0x1000
+#define XINPUT_GAMEPAD_B 0x2000
+#define XINPUT_GAMEPAD_X 0x4000
+#define XINPUT_GAMEPAD_Y 0x8000
+#define XINPUT_GAMEPAD_TRIGGER_THRESHOLD 30
+#endif
 #include <SDL2/SDL.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -322,6 +355,72 @@ static uint16_t s_scripted;                     /* THPS_INPUT's PS1 buttons */
 static int s_init;
 static int s_quit;
 
+#ifndef _WIN32
+/* Slot i is the i-th game controller opened, as XInput numbers its pads. */
+static SDL_GameController *s_gc[XI_SLOTS];
+
+static DWORD SdlGetState(DWORD slot, XINPUT_STATE *st) {
+    static const struct {
+        SDL_GameControllerButton b;
+        WORD bit;
+    } btn[] = {
+        {SDL_CONTROLLER_BUTTON_A, XINPUT_GAMEPAD_A},
+        {SDL_CONTROLLER_BUTTON_B, XINPUT_GAMEPAD_B},
+        {SDL_CONTROLLER_BUTTON_X, XINPUT_GAMEPAD_X},
+        {SDL_CONTROLLER_BUTTON_Y, XINPUT_GAMEPAD_Y},
+        {SDL_CONTROLLER_BUTTON_LEFTSHOULDER, XINPUT_GAMEPAD_LEFT_SHOULDER},
+        {SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER},
+        {SDL_CONTROLLER_BUTTON_BACK, XINPUT_GAMEPAD_BACK},
+        {SDL_CONTROLLER_BUTTON_START, XINPUT_GAMEPAD_START},
+        {SDL_CONTROLLER_BUTTON_LEFTSTICK, XINPUT_GAMEPAD_LEFT_THUMB},
+        {SDL_CONTROLLER_BUTTON_RIGHTSTICK, XINPUT_GAMEPAD_RIGHT_THUMB},
+        {SDL_CONTROLLER_BUTTON_DPAD_UP, XINPUT_GAMEPAD_DPAD_UP},
+        {SDL_CONTROLLER_BUTTON_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_DOWN},
+        {SDL_CONTROLLER_BUTTON_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_LEFT},
+        {SDL_CONTROLLER_BUTTON_DPAD_RIGHT, XINPUT_GAMEPAD_DPAD_RIGHT},
+    };
+    SDL_GameController *gc = s_gc[slot];
+    XINPUT_GAMEPAD *g = &st->Gamepad;
+    int i;
+    if (gc && !SDL_GameControllerGetAttached(gc)) {
+        SDL_GameControllerClose(gc);
+        gc = s_gc[slot] = NULL;
+    }
+    for (i = 0; !gc && i < SDL_NumJoysticks(); i++) {
+        SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(i);
+        int k, taken = 0;
+        if (!SDL_IsGameController(i))
+            continue;
+        for (k = 0; k < XI_SLOTS; k++)
+            taken |= s_gc[k] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(s_gc[k])) == id;
+        if (!taken)
+            gc = s_gc[slot] = SDL_GameControllerOpen(i);
+    }
+    if (!gc)
+        return 1;
+    memset(st, 0, sizeof *st);
+    for (i = 0; i < (int)(sizeof btn / sizeof btn[0]); i++)
+        if (SDL_GameControllerGetButton(gc, btn[i].b))
+            g->wButtons |= btn[i].bit;
+    g->bLeftTrigger = (uint8_t)(SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERLEFT) >> 7);
+    g->bRightTrigger = (uint8_t)(SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) >> 7);
+    /* XInput's Y axes point up */
+    g->sThumbLX = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_LEFTX);
+    g->sThumbLY = (int16_t)~SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_LEFTY);
+    g->sThumbRX = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_RIGHTX);
+    g->sThumbRY = (int16_t)~SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_RIGHTY);
+    return ERROR_SUCCESS;
+}
+
+static void LoadXInput(void) {
+    if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == 0) {
+        s_xinputGetState = SdlGetState;
+        PC_Log("gamepads: SDL game controllers");
+    } else {
+        PC_Log("gamepads: not available (%s)", SDL_GetError());
+    }
+}
+#else
 static void LoadXInput(void) {
     static const char *const dlls[] = {"xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll"};
     int i;
@@ -336,6 +435,7 @@ static void LoadXInput(void) {
     if (!s_xinputGetState)
         PC_Log("gamepads: XInput not available");
 }
+#endif
 
 static uint32_t XInputMask(const XINPUT_GAMEPAD *g) {
     static const struct {

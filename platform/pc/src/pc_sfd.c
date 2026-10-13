@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "pc_platform.h"
 #include "pc_sfd.h"
 
 #define READ_CHUNK 0x10000
@@ -308,8 +309,8 @@ PcSfd *PC_SfdOpen(const char *path) {
     }
     s = calloc(1, sizeof *s);
     s->f = f;
-    _fseeki64(f, 0, SEEK_END);
-    s->size = _ftelli64(f);
+    PC_FSEEK(f, 0, SEEK_END);
+    s->size = PC_FTELL(f);
     s->buf = malloc(BUF_SIZE);
     s->audioOn = 1;
     Restart(s);

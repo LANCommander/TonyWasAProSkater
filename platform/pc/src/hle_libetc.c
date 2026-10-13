@@ -1,11 +1,12 @@
 /* libetc: VSync, interrupt callbacks. Time advances on a 60 Hz clock; vblank "interrupts" are
  * run from VSync and from the HLE calls games busy-wait on (see PC_TickVBlank). */
-#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "pc_gpu.h"
 #include "pc_hle.h"
+#include "pc_platform.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
 
@@ -15,20 +16,18 @@ extern volatile uint32_t pc_heartbeat;
 void PC_CountReport(uint32_t frame);
 static uint32_t s_vsyncCallback;
 static uint32_t s_vblanks;
-static LARGE_INTEGER s_freq, s_next;
+static int64_t s_freq, s_next;
 static int s_inTick;
 static int s_unthrottled;
 /* THPS_DETERMINISTIC=1: a virtual clock instead of the wall clock, so automated runs (scripted
  * input, frame dumps) behave the same every time. Each poll of hardware state advances it 1 ms. */
 static int s_det;
-static LONGLONG s_virtualNow;
+static int64_t s_virtualNow;
 
-static LONGLONG Now(void) {
-    LARGE_INTEGER t;
+static int64_t Now(void) {
     if (s_det)
         return s_virtualNow;
-    QueryPerformanceCounter(&t);
-    return t.QuadPart;
+    return PC_ClockNow();
 }
 
 uint32_t PC_VBlankCount(void) { return s_vblanks; }
@@ -36,10 +35,10 @@ uint32_t PC_VBlankCount(void) { return s_vblanks; }
 static void ClockInit(void) {
     s_det = getenv("THPS_DETERMINISTIC") && atoi(getenv("THPS_DETERMINISTIC"));
     if (s_det)
-        s_freq.QuadPart = 1000000;
+        s_freq = 1000000;
     else
-        QueryPerformanceFrequency(&s_freq);
-    s_next.QuadPart = Now();
+        s_freq = PC_ClockFreq();
+    s_next = Now();
     s_unthrottled = getenv("THPS_FAST") && atoi(getenv("THPS_FAST"));
 }
 
@@ -63,23 +62,23 @@ static void RunVBlank(void) {
     PC_PumpEvents();
     DebugHooks();
     if (PC_QuitRequested())
-        ExitProcess(0);
+        PC_ExitProcess(0);
 }
 
 int PC_TickVBlank(void) {
-    LARGE_INTEGER now;
+    int64_t now;
     int n = 0;
-    if (!s_freq.QuadPart)
+    if (!s_freq)
         ClockInit();
     if (s_det)
         s_virtualNow += 1000;
-    now.QuadPart = Now();
-    while (now.QuadPart >= s_next.QuadPart && n < 4) {
-        s_next.QuadPart += s_freq.QuadPart / NTSC_HZ;
+    now = Now();
+    while (now >= s_next && n < 4) {
+        s_next += s_freq / NTSC_HZ;
         RunVBlank();
         n++;
     }
-    if (now.QuadPart - s_next.QuadPart > s_freq.QuadPart / 4)
+    if (now - s_next > s_freq / 4)
         s_next = now; /* fell far behind (debugger, loading): don't replay a burst */
     return n;
 }
@@ -127,29 +126,29 @@ static void DebugHooks(void) {
     }
     if (maxFrames && frames >= maxFrames) {
         PC_Log("THPS_FRAMES reached (%d), exiting", frames);
-        ExitProcess(0);
+        PC_ExitProcess(0);
     }
 }
 
 /* Block until the next vblank, then present. */
 static void WaitVBlank(void) {
     uint32_t start = s_vblanks;
-    if (!s_freq.QuadPart)
+    if (!s_freq)
         ClockInit();
     if (s_det) {
-        s_virtualNow = s_next.QuadPart;
+        s_virtualNow = s_next;
         PC_TickVBlank();
     } else if (s_unthrottled) {
-        s_next.QuadPart = Now();
+        s_next = Now();
         RunVBlank();
     } else {
         while (s_vblanks == start) {
-            LARGE_INTEGER now;
-            now.QuadPart = Now();
-            if (now.QuadPart < s_next.QuadPart) {
-                LONGLONG ms = (s_next.QuadPart - now.QuadPart) * 1000 / s_freq.QuadPart;
+            int64_t now;
+            now = Now();
+            if (now < s_next) {
+                int64_t ms = (s_next - now) * 1000 / s_freq;
                 if (ms > 1)
-                    Sleep((DWORD)(ms - 1));
+                    PC_SleepMs((unsigned)(ms - 1));
             }
             PC_TickVBlank();
         }

@@ -10,12 +10,18 @@
  * A snapshot is the RAM the game uses, the scratchpad, the GTE registers, the first 12 argument
  * words and the native stack above them (decompiled callers pass pointers to their locals),
  * written to <dir>/<addr>_<n>.snp (read by tests/test_asm.c). The function then runs as usual. */
+#ifdef _WIN32
 #include <windows.h>
+#else
+#define _GNU_SOURCE
+#include <pthread.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "pc_gte.h"
+#include "pc_platform.h"
 #include "pc_recomp.h"
 #include "pc_runtime.h"
 
@@ -39,16 +45,32 @@ uint32_t PC_SnapHandler(uint32_t addr, const uint32_t *args);
 /* Each hooked address jumps to `mov eax, addr; jmp pc_snap_entry`; this passes the address and
  * a pointer to the caller's argument words on to PC_SnapHandler. */
 __asm__(".text\n"
-        "_pc_snap_entry:\n"
+        PC_ASM_SYM("pc_snap_entry") ":\n"
         "\tpushl %ebp\n"
         "\tmovl %esp, %ebp\n"
         "\tleal 8(%ebp), %ecx\n"
         "\tpushl %ecx\n"
         "\tpushl %eax\n"
-        "\tcall _PC_SnapHandler\n"
+        "\tcall " PC_ASM_SYM("PC_SnapHandler") "\n"
         "\tleave\n"
         "\tret\n");
 extern void pc_snap_entry(void);
+
+/* The (exclusive) top of the calling thread's stack. */
+static uint32_t StackTop(void) {
+#ifdef _WIN32
+    return (uint32_t)(uintptr_t)((NT_TIB *)NtCurrentTeb())->StackBase;
+#else
+    pthread_attr_t at;
+    void *base = NULL;
+    size_t size = 0;
+    if (!pthread_getattr_np(pthread_self(), &at)) {
+        pthread_attr_getstack(&at, &base, &size);
+        pthread_attr_destroy(&at);
+    }
+    return (uint32_t)((uintptr_t)base + size);
+#endif
+}
 
 static void Write(int k, const uint32_t *args) {
     char path[MAX_PATH + 32];
@@ -56,7 +78,7 @@ static void Write(int k, const uint32_t *args) {
     int gs = PC_GteStateSize();
     void *gte = malloc((size_t)gs);
     FILE *f;
-    snprintf(path, sizeof path, "%s\\%08x_%d.snp", s_dir, s_snap[k].addr, s_snap[k].taken);
+    snprintf(path, sizeof path, "%s" PC_SEP "%08x_%d.snp", s_dir, s_snap[k].addr, s_snap[k].taken);
     f = fopen(path, "wb");
     if (!f) {
         PC_Log("THPS_SNAP: cannot write %s", path);
@@ -79,9 +101,8 @@ static void Write(int k, const uint32_t *args) {
     fwrite(gte, 1, (size_t)gs, f);
     {
         /* the native stack the arguments are on: callers pass pointers to their locals */
-        NT_TIB *tib = (NT_TIB *)NtCurrentTeb();
         uint32_t lo = ((uint32_t)(uintptr_t)args & ~0xfffu) - 0x1000u;
-        uint32_t top = (uint32_t)(uintptr_t)tib->StackBase, sz;
+        uint32_t top = StackTop(), sz;
         if (top - lo > SNAP_STACK)
             top = lo + SNAP_STACK;
         sz = top - lo;
@@ -116,8 +137,8 @@ void PC_SnapInstall(void) {
     if (!spec || !*spec)
         return;
     snprintf(s_dir, sizeof s_dir, "%s", getenv("THPS_SNAPDIR") ? getenv("THPS_SNAPDIR") : "snaps");
-    CreateDirectoryA(s_dir, NULL);
-    stubs = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    PC_MakeDirs(s_dir);
+    stubs = PC_AllocExec(4096);
     while (*spec && s_nsnap < MAX_SNAP) {
         char *e;
         uint32_t a = strtoul(spec, &e, 16);
@@ -149,6 +170,8 @@ void PC_SnapInstall(void) {
             e++;
         spec = *e == ',' ? e + 1 : e;
     }
+#ifdef _WIN32
     FlushInstructionCache(GetCurrentProcess(), NULL, 0);
+#endif
     PC_Log("THPS_SNAP: %d functions hooked, snapshots to %s", s_nsnap, s_dir);
 }

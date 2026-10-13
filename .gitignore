@@ -16,6 +16,8 @@
 
 # PC port data extracted from the user's disc on first startup (copyrighted)
 Data/
+# ...but not the decompiled data (git matches Data/ case-insensitively on Windows)
+!/decomp/data/
 
 # Ghidra project (machine-local, regenerable via scripts\build_project.ps1)
 /ghidra/*.gpr

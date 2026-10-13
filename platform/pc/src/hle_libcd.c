@@ -22,13 +22,13 @@
  * through the file as it is read. Its video is not streamed (the movie player reads it itself:
  * pc_movie.c), so a song's end is not seen by the game's frame counter: the end of its audio
  * stops the stream and tells pc_music.c, which loops the song as the end frame would. */
-#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "pc_assets.h"
 #include "pc_hle.h"
+#include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_sfd.h"
 #include "pc_spu.h"
@@ -142,7 +142,7 @@ int PC_CdMountFile(const char *path, uint32_t *lba, uint32_t *sectors) {
     Mount *m;
     long long size;
     int i;
-    if (!GetFullPathNameA(path, sizeof full, full, NULL))
+    if (!PC_FullPath(path, full, sizeof full))
         return 0;
     for (i = 0; i < s_nmounts; i++)
         if (!_stricmp(s_mounts[i].path, full)) {
@@ -156,8 +156,8 @@ int PC_CdMountFile(const char *path, uint32_t *lba, uint32_t *sectors) {
     m->f = fopen(full, "rb");
     if (!m->f)
         return 0;
-    _fseeki64(m->f, 0, SEEK_END);
-    size = _ftelli64(m->f);
+    PC_FSEEK(m->f, 0, SEEK_END);
+    size = PC_FTELL(m->f);
     if (!s_mountNext)
         s_mountNext = s_sectors > MOUNT_BASE ? (s_sectors + MOUNT_ALIGN) / MOUNT_ALIGN * MOUNT_ALIGN
                                              : MOUNT_BASE;
@@ -188,30 +188,29 @@ static Mount *MountAt(uint32_t lba) {
     return NULL;
 }
 
-static int FileExists(const char *p) {
-    DWORD a = GetFileAttributesA(p);
-    return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY);
-}
-
 static int s_noDisc;
 
 void PC_CdSetNoDisc(int on) { s_noDisc = on; }
 
 int PC_CdFindImage(char *path, int n) {
     const char *dir = PC_DataDir();
-    const char *fmts[] = {"%s\\thps1.bin", "%s\\..\\..\\extern\\thps1_disc\\thps1.bin",
-                          "%s\\Tony Hawk's Pro Skater (USA).bin", "%s\\game\\thps1.bin"};
+    /* next to thps.exe, or the development layout (thps.exe in build/pc or build/pc/release) */
+#define S PC_SEP
+    const char *fmts[] = {"%s" S "thps1.bin", "%s" S ".." S ".." S "extern" S "thps1_disc" S "thps1.bin",
+                          "%s" S ".." S ".." S ".." S "extern" S "thps1_disc" S "thps1.bin",
+                          "%s" S "Tony Hawk's Pro Skater (USA).bin", "%s" S "game" S "thps1.bin"};
+#undef S
     const char *e = getenv("THPS_DISC");
     int i;
     if (e) {
         size_t len = strlen(e);
         snprintf(path, n, "%s", e);
         /* a .gdi is the Dreamcast disc (pc_assets.c) */
-        return len < 4 || _stricmp(e + len - 4, ".gdi") ? FileExists(path) : 0;
+        return len < 4 || _stricmp(e + len - 4, ".gdi") ? PC_FileExists(path) : 0;
     }
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 5; i++) {
         snprintf(path, n, fmts[i], dir);
-        if (FileExists(path))
+        if (PC_FileExists(path))
             return 1;
     }
     return 0;
@@ -226,12 +225,12 @@ int PC_CdOpen(void) {
     if (!PC_CdFindImage(path, sizeof path))
         PC_Fatal("The game data has to be extracted from your disc first, and no disc image was "
                  "found. Put a raw .bin image (MODE2/2352) of Tony Hawk's Pro Skater (USA) next "
-                 "to thps.exe as thps1.bin, or set THPS_DISC.");
+                 "to " PC_EXE_NAME " as thps1.bin, or set THPS_DISC.");
     s_disc = fopen(path, "rb");
     if (!s_disc)
         PC_Fatal("cannot open %s", path);
-    _fseeki64(s_disc, 0, SEEK_END);
-    s_sectors = (uint32_t)(_ftelli64(s_disc) / 2352);
+    PC_FSEEK(s_disc, 0, SEEK_END);
+    s_sectors = (uint32_t)(PC_FTELL(s_disc) / 2352);
     PC_Log("disc image %s (%u sectors)", path, s_sectors);
     return 1;
 }
@@ -241,7 +240,7 @@ int PC_CdReadDiscSectors(uint32_t lba, uint32_t n, void *dst) {
         return 0;
     if (lba >= s_sectors || n > s_sectors - lba)
         return 0;
-    _fseeki64(s_disc, (long long)lba * 2352, SEEK_SET);
+    PC_FSEEK(s_disc, (long long)lba * 2352, SEEK_SET);
     return fread(dst, 2352, n, s_disc) == n;
 }
 
@@ -255,7 +254,7 @@ int PC_CdReadRawSector(uint32_t lba, void *dst) {
     if (m && m->isSfd)
         return 0;   /* no sectors: only its audio streams (StreamSfd) */
     if (m) {
-        _fseeki64(m->f, (long long)(lba - m->lba) * 2352, SEEK_SET);
+        PC_FSEEK(m->f, (long long)(lba - m->lba) * 2352, SEEK_SET);
         return fread(dst, 1, 2352, m->f) == 2352;
     }
     return PC_CdReadDiscSectors(lba, 1, dst);

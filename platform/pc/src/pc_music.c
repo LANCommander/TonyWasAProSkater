@@ -13,13 +13,13 @@
  * Entries can also be Dreamcast films (.sfd, pc_sfd.h): "goldfing.sfd" takes GOLDFING.STR's
  * settings. Their audio plays through the same CD stream (hle_libcd.c), which reports the end of
  * a song's audio here, and the song starts over as the PS1's does at its end frame. */
-#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "pc_assets.h"
 #include "pc_hle.h"
+#include "pc_platform.h"
 #include "pc_runtime.h"
 
 #define MOVIE_DETAILS 0x800a63e8u

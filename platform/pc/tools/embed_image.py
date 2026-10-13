@@ -10,6 +10,10 @@ over the function addresses. This writes the image with every instruction word c
 Data that lives between game functions in .text (the memory-layout table at 0x80071fa4) stays.
 The result is embedded in thps.exe (link.py: image.s). Prints what stayed in .text.
 
+Only build.py --mips uses this (translated retail code needs the whole image); other builds
+embed the image data_image.py builds from the decompiled data, which data_image.py --check
+compares with this one (`code_words`).
+
     python platform/pc/tools/embed_image.py <exe> <out.bin>
 """
 import os
@@ -26,9 +30,8 @@ GAME_END = 0x800858AC  # the hand-written assembly and then the libraries follow
 LIB_END = 0x8009D0E0  # first byte of .rodata
 
 
-def main():
-    exe_path, out = sys.argv[1:3]
-    exe = mips2c.Exe(exe_path)
+def code_words():
+    """Addresses of every instruction word in the retail image that the port clears."""
     code = set()
     for line in open(os.path.join(ROOT, "decomp", "functions.tsv"), encoding="utf-8"):
         p = line.split("\t")
@@ -36,16 +39,13 @@ def main():
             code.update(range(int(p[0], 16), int(p[0], 16) + int(p[1]), 4))
     # hand-written assembly and the Psy-Q libraries: all code (no data lives there)
     code.update(range(GAME_END, LIB_END, 4))
-    img = bytearray(exe.data)
-    cleared = 0
-    for a in code:
-        if TEXT_START <= a < LIB_END:
-            img[a - exe.base:a - exe.base + 4] = b"\0\0\0\0"
-            cleared += 4
-    kept = [a for a in range(TEXT_START, LIB_END, 4)
-            if struct.unpack_from("<I", img, a - exe.base)[0]]
+    return sorted(a for a in code if TEXT_START <= a < LIB_END)
+
+
+def runs_of(addrs):
+    """Sorted word addresses -> [(start, end)) runs."""
     runs, start, prev = [], None, None
-    for a in kept:
+    for a in addrs:
         if start is None or a != prev + 4:
             if start is not None:
                 runs.append((start, prev + 4))
@@ -53,6 +53,24 @@ def main():
         prev = a
     if start is not None:
         runs.append((start, prev + 4))
+    return runs
+
+
+def cleared_runs():
+    return runs_of(code_words())
+
+
+def main():
+    exe_path, out = sys.argv[1:3]
+    exe = mips2c.Exe(exe_path)
+    img = bytearray(exe.data)
+    cleared = 0
+    for a in code_words():
+        img[a - exe.base:a - exe.base + 4] = b"\0\0\0\0"
+        cleared += 4
+    kept = [a for a in range(TEXT_START, LIB_END, 4)
+            if struct.unpack_from("<I", img, a - exe.base)[0]]
+    runs = runs_of(kept)
     with open(out + ".tmp", "wb") as f:
         f.write(img)
     os.replace(out + ".tmp", out)

@@ -1,18 +1,18 @@
 /* Settings.ini: reading and writing the file; the entries belong to the subsystems (see
  * pc_settings.h). */
-#include <windows.h>
 #include <SDL2/SDL.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_settings.h"
 
 static const char *SettingsPath(void) {
     static char path[MAX_PATH];
     if (!path[0])
-        snprintf(path, sizeof path, "%s\\Settings.ini", PC_UserDir());
+        snprintf(path, sizeof path, "%s" PC_SEP "Settings.ini", PC_UserDir());
     return path;
 }
 
@@ -40,9 +40,9 @@ int PC_SettingsSave(void) {
           f);
     PC_VideoWriteSettings(f);
     PC_InputWriteSettings(f);
-    if (fclose(f) != 0 || !MoveFileExA(tmp, SettingsPath(), MOVEFILE_REPLACE_EXISTING)) {
+    if (fclose(f) != 0 || !PC_ReplaceFile(tmp, SettingsPath())) {
         PC_Log("cannot write %s", SettingsPath());
-        DeleteFileA(tmp);
+        PC_DeleteFile(tmp);
         return 0;
     }
     return 1;

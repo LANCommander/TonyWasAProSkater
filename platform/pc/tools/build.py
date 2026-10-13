@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the native Windows port of THPS1 (see platform/pc/README.md).
+"""Build the native Windows and Linux port of THPS1 (see platform/pc/README.md).
 
     python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link] [--mips]
 
@@ -17,7 +17,7 @@ that aren't byte-exact yet, and decomp/reimpl.tsv: hand-written assembly reimple
 
 Then it generates the glue (linker script of absolute symbols, the function table the runtime
 turns into trampolines, virtual-dispatch thunks, stubs for anything not implemented yet) and links
-everything with the runtime into build/pc/thps.exe.
+everything with the runtime into build/pc/thps.exe (Linux: build/pc-linux/thps; see toolchain.py).
 """
 import argparse
 import concurrent.futures as cf
@@ -33,10 +33,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PC = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(PC))
 DECOMP = os.path.join(ROOT, "decomp")
-OUT = os.path.join(ROOT, "build", "pc")
-TOOLBIN = os.environ.get("THPS_MINGW", r"C:\msys64\mingw32\bin")
 sys.path.insert(0, HERE)
 import portsrc  # noqa: E402
+import toolchain  # noqa: E402
+from toolchain import OUT, TOOLBIN, WINDOWS, tool  # noqa: E402,F401
 
 GAME_CODE_END = 0x800858AC
 CODE_END = 0x8009D0E0  # hand-written assembly rewritten in C (reimpl.tsv) lies past the game code
@@ -54,15 +54,17 @@ COMMON_FLAGS = [
     "-I", os.path.join(DECOMP, "include"),
     "-include", os.path.join(PC, "include", "pc_game.h"),
 ]
+if not WINDOWS:
+    # ELF: the same objects as MinGW's (symbols named `_name`, so the pipeline below is the same
+    # on every host; build_tu takes the '_' off again at the end), no position independence (the
+    # PS1 addresses are absolute), and small structs returned in registers as on Windows (the
+    # runtime is built the same way)
+    COMMON_FLAGS += ["-fleading-underscore", "-fno-pic", "-fno-pie", "-freg-struct-return"]
 C_FLAGS = ["-std=gnu89", "-fpermissive", "-fcommon"]
 # -fno-lifetime-dse: egcs destructors re-store their class's vptr (portsrc adds the store); g++ would
 # drop stores into an object whose lifetime is ending, and those vptrs are read by the base dtors
 CXX_FLAGS = ["-std=gnu++98", "-fpermissive", "-fno-exceptions", "-fno-rtti",
              "-fno-threadsafe-statics", "-fno-use-cxa-atexit", "-fno-lifetime-dse"]
-
-
-def tool(name):
-    return os.path.join(TOOLBIN, name + ".exe")
 
 
 def run(cmd, **kw):
@@ -326,6 +328,7 @@ def build_tu(ctx, tu, flags_hash):
     meta = {"src": tu["src"], "stamp": stamp, "errors": [], "warnings": [], "headers": headers}
     try:
         text = portsrc.fix_cast_lvalues(portsrc.translate_asm(text))
+        text = portsrc.unstatic_shared(text, tu["syms"])
         classes = {}
         if is_cxx:
             vtables = dict(ctx.vtables)
@@ -367,6 +370,8 @@ def build_tu(ctx, tu, flags_hash):
     defined, undefined = [], []
     for line in so.splitlines():
         parts = line.split()
+        if len(parts) == 3 and parts[1] == "W" and not WINDOWS:
+            parts[1] = "T"  # ELF COMDAT (inline) functions are weak; COFF's are plain globals
         if len(parts) == 2 and parts[0] == "U":
             undefined.append(parts[1])
         elif len(parts) == 3 and parts[1] in "TDBCR":
@@ -389,11 +394,25 @@ def build_tu(ctx, tu, flags_hash):
     meta["psx_syms"] = sorted(v for v in renames.values() if v.startswith("_psx_"))
     meta["aliases"] = sorted(v for v in renames.values()
                              if not v.startswith("_psx_") and re.search(r"_a\d+$", v))
+    globalize = info.get("globalize", [])
+    if not WINDOWS:
+        # -fleading-underscore named everything `_name`: back to the ELF names the runtime and
+        # the generated glue use (`_psx_80012345` -> `psx_80012345`, `_memcpy` -> `memcpy`)
+        for line in so.splitlines():
+            sym = line.split()[-1] if line.split() else ""
+            new = renames.get(sym, sym)
+            if new.startswith("_"):
+                renames[sym] = new[1:]
+        globalize = [strip_us(s) for s in globalize]
     rn = base + ".rename"
     open(rn, "w").write("".join("%s %s\n" % kv for kv in renames.items()))
+    # static constructors run from the game's own table (__main), never from the native startup
     cmd = [tool("objcopy"), "--redefine-syms=" + rn, "--remove-section=.ctors",
            "--remove-section=.dtors"]
-    for s in info.get("globalize", []):
+    if not WINDOWS:
+        cmd += ["--remove-section=.init_array", "--remove-section=.fini_array",
+                "--remove-section=.rel.init_array", "--remove-section=.rel.fini_array"]
+    for s in globalize:
         cmd += ["--globalize-symbol=" + s]
     rc, so, se = run(cmd + [base + ".raw.o", obj])
     if rc:
@@ -436,6 +455,8 @@ def relocate_data_defs(asm, res):
     it become external (resolved to the retail address at link time)."""
     relocated = []
     globls = set(re.findall(r"^\s*\.globl\s+(\S+)", asm, re.M))
+    # ELF spells a file-static .bss variable `.local x` + `.comm x,...` (COFF: `.lcomm x,...`)
+    locals_ = set(re.findall(r"^\s*\.local\s+(\S+)", asm, re.M))
     out_lines = []
     lines = asm.split("\n")
     section = ".text"
@@ -450,7 +471,7 @@ def relocate_data_defs(asm, res):
         m = re.match(r"\.comm\s+([^,\s]+)\s*,", s)
         if m:
             sym = m.group(1)
-            addr = res.data_addr(strip_us(sym))
+            addr = res.static_addr(sym) if sym in locals_ else res.data_addr(strip_us(sym))
             if addr is not None:
                 relocated.append((sym, addr))
                 continue
@@ -476,8 +497,11 @@ def relocate_data_defs(asm, res):
                 continue
         out_lines.append(line)
     rel = {s for s, _ in relocated}
-    out = "\n".join(l for l in out_lines if not re.match(r"^\s*\.globl\s+(\S+)\s*$", l) or
-                    re.match(r"^\s*\.globl\s+(\S+)", l).group(1) not in rel)
+    # and the directives about a dropped definition (ELF: .local/.type/.size; references to it
+    # become external)
+    sym_dir = re.compile(r"^\s*\.(?:globl|local|type|size)\s+([^,\s]+)")
+    out = "\n".join(l for l in out_lines if not sym_dir.match(l) or
+                    sym_dir.match(l).group(1) not in rel)
     res.relocated = dict(relocated)
     return out, relocated
 
@@ -716,8 +740,13 @@ def main():
     ap.add_argument("--no-link", action="store_true")
     ap.add_argument("--mips", action="store_true",
                     help="also translate the retail MIPS (THPS_MIPS / THPS_SNAP debugging)")
+    ap.add_argument("--release", action="store_true",
+                    help="build/pc/release/thps.exe for distribution: no retail data embedded (read "
+                         "from the player's disc), no console, debug info in thps.debug")
     a = ap.parse_args()
-    os.environ["PATH"] = TOOLBIN + os.pathsep + os.environ["PATH"]
+    if a.release and a.mips:
+        ap.error("--mips translates the retail code into the exe; it can't be a release build")
+    toolchain.add_to_path()
     if a.clean and os.path.isdir(os.path.join(OUT, "obj")):
         shutil.rmtree(os.path.join(OUT, "obj"))
     os.makedirs(OUT, exist_ok=True)
@@ -750,7 +779,7 @@ def main():
     if a.no_link or errs:
         return 1 if errs else 0
     import link  # noqa: E402
-    return link.link(ctx, metas, OUT, TOOLBIN, mips=a.mips)
+    return link.link(ctx, metas, OUT, TOOLBIN, mips=a.mips, release=a.release)
 
 
 if __name__ == "__main__":

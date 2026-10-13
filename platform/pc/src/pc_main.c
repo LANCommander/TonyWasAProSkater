@@ -1,7 +1,18 @@
 /* Boot: map PS1 memory at its own addresses, copy in the game's data, point every PS1 function
  * address at its native implementation, then run the game's main(). See platform/pc/README.md. */
+#ifdef _WIN32
 #include <windows.h>
 #include <shlobj.h>
+#else
+#define _GNU_SOURCE
+#include <errno.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/mman.h>
+#include <sys/syscall.h>
+#include <ucontext.h>
+#include <unistd.h>
+#endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +21,7 @@
 #include "pc_gpu.h"
 #include "pc_gte.h"
 #include "pc_hle.h"
+#include "pc_platform.h"
 #include "pc_recomp.h"
 #include "pc_runtime.h"
 
@@ -57,8 +69,8 @@ void PC_Fatal(const char *fmt, ...) {
     fprintf(stderr, "FATAL: %s\n", buf);
     fflush(stderr);
     if (!getenv("THPS_HEADLESS"))
-        MessageBoxA(NULL, buf, "Tony Hawk's Pro Skater", MB_ICONERROR | MB_OK);
-    ExitProcess(1);
+        PC_ErrorBox(buf);
+    PC_ExitProcess(1);
 }
 
 /* ---- function table ------------------------------------------------------------------------- */
@@ -238,7 +250,7 @@ static void InstallTrampolines(void) {
         static uint8_t *stubs;
         int k = 0;
         if (spec && !stubs)
-            stubs = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+            stubs = PC_AllocExec(4096);
         while (spec && *spec && k < 32) {
             char *e;
             uint32_t a = strtoul(spec, &e, 16);
@@ -261,7 +273,9 @@ static void InstallTrampolines(void) {
         }
         pc_ncount = k;
     }
+#ifdef _WIN32
     FlushInstructionCache(GetCurrentProcess(), PSX_PTR(PSX_EXE_BASE), PSX_RAM_SIZE - 0x10000);
+#endif
     PC_Log("functions: %d decompiled C, %d HLE, %d translated MIPS, %d missing (stubs)", counts[0],
            counts[1], counts[2], counts[3]);
 }
@@ -366,6 +380,53 @@ void pc_delete_mark(void *p) {
 
 uint32_t pc_ram_top = PSX_RAM_BASE + PSX_RAM_SIZE;
 
+#ifndef _WIN32
+#ifndef MAP_FIXED_NOREPLACE
+#define MAP_FIXED_NOREPLACE 0x100000
+#endif
+
+/* A view of `fd` (or anonymous memory, fd -1) at exactly `addr`, without replacing anything that
+ * is there already (kernels before 4.17 take the address as a hint: checked). */
+static int MapAt(uint32_t addr, uint32_t size, int fd, uint32_t off) {
+    void *want = PSX_PTR(addr);
+    void *p = mmap(want, size, PROT_READ | PROT_WRITE | PROT_EXEC,
+                   MAP_FIXED_NOREPLACE | (fd < 0 ? MAP_PRIVATE | MAP_ANONYMOUS : MAP_SHARED), fd,
+                   (off_t)off);
+    if (p == MAP_FAILED)
+        return 0;
+    if (p != want) {
+        munmap(p, size);
+        errno = EEXIST;
+        return 0;
+    }
+    return 1;
+}
+
+static void MapPsxMemory(void) {
+    /* the same layout as on Windows (below): one block of RAM seen at 0x80000000, 0xa0000000 and,
+     * past the first 64 KB (Linux's vm.mmap_min_addr), at its KUSEG address */
+    int fd = (int)syscall(SYS_memfd_create, "psx-ram", 0);
+    if (fd < 0) {
+        char path[] = "/tmp/thps-ram-XXXXXX";
+        fd = mkstemp(path);
+        if (fd >= 0)
+            unlink(path);
+    }
+    if (fd < 0 || ftruncate(fd, PSX_RAM_MAPPED))
+        PC_Fatal("cannot create the PS1 RAM (%s)", strerror(errno));
+    if (!MapAt(PSX_RAM_BASE, PSX_RAM_MAPPED, fd, 0))
+        PC_Fatal("cannot map PS1 RAM at 0x80000000 (%s): the executable must be 32-bit",
+                 strerror(errno));
+    if (!MapAt(0xa0000000u, PSX_RAM_MAPPED, fd, 0))
+        PC_Log("note: no KSEG1 mirror at 0xa0000000 (%s)", strerror(errno));
+    if (!MapAt(0x10000, PSX_RAM_SIZE - 0x10000, fd, 0x10000))
+        PC_Log("note: KUSEG RAM could not be mapped (%s)", strerror(errno));
+    if (!MapAt(PSX_SCRATCH_BASE, 0x10000, -1, 0))
+        PC_Fatal("cannot map the scratchpad at 0x1f800000 (%s)", strerror(errno));
+    close(fd);
+    memset(PSX_PTR(PSX_RAM_BASE), 0, PSX_RAM_MAPPED);
+}
+#else
 static void MapPsxMemory(void) {
     HANDLE sec = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE, 0,
                                     PSX_RAM_MAPPED, NULL);
@@ -418,16 +479,28 @@ static void MapPsxMemory(void) {
         PC_Fatal("cannot map the scratchpad at 0x1f800000 (%lu)", GetLastError());
     memset(PSX_PTR(PSX_RAM_BASE), 0, PSX_RAM_MAPPED);
 }
-
-static int FileExists(const char *p) {
-    DWORD a = GetFileAttributesA(p);
-    return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY);
-}
+#endif
 
 const char *PC_DataDir(void) { return s_dataDir; }
 
 void (*pc_hires_before_draw)(void);
 
+#ifndef _WIN32
+/* $XDG_DATA_HOME/Neversoft/Tony Hawk's Pro Skater (~/.local/share/...) */
+const char *PC_UserDir(void) {
+    static char dir[MAX_PATH];
+    if (!dir[0]) {
+        const char *xdg = getenv("XDG_DATA_HOME"), *home = getenv("HOME");
+        if (xdg && xdg[0] == '/')
+            snprintf(dir, sizeof dir, "%s/Neversoft/Tony Hawk's Pro Skater", xdg);
+        else
+            snprintf(dir, sizeof dir, "%s/.local/share/Neversoft/Tony Hawk's Pro Skater",
+                     home && *home ? home : ".");
+        PC_MakeDirs(dir);
+    }
+    return dir;
+}
+#else
 const char *PC_UserDir(void) {
     static char dir[MAX_PATH];
     if (!dir[0]) {
@@ -462,18 +535,15 @@ const char *PC_UserDir(void) {
     }
     return dir;
 }
+#endif
 
-/* The retail image's data (initialised globals, tables, strings, vtables), embedded in thps.exe
- * by the build with its code cleared (tools/embed_image.py), goes to its PS1 address. The game
- * directory (PC_DataDir) is the one thps.exe is in. */
+/* The game's data (initialised globals, tables, strings, vtables), embedded in thps.exe by the
+ * build from the decompiled data (decomp/data, tools/data_image.py), goes to its PS1 address. The
+ * game directory (PC_DataDir) is the one thps.exe is in. */
 extern const uint8_t pc_image[], pc_image_end[];
 
 static void LoadImage0(void) {
-    char *slash;
-    GetModuleFileNameA(NULL, s_dataDir, sizeof s_dataDir);
-    slash = strrchr(s_dataDir, '\\');
-    if (slash)
-        *slash = 0;
+    PC_ExeDir(s_dataDir, sizeof s_dataDir);
     memcpy(PSX_PTR(PSX_EXE_BASE), pc_image, (size_t)(pc_image_end - pc_image));
 }
 
@@ -497,27 +567,51 @@ static void Crt0(void) {
 
 /* ---- crash diagnostics ---------------------------------------------------------------------- */
 
-/* KUSEG: on the PS1, 0x00000000-0x001fffff is main RAM too, so NULL-ish pointers read and write
- * harmless low memory. Windows can't map those pages, so such an access faults here; the fault is
- * redone against the RAM at 0x80000000 by adding 0x80000000 to the instruction's base (or index)
- * register, single-stepping it, and taking the bias back off. Each site is logged once. */
-static DWORD *RegPtr(CONTEXT *c, int r) {
-    switch (r) {
-    case 0: return &c->Eax;
-    case 1: return &c->Ecx;
-    case 2: return &c->Edx;
-    case 3: return &c->Ebx;
-    case 4: return &c->Esp;
-    case 5: return &c->Ebp;
-    case 6: return &c->Esi;
-    default: return &c->Edi;
-    }
-}
+/* The interrupted thread's registers, as the fault handlers below see them (Windows CONTEXT,
+ * POSIX ucontext): eax ecx edx ebx esp ebp esi edi in x86 encoding order. */
+typedef struct {
+    uint32_t *r[8];
+    uint32_t *eip, *eflags;
+} Cpu;
 
+#ifdef _WIN32
+static void CpuOf(CONTEXT *c, Cpu *cpu) {
+    cpu->r[0] = (uint32_t *)&c->Eax;
+    cpu->r[1] = (uint32_t *)&c->Ecx;
+    cpu->r[2] = (uint32_t *)&c->Edx;
+    cpu->r[3] = (uint32_t *)&c->Ebx;
+    cpu->r[4] = (uint32_t *)&c->Esp;
+    cpu->r[5] = (uint32_t *)&c->Ebp;
+    cpu->r[6] = (uint32_t *)&c->Esi;
+    cpu->r[7] = (uint32_t *)&c->Edi;
+    cpu->eip = (uint32_t *)&c->Eip;
+    cpu->eflags = (uint32_t *)&c->EFlags;
+}
+#else
+static void CpuOf(ucontext_t *uc, Cpu *cpu) {
+    greg_t *g = uc->uc_mcontext.gregs;
+    cpu->r[0] = (uint32_t *)&g[REG_EAX];
+    cpu->r[1] = (uint32_t *)&g[REG_ECX];
+    cpu->r[2] = (uint32_t *)&g[REG_EDX];
+    cpu->r[3] = (uint32_t *)&g[REG_EBX];
+    cpu->r[4] = (uint32_t *)&g[REG_UESP];
+    cpu->r[5] = (uint32_t *)&g[REG_EBP];
+    cpu->r[6] = (uint32_t *)&g[REG_ESI];
+    cpu->r[7] = (uint32_t *)&g[REG_EDI];
+    cpu->eip = (uint32_t *)&g[REG_EIP];
+    cpu->eflags = (uint32_t *)&g[REG_EFL];
+}
+#endif
+
+/* KUSEG: on the PS1, 0x00000000-0x001fffff is main RAM too, so NULL-ish pointers read and write
+ * harmless low memory. The first 64 KB can't be mapped (on Windows, nor on Linux by default), so
+ * such an access faults here; the fault is redone against the RAM at 0x80000000 by adding
+ * 0x80000000 to the instruction's base (or index) register, single-stepping it, and taking the
+ * bias back off. Each site is logged once. */
 static struct {
     int active;
     int reg;
-    DWORD bias;
+    uint32_t bias;
 } s_fix;
 
 /* Opcodes (one byte) that take a ModRM byte. */
@@ -529,12 +623,11 @@ static int HasModRM1(uint8_t op) {
            (op >= 0xd8 && op <= 0xdf) || op == 0xf6 || op == 0xf7 || op == 0xfe || op == 0xff;
 }
 
-static int FixLowAccess(EXCEPTION_POINTERS *ep) {
-    CONTEXT *c = ep->ContextRecord;
-    uint8_t *p = (uint8_t *)c->Eip;
+static int FixLowAccess(Cpu *c, uint32_t addr) {
+    uint8_t *p = (uint8_t *)(uintptr_t)*c->eip;
     uint8_t op, modrm;
     int mod, rm, reg, base = -1, index = -1, scale = 1, writesReg = 0, two = 0;
-    DWORD *br;
+    uint32_t *br;
     while (*p == 0x66 || *p == 0x67 || *p == 0xf2 || *p == 0xf3 || *p == 0x2e || *p == 0x3e ||
            *p == 0x26 || *p == 0x36 || *p == 0x64 || *p == 0x65)
         p++;
@@ -571,43 +664,85 @@ static int FixLowAccess(EXCEPTION_POINTERS *ep) {
                                                  (op & 0x38) != 0x38);
     else
         writesReg = op == 0xb6 || op == 0xb7 || op == 0xbe || op == 0xbf || op == 0xaf;
-    if (base >= 0 && *RegPtr(c, base) < PSX_RAM_SIZE)
+    if (base >= 0 && *c->r[base] < PSX_RAM_SIZE)
         s_fix.reg = base, s_fix.bias = 0x80000000u;
-    else if (index >= 0 && *RegPtr(c, index) * (DWORD)scale < PSX_RAM_SIZE)
-        s_fix.reg = index, s_fix.bias = 0x80000000u / (DWORD)scale;
+    else if (index >= 0 && *c->r[index] * (uint32_t)scale < PSX_RAM_SIZE)
+        s_fix.reg = index, s_fix.bias = 0x80000000u / (uint32_t)scale;
     else
         return 0;
-    br = RegPtr(c, s_fix.reg);
+    br = c->r[s_fix.reg];
     *br += s_fix.bias;
     s_fix.active = 1;
     if (writesReg && reg == s_fix.reg)
         s_fix.active = 2; /* the instruction replaces the register: nothing to undo */
-    c->EFlags |= 0x100;   /* trap flag: come back after this one instruction */
+    *c->eflags |= 0x100;  /* trap flag: come back after this one instruction */
     {
-        static DWORD seen[256];
+        static uint32_t seen[256];
         static int nseen;
         int i, known = 0;
         for (i = 0; i < nseen; i++)
-            known |= seen[i] == c->Eip;
+            known |= seen[i] == *c->eip;
         if (!known && nseen < 256) {
-            seen[nseen++] = c->Eip;
-            PC_Log("low-memory access at eip=%08lx (address %08lx) redirected to PS1 RAM", c->Eip,
-                   (unsigned long)ep->ExceptionRecord->ExceptionInformation[1]);
+            seen[nseen++] = *c->eip;
+            PC_Log("low-memory access at eip=%08x (address %08x) redirected to PS1 RAM", *c->eip,
+                   addr);
         }
     }
     return 1;
 }
 
+/* The single step after FixLowAccess: take the bias back off. */
+static void FixLowAccessDone(Cpu *c) {
+    if (s_fix.active == 1)
+        *c->r[s_fix.reg] -= s_fix.bias;
+    s_fix.active = 0;
+    *c->eflags &= ~0x100u;
+}
+
 /* A breakpoint target for debuggers: called once for a genuine crash, before the report. */
 void __attribute__((noinline)) PC_CrashHook(void) { __asm__ volatile(""); }
+
+/* The 32-bit operand of the instruction whose ModRM byte is at m. */
+static uint32_t Operand(Cpu *c, const uint8_t *m) {
+    int mod = m[0] >> 6, rm = m[0] & 7;
+    const uint8_t *q = m + 1;
+    uint32_t ea = 0, d;
+    if (mod == 3)
+        return *c->r[rm];
+    if (rm == 4) {
+        uint8_t sib = *q++;
+        int index = (sib >> 3) & 7, base = sib & 7;
+        if (index != 4)
+            ea += *c->r[index] << (sib >> 6);
+        if (base == 5 && mod == 0) {
+            memcpy(&d, q, 4);
+            ea += d;
+            q += 4;
+        } else {
+            ea += *c->r[base];
+        }
+    } else if (rm == 5 && mod == 0) {
+        memcpy(&ea, q, 4);
+        q += 4;
+    } else {
+        ea = *c->r[rm];
+    }
+    if (mod == 1) {
+        ea += (uint32_t)(int32_t)(int8_t)*q;
+    } else if (mod == 2) {
+        memcpy(&d, q, 4);
+        ea += d;
+    }
+    return *(const uint32_t *)(uintptr_t)ea;
+}
 
 /* The R3000 never traps on division: `div` by zero leaves LO = (dividend < 0 ? 1 : -1) (or all
  * ones unsigned) and HI = dividend, and INT_MIN / -1 gives LO = INT_MIN, HI = 0. The game relies
  * on that (retail uses unchecked div). x86 div/idiv trap instead: give the MIPS result in
- * eax/edx and step over the instruction. Each site is logged once. */
-static int FixDivide(EXCEPTION_POINTERS *ep) {
-    CONTEXT *c = ep->ContextRecord;
-    uint8_t *p = (uint8_t *)c->Eip, modrm;
+ * eax/edx and step over the instruction. overflow: -1 if the caller can't tell a division by
+ * zero from INT_MIN / -1 (POSIX reports both as FPE_INTDIV). Each site is logged once. */
+static int FixDivide(Cpu *c, int overflow) {
+    uint8_t *p = (uint8_t *)(uintptr_t)*c->eip, modrm;
     int mod, rm, len, sgn;
     int opsize16 = 0;
     while (*p == 0x66 || *p == 0x67 || *p == 0x2e || *p == 0x3e || *p == 0x26 || *p == 0x36 ||
@@ -633,36 +768,61 @@ static int FixDivide(EXCEPTION_POINTERS *ep) {
         len += 4;
     if (mod == 0 && rm == 4 && (p[2] & 7) == 5)
         len += 4; /* SIB with no base: disp32 */
+    if (overflow < 0)
+        overflow = Operand(c, p + 1) != 0;
     {
-        uint32_t dividend = c->Eax;
-        if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_INT_OVERFLOW) {
-            c->Eax = 0x80000000u;
-            c->Edx = 0;
+        uint32_t dividend = *c->r[0];
+        if (overflow) {
+            *c->r[0] = 0x80000000u;
+            *c->r[2] = 0;
         } else {
-            c->Eax = sgn ? ((int32_t)dividend < 0 ? 1u : 0xffffffffu) : 0xffffffffu;
-            c->Edx = dividend;
+            *c->r[0] = sgn ? ((int32_t)dividend < 0 ? 1u : 0xffffffffu) : 0xffffffffu;
+            *c->r[2] = dividend;
         }
     }
     {
-        static DWORD seen[64];
+        static uint32_t seen[64];
         static int nseen;
         int i, known = 0;
         for (i = 0; i < nseen; i++)
-            known |= seen[i] == c->Eip;
+            known |= seen[i] == *c->eip;
         if (!known && nseen < 64) {
-            seen[nseen++] = c->Eip;
-            PC_Log("division by zero at eip=%08lx given the MIPS result", c->Eip);
+            seen[nseen++] = *c->eip;
+            PC_Log("division by zero at eip=%08x given the MIPS result", *c->eip);
         }
     }
-    c->Eip = (DWORD)(uintptr_t)(p + len);
+    *c->eip = (uint32_t)(uintptr_t)(p + len);
     return 1;
 }
 
+/* The crash report: registers and a frame-pointer walk (everything is built with
+ * -fno-omit-frame-pointer). */
+static void CrashReport(Cpu *c) {
+    uint32_t *bp = (uint32_t *)(uintptr_t)*c->r[5];
+    int i;
+    fprintf(stderr, "\n    eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+                    "    esp=%08x ebp=%08x\n",
+            *c->r[0], *c->r[3], *c->r[1], *c->r[2], *c->r[6], *c->r[7], *c->r[4], *c->r[5]);
+    fprintf(stderr, "    backtrace (run tools/symbolize.py on these):\n      %08x\n", *c->eip);
+    for (i = 0; i < 32 && bp && PC_Readable(bp, 8); i++) {
+        fprintf(stderr, "      %08x\n", bp[1]);
+        bp = (uint32_t *)(uintptr_t)bp[0];
+    }
+    fflush(stderr);
+    if (!getenv("THPS_HEADLESS"))
+        PC_ErrorBox("The game crashed; see the console log.");
+    PC_ExitProcess(3);
+}
+
+#ifdef _WIN32
 static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
     EXCEPTION_RECORD *r = ep->ExceptionRecord;
     CONTEXT *c = ep->ContextRecord;
     DWORD code = r->ExceptionCode;
-    if ((code == EXCEPTION_INT_DIVIDE_BY_ZERO || code == EXCEPTION_INT_OVERFLOW) && FixDivide(ep))
+    Cpu cpu;
+    CpuOf(c, &cpu);
+    if ((code == EXCEPTION_INT_DIVIDE_BY_ZERO || code == EXCEPTION_INT_OVERFLOW) &&
+        FixDivide(&cpu, code == EXCEPTION_INT_OVERFLOW))
         return EXCEPTION_CONTINUE_EXECUTION;
     if (code == EXCEPTION_SINGLE_STEP && (c->Dr6 & 1)) {
         /* THPS_WATCH hit: log the write */
@@ -683,14 +843,12 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
             return EXCEPTION_CONTINUE_EXECUTION;
     }
     if (code == EXCEPTION_SINGLE_STEP && s_fix.active) {
-        if (s_fix.active == 1)
-            *RegPtr(c, s_fix.reg) -= s_fix.bias;
-        s_fix.active = 0;
-        c->EFlags &= ~0x100u;
+        FixLowAccessDone(&cpu);
         return EXCEPTION_CONTINUE_EXECUTION;
     }
     if (code == EXCEPTION_ACCESS_VIOLATION && r->ExceptionInformation[0] != 8 &&
-        r->ExceptionInformation[1] < PSX_RAM_SIZE && !s_fix.active && FixLowAccess(ep))
+        r->ExceptionInformation[1] < PSX_RAM_SIZE && !s_fix.active &&
+        FixLowAccess(&cpu, (uint32_t)r->ExceptionInformation[1]))
         return EXCEPTION_CONTINUE_EXECUTION;
     if (code != EXCEPTION_ACCESS_VIOLATION && code != EXCEPTION_ILLEGAL_INSTRUCTION &&
         code != EXCEPTION_INT_DIVIDE_BY_ZERO && code != EXCEPTION_STACK_OVERFLOW &&
@@ -703,35 +861,64 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
                                        : r->ExceptionInformation[0] ? "write"
                                                                     : "read",
                 (unsigned long)r->ExceptionInformation[1]);
-    fprintf(stderr, "\n    eax=%08lx ebx=%08lx ecx=%08lx edx=%08lx esi=%08lx edi=%08lx\n"
-                    "    esp=%08lx ebp=%08lx\n",
-            c->Eax, c->Ebx, c->Ecx, c->Edx, c->Esi, c->Edi, c->Esp, c->Ebp);
-    {
-        /* frame-pointer walk (everything is built with -fno-omit-frame-pointer) */
-        DWORD *bp = (DWORD *)c->Ebp;
-        int i;
-        fprintf(stderr, "    backtrace (run tools/symbolize.py on these):\n      %08lx\n", c->Eip);
-        for (i = 0; i < 32 && bp && !IsBadReadPtr(bp, 8); i++) {
-            fprintf(stderr, "      %08lx\n", bp[1]);
-            bp = (DWORD *)bp[0];
-        }
-    }
-    fflush(stderr);
-    if (!getenv("THPS_HEADLESS"))
-        MessageBoxA(NULL, "The game crashed; see the console log.", "Tony Hawk's Pro Skater",
-                    MB_ICONERROR);
-    ExitProcess(3);
+    CrashReport(&cpu);
     return EXCEPTION_CONTINUE_SEARCH;
 }
+#else
+static void CrashSignal(int sig, siginfo_t *si, void *ctx) {
+    ucontext_t *uc = ctx;
+    Cpu cpu;
+    CpuOf(uc, &cpu);
+    if (sig == SIGFPE && (si->si_code == FPE_INTDIV || si->si_code == FPE_INTOVF) &&
+        FixDivide(&cpu, si->si_code == FPE_INTOVF ? 1 : -1))
+        return;
+    if (sig == SIGTRAP && s_fix.active) {
+        FixLowAccessDone(&cpu);
+        return;
+    }
+    /* page-fault error code bit 4: instruction fetch */
+    if ((sig == SIGSEGV || sig == SIGBUS) && !(uc->uc_mcontext.gregs[REG_ERR] & 0x10) &&
+        (uintptr_t)si->si_addr < PSX_RAM_SIZE && !s_fix.active &&
+        FixLowAccess(&cpu, (uint32_t)(uintptr_t)si->si_addr))
+        return;
+    PC_CrashHook();
+    fprintf(stderr, "\n*** crash: signal %d (%s) at eip=%08x", sig, strsignal(sig), *cpu.eip);
+    if (sig == SIGSEGV || sig == SIGBUS)
+        fprintf(stderr, " (%s %08x)",
+                uc->uc_mcontext.gregs[REG_ERR] & 0x10  ? "execute"
+                : uc->uc_mcontext.gregs[REG_ERR] & 2 ? "write"
+                                                     : "read",
+                (uint32_t)(uintptr_t)si->si_addr);
+    CrashReport(&cpu);
+}
+
+static void InstallCrashHandler(void) {
+    static uint8_t altstack[64 * 1024]; /* the report still runs after a stack overflow */
+    stack_t ss;
+    struct sigaction sa;
+    int sigs[] = {SIGSEGV, SIGBUS, SIGFPE, SIGILL, SIGTRAP};
+    unsigned i;
+    ss.ss_sp = altstack;
+    ss.ss_size = sizeof altstack;
+    ss.ss_flags = 0;
+    sigaltstack(&ss, NULL);
+    memset(&sa, 0, sizeof sa);
+    sa.sa_sigaction = CrashSignal;
+    sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_NODEFER;
+    sigemptyset(&sa.sa_mask);
+    for (i = 0; i < sizeof sigs / sizeof sigs[0]; i++)
+        sigaction(sigs[i], &sa, NULL);
+}
+#endif
 
 /* Print the caller's native backtrace (frame-pointer walk) for symbolize.py. */
 void PC_Backtrace(const char *why) {
-    DWORD *bp = (DWORD *)__builtin_frame_address(0);
+    uint32_t *bp = (uint32_t *)__builtin_frame_address(0);
     int i;
     fprintf(stderr, "*** %s\n    backtrace:\n", why);
-    for (i = 0; i < 24 && bp && !IsBadReadPtr(bp, 8); i++) {
-        fprintf(stderr, "      %08lx\n", bp[1]);
-        bp = (DWORD *)bp[0];
+    for (i = 0; i < 24 && bp && PC_Readable(bp, 8); i++) {
+        fprintf(stderr, "      %08x\n", bp[1]);
+        bp = (uint32_t *)(uintptr_t)bp[0];
     }
     fflush(stderr);
 }
@@ -739,33 +926,49 @@ void PC_Backtrace(const char *why) {
 /* ---- hang watchdog ----------------------------------------------------------------------------- */
 
 volatile uint32_t pc_heartbeat; /* bumped by every presented frame */
-static HANDLE s_mainThread;
 
-static void DumpThread(HANDLE th) {
-    CONTEXT c;
-    DWORD *bp;
+static void DumpStack(uint32_t eip, uint32_t ebp) {
+    uint32_t *bp = (uint32_t *)(uintptr_t)ebp;
     int i;
-    memset(&c, 0, sizeof c);
-    c.ContextFlags = CONTEXT_FULL;
-    SuspendThread(th);
-    if (GetThreadContext(th, &c)) {
-        fprintf(stderr, "    eip=%08lx\n    backtrace:\n      %08lx\n", c.Eip, c.Eip);
-        bp = (DWORD *)c.Ebp;
-        for (i = 0; i < 24 && bp && !IsBadReadPtr(bp, 8); i++) {
-            fprintf(stderr, "      %08lx\n", bp[1]);
-            bp = (DWORD *)bp[0];
-        }
+    fprintf(stderr, "    eip=%08x\n    backtrace:\n      %08x\n", eip, eip);
+    for (i = 0; i < 24 && bp && PC_Readable(bp, 8); i++) {
+        fprintf(stderr, "      %08x\n", bp[1]);
+        bp = (uint32_t *)(uintptr_t)bp[0];
     }
     fflush(stderr);
-    ResumeThread(th);
 }
 
-static DWORD WINAPI Watchdog(LPVOID arg) {
+#ifdef _WIN32
+static HANDLE s_mainThread;
+
+static void DumpMainThread(void) {
+    CONTEXT c;
+    memset(&c, 0, sizeof c);
+    c.ContextFlags = CONTEXT_FULL;
+    SuspendThread(s_mainThread);
+    if (GetThreadContext(s_mainThread, &c))
+        DumpStack(c.Eip, c.Ebp);
+    ResumeThread(s_mainThread);
+}
+#else
+static pthread_t s_mainThread;
+
+/* SIGUSR2 to the main thread: it prints where it is itself */
+static void DumpSignal(int sig, siginfo_t *si, void *ctx) {
+    ucontext_t *uc = ctx;
+    (void)sig;
+    (void)si;
+    DumpStack((uint32_t)uc->uc_mcontext.gregs[REG_EIP], (uint32_t)uc->uc_mcontext.gregs[REG_EBP]);
+}
+
+static void DumpMainThread(void) { pthread_kill(s_mainThread, SIGUSR2); }
+#endif
+
+static void Watchdog(void) {
     uint32_t last = 0;
     int stalls = 0;
-    (void)arg;
     for (;;) {
-        Sleep(5000);
+        PC_SleepMs(5000);
         if (pc_heartbeat != last) {
             last = pc_heartbeat;
             stalls = 0;
@@ -774,10 +977,47 @@ static DWORD WINAPI Watchdog(LPVOID arg) {
         if (++stalls > 3)
             continue;
         fprintf(stderr, "\n*** no frame presented for %d s (frame %u)\n", stalls * 5, last);
-        DumpThread(s_mainThread);
+        DumpMainThread();
     }
+}
+
+#ifdef _WIN32
+static DWORD WINAPI WatchdogThread(LPVOID arg) {
+    (void)arg;
+    Watchdog();
     return 0;
 }
+
+static void StartWatchdog(void) {
+    DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &s_mainThread, 0,
+                    FALSE, DUPLICATE_SAME_ACCESS);
+    CreateThread(NULL, 0, WatchdogThread, NULL, 0, NULL);
+}
+#else
+static void *WatchdogThread(void *arg) {
+    (void)arg;
+    Watchdog();
+    return NULL;
+}
+
+static void StartWatchdog(void) {
+    struct sigaction sa;
+    pthread_t th;
+    sigset_t block, old;
+    s_mainThread = pthread_self();
+    memset(&sa, 0, sizeof sa);
+    sa.sa_sigaction = DumpSignal;
+    sa.sa_flags = SA_SIGINFO | SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGUSR2, &sa, NULL);
+    /* the watchdog takes no signals meant for the game thread */
+    sigfillset(&block);
+    pthread_sigmask(SIG_BLOCK, &block, &old);
+    if (!pthread_create(&th, NULL, WatchdogThread, NULL))
+        pthread_detach(th);
+    pthread_sigmask(SIG_SETMASK, &old, NULL);
+}
+#endif
 
 void PC_SnapInstall(void); /* pc_snap.c */
 
@@ -787,10 +1027,19 @@ int main(int argc, char **argv) {
     (void)argc;
     (void)argv;
     pc_trace = getenv("THPS_TRACE") && atoi(getenv("THPS_TRACE"));
+#ifdef _WIN32
+    /* a release build has no console: started from Explorer, the log (crash backtraces too) goes
+     * to thps.log in the player's folder */
+    if (!GetStdHandle(STD_ERROR_HANDLE)) {
+        char log[MAX_PATH];
+        snprintf(log, sizeof log, "%s\\thps.log", PC_UserDir());
+        freopen(log, "w", stderr);
+    }
     AddVectoredExceptionHandler(1, CrashHandler);
-    DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &s_mainThread, 0,
-                    FALSE, DUPLICATE_SAME_ACCESS);
-    CreateThread(NULL, 0, Watchdog, NULL, 0, NULL);
+#else
+    InstallCrashHandler();
+#endif
+    StartWatchdog();
     MapPsxMemory();
     LoadImage0();
     BuildFunctionTable();
@@ -800,6 +1049,7 @@ int main(int argc, char **argv) {
     PC_HleInit();
     Crt0();
     if (getenv("THPS_WATCH")) {
+#ifdef _WIN32
         /* hardware write watchpoint on a 4-byte word (debug register 0) */
         CONTEXT c;
         memset(&c, 0, sizeof c);
@@ -810,6 +1060,9 @@ int main(int argc, char **argv) {
             PC_Log("THPS_WATCH: SetThreadContext failed (%lu)", GetLastError());
         else
             PC_Log("watching writes to %08lx", c.Dr0);
+#else
+        PC_Log("THPS_WATCH: only on Windows (use a gdb watchpoint)");
+#endif
     }
     PC_Log("starting game main at %08x", EXE_GAME_MAIN);
     ((int (*)(void))PSX_PTR(EXE_GAME_MAIN))();

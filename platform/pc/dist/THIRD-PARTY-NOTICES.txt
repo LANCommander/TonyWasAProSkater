@@ -1,0 +1,49 @@
+Third-party software in thps.exe
+================================
+
+thps.exe is a single program with these libraries linked into it. Their copyright and license
+notices follow.
+
+  SDL 2                 zlib license            https://libsdl.org
+  PL_MPEG               MIT license             https://github.com/phoboslab/pl_mpeg
+  glad (OpenGL loader)  CC0-1.0 / WTFPL, with   https://github.com/Dav1dde/glad
+                        Khronos API data under
+                        Apache-2.0
+  MinGW-w64 runtime     ZPL-2.1 and others      https://www.mingw-w64.org
+  GCC runtime (libgcc)  GPL-3.0 with the GCC Runtime Library Exception (no notice required)
+
+
+------------------------------------------------------------------------------------------------
+PL_MPEG - MPEG1 Video decoder, MP2 Audio decoder, MPEG-PS demuxer
+------------------------------------------------------------------------------------------------
+
+Copyright (c) Dominic Szablewski - https://phoboslab.org
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+and associated documentation files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+------------------------------------------------------------------------------------------------
+glad 2 (OpenGL 3.3 core loader, generated code)
+------------------------------------------------------------------------------------------------
+
+The generated loader is (WTFPL OR CC0-1.0) AND Apache-2.0: the generator's output is public
+domain, and the OpenGL API definitions it was generated from are the Khronos Group's XML API
+Registry:
+
+Copyright 2013-2020 The Khronos Group Inc.
+SPDX-License-Identifier: Apache-2.0
+
+The full Apache License 2.0 is at the end of this file.

@@ -51,7 +51,8 @@ const char *PC_NameOf(uint32_t addr);
 
 /* Directory holding the disc image / game files, and the executable path. */
 const char *PC_DataDir(void);
-/* The player's folder, Saved Games\Neversoft\Tony Hawk's Pro Skater (created if missing):
+/* The player's folder, Saved Games\Neversoft\Tony Hawk's Pro Skater (Linux:
+ * $XDG_DATA_HOME/Neversoft/Tony Hawk's Pro Skater, default ~/.local/share/...; created if missing):
  * Settings.ini and the Saves folder. */
 const char *PC_UserDir(void);
 

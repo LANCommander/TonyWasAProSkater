@@ -424,6 +424,45 @@ def mark_deletes(src):
 _CAST_INC_RE = re.compile(r"\*\s*\(\s*\(\s*([\w ]+?)\s*\*\s*\)\s*(\w+)\s*\)\s*\+\+")
 
 
+def unstatic_shared(src, names):
+    """Drop `static` from file-scope variables that have a retail address (`names`, the TU's
+    .syms.json). Matching sources declare a TU's view of a shared retail global as a file static
+    (skaterselect1p's DAT_800d2328, also read by 8005933c's skater constructor); the build
+    relocates statics to their retail addresses, but g++ drops a static it sees only written and
+    folds one it sees only read to its initial value, so the other TUs never saw the store."""
+    clean = _strip_comments(src)
+    clean = re.sub(r'"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'',
+                   lambda m: " " * len(m.group(0)), clean)
+    depth, cut, i, n = 0, [], 0, len(clean)
+    while i < n:
+        c = clean[i]
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+        elif depth == 0 and clean.startswith("static", i) and \
+                (i == 0 or not (clean[i - 1].isalnum() or clean[i - 1] == "_")) and \
+                i + 6 < n and clean[i + 6].isspace():
+            j = clean.find(";", i)
+            decl = clean[i + 6:j] if j >= 0 else ""
+            # variables only: no functions, inline struct bodies or read-only tables
+            if decl and not re.search(r"[({]|\bconst\b", decl.split("=", 1)[0]):
+                flat = decl
+                while re.search(r"\{[^{}]*\}", flat):  # aggregate initializers' commas
+                    flat = re.sub(r"\{[^{}]*\}", "0", flat)
+                declared = [re.sub(r"\[[^\]]*\]", "", part.split("=", 1)[0])
+                            for part in _split_top(flat, ",")]
+                declared = [(re.findall(r"\w+", d) or [""])[-1] for d in declared]
+                if all(d in names for d in declared):
+                    cut.append(i)
+            i += 6
+            continue
+        i += 1
+    for i in reversed(cut):
+        src = src[:i] + src[i + 6:]
+    return src
+
+
 def fix_cast_lvalues(src):
     """g++ 2.x's cast-as-lvalue `*((T *)p)++` (removed from modern GCC)."""
     return _CAST_INC_RE.sub(
