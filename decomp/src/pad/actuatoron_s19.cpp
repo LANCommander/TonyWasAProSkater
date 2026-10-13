@@ -6,6 +6,10 @@ extern int GGame;
 
 uchar align[8];
 
+#ifdef PC_PORT
+#include "pc_input.h"
+#endif
+
 extern "C" {
 	int PadGetState(int);
 	void PadSetAct(int, uchar *, int);
@@ -19,6 +23,12 @@ void Pad_ActuatorOn(uchar index, ushort time, uchar motor, uchar motor_value) {
 	if (GGame != 7)
 		checkIndex = index;
 
+#ifdef PC_PORT
+	/* PC: Pad_Update hands the motor values to the player's gamepad (pc_input.h) */
+	state = PC_InputGamepadConnected(index) ? 2 : 0;
+	if (state != 0) {
+		Pad[checkIndex].AlignCalled = 1;
+#else
 	state = PadGetState(index ? 16 : 0);
 
 	if (state != 0) {
@@ -34,6 +44,7 @@ void Pad_ActuatorOn(uchar index, ushort time, uchar motor, uchar motor_value) {
 				if (PadSetActAlign(index ? 16 : 0, align))
 					Pad[checkIndex].AlignCalled = 1;
 		}
+#endif
 
 		{
 			uchar *p_motor_value = &(&Pad[index].Motor0)[motor];

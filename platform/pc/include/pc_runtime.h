@@ -81,7 +81,7 @@ const char *PC_UserDir(void);
  * background and the frame's text are shown together. */
 extern void (*pc_hires_before_draw)(void);
 
-/* Per-frame hooks run from VSync. */
+/* Per-frame hooks (pc_frame.c). */
 void PC_PumpEvents(void);
 int PC_QuitRequested(void);
 void PC_RequestQuit(void);

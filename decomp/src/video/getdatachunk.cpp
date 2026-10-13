@@ -12,6 +12,9 @@ extern "C" {
 #include "game/colij.h"
 #include "game/career.h"
 #include "game/psyq.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 extern SVideoInfo GVInfo1, GVInfo2;
 extern int PosBits[], EulerBits[], FlipAngleBits[];
@@ -133,7 +136,11 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 		int n = VInfo->Yblanks - Xblanks;
 
 		for (i = 0; i < n; i++)
+#ifdef PC_PORT
+			PC_FrameWait(1);
+#else
 			VSync(0);
+#endif
 	}
 
 	if (GetBit(VInfo)) {

@@ -98,8 +98,13 @@ int PC_InputSaveSettings(void);                    /* write Settings.ini; 0 on f
 int PC_InputCapture(int player, int gamepad);
 int PC_InputClearPressed(int player);
 
+/* Before anything else: the settings and the gamepad API. */
+void PC_InputInit(void);
 /* Once per game frame, before the actions are read: sample the keyboard and gamepads. */
 void PC_InputUpdate(void);
+/* The player's gamepad motors, as the game sets a DualShock's: small on (nonzero) or off, large
+ * 0..255. Nothing without a gamepad. */
+void PC_InputRumble(int player, int small, int large);
 
 /* Player 0 is the keyboard plus the first gamepad (always connected), player 1 the second
  * gamepad. */

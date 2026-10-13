@@ -7,6 +7,9 @@ extern volatile unsigned char Pad[];
 int GNumberOfPlayers;
 
 void FUN_80092044(void);
+#ifdef PC_PORT
+void PC_RunStaticCtors(void);
+#endif
 void Options_Init(void);
 void Career_Init(void);
 void FUN_80071f84(int);
@@ -20,7 +23,11 @@ void FUN_8006b3f8(void);
 int FUN_80026d44(void) {
 	volatile unsigned char *p;
 
+#ifdef PC_PORT
+	PC_RunStaticCtors(); /* the game's static constructors (libsn's __main on the PS1) */
+#else
 	FUN_80092044();
+#endif
 	Options_Init();
 	Career_Init();
 	FUN_80071f84(1);

@@ -2,8 +2,9 @@
    library, LIBETC, LIBCD, LIBPRESS, LIBPAD, LIBSPU and LIBSND. The port has only libgte.h and
    libgpu.h of the SDK, so these are declared here, with the SDK's prototypes (C linkage: they're the
    SDK's C functions). printf/sprintf come from Psy-Q's STDIO.H under egcs; everything else is
-   declared here: Psy-Q's STRINGS.H has no prototypes, and the port must not take the host's
-   <stdio.h> (MinGW's turns sprintf into a call to __mingw_sprintf, not the game's 0x8008b900). */
+   declared here: Psy-Q's STRINGS.H has no prototypes. The PC port doesn't take the host's
+   <stdio.h> either, but links these C library calls to the host's own (platform/pc/tools/build.py
+   NATIVE_OK; printf becomes the port's trace log, NATIVE_RENAME). */
 #ifndef GAME_PSYQ_H
 #define GAME_PSYQ_H
 

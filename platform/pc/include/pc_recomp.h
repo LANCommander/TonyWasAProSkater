@@ -110,7 +110,9 @@ u32 rc_cop0_read(int reg);
 void rc_break(u32 pc);
 void rc_bad_jump(u32 pc, u32 target);
 void rc_untranslatable(u32 entry);
+/* The BIOS translated code calls (mips_bios.c; build.py --mips only, PC_MIPS) */
 u32 PC_BiosCall(u32 vector, u32 fn);
 void PC_Syscall(void);
+void PC_HeapInit(u32 addr, u32 size);
 
 #endif

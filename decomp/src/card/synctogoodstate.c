@@ -1,5 +1,8 @@
 /* SyncToGoodState__Fv (0x80014424) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 int CardStatusMode, CardLoadFlag, CardStatusTemp, CardStatus;
 
@@ -22,7 +25,11 @@ int SyncToGoodState(void) {
 	CardLoadFlag = 0;
 
 	for (;;) {
+#ifdef PC_PORT
+		PC_FrameWait(1);
+#else
 		VSync(0);
+#endif
 		Card_CheckStatus(0, 0);
 
 		if (CardLoadFlag == 1)

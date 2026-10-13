@@ -17,6 +17,9 @@ extern "C" {
 #include "game/frontend.h"
 #include "game/hires.h"
 #include "game/main.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 extern SControl Pad[2];
 extern PadBuffer DAT_800bf104;
@@ -42,7 +45,11 @@ void Pause(int);
 void LoadingScreen_WaitLevel(void) {
 	do {
 		if (DAT_800d1cec)
+#ifdef PC_PORT
+			PC_FrameWait(1);
+#else
 			VSync(0);
+#endif
 
 		DrawSync(0);
 		HiRes_DrawOTagNoSync();

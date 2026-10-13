@@ -1,5 +1,8 @@
 /* FUN_800502bc (0x800502bc) flags=-fstructure-noalias */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 typedef struct P {
 	unsigned tag;
@@ -68,8 +71,14 @@ void FUN_800502bc(int a) {
 					GameFMV_StartY = 0;
 					GameFMV_StartFMV(1);
 
+#ifdef PC_PORT
+					/* a start position that varies: the frame count */
+					DAT_800d226c = (int)(PC_FrameCount() % 320);
+					DAT_800d2270 = (int)(PC_FrameCount() % 112);
+#else
 					DAT_800d226c = (VSync(1) + VSync(-1)) % 320;
 					DAT_800d2270 = (VSync(1) + VSync(-1)) % 112;
+#endif
 				}
 
 				DAT_800d2280->r = DAT_800d2278;

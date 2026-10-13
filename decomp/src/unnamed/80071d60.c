@@ -1,5 +1,8 @@
 /* FUN_80071d60 (0x80071d60) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 typedef struct {
 	short x, y, w, h;
@@ -31,7 +34,9 @@ void FUN_80071d60(void) {
 
 	ProjectedVertices = Vertices;
 	RotatedVertices = Vertices + 3200;
+#ifndef PC_PORT /* PC: no interrupt callbacks to reset; the frame handler is set below */
 	FUN_80096b84();
+#endif
 	FUN_80014d5c(1);
 	Pad_InitAtStart();
 	FUN_800971a4();
@@ -41,7 +46,11 @@ void FUN_80071d60(void) {
 
 	r = DAT_800d1f8c[0];
 	ClearImage(&r, 0, 0, 0);
+#ifdef PC_PORT
+	PC_SetFrameHandler(FUN_80047870); /* MyVSync: once a frame (pc_frame.h) */
+#else
 	FUN_80096c14(FUN_80047870);
+#endif
 	FUN_8008c3d0(1);
 	FUN_800785cc(0x9f6ad);
 	SFX_InitAtStart();

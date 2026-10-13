@@ -1,6 +1,9 @@
 /* Credits_Roll__Fii (0x8004fe28) */
 #include "names.h"
 #include "game/padbuttons.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 extern char Pad[];
 
@@ -165,9 +168,17 @@ void Credits_Roll(int a0, int a1) {
 			s3 += th;
 		}
 
+#ifdef PC_PORT
+		PC_FrameWait(1);
+#else
 		VSync(0);
+#endif
 		FUN_8005027c(a0, 1, a1);
+#ifdef PC_PORT
+		PC_FrameWait(1);
+#else
 		VSync(0);
+#endif
 		FUN_800494dc();
 		Pad_Update();
 		PollHost();

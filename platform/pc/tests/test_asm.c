@@ -51,6 +51,10 @@ static int verbose;
 static uint8_t *s_exe;   /* the retail image, 0x80010000.. */
 static uint32_t s_exeSize;
 
+/* The port's native-data lookup (pc_main.c; hle_libgte.c's tables): in a snapshot every global is
+ * at its retail address */
+void *PC_Data(uint32_t addr) { return (void *)(uintptr_t)addr; }
+
 static const AsmImpl *Find(uint32_t addr) {
 	const AsmImpl *p;
 	for (p = asm_impls; p->addr; p++)

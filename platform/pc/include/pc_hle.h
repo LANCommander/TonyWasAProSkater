@@ -1,9 +1,12 @@
-/* High-level reimplementations of the Psy-Q libraries and the PS1 BIOS (src/hle_*.c).
+/* The Psy-Q libraries the port still reimplements at their retail addresses (src/hle_*.c): GPU,
+ * GTE, CD, SPU, MDEC. Each is on its way to a native subsystem the game calls directly, as the C
+ * library, BIOS, memory card, controllers and VSync already have (pc_frame.h, pc_input.h,
+ * pc_saves.h).
  *
- * Naming: an HLE entry point is either the Psy-Q function's own name (DrawOTag) or, where that
- * would clash with the host C library, `hle_<name>` (hle_sprintf). The build maps both to the
- * retail address of the Psy-Q function (build/psyq_names.tsv). `hle_<8 hex digits>` names an
- * address directly, and `hleov_<8 hex digits>` overrides even a decompiled game function. */
+ * Naming: an HLE entry point is either the Psy-Q function's own name (DrawOTag) or `hle_<name>`
+ * where that would clash with the host C library. The build maps both to the retail address of
+ * the Psy-Q function (build/psyq_names.tsv). `hle_<8 hex digits>` names an address directly, and
+ * `hleov_<8 hex digits>` overrides even a decompiled game function. */
 #ifndef PC_HLE_H
 #define PC_HLE_H
 
@@ -12,27 +15,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void PC_HleInit(void);
-
-/* BIOS heap (InitHeap/malloc/free) in PS1 RAM. */
-void PC_HeapInit(uint32_t addr, uint32_t size);
-uint32_t PC_Malloc(uint32_t size);
-void PC_Free(uint32_t addr);
-
-/* BIOS events. Classes/specs as in the BIOS (e.g. 0xf4000001 HwCARD, 0x0004 EvSpIOE). */
-void PC_DeliverEvent(uint32_t cls, uint32_t spec);
-
-/* A vertical blank is due: run the VSync callbacks and poll input. Called by VSync() and by the
- * HLE functions games spin on (CdReadSync, DrawSync, TestEvent...), so code that busy-waits for
- * interrupt-driven state still sees time pass. Returns the number of vblanks that elapsed. */
-int PC_TickVBlank(void);
-/* Total vblanks since boot. */
-uint32_t PC_VBlankCount(void);
-
-/* Input (pc_input.c, hle_libpad.c): PC_InputPoll fills the libpad receive buffers, once per vblank. */
-void PC_InputInit(void);
-void PC_InputPoll(void);
 
 /* CD image. Sector reads see the disc image plus the mounted files. */
 int PC_CdOpen(void);
@@ -51,7 +33,7 @@ int PC_CdFindDiscFile(const char *name, uint32_t *lba, uint32_t *size);
 int PC_CdMountFile(const char *path, uint32_t *lba, uint32_t *sectors);
 /* The file mounted at lba, or NULL. */
 const char *PC_CdMountPath(uint32_t lba);
-/* Once per vblank: advance a CD stream (CdRead2/CdlReadS) by the sectors read since the last. */
+/* Once per frame: advance a CD stream (CdRead2/CdlReadS) by the sectors read since the last. */
 void PC_CdStreamVBlank(void);
 /* Seconds of the film mounted at lba that have been heard since its stream started from the
  * top (0 before the mixer gets to it, or if it isn't the film streaming). */

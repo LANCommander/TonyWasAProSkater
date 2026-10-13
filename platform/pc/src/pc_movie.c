@@ -34,7 +34,7 @@ typedef struct {
 } PcRect;
 
 int LoadImage(PcRect *rect, const void *p);   /* hle_libgpu.c */
-int VSync(int mode);                          /* hle_libetc.c */
+#include "pc_frame.h"
 
 static PcSfd *s_sfd;
 static plm_buffer_t *s_buf;
@@ -58,7 +58,7 @@ int PC_MovieAvailable(int track) {
 }
 
 int PC_MovieWait(void) {
-    VSync(0);
+    PC_FrameWait(1);
     return PC_CdStreamBusy();
 }
 
@@ -146,7 +146,7 @@ int PC_MovieFrame(void) {
         Show(s_next);
         s_next = NULL;
     }
-    VSync(0);
+    PC_FrameWait(1);
     a = PC_CdFilmTime(s_lba);
     if (a > s_audio) {
         s_audio = s_clock = a;

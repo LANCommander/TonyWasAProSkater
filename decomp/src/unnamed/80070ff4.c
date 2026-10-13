@@ -77,6 +77,9 @@ int Pad_Update(void) {
 			any |= down;
 			Pad_Button(q + i, down);
 		}
+
+		/* the motors Pad_ActuatorOn/Off set (Motor0, Motor1) */
+		PC_InputRumble(j, ((unsigned char *)&Pad[j].pad154)[0], ((unsigned char *)&Pad[j].pad154)[1]);
 	}
 
 	if (!any)

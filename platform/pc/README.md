@@ -65,7 +65,7 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 |---|---|
 | `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `inline_c.h`, `sys/types.h`) |
 | `include/pc_*.h` | interfaces between the port's subsystems |
-| `src/` | runtime: boot, memory map, HLE libraries, GTE, GPU, input, video |
+| `src/` | runtime: boot, memory map, frame clock, input, video, saves, and the remaining HLE libraries (GPU, GTE, CD, SPU, MDEC) |
 | `include/pc_platform.h`, `src/pc_platform.c` | what differs between Windows and Linux: paths, folders, files, clock |
 | `tools/` | build driver and code generators (`toolchain.py`: the host's compiler and object format) |
 
@@ -330,7 +330,7 @@ The pause-menu cheat codes are entered with the Skate controls (hold SpinLeft). 
 button legend (PS1 symbols for Select, Accept and Back) is part of its background images.
 
 On PC the main menu (`decomp/src/unnamed/8005e754.c`) ends with **QUIT**, which exits the game
-the same way closing the window does (`PC_RequestQuit`, acted on at the next vblank). Its row id
+the same way closing the window does (`PC_RequestQuit`, acted on at the next frame). Its row id
 7 is also the hidden cheat menu's, which is only reached through a menu path, so the menu only
 quits when 7 was picked by hand.
 
@@ -379,7 +379,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_INPUT=frame:mask,...` | scripted pad input for player 1 (PS1 button mask, pressed = 1, held from that frame; X is both Ollie and Menu Accept, Triangle Grind and Menu Back, Start is Pause) |
 | `THPS_KEYS=frame:Key+Key,...` | scripted keyboard (Settings.ini key names, held from that frame; `frame:` releases), read through the bindings |
 | `THPS_NOGAMEPAD=1` | ignore connected gamepads, so scripted runs navigate the menus the same way with or without one |
-| `THPS_TRACE=1` | log CD, BIOS and debug-print activity, and player 1's actions as they change |
+| `THPS_TRACE=1` | log CD activity, the game's debug prints, and player 1's actions as they change |
 | `THPS_FAST=1` | don't throttle to 60 Hz |
 | `THPS_MOVIES=0` | skip every movie |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
@@ -411,7 +411,7 @@ image) and `src/pc_xa.c` decodes them. `src/pc_music.c` picks the next song from
 music, movies and sound effects come from its films and sound banks (see above). The PS1's
 movies play through the game's own movie player (`GameFMV_PlayMovie`): `src/pc_mdec.c` is the
 MDEC (the game decodes the bitstream itself, `DecDCTvlc3`; this does the inverse DCT and colour
-conversion into the slices the game uploads), and the player's busy-waits wait a vblank for the
+conversion into the slices the game uploads), and the player's busy-waits wait a frame for the
 CD stream instead (PC branch, `PC_MovieWait`). The same decoder shows the songs' 96x64 video on
 the levels' TV screens (the credits screen shows them the same way). Not done yet: SPU reverb,
 exact ADSR curves, 64-bit build. Running every game function as translated MIPS
@@ -423,7 +423,7 @@ Port glue worth knowing about (see the tools for details):
   the virtual destructor with in_chrg 3, constructors returning `this`.
 - File statics in decompiled TUs live at their retail addresses (listed in each `.syms.json`).
 - Hardware behaviour the game relies on is emulated: MIPS division never traps (the fault
-  handler gives the MIPS result), low KUSEG addresses map to RAM, busy-waits let vblanks happen.
+  handler gives the MIPS result), low KUSEG addresses map to RAM, busy-waits let frames happen (`PC_FramePoll`).
 
 Changes the port needs in `decomp/src` are guarded by `#ifdef PC_PORT` or are honest signatures
 that still compile to the same bytes. `node decomp/tools/check_all.mjs` must stay green.

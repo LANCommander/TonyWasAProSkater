@@ -11,6 +11,12 @@ void FUN_8008f0dc(void);
 
 void FUN_80014d5c(int pad) {
 	DAT_800d137c = 1;
+#ifdef PC_PORT
+	/* PC: no memory card (saves are files, pc_saves.h), so no card driver or BIOS card events. */
+	CardStatusMode = 0;
+	CardLoadFlag = 0;
+	return;
+#endif
 	FUN_8008e944(pad);
 	FUN_8008e9d4();
 	FUN_8008ea38();

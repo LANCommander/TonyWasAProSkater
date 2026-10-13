@@ -8,6 +8,9 @@
 #include "game/mem.h"
 #include "game/psyq.h"
 #include "game/shellutils.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 extern int Loading;
 extern int DAT_800d2c1c[3];             /* pictures per column (8 decks, 3 trucks, 15 wheels) */
@@ -27,7 +30,11 @@ int DAT_800d22cc; /* all pictures loaded */
 int Load8BitBMP2(char *, char **, int *, int *, ushort *);
 
 void Front_StreamBoardPictures2P(void) {
+#ifdef PC_PORT
+	PC_FramePoll(); /* a frame due while the pictures load runs here */
+#else
 	VSync(-1);
+#endif
 
 	int col = DAT_800d22b8[DAT_800d22ac];
 

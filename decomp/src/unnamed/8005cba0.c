@@ -3,6 +3,9 @@
 #include <sys/types.h>
 #include <libgte.h>
 #include <libgpu.h>
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 typedef struct {
 	char p[12];
@@ -41,7 +44,11 @@ void LoadingScreen_Main(void) {
 	r.w = 512;
 	r.h = 240;
 	ClearImage(&r, 0, 0, 0);
+#ifdef PC_PORT
+	PC_FrameWait(1);
+#else
 	VSync(0);
+#endif
 	ClearImage(&r, 0, 0, 0);
 
 	dr.dfe = 0;

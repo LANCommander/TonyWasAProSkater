@@ -15,6 +15,9 @@ extern void *pBMR;
 
 #ifdef PC_PORT
 #include "pc_assets.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 #endif
 
 void DownloadBMP16x2(char *pData) {
@@ -38,7 +41,11 @@ void DownloadBMP16x2(char *pData) {
 
 		if (PC_BmpLayoutSize(pData, &lw, &lh) && lh == *(ushort *)(pData + 22)) {
 			((void (*)(char *))0x80061a10)(pData);
+#ifdef PC_PORT
+			PC_FrameWait(1);
+#else
 			VSync(0);
+#endif
 			return;
 		}
 	}
@@ -170,6 +177,10 @@ void DownloadBMP16x2(char *pData) {
 	DrawSync(0);
 	LoadImage(&r, (u_long *)data);
 	DrawSync(0);
+#ifdef PC_PORT
+	PC_FrameWait(1);
+#else
 	VSync(0);
+#endif
 	Mem_Delete(data);
 }

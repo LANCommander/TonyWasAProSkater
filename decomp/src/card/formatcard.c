@@ -10,6 +10,10 @@ int Card_FormatCard(int a, int b) {
 	char buf[8];
 	int s, r;
 
+#ifdef PC_PORT
+	/* PC: the saves folder needs no formatting (pc_saves.h). */
+	return 1;
+#endif
 	sprintf(buf, "bu%1d%1d:", a, b);
 	_clear_event_x();
 

@@ -14,6 +14,9 @@ extern "C" {
 #include "game/mem.h"
 #include "game/pad.h"
 #include "game/psyq.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 struct CdlATV {
 	uchar val0, val1, val2, val3;
@@ -128,7 +131,11 @@ void GameFMV_PlayMovie(int track) {
 		GameFMV_Active = 1;
 		Front_ClearScreen();
 		SetDefDispEnv(&disp, 0, 256, 320, 240);
+#ifdef PC_PORT
+		PC_FrameWait(1);
+#else
 		VSync(0);
+#endif
 		PutDispEnv(&disp);
 
 		atv.val2 = 0;
@@ -169,7 +176,11 @@ void GameFMV_PlayMovie(int track) {
 
 		disp.isrgb24 = 1;
 		disp.disp.w = 320;
+#ifdef PC_PORT
+		PC_FrameWait(1);
+#else
 		VSync(0);
+#endif
 		PutDispEnv(&disp);
 
 		while (PC_MovieFrame()) {
@@ -245,7 +256,11 @@ void GameFMV_PlayMovie(int track) {
 			disp.disp.w = disp.disp.w * 2 / 3;
 		}
 
+#ifdef PC_PORT
+		PC_FrameWait(1);
+#else
 		VSync(0);
+#endif
 		PutDispEnv(&disp);
 
 		if (GameFMV_RewindSwitch)
@@ -272,7 +287,11 @@ end:
 	disp.isrgb24 = 0;
 	disp.disp.w = 512;
 	disp.screen.w = old_screen_w;
+#ifdef PC_PORT
+	PC_FrameWait(1);
+#else
 	VSync(0);
+#endif
 	PutDispEnv(&disp);
 
 	atv.val0 = 0;

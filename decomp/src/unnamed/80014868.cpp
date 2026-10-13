@@ -57,6 +57,10 @@ int Card_WriteReplayToDisk(EFileType FileType, char *FName) {
 			break;
 	}
 
+#ifdef PC_PORT
+	/* PC: no development-kit host link (and nothing calls this); replays save through pc_saves.h */
+	return 0;
+#endif
 	PCinit();
 
 	fd = PCcreat(FName, 0);

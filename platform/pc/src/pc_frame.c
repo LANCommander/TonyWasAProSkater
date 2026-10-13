@@ -1,26 +1,28 @@
-/* libetc: VSync, interrupt callbacks. Time advances on a 60 Hz clock; vblank "interrupts" are
- * run from VSync and from the HLE calls games busy-wait on (see PC_TickVBlank). */
+/* The frame clock (pc_frame.h). Frames run at 60 Hz off the wall clock, from PC_FrameWait and from
+ * PC_FramePoll, which the port calls wherever the game waits on something a frame changes. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "pc_frame.h"
 #include "pc_gpu.h"
 #include "pc_hle.h"
+#include "pc_input.h"
 #include "pc_platform.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
 
-#define NTSC_HZ 60
+#define FRAME_HZ 60
 
 extern volatile uint32_t pc_heartbeat;
 void PC_CountReport(uint32_t frame);
-static uint32_t s_vsyncCallback;
-static uint32_t s_vblanks;
+static void (*s_frameHandler)(void);
+static uint32_t s_frames;
 static int64_t s_freq, s_next;
-static int s_inTick;
+static int s_inHandler;
 static int s_unthrottled;
 /* THPS_DETERMINISTIC=1: a virtual clock instead of the wall clock, so automated runs (scripted
- * input, frame dumps) behave the same every time. Each poll of hardware state advances it 1 ms. */
+ * input, frame dumps) behave the same every time. Each poll advances it 1 ms. */
 static int s_det;
 static int64_t s_virtualNow;
 
@@ -30,7 +32,7 @@ static int64_t Now(void) {
     return PC_ClockNow();
 }
 
-uint32_t PC_VBlankCount(void) { return s_vblanks; }
+uint32_t PC_FrameCount(void) { return s_frames; }
 
 static void ClockInit(void) {
     s_det = getenv("THPS_DETERMINISTIC") && atoi(getenv("THPS_DETERMINISTIC"));
@@ -44,17 +46,16 @@ static void ClockInit(void) {
 
 static void DebugHooks(void);
 
-/* One vertical blank: input, the game's VSync callback, then show the display area (games that
- * flip buffers from the callback never call VSync(0) while playing). */
-static void RunVBlank(void) {
-    s_vblanks++;
-    PC_InputPoll();
+/* One frame: input, streaming, the game's frame handler, then show the display area (the game
+ * flips buffers from its handler and never waits for a frame while playing). */
+static void RunFrame(void) {
+    s_frames++;
     PC_CdStreamVBlank();
     PC_GpuRunDueCallback();
-    if (s_vsyncCallback && !s_inTick) {
-        s_inTick = 1;
-        ((void (*)(void))PSX_PTR(s_vsyncCallback))();
-        s_inTick = 0;
+    if (s_frameHandler && !s_inHandler) {
+        s_inHandler = 1;
+        s_frameHandler();
+        s_inHandler = 0;
     }
     PC_GpuPresent();
     PC_CountReport(pc_heartbeat);
@@ -65,7 +66,7 @@ static void RunVBlank(void) {
         PC_ExitProcess(0);
 }
 
-int PC_TickVBlank(void) {
+int PC_FramePoll(void) {
     int64_t now;
     int n = 0;
     if (!s_freq)
@@ -74,8 +75,8 @@ int PC_TickVBlank(void) {
         s_virtualNow += 1000;
     now = Now();
     while (now >= s_next && n < 4) {
-        s_next += s_freq / NTSC_HZ;
-        RunVBlank();
+        s_next += s_freq / FRAME_HZ;
+        RunFrame();
         n++;
     }
     if (now - s_next > s_freq / 4)
@@ -83,10 +84,10 @@ int PC_TickVBlank(void) {
     return n;
 }
 
-/* Automated runs: THPS_SHOT="f1,f2,..." dumps the display (and VRAM) at those VSync(0) counts to
- * THPS_SHOTDIR (default "."); THPS_FRAMES=n exits after n presented frames; THPS_POKE=
- * "addr:value,..." stores those words every vblank (0x800d1708:1 = Cheat_LevelSelect; a
- * decompiled global by its retail address, PC_Data). */
+/* Automated runs: THPS_SHOT="f1,f2,..." dumps the display (and VRAM) at those frames to
+ * THPS_SHOTDIR (default "."); THPS_FRAMES=n exits after n frames; THPS_POKE="addr:value,..."
+ * stores those words every frame (0x800d1708:1 = Cheat_LevelSelect; a decompiled global by its
+ * retail address, PC_Data). */
 static void DebugHooks(void) {
     static int frames, maxFrames = -1;
     static const char *shots, *pokes;
@@ -131,19 +132,19 @@ static void DebugHooks(void) {
     }
 }
 
-/* Block until the next vblank, then present. */
-static void WaitVBlank(void) {
-    uint32_t start = s_vblanks;
+/* Block until the next frame has run. */
+static void WaitFrame(void) {
+    uint32_t start = s_frames;
     if (!s_freq)
         ClockInit();
     if (s_det) {
         s_virtualNow = s_next;
-        PC_TickVBlank();
+        PC_FramePoll();
     } else if (s_unthrottled) {
         s_next = Now();
-        RunVBlank();
+        RunFrame();
     } else {
-        while (s_vblanks == start) {
+        while (s_frames == start) {
             int64_t now;
             now = Now();
             if (now < s_next) {
@@ -151,55 +152,18 @@ static void WaitVBlank(void) {
                 if (ms > 1)
                     PC_SleepMs((unsigned)(ms - 1));
             }
-            PC_TickVBlank();
+            PC_FramePoll();
         }
     }
 }
 
-int VSync(int mode) {
-    if (mode < 0) {
-        /* the vblank counter: games spin on it (the career auto-load waits a second after
-         * loading), so a vblank that is due happens here */
-        PC_TickVBlank();
-        return (int)s_vblanks;
-    }
-    if (mode == 1) {
-        PC_TickVBlank();
-        return 0; /* horizontal lines since the last vblank */
-    }
-    if (mode == 0)
-        mode = 1;
-    while (mode-- > 0)
-        WaitVBlank();
-    return 0;
+void PC_FrameWait(int n) {
+    while (n-- > 0)
+        WaitFrame();
 }
 
-int VSyncCallback(uint32_t func) {
-    s_vsyncCallback = func;
+void PC_SetFrameHandler(void (*fn)(void)) {
+    s_frameHandler = fn;
     if (getenv("THPS_TRACE_CULL"))
-        fprintf(stderr, "VSyncCallback(%08x) registered at f%u\n", func, pc_heartbeat);
-    return 0;
+        fprintf(stderr, "frame handler %p set at f%u\n", (void *)fn, pc_heartbeat);
 }
-
-int ResetCallback(void) {
-    s_vsyncCallback = 0;
-    return 0;
-}
-
-uint32_t InterruptCallback(int irq, uint32_t func) {
-    (void)irq;
-    (void)func;
-    return 0;
-}
-
-uint32_t DMACallback(int dma, uint32_t func) {
-    (void)dma;
-    (void)func;
-    return 0;
-}
-
-int SetIntrMask(int mask) { return mask; }
-int StopCallback(void) { return 0; }
-int RestartCallback(void) { return 0; }
-int CheckCallback(void) { return 0; }
-void PadStop(void) {}

@@ -206,6 +206,8 @@ class Ctx:
         if os.path.exists(p):
             for q in read_tsv(p):
                 self.psyq.setdefault(q[1], int(q[0], 16))
+        self.native_at = {"_psx_%08x" % self.psyq[n]: "_" + t for n, t in NATIVE_RENAME.items()
+                          if n in self.psyq}
 
 
 BUILTIN_CXX = {
@@ -220,7 +222,15 @@ NATIVE_OK = re.compile(r"^(__alloca|___chkstk.*|__[a-z]*div[sd]i3|__[a-z]*mod[sd
                        r"__ashldi3|__ashrdi3|__lshrdi3|__cmpdi2|__ucmpdi2|_?memcpy|_?memset|"
                        r"_?memmove|__fixunsdfdi|__floatdidf|_?abort|_?PC_Gte\w+|__ZTV.*|___cxa_.*|"
                        r"___gxx_personality.*|__Unwind.*|___dso_handle|_atexit|"
-                       r"__GLOBAL_OFFSET_TABLE_|_?pc_delete_mark|_?pc_vdelete)$")
+                       r"__GLOBAL_OFFSET_TABLE_|_?pc_delete_mark|_?pc_vdelete|"
+                       # the C library: the host's, not Psy-Q's LIBC at its retail addresses
+                       r"_?sprintf|_?strcpy|_?strlen|_?strcmp|_?strncmp|_?memchr|_?malloc|_?free)$")
+
+# Psy-Q functions whose callers get a native port function instead: the game's debug printf goes
+# to the port's trace log, and libsn's operator delete (which freed into the BIOS heap, which
+# the game never allocates from) does nothing
+NATIVE_RENAME = {"printf": "PC_GameDebugf", "puts": "PC_GameDebugPuts",
+                 "__builtin_delete": "pc_delete_unowned"}
 
 
 def strip_us(sym):
@@ -631,6 +641,9 @@ class Resolver:
             name = strip_us(sym)
             if NATIVE_OK.match(sym) or NATIVE_OK.match(name):
                 continue
+            if name in NATIVE_RENAME:
+                renames[sym] = "_" + NATIVE_RENAME[name]
+                continue
             if sym in self.relocated:
                 renames[sym] = "_psx_%08x" % self.relocated[sym]
                 continue
@@ -644,7 +657,8 @@ class Resolver:
             if r is None:
                 info["unresolved"].append(name)
             else:
-                renames[sym] = r
+                # a call by address (FUN_<addr>) to one of NATIVE_RENAME's functions
+                renames[sym] = self.ctx.native_at.get(r, r)
         return renames, info
 
     def class_delete_addr(self, cls):

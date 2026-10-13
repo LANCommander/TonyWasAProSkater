@@ -1,5 +1,8 @@
 /* Front_StopMusicLoop__Fv (0x8005c85c) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 short DAT_800d1ca0;
 
@@ -12,6 +15,10 @@ void Front_StopMusicLoop(void) {
 
 	while (DAT_800d1ca0 >= 0) {
 		Front_UpdateMusicLoop();
+#ifdef PC_PORT
+		PC_FrameWait(1);
+#else
 		VSync(0);
+#endif
 	}
 }

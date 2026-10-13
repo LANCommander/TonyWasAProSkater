@@ -46,7 +46,7 @@ typedef struct {
 #include <stdlib.h>
 #include <string.h>
 
-#include "pc_hle.h"
+#include "pc_frame.h"
 #include "pc_input.h"
 #include "pc_runtime.h"
 #include "pc_settings.h"
@@ -336,6 +336,9 @@ int PC_InputSettingsLine(const char *section, const char *key, char *value) {
 
 typedef DWORD(WINAPI *XInputGetStateFn)(DWORD, XINPUT_STATE *);
 static XInputGetStateFn s_xinputGetState;
+/* Rumble: low-frequency (large) and high-frequency (small) motor speeds, 0..65535 */
+typedef void (*RumbleFn)(DWORD slot, WORD low, WORD high);
+static RumbleFn s_rumble;
 
 #define XI_SLOTS 4
 #define STICK_THRESHOLD 16000
@@ -412,15 +415,31 @@ static DWORD SdlGetState(DWORD slot, XINPUT_STATE *st) {
     return ERROR_SUCCESS;
 }
 
+static void SdlRumble(DWORD slot, WORD low, WORD high) {
+    if (s_gc[slot])
+        SDL_GameControllerRumble(s_gc[slot], low, high, 1000); /* renewed while it lasts */
+}
+
 static void LoadXInput(void) {
     if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == 0) {
         s_xinputGetState = SdlGetState;
+        s_rumble = SdlRumble;
         PC_Log("gamepads: SDL game controllers");
     } else {
         PC_Log("gamepads: not available (%s)", SDL_GetError());
     }
 }
 #else
+typedef DWORD(WINAPI *XInputSetStateFn)(DWORD, XINPUT_VIBRATION *);
+static XInputSetStateFn s_xinputSetState;
+
+static void XiRumble(DWORD slot, WORD low, WORD high) {
+    XINPUT_VIBRATION v;
+    v.wLeftMotorSpeed = low;
+    v.wRightMotorSpeed = high;
+    s_xinputSetState(slot, &v);
+}
+
 static void LoadXInput(void) {
     static const char *const dlls[] = {"xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll"};
     int i;
@@ -428,6 +447,9 @@ static void LoadXInput(void) {
         HMODULE m = LoadLibraryA(dlls[i]);
         if (m) {
             s_xinputGetState = (XInputGetStateFn)(void (*)(void))GetProcAddress(m, "XInputGetState");
+            s_xinputSetState = (XInputSetStateFn)(void (*)(void))GetProcAddress(m, "XInputSetState");
+            if (s_xinputSetState)
+                s_rumble = XiRumble;
             if (s_xinputGetState)
                 PC_Log("gamepads: %s", dlls[i]);
         }
@@ -524,7 +546,7 @@ static void PollGamepads(void) {
 static void ScriptedKeys(uint8_t *down) {
     static char *spec;
     static int parsed;
-    uint32_t now = PC_VBlankCount();
+    uint32_t now = PC_FrameCount();
     const char *held = NULL;
     char *p;
     if (!parsed) {
@@ -558,7 +580,7 @@ static uint16_t ScriptedButtons(void) {
     static int parsed, n;
     static uint32_t frames[256];
     static uint16_t masks[256];
-    uint32_t now = PC_VBlankCount();
+    uint32_t now = PC_FrameCount();
     uint16_t m = 0;
     int i;
     if (!parsed) {
@@ -657,10 +679,28 @@ void PC_InputUpdate(void) {
                 if (acts >> a & 1)
                     snprintf(list + strlen(list), sizeof list - strlen(list), " %s%s",
                              s_actions[a].set == PC_SET_MENU ? "Menu" : "", s_actions[a].name);
-            PC_Trace("player 1 at vblank %u:%s", PC_VBlankCount(), acts ? list : " -");
+            PC_Trace("player 1 at vblank %u:%s", PC_FrameCount(), acts ? list : " -");
             s_lastDown = acts;
         }
     }
+}
+
+void PC_InputRumble(int player, int small, int large) {
+    static int s_last[2][2] = {{-1, -1}, {-1, -1}};
+    static uint32_t s_renewed[2];
+    int slot;
+    if (player < 0 || player > 1 || !s_rumble || (slot = s_playerSlot[player]) < 0)
+        return;
+    small = small ? 0xffff : 0; /* the DualShock's small motor is on or off */
+    large = large * 0x101;
+    /* SDL's rumble runs out after a second: renew it while it lasts */
+    if (small == s_last[player][0] && large == s_last[player][1] &&
+        (!(small | large) || PC_FrameCount() - s_renewed[player] < 30))
+        return;
+    s_last[player][0] = small;
+    s_last[player][1] = large;
+    s_renewed[player] = PC_FrameCount();
+    s_rumble((DWORD)slot, (WORD)large, (WORD)small);
 }
 
 int PC_InputPlayerConnected(int player) { return player == 0 || s_playerSlot[player] >= 0; }

@@ -32,8 +32,10 @@ void Pad_InitAtStart(void) {
 	}
 
 	Pad_ClearAll();
+#ifndef PC_PORT /* PC: Pad_Update reads the bound actions (pc_input.h), no receive buffers */
 	FUN_80096304(controllers, controllers + 34);
 	FUN_80096050();
+#endif
 
 	Pad_IdleTime = 0;
 	ResetMainDemoTimer();

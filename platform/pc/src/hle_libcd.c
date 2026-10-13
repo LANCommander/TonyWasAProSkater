@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "pc_assets.h"
+#include "pc_frame.h"
 #include "pc_hle.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
@@ -456,14 +457,14 @@ int CdRead(int sectors, uint32_t buf, int mode) {
 
 int CdReadSync(int mode, uint8_t *result) {
     (void)mode;
-    PC_TickVBlank();
+    PC_FramePoll();
     ResultStat(result);
     return s_pending;
 }
 
 int CdSync(int mode, uint8_t *result) {
     (void)mode;
-    PC_TickVBlank();
+    PC_FramePoll();
     ResultStat(result);
     return CdlComplete;
 }

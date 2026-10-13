@@ -31,6 +31,9 @@ void Options_SetPreferences(void);
 
 #ifdef PC_PORT
 #include "pc_saves.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 #endif
 
 int FUN_800154f4(void) {
@@ -93,8 +96,10 @@ int FUN_800154f4(void) {
 			Options_SetPreferences();
 		}
 
+#ifndef PC_PORT /* PC: no card pause (s2 stays 0) */
 		while (s2 != 0 && VSync(-1) < s2 + 60)
 			;
+#endif
 
 		return r;
 	}

@@ -13,6 +13,7 @@
 #include <libgpu.h>
 #include "pc_gpu.h"
 #include "pc_gpu_gl.h"
+#include "pc_frame.h"
 #include "pc_hle.h"
 
 #define LINK(p) ((u_long)(uintptr_t)(p) & 0xffffffu)
@@ -119,8 +120,8 @@ int DrawSync(int mode)
 /* The interlace field flips every vblank; games spin on it, so let time pass while they do. */
 int GetODE(void)
 {
-    PC_TickVBlank();
-    return (int)(PC_VBlankCount() & 1);
+    PC_FramePoll();
+    return (int)(PC_FrameCount() & 1);
 }
 
 int GetVideoMode(void)
@@ -274,8 +275,8 @@ void DrawOTag(u_long *p)
         s_cb_scheduled = 1;
 }
 
-/* Fire any DrawSyncCallback scheduled by a DrawOTag since the last tick -- called once per vblank,
- * before the game's own VSync callback runs, so state it depends on (e.g. Db_CallBack clearing
+/* Fire any DrawSyncCallback scheduled by a DrawOTag since the last tick -- called once per frame,
+ * before the game's frame handler runs, so state it depends on (e.g. Db_CallBack clearing
  * THPS1's "Rendering" flag) is settled by the time game logic checks it that tick. */
 void PC_GpuRunDueCallback(void)
 {

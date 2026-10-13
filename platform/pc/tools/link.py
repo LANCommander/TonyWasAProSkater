@@ -171,7 +171,8 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
         out = os.path.join(out, "release")
     nm = tool("nm")
     gen = os.path.join(out, "gen")
-    rt = os.path.join(out, "runtime")
+    # a --mips build's runtime also has the BIOS translated code calls (PC_MIPS, mips_bios.c)
+    rt = os.path.join(out, "runtime_mips" if mips else "runtime")
     os.makedirs(gen, exist_ok=True)
     os.makedirs(rt, exist_ok=True)
     if WINDOWS:
@@ -188,6 +189,8 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
         # absolute addresses (no PIE), the Windows ABI's small-struct returns (as the game code,
         # build.py), 64-bit file offsets (disc images are bigger than 2 GB)
         rt_flags += ["-fno-pic", "-fno-pie", "-freg-struct-return", "-D_FILE_OFFSET_BITS=64"]
+    if mips:
+        rt_flags += ["-DPC_MIPS=1"]
     img = ctx.image[0x800:]
 
     # ---- 1. runtime -------------------------------------------------------------------------
@@ -362,6 +365,15 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
                 "\tmovl $3, %edx",
                 "1:"]
 
+    # libsn's operator delete freed into the BIOS heap, which the game never allocates from: on
+    # PC it is the native pc_delete_unowned (build.py NATIVE_RENAME)
+    unowned = psyq.get("__builtin_delete", [None])[0]
+
+    def jump_to(a):
+        if a == unowned:
+            return ["\tjmp _pc_delete_unowned"]
+        return ["\tmovl $0x%08x, %%eax" % a, "\tjmp *%eax"]
+
     asm = ["\t.text"]
     done = set()
     for m in metas:
@@ -412,9 +424,7 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
                     "\tmovl $0, _pc_delete_freed",
                     "\tret",
                     "1:",
-                    "\tmovl $0, _pc_delete_marked",
-                    "\tmovl $0x%08x, %%eax" % a,
-                    "\tjmp *%eax"]
+                    "\tmovl $0, _pc_delete_marked"] + jump_to(a)
     # constructors defined in C++: call the native one with the caller's argument words, then
     # return `this` as egcs constructors do
     for m in metas:
@@ -455,7 +465,7 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
                     "\tjz 1f"]
             if not dl:
                 raise SystemExit("no operator delete for %s (destructor 0x%08x)" % (cls, a))
-            asm += ["\tmovl $0x%08x, %%eax" % dl, "\tjmp *%eax", "1:", "\tret"]
+            asm += jump_to(dl) + ["1:", "\tret"]
     # extra names objcopy needed when two symbols in one object map to the same thunk
     aliases = set()
     for m in metas:

@@ -35,11 +35,11 @@ int PC_GpuDrawState(int *ofs_x, int *ofs_y, int clip[4]);
 /* Direct VRAM access (1024x512 halfwords, row-major), for transfers and debugging. */
 uint16_t *PC_GpuVram(void);
 
-/* Present the current display area (GP1 display start/mode) to the window. Called once per VSync. */
+/* Present the current display area (GP1 display start/mode) to the window. Once per frame. */
 void PC_GpuPresent(void);
 
 /* Fire a DrawSyncCallback scheduled by DrawOTag since the last tick (deferred to approximate real,
- * asynchronous GPU completion timing). Called once per vblank, before the game's VSync callback. */
+ * asynchronous GPU completion timing). Called once per frame, before the game's frame handler. */
 void PC_GpuRunDueCallback(void);
 
 /* Write the whole VRAM (or the display area) to a .bmp, for debugging. */

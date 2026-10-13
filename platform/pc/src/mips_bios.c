@@ -1,11 +1,14 @@
-/* The PS1 BIOS as the game sees it: the A0/B0/C0 function tables (reached from the Psy-Q stubs,
- * which mips2c turns into PC_BiosCall), the syscalls, a heap in PS1 RAM, and events. */
+/* The PS1 BIOS for translated retail code (build.py --mips only: THPS_MIPS, THPS_SNAP): the
+ * A0/B0/C0 function tables (reached from the Psy-Q stubs, which mips2c turns into PC_BiosCall),
+ * the syscalls, a heap in PS1 RAM, and events. The port itself has no BIOS: the game calls the
+ * host's C library and the port's services. */
+#ifdef PC_MIPS
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "pc_hle.h"
+#include "pc_frame.h"
 #include "pc_recomp.h"
 #include "pc_runtime.h"
 
@@ -30,7 +33,7 @@ void PC_HeapInit(uint32_t addr, uint32_t size) {
     b->used = 0;
 }
 
-uint32_t PC_Malloc(uint32_t size) {
+static uint32_t PC_Malloc(uint32_t size) {
     uint32_t a = s_heapStart, need = ((size + 7) & ~7u) + 8;
     while (a < s_heapEnd) {
         HeapBlock *b = PSX_PTR(a);
@@ -61,7 +64,7 @@ uint32_t PC_Malloc(uint32_t size) {
     return 0;
 }
 
-void PC_Free(uint32_t addr) {
+static void PC_Free(uint32_t addr) {
     if (addr >= s_heapStart + 8 && addr < s_heapEnd)
         ((HeapBlock *)PSX_PTR(addr - 8))->used = 0;
 }
@@ -97,22 +100,9 @@ static Event *Ev(uint32_t h) {
     return (h >> 24) == 0xf1 && i < MAX_EVENTS && s_events[i].used ? &s_events[i] : NULL;
 }
 
-void PC_DeliverEvent(uint32_t cls, uint32_t spec) {
-    int i;
-    for (i = 0; i < MAX_EVENTS; i++) {
-        Event *e = &s_events[i];
-        if (!e->used || !e->enabled || e->cls != cls || e->spec != spec)
-            continue;
-        if (e->mode == 0x1000 && e->func) /* EvMdINTR: call the handler */
-            ((void (*)(void))PSX_PTR(e->func))();
-        else
-            e->ready = 1;
-    }
-}
-
 static int TestEvent(uint32_t h) {
     Event *e = Ev(h);
-    PC_TickVBlank();
+    PC_FramePoll();
     if (e && e->ready) {
         e->ready = 0;
         return 1;
@@ -182,7 +172,7 @@ u32 PC_BiosCall(u32 vec, u32 fn) {
         case 0x07: return 1; /* DeliverEvent */
         case 0x08: return OpenEvent(a0, a1, a2, a3);
         case 0x09: { Event *e = Ev(a0); if (e) e->used = 0; return 1; }
-        case 0x0a: { Event *e = Ev(a0); while (e && !e->ready) { PC_TickVBlank(); } if (e) e->ready = 0; return 1; }
+        case 0x0a: { Event *e = Ev(a0); while (e && !e->ready) { PC_FramePoll(); } if (e) e->ready = 0; return 1; }
         case 0x0b: return (u32)TestEvent(a0);
         case 0x0c: { Event *e = Ev(a0); if (e) e->enabled = 1; return 1; }
         case 0x0d: { Event *e = Ev(a0); if (e) e->enabled = 0; return 1; }
@@ -249,45 +239,4 @@ void PC_Syscall(void) {
     }
 }
 
-/* ---- libapi entry points the game calls directly ---------------------------------------------
- * In the library each is a three-instruction stub that jumps into the BIOS table. */
-
-static u32 BiosCall4(u32 vec, u32 fn, u32 a0, u32 a1, u32 a2, u32 a3) {
-    u32 save[4], r;
-    int i;
-    for (i = 0; i < 4; i++)
-        save[i] = pc_r.r[4 + i];
-    pc_r.r[4] = a0;
-    pc_r.r[5] = a1;
-    pc_r.r[6] = a2;
-    pc_r.r[7] = a3;
-    r = PC_BiosCall(vec, fn);
-    for (i = 0; i < 4; i++)
-        pc_r.r[4 + i] = save[i];
-    return r;
-}
-
-u32 hle_8008eab8(u32 cls, u32 spec, u32 mode, u32 func) { /* OpenEvent */
-    return BiosCall4(0xb0, 0x08, cls, spec, mode, func);
-}
-
-u32 hle_8008eb08(u32 event) { /* TestEvent */
-    return BiosCall4(0xb0, 0x0b, event, 0, 0, 0);
-}
-
-u32 hle_8008ea48(u32 event) { /* EnableEvent */
-    return BiosCall4(0xb0, 0x0c, event, 0, 0, 0);
-}
-
-/* __main (libsn): runs the static constructors listed after the linker's ctor table, once. */
-#define CTORS_DONE PSX_DATA_ADDR(0x800ce490u)
-#define CTOR_TABLE PSX_DATA_ADDR(0x800d101cu)
-#define CTOR_COUNT 19
-void hle_80092044(void) {
-    int i;
-    if (*(u32 *)PSX_PTR(CTORS_DONE))
-        return;
-    *(u32 *)PSX_PTR(CTORS_DONE) = 1;
-    for (i = 0; i < CTOR_COUNT; i++)
-        ((void (*)(void))PSX_PTR(*(u32 *)PSX_PTR(CTOR_TABLE + 4 * i)))();
-}
+#endif

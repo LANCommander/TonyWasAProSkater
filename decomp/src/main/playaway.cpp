@@ -314,8 +314,10 @@ void PlayAway(void) {
 
 	XStart = Xblanks;
 
+#ifndef PC_PORT /* PC: no controller port polling to switch off (pc_input.h) */
 	if (GNumberOfPlayers == 1)
 		PadEnableCom(1);
+#endif
 
 	{
 		CBruce *p = GSkater;
@@ -456,7 +458,9 @@ void PlayAway(void) {
 			EndCode = 2;
 	}
 done:
+#ifndef PC_PORT
 	PadEnableCom(3);
+#endif
 	Spool_Sync();
 
 	M3d_OTPushback = 1;

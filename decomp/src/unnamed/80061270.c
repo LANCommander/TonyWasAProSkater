@@ -1,5 +1,8 @@
 /* FUN_80061270 (0x80061270) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_frame.h"
+#endif
 
 int DAT_800d1d84;
 int DAT_800d1d88;
@@ -43,6 +46,10 @@ void FUN_80061270(int a) {
 		}
 
 		Mess_SetFontScale(255);
+#ifdef PC_PORT
+		PC_FrameWait(1);
+#else
 		VSync(0);
+#endif
 	}
 }

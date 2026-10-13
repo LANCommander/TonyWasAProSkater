@@ -18,12 +18,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SDL_MAIN_HANDLED /* this file has main: SDL_SetMainReady in PlatformInit */
+#include <SDL2/SDL.h>
+
+#include "pc_assets.h"
 #include "pc_gpu.h"
 #include "pc_gte.h"
 #include "pc_hle.h"
+#include "pc_input.h"
 #include "pc_platform.h"
 #include "pc_recomp.h"
+#include "pc_render3d.h"
 #include "pc_runtime.h"
+#include "pc_spu.h"
 
 #define EXE_GAME_MAIN 0x80026d44u
 #define EXE_GP 0x800d1080u
@@ -58,6 +65,25 @@ void PC_Trace(const char *fmt, ...) {
     va_end(ap);
     fputc('\n', stderr);
     fflush(stderr);
+}
+
+/* The game's own debug output (its printf and puts calls; build.py NATIVE_RENAME): THPS_TRACE=1. */
+int PC_GameDebugf(const char *fmt, ...) {
+    va_list ap;
+    int n;
+    if (!pc_trace)
+        return 0;
+    va_start(ap, fmt);
+    n = vfprintf(stdout, fmt, ap);
+    va_end(ap);
+    fflush(stdout);
+    return n;
+}
+
+int PC_GameDebugPuts(const char *s) {
+    if (pc_trace)
+        puts(s);
+    return 0;
 }
 
 void PC_Fatal(const char *fmt, ...) {
@@ -359,11 +385,13 @@ static void CallNative(u32 target, int indirect) {
 
 void rc_call_native(u32 target) { CallNative(target, 0); }
 void rc_call_indirect(u32 target) {
+#ifdef PC_MIPS
     if (target == 0xa0 || target == 0xb0 || target == 0xc0) {
         /* direct BIOS table call: function number in t1 */
         pc_r.r[2] = PC_BiosCall(target, pc_r.r[9]);
         return;
     }
+#endif
     CallNative(target, 1);
 }
 
@@ -393,6 +421,13 @@ void pc_vdelete(void *vtable, int slot, void *obj) {
 void pc_delete_mark(void *p) {
     pc_delete_marked = p;
     pc_delete_freed = NULL;
+}
+
+/* operator delete for a class without an allocator of its own. Retail's (libsn) freed into the
+ * BIOS heap, which the game never allocates from: there's nothing to free. */
+void pc_delete_unowned(void *p) {
+    if (p)
+        PC_Trace("delete %p: no allocator owns it", p);
 }
 
 /* ---- memory map ----------------------------------------------------------------------------- */
@@ -566,8 +601,8 @@ static void LoadImage0(void) {
     memcpy(PSX_PTR(PSX_EXE_BASE), pc_image, (size_t)(pc_image_end - pc_image));
 }
 
-/* What the retail entry point (__SN_ENTRY_POINT) does before main: clear .bss and hand the
- * memory between .bss and the stack to the heap. */
+/* What the retail entry point (__SN_ENTRY_POINT) does before main: clear .bss (and, for
+ * translated retail code, hand the memory between .bss and the stack to the BIOS heap). */
 static void Crt0(void) {
     /* the linker's stack top is an 8 MB dev-kit address; on a 2 MB console it is mirrored: the
      * stack goes at the top of the RAM the game uses */
@@ -580,8 +615,24 @@ static void Crt0(void) {
     memset(PSX_PTR(EXE_BSS_START), 0, EXE_BSS_END - EXE_BSS_START);
     pc_r.r[29] = sp;
     pc_r.r[28] = EXE_GP;
+#ifdef PC_MIPS
     PC_Log("heap %08x size %08x, PS1 stack %08x", heap + 4, size, sp);
     PC_HeapInit(heap + 4, size);
+#else
+    (void)size;
+#endif
+}
+
+/* The game's static constructors, once (what libsn's __main does on the PS1): the 19 entries of
+ * the retail constructor table. */
+void PC_RunStaticCtors(void) {
+    static int done;
+    int i;
+    if (done)
+        return;
+    done = 1;
+    for (i = 0; i < 19; i++)
+        ((void (*)(void))PSX_PTR(*(u32 *)PC_Data(0x800d101cu + 4 * i)))();
 }
 
 /* ---- crash diagnostics ---------------------------------------------------------------------- */
@@ -1040,6 +1091,20 @@ static void StartWatchdog(void) {
 
 void PC_SnapInstall(void); /* pc_snap.c */
 
+/* Bring up the host devices before the game runs: the extracted data (from the disc on first
+ * startup), window/GPU, input, sound. */
+static void PlatformInit(void) {
+    int scale = getenv("THPS_SCALE") ? atoi(getenv("THPS_SCALE")) : 3;
+    SDL_SetMainReady();
+    PC_AssetsInit();
+    PC_GpuInit(scale > 0 ? scale : 3);
+    if (PC_AssetsDreamcast() && !R3d_Native())
+        PC_Log("note: the Dreamcast models and textures need the native 3D renderer (not "
+               "THPS_RENDER3D=psx): they will look wrong");
+    PC_InputInit();
+    PC_SpuInit();
+}
+
 /* ---- entry ---------------------------------------------------------------------------------- */
 
 int main(int argc, char **argv) {
@@ -1065,7 +1130,7 @@ int main(int argc, char **argv) {
     InstallTrampolines();
     PC_SnapInstall();
     PC_GteReset();
-    PC_HleInit();
+    PlatformInit();
     Crt0();
     if (getenv("THPS_WATCH")) {
 #ifdef _WIN32
