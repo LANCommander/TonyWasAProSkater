@@ -1,0 +1,4 @@
+# The decompiled data keeps the layout tools/gen_data.py gives it (one struct element per group of
+# lines, PSX_DATA on the definition's line), which clang-format would reflow.
+DisableFormat: true
+SortIncludes: Never

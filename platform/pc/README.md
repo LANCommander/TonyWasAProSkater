@@ -9,14 +9,17 @@ The decompiled C is written for the PS1: 32-bit pointers, hand-padded structs, g
 by absolute address, and a data image full of MIPS addresses (vtables, pointer tables, linked
 lists). Instead of rewriting all of that, the port keeps the PS1 address space:
 
-- The executable is a **32-bit, large-address-aware** Windows program. At startup it maps PS1
+- The executable is a **32-bit** program (large-address-aware on Windows). At startup it maps PS1
   main RAM at `0x80000000` (2 MB) and the scratchpad at `0x1f800000` (1 KB), then copies the
-  game's data to `0x80010000`: the retail image as the build found it in `SLUS_008.60`, with all
-  its code cleared (`tools/embed_image.py`; only data is left), embedded in `thps.exe`. So the
-  port doesn't need `SLUS_008.60` to run. Every pointer in the retail data is a valid native
-  pointer, and struct layouts are unchanged (int, long and pointers are all 4 bytes).
+  game's data to `0x80010000`: the image `tools/data_image.py` builds from the decompiled data
+  (`decomp/data`: every initialised global at its retail address, pointers resolved to PS1
+  addresses), embedded in `thps.exe`. It is the retail image without the code, the switch jump
+  tables and the Psy-Q libraries' own data (`decomp/data/omitted.tsv`), which the build checks
+  byte for byte against `SLUS_008.60`. So the port doesn't need `SLUS_008.60` to run. Every
+  pointer in the data is a valid native pointer, and struct layouts are unchanged (int, long and
+  pointers are all 4 bytes).
 - **Globals.** Each decompiled TU is compiled natively, then its symbols are rewritten to the
-  absolute PS1 addresses recorded in its `.syms.json`. Data lives in the retail image (in PS1 RAM), not in
+  absolute PS1 addresses recorded in its `.syms.json`. Data lives in the data image (in PS1 RAM), not in
   the TUs' own sections.
 - **Functions.** Every function keeps its PS1 address as its identity. At startup a 5-byte
   `jmp` to the native code is written over the start of each function's (now unused) MIPS

@@ -175,6 +175,29 @@ leading-zero counter. For those the faithful source is a `.s` file:
     helpers `Mips_DotProd2Sign`, `Mips_FixMul__Fii`, `Mips_DotProd2` and
     `Mips_CVecDotProd__FP7CVectorT0` (a CVector dot product, >> 12).
 
+## Data (`data/`)
+
+The initialised globals (retail `.rodata`, `.data`, `.sdata`; 0x8009d0e0-0x800d21c8, plus the
+table in `.text` at 0x80071fa4 and the free-memory pointer after `.bss` at 0x800dc94c) are C in
+`data/<module>.c`, one file per `src/` module that uses them. Each global is defined at its
+retail address with `PSX_DATA(addr)` (`data/psxdata.h`), under the name the decompiled code
+uses (its `.syms.json`), else `data_names.tsv`, else `D_<addr>`; strings are literals, pointers
+are references to their targets (`(int)s_hawk`, `(int)Die__6CBaddy` in a class table), struct
+arrays are laid out one element per group of lines with their retail type and count in a comment
+(`/* SStats[11] (THPS2 demo: SStats[14]) */`).
+
+These files are compiled only for the port (native gcc; the matching build declares what it uses
+itself). `platform/pc/tools/data_image.py` places every global at its address and resolves the
+pointers, building the port's data image, and `--check` compares it with `SLUS_008.60`: equal
+except the code and what `data/omitted.tsv` leaves out (Psy-Q library data the port doesn't use,
+MIPS switch jump tables, the memory card icons). The port build runs that check and fails if a
+data file stops matching, or if decompiled code names a global the image leaves out.
+
+`tools/gen_data.py` generated the files (from `SLUS_008.60`, the names, the `.syms.json`
+references, and the struct sizes of a `platform/pc/tools/layouts.py` snapshot, `--layouts`); they
+are edited by hand from now on (typed struct initialisers are the obvious next step). They keep
+their own layout: `data/.clang-format` turns clang-format off there.
+
 ## Demo twins: start here for any named function
 
 `build/matches.json` lists the retail functions that are byte-identical to a THPS2-demo function once
