@@ -1,9 +1,11 @@
-/* FUN_80054134 (0x80054134) flags=-fstructure-noalias */
-/* C++ (front end, 1-player board select). The 1-player twin of FUN_8005115c (boardstream2p.cpp),
-   called once a frame by FUN_80054510 (boardselect1p.cpp) until every picture is in: streams the
+/* Front_StreamBoardPictures1P__Fv (0x80054134) flags=-fstructure-noalias */
+/* C++ (front end, 1-player board select). The 1-player twin of Front_StreamBoardPictures2P (boardstream2p.cpp),
+   called once a frame by Front_BoardSelect1P (boardselect1p.cpp) until every picture is in: streams the
    deck/trucks/wheels pictures from CD one at a time, cycling the columns. The finished load is
    turned into a SlicedImage; the next file is picked outward from the column's current entry
    (offset 0, n-1, 1, n-2, ...) until the middle is reached. Sets DAT_800d22ec when all are done. */
+#include "game/fileio.h"
+#include "game/mem.h"
 #include "game/shellutils.h"
 
 extern int Loading;
@@ -20,19 +22,12 @@ char *DAT_800d22e4; /* load buffer */
 uchar DAT_800d22e8;
 int DAT_800d22ec; /* all pictures loaded */
 
-extern "C" {
-	void FileIO_Continue__Fv(void);
-	int FileIO_Open__FPCc(char *);
-	char *Mem_NewX__FUiii(int, int, int);
-	void FileIO_Load__FPv(char *);
-}
-
 int Load8BitBMP2(char *, char **, int *, int *, ushort *);
 
-extern "C" void FUN_80054134(void) {
+void Front_StreamBoardPictures1P(void) {
 	int col = DAT_800d22e0;
 
-	FileIO_Continue__Fv();
+	FileIO_Continue();
 
 	if (DAT_800d22ec)
 		DAT_800d22e8 = 1;
@@ -86,10 +81,10 @@ extern "C" void FUN_80054134(void) {
 			if (DAT_800d22d8 >= DAT_800d33c4[c])
 				DAT_800d22d8 -= DAT_800d33c4[c];
 
-			int size = FileIO_Open__FPCc(DAT_800d33d4[c][DAT_800d22d8]);
+			int size = FileIO_Open(DAT_800d33d4[c][DAT_800d22d8]);
 
 			if (size > 0)
-				FileIO_Load__FPv(DAT_800d22e4 = Mem_NewX__FUiii(size, 1, 1));
+				FileIO_Load(DAT_800d22e4 = Mem_NewX(size, 1, 1));
 		}
 	}
 }

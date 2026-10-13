@@ -26,7 +26,6 @@ extern SSinCos rcossin_tbl;
 extern int Camera_CurrentMikeCamera;
 
 int Utils_CrapDist(const CVector &, const CVector &);
-extern "C" int FUN_800936d4(int, int);
 
 int Utils_CalculateSpatialAttenuation(const CVector &pos, int near, int far) {
 	int vol;
@@ -59,7 +58,7 @@ int Utils_CalculateSpatialAttenuation(const CVector &pos, int near, int far) {
 	if (!(centre.vx | centre.vz))
 		return vol | (vol << 16);
 
-	heading = (1024 - FUN_800936d4(centre.vz, centre.vx)) & 4095;
+	heading = (1024 - ratan2(centre.vz, centre.vx)) & 4095;
 	behind = 0;
 
 	if (heading > 1024 && heading < 3072) {

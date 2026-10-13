@@ -7,6 +7,7 @@ extern "C" {
 }
 
 #include "game/font.h"
+#include "game/psyq.h"
 
 extern FontInfo Font_table[10];
 
@@ -20,12 +21,6 @@ void *Mem_New(u_int, int, int);
 void Mem_Delete(void *);
 void Pack_Pack(int, int, int, int *, int *, int, int, u_int);
 int GetFree16Slot(void);
-
-extern "C" {
-	int strcmp(const char *, const char *);
-	char *strcpy(char *, const char *);
-	int printf(const char *, ...);
-}
 
 int Mess_LoadFont(char *filename, char *file_buffer, int char_sep, int shadow_offset, int width) {
 	int this_font;

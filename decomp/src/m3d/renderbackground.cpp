@@ -12,6 +12,7 @@ extern "C" {
 
 #include "game/m3d.h"
 #include "game/camera.h"
+#include "game/m3dasm.h"
 
 extern SPSXRegion PSXRegion[];
 
@@ -27,12 +28,6 @@ extern int DpqMax;
 
 void RenderBackgroundModel(SModel *);
 void RenderBackgroundModelNonRotated(SModel *);
-
-extern "C" {
-	void FUN_8008b3d4(SVector *, MATRIX *);
-	void FUN_8008b254(MATRIX *, MATRIX *);
-	void FUN_8008b238(MATRIX *);
-}
 
 void M3d_RenderBackground(void *p) {
 	Item *pItem;
@@ -58,11 +53,11 @@ void M3d_RenderBackground(void *p) {
 			gte_SetRotMatrix(&pCurrentCamera->View);
 
 			if (*(int *)&pItem->Angles || pItem->Angles.vz) {
-				FUN_8008b3d4(&pItem->Angles, &WorldTransform);
-				FUN_8008b254(&WorldTransform, &Transform);
+				M3dMaths_RotMatrixYXZ((SVECTOR *)&pItem->Angles, &WorldTransform);
+				M3dMaths_MulRotMatrix(&WorldTransform, &Transform);
 				gte_SetRotMatrix(&Transform);
 			} else {
-				FUN_8008b238(&WorldTransform);
+				M3dMaths_SetIdentityRotation(&WorldTransform);
 			}
 
 			pColourTable = (int)PSXRegion[pItem->Region].pColourTable;

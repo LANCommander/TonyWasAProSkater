@@ -11,25 +11,25 @@ int DAT_800d2358, DAT_800d235c;
 int Mess_GetFontScale(void);
 void Pack_DefragmentFully(void);
 void Front_InitMemCardMenus(int, int, int);
-void FUN_80011628(int);
+void Front_SetLoadAction(int);
 int Mem_NewX(int, int, int);
-void FUN_8005c780(void);
-void FUN_8005c934(void);
-void FUN_80070ff4(void);
-void FUN_8006b240(void);
-void FUN_80061ea0(void);
-void FUN_80064890(int, int, int);
+void Front_UpdateMusicLoop(void);
+void FrontLoader_Continue(void);
+void Pad_Update(void);
+void HiRes_ClearOTag(void);
+void ResetOT(void);
+void VerticalMenu_setTriangles(int, int, int);
 void Front_MemCardHiResDisplay(void);
-void FUN_8006b26c(void);
+void HiRes_DrawOTag(void);
 int Front_MemCardUpdate(void);
 void Pad_ClearTriggers(char *);
 void SFX_PlayX(int, int, int);
 void Mess_SetFontScale(int);
 void Front_RestoreBackground(void);
 void VerticalMenu_erase(int);
-void FUN_8008c468(int);
-void FUN_80011570(void);
-void FUN_80011150(void);
+void DrawSync(int);
+void Front_FreeBackground(void);
+void Front_FreeMemCardMenus(void);
 void Mem_Delete(int);
 
 int FUN_800609c8(void) {
@@ -38,24 +38,24 @@ int FUN_800609c8(void) {
 	fs = Mess_GetFontScale();
 	Pack_DefragmentFully();
 	Front_InitMemCardMenus(640, 15, 39);
-	FUN_80011628(1);
+	Front_SetLoadAction(1);
 
 	GVInfo1[1] = Mem_NewX(640, 0, 1);
 	GVideoRestart[0] = 0;
 	i = (int)Pad;
 
 	do {
-		FUN_8005c780();
-		FUN_8005c934();
-		FUN_80070ff4();
-		FUN_8006b240();
-		FUN_80061ea0();
+		Front_UpdateMusicLoop();
+		FrontLoader_Continue();
+		Pad_Update();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		if (pVertMenu != 0)
-			FUN_80064890(pVertMenu, DAT_800d2358, DAT_800d235c);
+			VerticalMenu_setTriangles(pVertMenu, DAT_800d2358, DAT_800d235c);
 
 		Front_MemCardHiResDisplay();
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	} while (Front_MemCardUpdate() == 18);
 
 	Pad_ClearTriggers((char *)i);
@@ -66,22 +66,22 @@ int FUN_800609c8(void) {
 	i = 0;
 
 	do {
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 		Front_RestoreBackground();
 
 		if (pVertMenu != 0)
 			VerticalMenu_erase(pVertMenu);
 
 		i++;
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	} while (i < 2);
 
-	FUN_8008c468(0);
-	FUN_80011570();
+	DrawSync(0);
+	Front_FreeBackground();
 
 	if (pVertMenu != 0)
-		FUN_80011150();
+		Front_FreeMemCardMenus();
 
 	Mem_Delete(GVInfo1[1]);
 

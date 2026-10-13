@@ -39,7 +39,7 @@ void CBruce::HandleBailOnLanding(int) {
 
 	if (Bailing) {
 		/* The retail call leaves the limit argument unset; Bail ignores it. */
-		Bail(0, DO_LIMIT);
+		Bail(0);
 
 		mTrickBails += 1;
 	}

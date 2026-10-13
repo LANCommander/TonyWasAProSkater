@@ -1,8 +1,9 @@
-/* FUN_80014868 (0x80014868) */
+/* Card_WriteReplayToDisk__F9EFileTypePc (0x80014868) */
 /* C++ (CARD.CPP). Debug twin of Card_Write: writes the replay header/data buffers (and the 2-player
    pair) to the PC host through the Psy-Q PCinit/PCcreat/PClseek/PCwrite/PCclose break calls,
    with the same switch(FileType) setup and checksums as Card_Write (only case 1 survives). */
 #include "game/card.h"
+#include "game/psyq.h"
 #include "game/video.h"
 
 extern SVideoInfo GVInfo1;
@@ -15,12 +16,11 @@ extern "C" {
 	int PCinit(void);
 	int PCcreat(char *, int);
 	int PClseek(int, int, int);
-	int printf(const char *, ...);
 	int PCwrite(int, char *, int);
 	int PCclose(int);
 }
 
-extern "C" int FUN_80014868(EFileType FileType, char *FName) {
+int Card_WriteReplayToDisk(EFileType FileType, char *FName) {
 	unsigned short fd;
 	int DataSize;
 	int DataSize2;
@@ -43,6 +43,7 @@ extern "C" int FUN_80014868(EFileType FileType, char *FName) {
 	}
 
 	Video_SetHeader((SVideoHead *)(pHeaderBuf + 128), 0);
+
 	if (pHeaderBuf2)
 		Video_SetHeader((SVideoHead *)(pHeaderBuf2 + 128), 1);
 

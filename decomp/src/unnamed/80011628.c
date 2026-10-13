@@ -1,6 +1,8 @@
-/* FUN_80011628 (0x80011628) */
+/* Front_SetLoadAction__F11ELoadAction (0x80011628) */
+#include "names.h"
+
 int GLoadAction;
 
-void FUN_80011628(int v) {
+void Front_SetLoadAction(int v) {
 	GLoadAction = v;
 }

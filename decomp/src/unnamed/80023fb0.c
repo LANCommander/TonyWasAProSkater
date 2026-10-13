@@ -1,7 +1,9 @@
-/* FUN_80023fb0 (0x80023fb0) */
+/* GameFMV_ScaleMusicVolume__Fi (0x80023fb0) */
+#include "names.h"
+
 int GameFMV_MusicScale;
 
-int FUN_80023fb0(int a) {
+int GameFMV_ScaleMusicVolume(int a) {
 	int t = (a * GameFMV_MusicScale) / 128;
 
 	if (t > 16383)

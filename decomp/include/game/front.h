@@ -254,4 +254,28 @@ struct SLabels {
 	char *Name[8];
 };
 
+/* functions */
+struct SSaveGame;
+
+void Front_SetSJISName(char *SJISName);                              /* 0x800116b4 */
+void Front_PrintDemo();                                              /* 0x800160bc */
+void Front_DisplayScreen();                                          /* 0x800161d8 */
+void Front_Init();                                                   /* 0x800171f0 */
+void PrintPaused();                                                  /* 0x80017898 */
+void CommonSwitchOnMenuCode();                                       /* 0x8001a128 */
+void Front_SwitchOnEndHeat();                                        /* 0x8001a1c8 */
+void Front_SwitchOnEndLevelMenu();                                   /* 0x8001a2bc */
+void Front_SwitchOnStartLevelMenu();                                 /* 0x8001a5b8 */
+void Front_PrintHorseLetters();                                      /* 0x8001a5e0 */
+void Front_SwitchOnVideoScreen();                                    /* 0x8001a608 */
+void Front_Update();                                                 /* 0x8001a6f8 */
+void Front_SaveGameState();                                          /* 0x8001cbf0 */
+void Front_LoadGame(SSaveGame *pGame);                               /* 0x8001ccf8 */
+void FlickerSync();                                                  /* 0x80059018 */
+void ClearSoftReset();                                               /* 0x8005c678 */
+void LoadingScreen_Main();                                           /* 0x8005cba0 */
+void LoadingScreen_SetCurrentLevel(int level, int type, int skater); /* 0x8005d35c */
+void LoadingScreen_Wait();                                           /* 0x8005d3dc */
+void LoadingScreen_WaitLevel();                                      /* 0x8005d73c */
+
 #endif

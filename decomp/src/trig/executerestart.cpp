@@ -3,6 +3,8 @@
    current restart node, runs its command list, and in mode 2 (unless state 7) nudges the skater
    and moves it to the restart node named "RE_2P". */
 #include "game/bruce.h"
+#include "game/psyq.h"
+#include "game/trig.h"
 
 extern CBruce *MechList;
 extern int GNumberOfPlayers;
@@ -15,11 +17,6 @@ int NumNodes;
 CSVector *Trig_GetPosition(CVector &, int);
 void FudgeAngles(CBruce *);
 int Utils_CompareStrings(const char *, const char *, unsigned int);
-
-extern "C" {
-	void FUN_8008c190(void *, int, int, int);
-	void ExecuteCommandList__FPUsii(ushort *, int, int);
-}
 
 void Trig_ExecuteRestart() {
 	CVector StartPos;
@@ -34,8 +31,8 @@ void Trig_ExecuteRestart() {
 		MechListCopy->mPos = StartPos;
 		MechListCopy->mOldPos = StartPos;
 		MechListCopy->mAngles = *pAngles;
-		FUN_8008c190("%d,%d,%d\n", MechListCopy->mAngles.vx, MechListCopy->mAngles.vy,
-		             MechListCopy->mAngles.vz);
+		printf("%d,%d,%d\n", MechListCopy->mAngles.vx, MechListCopy->mAngles.vy,
+		       MechListCopy->mAngles.vz);
 		FudgeAngles(MechListCopy);
 	}
 
@@ -46,7 +43,7 @@ void Trig_ExecuteRestart() {
 
 	pName++;
 	pName += (int)pName & 1;
-	ExecuteCommandList__FPUsii((ushort *)pName, RestartNode, 1);
+	ExecuteCommandList((ushort *)pName, RestartNode, 1);
 
 	if (GNumberOfPlayers == 2 && GGame != 7) {
 		int i;

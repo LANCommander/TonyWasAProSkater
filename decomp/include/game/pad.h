@@ -135,4 +135,7 @@ void ReadController(ControllerData *, uchar *);   /* 0x80070e5c */
 void Pad_Remap();                                 /* 0x80071588 */
 void Pad_Restore();                               /* 0x8007171c */
 
+/* functions */
+int Pad_Update(); /* 0x80070ff4 */
+
 #endif

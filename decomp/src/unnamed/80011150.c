@@ -1,4 +1,6 @@
-/* FUN_80011150 (0x80011150) */
+/* Front_FreeMemCardMenus__Fv (0x80011150) */
+#include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;
@@ -14,7 +16,7 @@ struct O *Tri1;
 struct O *Tri2;
 struct O *pVertMenu;
 
-void FUN_80011150(void) {
+void Front_FreeMemCardMenus(void) {
 	struct O *o = Tri1;
 
 	if (o)

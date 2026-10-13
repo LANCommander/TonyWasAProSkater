@@ -61,7 +61,14 @@ Validated on `CVector::operator+=` (`0x8004da3c`): the `move v0,a0` prologue and
 - **Names for `FUN_` rows:** callers often resolve a `FUN_` through a real name in their
   `.syms.json`. **`python ../tools/review_caller_names.py`** compares those names with the demo
   SYM and writes `caller_names_review.tsv`. Promote a name only after checking it, and rename the
-  defining source, its header, `matched.tsv` and every caller in one step. Leave callers on the
+  defining source, its header, `matched.tsv` and every caller in one step:
+  **`python tools/rename_fn.py ROWS.tsv --apply`** does that (rows: `addr old symbol decl header
+  basis`; see its docstring). It updates the tables, line-1 headers and every `.syms.json`, gives
+  `.c` callers the `names.h` alias, turns C++ callers' `extern "C"` declarations into one C++
+  declaration in `include/game/*.h` (method calls become `obj->Method(...)`), and adds
+  `inferred_names.tsv` rows. `--check` lists `FUN_` rows that some `.syms.json` already names.
+  Library functions are declared in `include/game/psyq.h` (beyond `libgte.h`/`libgpu.h`) and the
+  hand-written assembly entry points in `include/game/m3dasm.h`. Leave callers on the
   `FUN_` alias when the name isn't a C identifier (destructors such as `_._5CItem`). The same goes
   for C++ sources where the raw name would collide with one g++ emits itself (`__8CQuadBit` beside
   `struct CQuadBit`). `BASEF` is an alias some callers use for `_._4CBit` (0x80027e80).

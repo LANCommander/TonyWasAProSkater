@@ -13,17 +13,14 @@
    (if (a - d >= -Max) a -= d;), giving the two arms' shared `slt; bne; sw` tail; the anim-range
    tests are switches (signed slti trees); DeltaAngle's per-stat rate is one ?: expression. */
 #include "game/bruce.h"
+#include "game/m3dasm.h"
+#include "game/vector.h"
 
 extern SControl Pad[];
 extern int XFrames;
 extern int TimeScale;
 
 int InterpolateFrame(int, int);
-
-extern "C" {
-	int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
-	int FUN_8008b5dc(int);
-}
 
 void CBruce::HandleSpin() {
 	int DeltaAngle;
@@ -103,7 +100,7 @@ void CBruce::HandleSpin() {
 			mDoingSharpTurn = 1;
 
 			{
-				int Speed = (FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6) >> 12;
+				int Speed = (M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6) >> 12;
 
 				DeltaAngle *= 2;
 				MaxLeanAngle = 0x5a000;

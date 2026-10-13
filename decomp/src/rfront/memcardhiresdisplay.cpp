@@ -3,10 +3,20 @@
    Hi-res memory-card screen: the save/load progress screen, the background state machine, then
    one case per card state (case 20 = the save-file VerticalMenu with scroll arrows).
    Levers: the arrow text is `if (up && down) ... else sprintf(.., up ? a : b)` with `down` a
-   separate block local (keeps up in a1 and XMid in s1); FUN_8008c468 returns int; the
+   separate block local (keeps up in a1 and XMid in s1); DrawSync returns int; the
    VerticalMenu ?: count is `n < 6 ? n : 5`; sizeof(VerticalMenu) = 820. */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
+
 #include "game/shellutils.h"
 #include "game/front.h"
+#include "game/mess.h"
+#include "game/psyq.h"
+#include "game/hires.h"
+#include "game/rfront.h"
 
 extern "C" {
 	extern LocalText GameText;
@@ -19,17 +29,6 @@ extern "C" {
 VerticalMenu *pVertMenu;
 int NumVertMenuItems, VertMenuTopIndex, VertMenuTopChanged, MCState, OldMCState, MCResolution,
     GLoadAction;
-
-extern "C" {
-	void FUN_80011214(void);
-	void FUN_80011570(void);
-	void Mess_SetTextJustify__FUc(int);
-	void FUN_80061ea0(void);
-	void FUN_8006b240(void);
-	void FUN_8006b26c(void);
-	void FUN_8008b900(char *, char *, char *);
-	int FUN_8008c468(int);
-}
 
 void Front_DirtyRectText(int, int, const char *);
 void Front_PrintCentredPrompt(const char *);
@@ -51,25 +50,25 @@ void Front_MemCardHiResDisplay() {
 			char *load;
 
 			for (i = 0; i < 2; i++) {
-				FUN_8006b240();
-				FUN_80061ea0();
+				HiRes_ClearOTag();
+				ResetOT();
 
 				if (pVertMenu)
 					pVertMenu->erase();
 
-				FUN_8006b26c();
+				HiRes_DrawOTag();
 			}
 
 			load = "loading saved game";
-			FUN_8008c468(0);
+			DrawSync(0);
 
 			for (i = 0; i < 4; i++) {
-				FUN_8006b240();
-				FUN_80061ea0();
-				FUN_80011214();
+				HiRes_ClearOTag();
+				ResetOT();
+				RGBGreen();
 				Front_DirtyRectText(XMid, 240, load);
 				RGBRed();
-				FUN_8006b26c();
+				HiRes_DrawOTag();
 			}
 		}
 
@@ -103,19 +102,19 @@ void Front_MemCardHiResDisplay() {
 				return;
 			}
 
-			FUN_80011570();
+			Front_FreeBackground();
 		set:
 			OldMCState = MCState;
 		}
 	}
 
 	Mess_SetScale(200);
-	Mess_SetTextJustify__FUc(0);
+	Mess_SetTextJustify(0);
 
 	switch (MCState) {
 		case 15:
 		case 16:
-			FUN_80011214();
+			RGBGreen();
 			Front_DirtyRectText(XMid, 180, GameText.pCheckingCard);
 			RGBRed();
 			Front_DirtyRectText(XMid, 280, GameText.pDoNotRemove1);
@@ -150,7 +149,7 @@ void Front_MemCardHiResDisplay() {
 			if (!pVertMenu) {
 				pVertMenu = new VerticalMenu(100, 398, 15, VertMenuItem,
 				                             NumVertMenuItems < 6 ? NumVertMenuItems : 5, 0, 0, 0);
-				FUN_8008b900(msg, GameText.pHiResScroll, GameText.pHiResUpOrDown);
+				sprintf(msg, GameText.pHiResScroll, GameText.pHiResUpOrDown);
 				Front_DirtyRectText(XMid, 380, msg);
 			}
 
@@ -160,17 +159,17 @@ void Front_MemCardHiResDisplay() {
 			}
 
 			if (NumVertMenuItems > 5 && ((TTime / 20) & 3)) {
-				FUN_80011214();
+				RGBGreen();
 
 				{
 					int up = VertMenuTopIndex > 0;
 					int down = VertMenuTopIndex < NumVertMenuItems - 5;
 
 					if (up && down)
-						FUN_8008b900(msg, GameText.pHiResScroll, GameText.pHiResUpOrDown);
+						sprintf(msg, GameText.pHiResScroll, GameText.pHiResUpOrDown);
 					else
-						FUN_8008b900(msg, GameText.pHiResScroll,
-						             up ? GameText.pHiResUp : GameText.pHiResDown);
+						sprintf(msg, GameText.pHiResScroll,
+						        up ? GameText.pHiResUp : GameText.pHiResDown);
 				}
 
 				Front_DirtyRectText(XMid, 380, msg);
@@ -183,7 +182,7 @@ void Front_MemCardHiResDisplay() {
 
 			break;
 		case 21:
-			FUN_80011214();
+			RGBGreen();
 			Front_DirtyRectText(XMid, 220, "loading video file");
 			RGBRed();
 			Front_DirtyRectText(XMid, 280, GameText.pDoNotRemove1);

@@ -44,4 +44,13 @@ struct SSaveGame {
 	SPreferences Preferences; /* 0x70 */
 }; /* size 0x88 */
 
+/* functions */
+int Card_FileExists(EFileType FileType);                      /* 0x800144a8 */
+int Card_Write(EFileType FileType, int NumBlocks);            /* 0x80014558 */
+int Card_WriteReplayToDisk(EFileType FileType, char *FName);  /* 0x80014868 */
+int Card_Load(EFileType FileType, ulong *pBuf, ulong *pBuf2); /* 0x800149f4 */
+short Card_LoadDemoReplay(const char *FName);                 /* 0x80014ba4 */
+int Card_LoadReplayFromCD(ulong *, ulong *, char *name);      /* 0x80014c74 */
+void Card_GetNextTimeStamp();                                 /* 0x8001571c */
+
 #endif

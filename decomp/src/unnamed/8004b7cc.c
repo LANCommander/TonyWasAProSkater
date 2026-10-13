@@ -9,7 +9,7 @@ typedef struct {
 
 extern int SFXLEVEL;
 
-void FUN_80093e54(int a, S *s);
+void SpuNSetVoiceAttr(int a, S *s);
 
 void SFX_ModifyVol(unsigned mask, int a, int b) {
 	int i;
@@ -43,7 +43,7 @@ void SFX_ModifyVol(unsigned mask, int a, int b) {
 				s.b = 3;
 				s.c = a;
 				s.d = b;
-				FUN_80093e54(i, &s);
+				SpuNSetVoiceAttr(i, &s);
 			}
 		}
 	}

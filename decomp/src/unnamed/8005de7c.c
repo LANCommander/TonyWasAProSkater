@@ -1,4 +1,4 @@
-/* FUN_8005de7c (0x8005de7c) */
+/* Front_MainMenu__Fi (0x8005de7c) */
 #include "names.h"
 
 struct VT {
@@ -24,24 +24,24 @@ struct O *DAT_800d2358;
 struct O *DAT_800d235c;
 
 extern void Pack_DefragmentFully(void);
-extern void FUN_8005c97c(int);
-extern void FUN_8005ca64(void);
-extern int FUN_8005ca3c(char *);
-extern void FUN_80061714(int);
+extern void FrontLoader_LoadSet(int);
+extern void FrontLoader_Defragment(void);
+extern int FrontLoader_TakeFile(char *);
+extern void DownloadBMP16x2(int);
 extern void Mess_LoadFont__FPcT0iii(char *, int, int, int, int);
 extern void Mess_SetFontScale(unsigned);
 extern struct O *__nw__6CClassUi(unsigned);
 extern struct O *__6SpritePciii(struct O *, char *, int, int, int);
-extern void FUN_8005c8dc(int);
+extern void FrontLoader_SetFiles(int);
 extern int FUN_8005e754(int);
 
-int FUN_8005de7c(int a) {
+int Front_MainMenu(int a) {
 	int i, j, r;
 	struct O *o, *p, *q;
 
 	Pack_DefragmentFully();
-	FUN_8005c97c(0);
-	FUN_8005ca64();
+	FrontLoader_LoadSet(0);
+	FrontLoader_Defragment();
 
 	if (DAT_800d1d24) {
 		for (i = 0; i < 11; i++) {
@@ -60,8 +60,8 @@ int FUN_8005de7c(int a) {
 		}
 	}
 
-	FUN_80061714(FUN_8005ca3c("main_h.bmp"));
-	Mess_LoadFont__FPcT0iii("mainf.fnt", FUN_8005ca3c("mainf.fnt"), -1, -1, -1);
+	DownloadBMP16x2(FrontLoader_TakeFile("main_h.bmp"));
+	Mess_LoadFont__FPcT0iii("mainf.fnt", FrontLoader_TakeFile("mainf.fnt"), -1, -1, -1);
 	Mess_SetFontScale(200);
 
 	o = __nw__6CClassUi(24);
@@ -76,7 +76,7 @@ int FUN_8005de7c(int a) {
 		p = __6SpritePciii(p, "levbut1.bmp", 1, 32, 128);
 
 	DAT_800d235c = p;
-	FUN_8005c8dc(1);
+	FrontLoader_SetFiles(1);
 
 	r = FUN_8005e754(a);
 	q = DAT_800d2358;

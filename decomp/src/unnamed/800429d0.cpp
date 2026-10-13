@@ -3,14 +3,13 @@
    front and right columns of the rotation matrix. The function finder split it in three
    (0x800429d0, 0x80042a54, 0x80042aa0). */
 #include "game/bruce.h"
-
-extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
+#include "game/vector.h"
 
 void CBruce::FlipToVelocity() {
 	if (mAnim == 34)
 		return;
 
-	if (Mips_CVecDotProd__FP7CVectorT0(&mFront, &mVel) <= 20480)
+	if (Mips_CVecDotProd(&mFront, &mVel) <= 20480)
 		return;
 
 	mRotMatrix.m[0][2] = -mFront.vx;

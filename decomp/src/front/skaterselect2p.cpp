@@ -1,4 +1,4 @@
-/* FUN_80056754 (0x80056754) flags=-fstructure-noalias */
+/* Front_SkaterSelect2P__Fv (0x80056754) flags=-fstructure-noalias */
 /* C++ (front end, 2-player skater select). Each player spins a CBruce model of the highlighted
    skater on a turntable inside a frame; left/right slide the model out and the next skater in
    (models stream in through the credits spooler, "LOADING" is shown until the PSX is resident),
@@ -21,6 +21,15 @@ extern "C" {
 #include "game/front.h"
 #include "game/bruce.h"
 #include "game/m3d.h"
+#include "game/mess.h"
+#include "game/fileio.h"
+#include "game/sfx.h"
+#include "game/spool.h"
+#include "game/psyq.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/main.h"
+#include "game/ob.h"
 
 extern SControl Pad[];
 extern SCareer GCareer;
@@ -60,55 +69,7 @@ void Mess_LoadFont(char *, int, int, int);
 void Mem_Copy(void *, void *, int);
 void M3d_BuildTransform(CSuper *);
 
-extern "C" {
-	void FUN_8005c8dc(int);
-	void FUN_8005c97c(int);
-	void FUN_8005ca64(void);
-	void *FUN_8005ca3c(char *);
-	void FUN_80061714(void *);
-	void FUN_80059520(int);
-	int FUN_8008b900(char *, const char *, ...);
-	void FUN_8008c190(const char *, ...);
-	void FUN_8008c468(int);
-	void FUN_80055eb8(void);
-	SViewport *FUN_8006b1c8(void);
-	void FUN_8006b240(void);
-	void FUN_8005c780(void);
-	void FUN_80070ff4(void);
-	void FUN_8005c68c(void);
-	void FUN_800242cc(void);
-	void FUN_80055f80(void);
-	void FUN_8005c934(void);
-	void FUN_80061ea0(void);
-	void FUN_80059618(int);
-	void FUN_80043f70(CBruce *);
-	int SFX_PlayX__FUisi(int, int, int);
-	void FUN_8006ed2c(int);
-	void ProcessNewPSX__Fi(int);
-	CBruce *FUN_8005622c(int);
-	void FUN_80056428(void);
-	void FUN_800565ac(void);
-	void FUN_80061eb4(int);
-	void FUN_80093240(SVECTOR *, MATRIX *);
-	void M3d_RenderSetup__FP7SCameraP9SViewportPUi(char *, SViewport *, char *);
-	void M3d_Render__FPv(char *);
-	void FUN_80083774(void);
-	void Mess_SetTextJustify__FUc(int);
-	int Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	int Mess_TextHeightAboveBaseline__FPCc(char *);
-	int Mess_TextWidth__FPCc(char *);
-	void SetClippingBox__Fiiii(int, int, int, int);
-	void FUN_80059018(void);
-	void FUN_8008c8dc(char *);
-	void FUN_80056394(void);
-	void FUN_8006b374(void);
-	void FUN_8006af64(void);
-	void FileIO_Sync__Fv(void);
-	void FUN_8005609c(void);
-	void FUN_80059758(void);
-}
-
-extern "C" int FUN_80056754(void) {
+int Front_SkaterSelect2P(void) {
 	char spare[40]; /* never referenced; retail's frame has these 40 bytes at sp+0x20 */
 	char name[16];
 	Sprite *bars[4];
@@ -141,19 +102,19 @@ extern "C" int FUN_80056754(void) {
 	void *buf;
 	void *bmp;
 
-	FUN_8005c8dc(2);
-	FUN_8005c97c(2);
-	FUN_8005ca64();
+	FrontLoader_SetFiles(2);
+	FrontLoader_LoadSet(2);
+	FrontLoader_Defragment();
 
 	buf = Mem_NewX(0x26160, 1, 1);
-	bmp = FUN_8005ca3c("select2p.bmp");
+	bmp = FrontLoader_TakeFile("select2p.bmp");
 
 	Mem_Copy(buf, bmp, 0x26160);
 	Mem_Delete(bmp);
 	Mess_LoadFont("stats2.fnt", -1, -1, -1);
 	Mess_LoadFont("mainf.fnt", -1, -1, -1);
 	Mess_SetFontScale(200);
-	FUN_80061714(buf);
+	DownloadBMP16x2(buf);
 
 	result = 0;
 	DAT_800d1c20 = 0;
@@ -189,17 +150,17 @@ extern "C" int FUN_80056754(void) {
 	}
 
 	Pack_DefragmentFully();
-	FUN_80059520(2);
+	Front_InitSkaterPack(2);
 
 	for (i = 0; i < 4; i++) {
-		FUN_8008b900(name, "bar%d.bmp", i + 5);
+		sprintf(name, "bar%d.bmp", i + 5);
 
 		bars[i] = new Sprite(name, 1, 32, 128);
 		bars[i]->removeFromMemory();
 	}
 
 	for (i = 0; i < 4; i++) {
-		FUN_8008b900(name, "levbut%d.bmp", i + 1);
+		sprintf(name, "levbut%d.bmp", i + 1);
 
 		buttons[i] = new Sprite(name, 1, 32, 128);
 		buttons[i]->removeFromMemory();
@@ -282,13 +243,13 @@ extern "C" int FUN_80056754(void) {
 	homeX[0] = DAT_800d2300;
 	homeX[1] = DAT_800d22fc;
 
-	FUN_8008c468(0);
-	FUN_80055eb8();
-	FUN_8008c468(0);
+	DrawSync(0);
+	Front_InitSkaterSpool2P();
+	DrawSync(0);
 
 	rot[0].vx = rot[0].vy = rot[0].vz = 0;
 	rot[1].vx = rot[1].vy = rot[1].vz = 0;
-	vp = FUN_8006b1c8();
+	vp = HiRes_SetupCamera();
 	vp->xR = 640;
 	vp->yB = 480;
 	bruce[0] = 0;
@@ -320,6 +281,7 @@ extern "C" int FUN_80056754(void) {
 	int textSpeed[2];
 	int textState[2];
 	int loadX[2];
+
 	lx[0] = 208;
 	lx[1] = 496;
 	ly[0] = 153;
@@ -343,45 +305,45 @@ extern "C" int FUN_80056754(void) {
 	textState[1] = 0;
 	pDoubleBuffer = pDoubleBuffer == DoubleBuffer ? DoubleBuffer + 32940 : DoubleBuffer;
 
-	FUN_8006b240();
+	HiRes_ClearOTag();
 
 	pDoubleBuffer = pDoubleBuffer == DoubleBuffer ? DoubleBuffer + 32940 : DoubleBuffer;
 
-	FUN_8006b240();
+	HiRes_ClearOTag();
 
 	loadX[0] = frameX[0] + 64;
 	loadX[1] = frameX[1] + 64;
 
-	FUN_8005c8dc(10);
+	FrontLoader_SetFiles(10);
 
 	for (;;) {
-		FUN_8005c780();
-		FUN_80070ff4();
-		FUN_8005c68c();
+		Front_UpdateMusicLoop();
+		Pad_Update();
+		Front_CheckSoftReset();
 
 		if (DAT_800d1cb8)
 			goto out;
 
-		FUN_800242cc();
+		PollHost();
 
 		if (!DAT_800d2314)
-			FUN_80055f80();
+			Front_SpoolNextSkater2P();
 		else
-			FUN_8005c934();
+			FrontLoader_Continue();
 
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		for (p = 0; p < 2; p++) {
 			int done;
 			int press;
 
-			FUN_80059618(0);
+			Front_SelectSkaterPack(0);
 			input[p]->update();
 
 			if (DAT_800d231c[p]) {
-				FUN_80043f70(bruce[p]);
-				FUN_80043f70(bruce[p]);
+				bruce[p]->UpdateFrame();
+				bruce[p]->UpdateFrame();
 			}
 
 			done = 0;
@@ -393,13 +355,13 @@ extern "C" int FUN_80056754(void) {
 					press = input[p]->getPress();
 
 					if (press == 2) {
-						SFX_PlayX__FUisi(148, 0x2000, 0);
+						SFX_PlayX(148, 0x2000, 0);
 
 						state[p] = 2;
 						textState[p] = 3;
 						rightTimer[p] = 16;
 					} else if (press == 1) {
-						SFX_PlayX__FUisi(148, 0x2000, 0);
+						SFX_PlayX(148, 0x2000, 0);
 
 						state[p] = 3;
 						textState[p] = 3;
@@ -411,19 +373,19 @@ extern "C" int FUN_80056754(void) {
 							DAT_800d231c[p] = 1;
 						} else {
 							DAT_800d231c[p] = 1;
-							FUN_8006ed2c(DAT_800d3758[DAT_800d2304[p]]);
+							Spool_BackupPSX(DAT_800d3758[DAT_800d2304[p]]);
 
 							if (Cheat_BigHead) {
 								GHeadUp = Stats[DAT_800d2304[p]].Neck;
 								GHeadPart = Stats[DAT_800d2304[p]].Head;
 							}
 
-							ProcessNewPSX__Fi(DAT_800d3758[DAT_800d2304[p]]);
+							ProcessNewPSX(DAT_800d3758[DAT_800d2304[p]]);
 
 							GHeadPart = -1;
 						}
 
-						bruce[p] = FUN_8005622c(p);
+						bruce[p] = Front_CreateSkaterModel2P(p);
 						bruce[p]->mPos.vx = homeX[p];
 					}
 
@@ -489,7 +451,7 @@ extern "C" int FUN_80056754(void) {
 					break;
 				case 7:
 					state[p] = 9;
-					FUN_80056428();
+					Front_UnloadSkaterTextures2P();
 
 					if (DAT_800d231c[p]) {
 						if (bruce[p]) {
@@ -502,13 +464,13 @@ extern "C" int FUN_80056754(void) {
 						DAT_800d2304[p] = 0;
 
 					DAT_800d231c[p] = DAT_800d3788[DAT_800d2304[p]];
-					FUN_800565ac();
+					Front_LoadSkaterTextures2P();
 
 					if (DAT_800d231c[p]) {
 						if (bruce[p])
-							FUN_8008c190("\nOH FUCK!!!");
+							printf("\nOH FUCK!!!");
 
-						bruce[p] = FUN_8005622c(p);
+						bruce[p] = Front_CreateSkaterModel2P(p);
 						bruce[p]->mPos.vx = maxX[p];
 					}
 
@@ -525,7 +487,7 @@ extern "C" int FUN_80056754(void) {
 					break;
 				case 6:
 					state[p] = 8;
-					FUN_80056428();
+					Front_UnloadSkaterTextures2P();
 
 					if (DAT_800d231c[p]) {
 						if (bruce[p]) {
@@ -538,13 +500,13 @@ extern "C" int FUN_80056754(void) {
 						DAT_800d2304[p] = numSkaters - 1;
 
 					DAT_800d231c[p] = DAT_800d3788[DAT_800d2304[p]];
-					FUN_800565ac();
+					Front_LoadSkaterTextures2P();
 
 					if (DAT_800d231c[p]) {
 						if (bruce[p])
-							FUN_8008c190("\nOH FUCK!!!");
+							printf("\nOH FUCK!!!");
 
-						bruce[p] = FUN_8005622c(p);
+						bruce[p] = Front_CreateSkaterModel2P(p);
 						bruce[p]->mPos.vx = minX[p];
 					}
 
@@ -577,13 +539,13 @@ extern "C" int FUN_80056754(void) {
 						press = input[p]->getPress();
 
 						if (press == 2) {
-							SFX_PlayX__FUisi(148, 0x2000, 0);
+							SFX_PlayX(148, 0x2000, 0);
 
 							state[p] = 2;
 							textState[p] = 3;
 							rightTimer[p] = 16;
 						} else if (press == 1) {
-							SFX_PlayX__FUisi(148, 0x2000, 0);
+							SFX_PlayX(148, 0x2000, 0);
 
 							state[p] = 3;
 							textState[p] = 3;
@@ -614,13 +576,13 @@ extern "C" int FUN_80056754(void) {
 						press = input[p]->getPress();
 
 						if (press == 2) {
-							SFX_PlayX__FUisi(148, 0x2000, 0);
+							SFX_PlayX(148, 0x2000, 0);
 
 							state[p] = 2;
 							textState[p] = 3;
 							rightTimer[p] = 16;
 						} else if (press == 1) {
-							SFX_PlayX__FUisi(148, 0x2000, 0);
+							SFX_PlayX(148, 0x2000, 0);
 
 							state[p] = 3;
 							textState[p] = 3;
@@ -631,10 +593,10 @@ extern "C" int FUN_80056754(void) {
 					break;
 			}
 
-			FUN_80061eb4(p);
+			SetOTPlayer(p);
 
 			if (DAT_800d231c[p]) {
-				FUN_80093240(&rot[p], &bruce[p]->mRotMatrix);
+				RotMatrixYXZ(&rot[p], &bruce[p]->mRotMatrix);
 
 				bruce[p]->mRotMatrix.m[0][1] = -bruce[p]->mRotMatrix.m[0][1];
 				bruce[p]->mRotMatrix.m[1][1] = -bruce[p]->mRotMatrix.m[1][1];
@@ -649,10 +611,10 @@ extern "C" int FUN_80056754(void) {
 
 					bruce[0]->mShadowLights = 0;
 					bruce[1]->mShadowLights = 0;
-					M3d_RenderSetup__FP7SCameraP9SViewportPUi(MikeCamera, vp,
-					                                          pDoubleBuffer + ((p << 14) + 140));
-					M3d_Render__FPv(MechList);
-					FUN_80083774();
+					M3d_RenderSetup((SCamera *)MikeCamera, (SViewport *)vp,
+					                (uint *)(pDoubleBuffer + ((p << 14) + 140)));
+					M3d_Render(MechList);
+					M3d_RenderCleanup();
 
 					bruce[p ^ 1]->mFlags ^= 0x41;
 				} else if (!shown[p]) {
@@ -661,19 +623,19 @@ extern "C" int FUN_80056754(void) {
 			} else if (state[p] == 0) {
 				Mess_SetCurrentFont("stats2.fnt");
 				Mess_SetRGB(128, 128, 128, 0);
-				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(loadX[p], 163, "LOADING", 0, 0, 256, 0);
+				Mess_SetTextJustify(0);
+				Mess_DrawText(loadX[p], 163, "LOADING", 0, 0, 256, 0);
 			}
 
 			if (state[p] == 1) {
 				Mess_SetCurrentFont("stats2.fnt");
 				Mess_SetRGB(250, 190, 60, 0);
-				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(lx[p], ly[0], sSkater, 1, 0, 256, 0);
-				Mess_DrawText__FiiPCciUiib(lx[p], ly[1], sChosen, 1, 0, 256, 0);
+				Mess_SetTextJustify(0);
+				Mess_DrawText(lx[p], ly[0], sSkater, 1, 0, 256, 0);
+				Mess_DrawText(lx[p], ly[1], sChosen, 1, 0, 256, 0);
 			}
 
-			FUN_80061eb4(p);
+			SetOTPlayer(p);
 
 			if (infoTimer[p]) {
 				infoTimer[p]--;
@@ -682,49 +644,43 @@ extern "C" int FUN_80056754(void) {
 				info[2][p]->draw(infoX[p], 369, 0, -1, -1, -1);
 				Mess_SetCurrentFont("stats2.fnt");
 				Mess_SetRGB(128, 128, 128, 0);
-				Mess_SetTextJustify__FUc(1);
+				Mess_SetTextJustify(1);
 				int ty = 330;
 
-				Mess_DrawText__FiiPCciUiib(
-				    infoX[p],
-				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[0]) + ty -
-				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[0]) >> 1),
-				    Stats[DAT_800d2304[p]].pBio[0], 0, 0, 256, 0);
+				Mess_DrawText(infoX[p],
+				              Mess_TextHeightAboveBaseline(Stats[DAT_800d2304[p]].pBio[0]) + ty -
+				                  (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[0]) >> 1),
+				              Stats[DAT_800d2304[p]].pBio[0], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(
-				    infoX[p],
-				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[1]) + ty -
-				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[1]) >> 1),
-				    Stats[DAT_800d2304[p]].pBio[1], 0, 0, 256, 0);
+				Mess_DrawText(infoX[p],
+				              Mess_TextHeightAboveBaseline(Stats[DAT_800d2304[p]].pBio[1]) + ty -
+				                  (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[1]) >> 1),
+				              Stats[DAT_800d2304[p]].pBio[1], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(
-				    infoX[p],
-				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[2]) + ty -
-				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[2]) >> 1),
-				    Stats[DAT_800d2304[p]].pBio[2], 0, 0, 256, 0);
+				Mess_DrawText(infoX[p],
+				              Mess_TextHeightAboveBaseline(Stats[DAT_800d2304[p]].pBio[2]) + ty -
+				                  (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[2]) >> 1),
+				              Stats[DAT_800d2304[p]].pBio[2], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(
-				    infoX[p],
-				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[3]) + ty -
-				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[3]) >> 1),
-				    Stats[DAT_800d2304[p]].pBio[3], 0, 0, 256, 0);
+				Mess_DrawText(infoX[p],
+				              Mess_TextHeightAboveBaseline(Stats[DAT_800d2304[p]].pBio[3]) + ty -
+				                  (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[3]) >> 1),
+				              Stats[DAT_800d2304[p]].pBio[3], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(
-				    infoX[p],
-				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[4]) + ty -
-				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[4]) >> 1),
-				    Stats[DAT_800d2304[p]].pBio[4], 0, 0, 256, 0);
+				Mess_DrawText(infoX[p],
+				              Mess_TextHeightAboveBaseline(Stats[DAT_800d2304[p]].pBio[4]) + ty -
+				                  (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[4]) >> 1),
+				              Stats[DAT_800d2304[p]].pBio[4], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(
-				    infoX[p],
-				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[5]) + ty -
-				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[5]) >> 1),
-				    Stats[DAT_800d2304[p]].pBio[5], 0, 0, 256, 0);
+				Mess_DrawText(infoX[p],
+				              Mess_TextHeightAboveBaseline(Stats[DAT_800d2304[p]].pBio[5]) + ty -
+				                  (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[5]) >> 1),
+				              Stats[DAT_800d2304[p]].pBio[5], 0, 0, 256, 0);
 			}
 
 			if (panelState[p] == -1 && panelState[1 - p] <= 0 && infoTimer[1 - p] <= 0 &&
@@ -781,14 +737,14 @@ extern "C" int FUN_80056754(void) {
 				case 0:
 					Mess_SetCurrentFont("mainf.fnt");
 					Mess_SetRGB(128, 128, 128, 0);
-					Mess_SetTextJustify__FUc(1);
+					Mess_SetTextJustify(1);
 
 					if (p == 0) {
-						startX[p] = textX[p] = -Mess_TextWidth__FPCc(Stats[DAT_800d2304[p]].Name);
-						endX[p] = 208 - (Mess_TextWidth__FPCc(Stats[DAT_800d2304[p]].Name) >> 1);
+						startX[p] = textX[p] = -Mess_TextWidth(Stats[DAT_800d2304[p]].Name);
+						endX[p] = 208 - (Mess_TextWidth(Stats[DAT_800d2304[p]].Name) >> 1);
 					} else {
 						startX[p] = textX[p] = 640;
-						endX[p] = 496 - (Mess_TextWidth__FPCc(Stats[DAT_800d2304[p]].Name) >> 1);
+						endX[p] = 496 - (Mess_TextWidth(Stats[DAT_800d2304[p]].Name) >> 1);
 					}
 
 					textSpeed[p] = (endX[p] - startX[p]) / 6;
@@ -798,8 +754,8 @@ extern "C" int FUN_80056754(void) {
 					{
 						int ty = 74;
 
-						textY[p] = Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Name) +
-						           ty - (Mess_TextHeight(Stats[DAT_800d2304[p]].Name) >> 1);
+						textY[p] = Mess_TextHeightAboveBaseline(Stats[DAT_800d2304[p]].Name) + ty -
+						           (Mess_TextHeight(Stats[DAT_800d2304[p]].Name) >> 1);
 					}
 
 					textState[p] = 2;
@@ -816,9 +772,8 @@ extern "C" int FUN_80056754(void) {
 					textBar[p]->draw(barX[p], 50, 0, -1, -1, -1);
 					Mess_SetCurrentFont("mainf.fnt");
 					Mess_SetRGB(128, 128, 128, 0);
-					Mess_SetTextJustify__FUc(1);
-					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0,
-					                           0, 256, 0);
+					Mess_SetTextJustify(1);
+					Mess_DrawText(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0, 0, 256, 0);
 					break;
 				case 3:
 					textX[p] -= textSpeed[p];
@@ -830,32 +785,31 @@ extern "C" int FUN_80056754(void) {
 					textBar[p]->draw(barX[p], 50, 0, -1, -1, -1);
 					Mess_SetCurrentFont("mainf.fnt");
 					Mess_SetRGB(128, 128, 128, 0);
-					Mess_SetTextJustify__FUc(1);
-					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0,
-					                           0, 256, 0);
+					Mess_SetTextJustify(1);
+					Mess_DrawText(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0, 0, 256, 0);
 					break;
 			}
 
-			FUN_80061eb4(p);
+			SetOTPlayer(p);
 
 			if (DAT_800d231c[p])
-				SetClippingBox__Fiiii(frameX[p], 92, 129, 142);
+				SetClippingBox(frameX[p], 92, 129, 142);
 			else
-				SetClippingBox__Fiiii(0, 0, 640, 480);
+				SetClippingBox(0, 0, 640, 480);
 
 			if (p == 0) {
-				FUN_80059018();
+				FlickerSync();
 
 				pDoubleBuffer = pDoubleBuffer == DoubleBuffer ? DoubleBuffer + 32940 : DoubleBuffer;
-				FUN_8008c8dc(pDoubleBuffer + 32904);
+				DrawOTag((u_long *)(pDoubleBuffer + 32904));
 
 				pDoubleBuffer = pDoubleBuffer == DoubleBuffer ? DoubleBuffer + 32940 : DoubleBuffer;
 			}
 		}
 
-		FUN_80056394();
-		FUN_80059018();
-		FUN_8006b374();
+		Front_ResetDrawArea2P();
+		FlickerSync();
+		HiRes_DrawOTagAll();
 
 		for (p = 0; p < 2; p++) {
 			if (Pad[p].MenuStart.Triggered || Pad[p].MenuAccept.Triggered) {
@@ -865,9 +819,9 @@ extern "C" int FUN_80056754(void) {
 				if (state[p] != 1 && DAT_800d231c[p] &&
 				    (DAT_800d2304[0] != DAT_800d2304[1] || state[1 - p] != 1)) {
 					state[p] = 1;
-					SFX_PlayX__FUisi(145, 0x2000, 0);
+					SFX_PlayX(145, 0x2000, 0);
 				} else if (state[p] != 1 && DAT_800d231c[p]) {
-					SFX_PlayX__FUisi(146, 0x2000, 0);
+					SFX_PlayX(146, 0x2000, 0);
 				}
 			}
 
@@ -876,13 +830,13 @@ extern "C" int FUN_80056754(void) {
 
 				if (state[p] != 1) {
 					if (state[1 - p] != 1) {
-						SFX_PlayX__FUisi(147, 0x2000, 0);
+						SFX_PlayX(147, 0x2000, 0);
 
 						result = -1;
 						break;
 					}
 				} else {
-					SFX_PlayX__FUisi(147, 0x2000, 0);
+					SFX_PlayX(147, 0x2000, 0);
 
 					state[p] = 0;
 				}
@@ -913,9 +867,10 @@ extern "C" int FUN_80056754(void) {
 
 out:
 
-	FUN_8006af64();
+	HiRes_BlankScreen();
+
 	if (Loading)
-		FileIO_Sync__Fv();
+		FileIO_Sync();
 
 	for (i = 0; i < 2; i++) {
 		if (DAT_800d231c[i]) {
@@ -924,13 +879,15 @@ out:
 		}
 	}
 
-	FUN_8005609c();
-	FUN_80059758();
+	Front_FreeSkaterSpool2P();
+	Front_FreeSkaterPack();
 
 	for (i = 0; i < 4; i++)
 		delete bars[i];
+
 	for (int k = 0; k < 4; k++)
 		delete buttons[k];
+
 	delete info[0][0];
 	delete info[1][0];
 	delete info[2][0];

@@ -1,12 +1,14 @@
 /* FUN_800601fc (0x800601fc) */
+#include "names.h"
+
 extern int DAT_800a5e28[];
 extern int DAT_800a5e30[];
 
-int FUN_80060ba0(void);
+int Front_MemCardScreen(void);
 void FUN_8005e4ec(int *p, int a, int b);
 
 int FUN_800601fc(void) {
-	int r = FUN_80060ba0();
+	int r = Front_MemCardScreen();
 	int v;
 
 	if (r != -1) {

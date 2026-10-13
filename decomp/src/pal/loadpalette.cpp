@@ -1,4 +1,4 @@
-/* Pal_LoadPalette__FUiPUiUci (0x8004aea4) */
+/* Pal_LoadPalette__FUiPUiUc (0x8004aea4) */
 /* C++ (PAL.CPP). Demo twin (retail drops the Remap path); locals from its MAIN.SYM. Allocates a
    palette entry, makes 0x7c1f (magenta) the transparent colour and sets the semi-transparency bit
    on the colours after it (or on all of them if there is none), reserves a 16- or 256-colour CLUT
@@ -20,7 +20,6 @@ int Pal256Y;
 tag_S_Pal *Pal_NewEntry(uint);
 int GetFree16Slot(void);
 int GetFree256Slot(void);
-extern "C" void FUN_8008c714(RECT *, uint *);
 
 tag_S_Pal *Pal_LoadPalette(uint checksum, uint *pData, uchar flags) {
 	tag_S_Pal *pNew;
@@ -78,7 +77,7 @@ tag_S_Pal *Pal_LoadPalette(uint checksum, uint *pData, uchar flags) {
 	}
 
 	rec.w = entries;
-	FUN_8008c714(&rec, pData);
+	LoadImage(&rec, (u_long *)pData);
 
 	pNew->InVRAM = 1;
 	return pNew;

@@ -11,11 +11,11 @@ char FileStart[8];
 
 extern R DAT_800d1b20[];
 
-int FUN_8008f264(int, char *, int);
+int CdControl(int, char *, int);
 int FUN_800958c0(int, int, int);
 int FUN_80095a5c(int, char *);
-void FUN_80070ff4(void);
-int FUN_8008c5ec(R *, int, int, int);
+void Pad_Update(void);
+int ClearImage(R *, int, int, int);
 void FUN_8005dcc4(void);
 
 void FileIO_Continue(void) {
@@ -37,7 +37,7 @@ void FileIO_Continue(void) {
 		case 1:
 			CurrentPos = 0;
 
-			if (FUN_8008f264(2, FileStart, 0) == 0) {
+			if (CdControl(2, FileStart, 0) == 0) {
 				s0 = 1;
 				break;
 			}
@@ -58,7 +58,7 @@ void FileIO_Continue(void) {
 				break;
 			}
 
-			FUN_80070ff4();
+			Pad_Update();
 
 			v = FUN_80095a5c(1, buf);
 
@@ -82,10 +82,10 @@ void FileIO_Continue(void) {
 
 	if (s0 != 0) {
 		r = DAT_800d1b20[0];
-		FUN_8008c5ec(&r, 255, 0, 0);
+		ClearImage(&r, 255, 0, 0);
 
 		r.y += 256;
-		FUN_8008c5ec(&r, 255, 0, 0);
+		ClearImage(&r, 255, 0, 0);
 	}
 
 	FUN_8005dcc4();

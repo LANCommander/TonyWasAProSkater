@@ -1,4 +1,4 @@
-/* FUN_8004f8a0 (0x8004f8a0) */
+/* Rail_Update__Fv (0x8004f8a0) */
 #include "names.h"
 
 typedef struct {
@@ -53,7 +53,7 @@ Box *RailList;
 
 unsigned short *Trig_GetLinksPointer(int);
 void Trig_GetPosition(V *, int);
-int FUN_8004f578(unsigned short *);
+int Rail_NextNode(unsigned short *);
 int Mips_CVecDotProd(V *, V *);
 int M3dUtils_LineLineClosestPoints(V *, V *, V *, V *, V *, int *, V *, int *);
 void M3dUtils_NormaliseVector(V *);
@@ -61,7 +61,7 @@ int __eq__7CVectorRC7CVector(V *, V *);
 V __mi__C7CVector(const V *);
 void __mi__FRC7CVectorT0(V *, V *, V *);
 
-void FUN_8004f8a0(void) {
+void Rail_Update(void) {
 	Obj *o;
 	Box *b;
 	V cmin, cmax, pa, pb, v60, v70, v80, v90;
@@ -125,7 +125,7 @@ void FUN_8004f8a0(void) {
 							while (*(lp = Trig_GetLinksPointer(s7))) {
 								Trig_GetPosition(&pa, s7);
 
-								nxt = FUN_8004f578(lp);
+								nxt = Rail_NextNode(lp);
 								Trig_GetPosition(&pb, nxt);
 
 								cmin = pa;

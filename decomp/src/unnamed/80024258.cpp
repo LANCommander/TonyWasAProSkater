@@ -1,4 +1,4 @@
-/* FUN_80024258 (0x80024258) */
+/* CalcPolyBufferEnd__Fv (0x80024258) */
 /* CalcPolyBufferEnd: the demo's MAIN.CPP twin used a fixed POLYBUFFERSIZE; THPS1 sizes the
    primitive buffer per level and per player count. */
 #include "game/m3d.h"
@@ -15,7 +15,7 @@ unsigned long PolyBufferEnd; /* PolyBufferEnd */
 
 #define POLYBUFFERSIZE (Levels[GLevel].ExtraPolyBuffer[GNumberOfPlayers - 1] + 0x17c00)
 
-void FUN_80024258(void) {
+void CalcPolyBufferEnd(void) {
 	unsigned long Prims = (unsigned long)pDoubleBuffer->Polys;
 	int Size = POLYBUFFERSIZE;
 

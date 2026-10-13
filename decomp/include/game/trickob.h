@@ -44,4 +44,11 @@ class CTrickOb : public CClass {
 	virtual ~CTrickOb(); /* slot 0: 0x8004ef80 */
 };
 
+/* functions */
+int TrickOb_TrickedOnItem(Item *, void *, int); /* 0x8004f000 */
+int TrickOb_GetItemType(Item *pItem);           /* 0x8004f318 */
+void TrickOb_Update();                          /* 0x8004f374 */
+int Rail_NextNode(ushort *);                    /* 0x8004f578 */
+void Rail_Update();                             /* 0x8004f8a0 */
+
 #endif

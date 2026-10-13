@@ -1,5 +1,6 @@
-/* FUN_80056394 (0x80056394) */
-/* Full-screen DR_AREA added at OT slot 39; FUN_8005948c is a byte-identical copy. */
+/* Front_ResetDrawArea2P__Fv (0x80056394) */
+#include "names.h"
+/* Full-screen DR_AREA added at OT slot 39; Front_ResetDrawArea1P is a byte-identical copy. */
 #include <sys/types.h>
 #include <libgte.h>
 #include <libgpu.h>
@@ -7,7 +8,7 @@
 extern u_long *pDoubleBuffer;
 extern u_char *pPoly;
 
-void FUN_80056394(void) {
+void Front_ResetDrawArea2P(void) {
 	DR_AREA *p = (DR_AREA *)pPoly;
 	RECT r;
 

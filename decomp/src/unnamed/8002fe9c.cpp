@@ -1,4 +1,4 @@
-/* Bail__6CBrucei13ELimitBailVel (0x8002fe9c) */
+/* Bail__6CBrucei (0x8002fe9c) */
 /* C++ (PHYSICS.CPP). Starts a bail: ends the combo, goes into the air without the board, runs the
    bail animation (harder above a speed), and plays a skater-specific (or random) bail sound. */
 extern "C" {
@@ -8,6 +8,7 @@ extern "C" {
 
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/m3dasm.h"
 
 struct Message;
 
@@ -17,9 +18,7 @@ int Mips_CVecDotProd(CVector *, CVector *);
 void SFX_PlayX(uint, short, int);
 int Redbook_Rnd(int);
 
-extern "C" int FUN_8008b5dc(int);
-
-void CBruce::Bail(int BailNumber, ELimitBailVel) {
+void CBruce::Bail(int BailNumber) {
 	mBailNumber = BailNumber;
 	m724 = 0;
 	mBails++;
@@ -39,7 +38,7 @@ void CBruce::Bail(int BailNumber, ELimitBailVel) {
 	mAnimSpeed = 0x10000;
 	Debug_RunAnim2(0x36, 0, 0x1d, 0x416);
 
-	if (0x2d000 < (FUN_8008b5dc(Mips_CVecDotProd(&mVel, &mVel)) << 6))
+	if (0x2d000 < (M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6))
 		m24C = 1;
 	else
 		m24C = 6;

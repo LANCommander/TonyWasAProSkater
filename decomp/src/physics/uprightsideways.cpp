@@ -9,10 +9,7 @@ extern "C" {
 }
 
 #include "game/bruce.h"
-
-extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
-extern "C" void FUN_80093130(MATRIX *, MATRIX *);
-extern "C" MATRIX *FUN_80093240(SVECTOR *, MATRIX *);
+#include "game/vector.h"
 
 extern CVector WorldUp;
 
@@ -38,22 +35,22 @@ void CBruce::UprightSideways() {
 		TmpCV.vz = _z;
 	}
 
-	dot = Mips_CVecDotProd__FP7CVectorT0(&mUp, &TmpCV);
+	dot = Mips_CVecDotProd(&mUp, &TmpCV);
 
 	if (dot >= 42) {
 		RotAngle.vy = 0;
 		RotAngle.vx = 0;
 		RotAngle.vz = 11;
-		FUN_80093240(&RotAngle, &SurfaceRotMatrix);
-		FUN_80093130(&mRotMatrix, &SurfaceRotMatrix);
+		RotMatrixYXZ(&RotAngle, &SurfaceRotMatrix);
+		MulMatrix(&mRotMatrix, &SurfaceRotMatrix);
 	} else if (dot < -41) {
 		RotAngle.vy = 0;
 		RotAngle.vx = 0;
 		RotAngle.vz = 4085;
-		FUN_80093240(&RotAngle, &SurfaceRotMatrix);
-		FUN_80093130(&mRotMatrix, &SurfaceRotMatrix);
+		RotMatrixYXZ(&RotAngle, &SurfaceRotMatrix);
+		MulMatrix(&mRotMatrix, &SurfaceRotMatrix);
 	} else {
-		Mips_CVecDotProd__FP7CVectorT0(&mUp, &WorldUp);
+		Mips_CVecDotProd(&mUp, &WorldUp);
 	}
 
 	FRUVectorsFromRotMatrix();

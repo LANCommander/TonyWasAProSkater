@@ -2,9 +2,22 @@
 /* C++ (MAIN.CPP). Fuzzy demo twin; locals (Frozen) from MAIN.SYM. Runs the per-frame game logic
    on every other frame: objects, tricks, panels, front end and messages, swapping the two pads
    around the front-end update in two-player mode. */
+#include "game/bit.h"
 #include "game/bruce.h"
 #include "game/camera.h"
+#include "game/fileio.h"
+#include "game/flash.h"
+#include "game/font.h"
+#include "game/front.h"
+#include "game/mess.h"
+#include "game/ob.h"
 #include "game/pad.h"
+#include "game/panel.h"
+#include "game/shatter.h"
+#include "game/spool.h"
+#include "game/trickob.h"
+#include "game/tricktips.h"
+#include "game/utils.h"
 
 extern "C" {
 	extern SControl Pad[2];
@@ -28,25 +41,6 @@ extern "C" {
 	extern CBody *PowerUpList;
 	extern CBody *BackgroundList;
 	extern CBody *CameraList;
-
-	void Front_Update__Fv(void);
-	void Bit_RemoveDeadBits__Fv(void);
-	void FUN_8002aa6c(void);
-	void Ob_AI__FPP5CBody(CBody **);
-	void Ob_QuickAI__FPP5CBody(CBody **);
-	void FUN_80048044(void);
-	void FileIO_Continue__Fv(void);
-	void FUN_8004f8a0(void);
-	void FUN_8006c4e8(void);
-	void Spool_Continue__Fv(void);
-	void TrickTips_Update__Fv(void);
-	void Flash_Update__Fv(void);
-	void Font_Reset__Fv(void);
-	void Mess_Update__Fv(void);
-	void Ob_ClearInputFlags__FP5CBody(CBody *);
-	void Ob_MaybeUnSuspendOrCull__Fv(void);
-	void Shatter_MaybeMakeGlassShatterSound__Fv(void);
-	void TrickOb_Update__Fv(void);
 }
 
 void Game_Logic(void) {
@@ -58,7 +52,7 @@ void Game_Logic(void) {
 		return;
 
 	TTime++;
-	Font_Reset__Fv();
+	Font_Reset();
 
 	Frozen = 0;
 
@@ -66,22 +60,22 @@ void Game_Logic(void) {
 		Frozen = 1;
 
 	if (!Frozen) {
-		Flash_Update__Fv();
-		FUN_80048044();
-		Ob_ClearInputFlags__FP5CBody(BaddyList);
-		Ob_ClearInputFlags__FP5CBody(EnvironmentalObjectList);
-		Ob_AI__FPP5CBody(&MechList);
+		Flash_Update();
+		Utils_ClearExplosionStack();
+		Ob_ClearInputFlags(BaddyList);
+		Ob_ClearInputFlags(EnvironmentalObjectList);
+		Ob_AI(&MechList);
 
 		if (!GamePaused[0]) {
-			FUN_8002aa6c();
-			FUN_8004f8a0();
-			Ob_AI__FPP5CBody(&PowerUpList);
-			TrickOb_Update__Fv();
-			Ob_QuickAI__FPP5CBody(&EnvironmentalObjectList);
-			Ob_QuickAI__FPP5CBody(&BackgroundList);
-			Ob_MaybeUnSuspendOrCull__Fv();
-			Ob_AI__FPP5CBody(&BaddyList);
-			Bit_RemoveDeadBits__Fv();
+			Bit_Move();
+			Rail_Update();
+			Ob_AI(&PowerUpList);
+			TrickOb_Update();
+			Ob_QuickAI(&EnvironmentalObjectList);
+			Ob_QuickAI(&BackgroundList);
+			Ob_MaybeUnSuspendOrCull();
+			Ob_AI(&BaddyList);
+			Bit_RemoveDeadBits();
 
 			if (GGame != 7)
 				if (GState == 1 && GSpin < 40 && !GSkater->mPhysicsState &&
@@ -94,11 +88,11 @@ void Game_Logic(void) {
 		}
 	} else {
 		if (GState == 1)
-			Ob_AI__FPP5CBody(&CameraList);
+			Ob_AI(&CameraList);
 	}
 
-	Shatter_MaybeMakeGlassShatterSound__Fv();
-	FUN_8006c4e8();
+	Shatter_MaybeMakeGlassShatterSound();
+	Panel_Update();
 
 	if (GGame == 7 && GHorsePlayer == 1) {
 		SControl t = Pad[0];
@@ -108,7 +102,7 @@ void Game_Logic(void) {
 	}
 
 	Pad_Remap();
-	Front_Update__Fv();
+	Front_Update();
 	Pad_Restore();
 
 	if (GGame == 7 && GHorsePlayer == 1) {
@@ -118,8 +112,8 @@ void Game_Logic(void) {
 		Pad[1] = t;
 	}
 
-	TrickTips_Update__Fv();
-	Mess_Update__Fv();
-	Spool_Continue__Fv();
-	FileIO_Continue__Fv();
+	TrickTips_Update();
+	Mess_Update();
+	Spool_Continue();
+	FileIO_Continue();
 }

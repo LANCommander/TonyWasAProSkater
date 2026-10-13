@@ -2,7 +2,7 @@
 #include "names.h"
 #include "game/padbuttons.h"
 
-/* Front-end screen setup (next to FUN_8005cba0): loads the level's two pictures, builds the three
+/* Front-end screen setup (next to LoadingScreen_Main): loads the level's two pictures, builds the three
    sprites and draws the got-tape markers. buf is an unused 40-byte local kept for the frame size. */
 typedef struct {
 	char p[0x30];
@@ -25,9 +25,9 @@ int DAT_800d1d0c, DAT_800d1d04, DAT_800d1d00;
 unsigned char DAT_800d1d18;
 int DAT_800d1cec, DAT_800d1d14;
 
-void FUN_8005c8dc(int);
-void FUN_8005c97c(int);
-void FUN_8005ca64(void);
+void FrontLoader_SetFiles(int);
+void FrontLoader_LoadSet(int);
+void FrontLoader_Defragment(void);
 int FileIO_Open(int);
 int Mem_NewX(int, int, int);
 void FileIO_Load(int);
@@ -36,20 +36,20 @@ void FUN_80061a10(int);
 void FUN_8005dc58(int);
 int __nw__6CClassUi(int);
 int FUN_80063a5c(int, int, int, int, int, int, int);
-int FUN_8005ca3c(char *);
-void FUN_8006b240(void);
-void FUN_80061ea0(void);
+int FrontLoader_TakeFile(char *);
+void HiRes_ClearOTag(void);
+void ResetOT(void);
 void Sprite_draw(int, int, int, int, int, int, int);
-void FUN_8006b26c(void);
+void HiRes_DrawOTag(void);
 void Pack_DefragmentFully(void);
 
 void FUN_8005d00c(void) {
 	char buf[40];
 	int s1, o, o2, o3, i, y;
 
-	FUN_8005c8dc(4);
-	FUN_8005c97c(4);
-	FUN_8005ca64();
+	FrontLoader_SetFiles(4);
+	FrontLoader_LoadSet(4);
+	FrontLoader_Defragment();
 
 	s1 = Mem_NewX(FileIO_Open(Levels[DAT_800d1cf4].f30), 1, 1);
 	FileIO_Load(s1);
@@ -70,18 +70,18 @@ void FUN_8005d00c(void) {
 	o2 = __nw__6CClassUi(24);
 
 	if (o2)
-		o2 = FUN_80063a5c(o2, 8, FUN_8005ca3c("Pressx.bmp"), 0, 440, 64, 128);
+		o2 = FUN_80063a5c(o2, 8, FrontLoader_TakeFile("Pressx.bmp"), 0, 440, 64, 128);
 
 	DAT_800d1d04 = o2;
 	DAT_800d1d18 = GCareer[DAT_800d234c].Tapes[DAT_800d1cf4];
 	o3 = __nw__6CClassUi(24);
 
 	if (o3)
-		o3 = FUN_80063a5c(o3, 8, FUN_8005ca3c("check2.bmp"), 0, 256, 64, 128);
+		o3 = FUN_80063a5c(o3, 8, FrontLoader_TakeFile("check2.bmp"), 0, 256, 64, 128);
 
 	DAT_800d1d00 = o3;
-	FUN_8006b240();
-	FUN_80061ea0();
+	HiRes_ClearOTag();
+	ResetOT();
 
 	y = 39;
 
@@ -92,13 +92,13 @@ void FUN_8005d00c(void) {
 		y += 26;
 	}
 
-	FUN_8006b26c();
+	HiRes_DrawOTag();
 
 	Pad[PAD_MENU_START + PAD_TRIGGERED] = 0;
 	Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] = 0;
 	DAT_800d1cec = 0;
 	DAT_800d1d14 = 0;
 	Pack_DefragmentFully();
-	FUN_8006b240();
-	FUN_80061ea0();
+	HiRes_ClearOTag();
+	ResetOT();
 }

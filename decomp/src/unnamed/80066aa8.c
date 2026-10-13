@@ -1,4 +1,4 @@
-/* FUN_80066aa8 (0x80066aa8) */
+/* LevelSelect_InitPackSlots__Fv (0x80066aa8) */
 #include "names.h"
 
 typedef struct {
@@ -18,7 +18,7 @@ int DAT_800d23ac;
 S *Pack_Pack(int a, int b, int c, char *d, char *e, int f, int g, int h);
 S *Mem_NewX(int a, int b, int c);
 
-void FUN_80066aa8(void) {
+void LevelSelect_InitPackSlots(void) {
 	int i;
 	S *s;
 

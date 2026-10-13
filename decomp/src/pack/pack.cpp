@@ -7,6 +7,7 @@
    return the new full block. AlignedX/AlignedW are one pair for the third search and the split
    after it, so AlignedW lives across the Pack_NewFree call in s0, as retail's does. */
 #include "game/m3d.h"
+#include "game/pack.h"
 
 TSPack *Pack_pFree;
 int Pack_NoBottom;
@@ -15,7 +16,6 @@ int Pack_NoRight;
 TSPack *Pack_NewFree(int, int, int, int);
 void Pack_Merge(TSPack *);
 void Pack_Remove(TSPack **, TSPack *);
-extern "C" TSPack *FUN_800496b0(int, int, int, int);
 
 TSPack *Pack_Pack(int Type, int WW, int H, int *X, int *Y, int BPP, int Aligned, uint checksum) {
 	TSPack *pBest;
@@ -258,7 +258,7 @@ TSPack *Pack_Pack(int Type, int WW, int H, int *X, int *Y, int BPP, int Aligned,
 		OH = pBest->H;
 		Pack_Remove(&Pack_pFree, pBest);
 
-		pBest = FUN_800496b0(OX + OW - W, OY, W, H);
+		pBest = Pack_NewFull(OX + OW - W, OY, W, H);
 
 		if (OW != W) {
 			if (OH != H) {
@@ -281,7 +281,7 @@ TSPack *Pack_Pack(int Type, int WW, int H, int *X, int *Y, int BPP, int Aligned,
 		OH = pBest->H;
 		Pack_Remove(&Pack_pFree, pBest);
 
-		pBest = FUN_800496b0(OX, OY, W, H);
+		pBest = Pack_NewFull(OX, OY, W, H);
 
 		if (OW != W) {
 			if (OH != H) {

@@ -23,7 +23,7 @@ typedef struct {
 
 int SFXPaused;
 
-extern void FUN_80093e54(int, VATTR *);
+extern void SpuNSetVoiceAttr(int, VATTR *);
 
 void SFX_SetVoicePitch(unsigned m, unsigned short p) {
 	VATTR a;
@@ -39,7 +39,7 @@ void SFX_SetVoicePitch(unsigned m, unsigned short p) {
 		if (m & (1 << i)) {
 			a.mask = 16;
 			a.pitch = p;
-			FUN_80093e54(i, &a);
+			SpuNSetVoiceAttr(i, &a);
 		}
 	}
 }

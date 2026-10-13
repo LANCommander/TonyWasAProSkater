@@ -10,6 +10,7 @@ extern "C" {
 }
 
 #include "game/m3d.h"
+#include "game/m3dasm.h"
 
 static inline void SetV(CVector *v, int _x, int _y, int _z) {
 	v->vx = _x;
@@ -34,12 +35,6 @@ void Shatter_Glass(int, const CVector &, const CVector &, const CVector &, const
                    uchar, uchar);
 void Split(const CVector &, const CVector &, const CVector &, int, int, int, int, int, int, uint,
            int);
-
-extern "C" {
-	void FUN_8008b3d4(SVECTOR *, MATRIX *);
-	void FUN_8008f76c(MATRIX *);
-	void FUN_80089f54(CVector *);
-}
 
 int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int UseFlags,
                  int ModifyFlags, int TryToShatter) {
@@ -99,9 +94,9 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 	}
 
 	pNormal = (SVECTOR *)((char *)pNormals + (f->NormalOffset & ~7));
-	FUN_8008b3d4((SVECTOR *)&pItem->Angles, &Transform);
-	FUN_8008f76c(&Transform);
-	FUN_80089f54((CVector *)&pItem->Position);
+	M3dMaths_RotMatrixYXZ((SVECTOR *)&pItem->Angles, &Transform);
+	SetRotMatrix(&Transform);
+	M3dAsm_SetTransVector((Vector *)&pItem->Position);
 	TransformVertex(a, pVertices, pVertexNums, 0);
 	TransformVertex(b, pVertices, pVertexNums, 1);
 	TransformVertex(c, pVertices, pVertexNums, 2);

@@ -1,4 +1,6 @@
 /* FUN_8005e8e0 (0x8005e8e0) */
+#include "names.h"
+
 typedef struct {
 	int a, b, c;
 } V;
@@ -15,9 +17,9 @@ extern int GHasCareerLoaded;
 
 int DAT_800d1d80;
 
-int FUN_8005e0e0(V *, int *, int, int, int *, int, int, int, int);
+int Front_RunMenu(V *, int *, int, int, int *, int, int, int, int);
 void FUN_8005e4ec(int *, int, int);
-int FUN_80060ba0(int);
+int Front_MemCardScreen(int);
 
 int FUN_8005e8e0(int a) {
 	V l;
@@ -30,7 +32,7 @@ int FUN_8005e8e0(int a) {
 		k[1] = 0;
 		k[2] = 0;
 		k[0] = DAT_800d1d80 ^ 1;
-		v = FUN_8005e0e0(&l, k, 3, 16, &a, 0, 0, 0, 0);
+		v = Front_RunMenu(&l, k, 3, 16, &a, 0, 0, 0, 0);
 
 		if (v == -1)
 			goto ret;
@@ -39,7 +41,7 @@ int FUN_8005e8e0(int a) {
 			case 18:
 				break;
 			case 19:
-				v = FUN_80060ba0(0);
+				v = Front_MemCardScreen(0);
 
 				if (v == 0) {
 					v = GameText.f;

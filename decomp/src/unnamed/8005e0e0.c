@@ -1,4 +1,4 @@
-/* FUN_8005e0e0 (0x8005e0e0) */
+/* Front_RunMenu__FPPcPiiiT1PFP12VerticalMenu_vT1T1i (0x8005e0e0) */
 #include "names.h"
 #include "game/padbuttons.h"
 
@@ -22,33 +22,33 @@ extern int DAT_800d1cb8;
 
 int DAT_800d2358, DAT_800d235c, DAT_800d1d28;
 
-extern int FUN_8005eb78();
-void FUN_800242cc(void);
+extern int Front_ControllerOptionsHandler();
+void PollHost(void);
 void SFX_PlayX(int, int, int);
-void FUN_8005c68c(void);
-void FUN_8005c780(void);
-void FUN_8005c934(void);
+void Front_CheckSoftReset(void);
+void Front_UpdateMusicLoop(void);
+void FrontLoader_Continue(void);
 int FUN_8005e09c(int);
-void FUN_80061ea0(void);
+void ResetOT(void);
 O *PadBuffer_ctor(O *, int);
 void PadBuffer_update(O *);
 int PadBuffer_getPress(O *);
 O *VerticalMenu_ctor(O *, int, int, int, int *, int, int, int, int);
-void FUN_80064890(O *, int, int);
+void VerticalMenu_setTriangles(O *, int, int);
 void FUN_800648c0(O *, int, int);
 int VerticalMenu_getSelected(O *);
-void FUN_8006b240(void);
-void FUN_8006b26c(void);
-void FUN_80070ff4(void);
-int FUN_8008f6fc(int, char *);
+void HiRes_ClearOTag(void);
+void HiRes_DrawOTag(void);
+void Pad_Update(void);
+int strcmp(int, char *);
 void Pad_ClearTriggers(char *);
 O *__nw__6CClassUi(int);
 void VerticalMenu_down(O *);
 void VerticalMenu_erase(O *);
 void VerticalMenu_up(O *);
 
-int FUN_8005e0e0(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int a6, int a7,
-                 int a8) {
+int Front_RunMenu(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int a6, int a7,
+                  int a8) {
 	O *s2;
 	O *s1;
 	int s3, s0, i, r, t;
@@ -67,7 +67,7 @@ int FUN_8005e0e0(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int 
 	if (s2)
 		s2 = VerticalMenu_ctor(s2, 100, 398, 15, a0, a2, a6, a7, a8);
 
-	FUN_80064890(s2, DAT_800d2358, DAT_800d235c);
+	VerticalMenu_setTriangles(s2, DAT_800d2358, DAT_800d235c);
 
 	for (i = 0; i < a2; i++) {
 		if (a1[i])
@@ -76,7 +76,7 @@ int FUN_8005e0e0(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int 
 
 	s0 = -1;
 
-	if (a5 && (int)a5 == (int)FUN_8005eb78)
+	if (a5 && (int)a5 == (int)Front_ControllerOptionsHandler)
 		s0 = DAT_800d1d28;
 
 	s1 = __nw__6CClassUi(284);
@@ -87,27 +87,27 @@ int FUN_8005e0e0(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int 
 	DemoTimer = 1600;
 
 	while (s3 == 0) {
-		FUN_8005c780();
+		Front_UpdateMusicLoop();
 
-		if (FUN_8008f6fc(*a0, "CAREER MODE") == 0) {
+		if (strcmp(*a0, "CAREER MODE") == 0) {
 			if (DemoTimer)
 				DemoTimer--;
 			else
 				s3 = 128;
 		}
 
-		FUN_8005c934();
-		FUN_80070ff4();
-		FUN_8005c68c();
+		FrontLoader_Continue();
+		Pad_Update();
+		Front_CheckSoftReset();
 
 		if (DAT_800d1cb8) {
 			s3 = 0x666;
 			break;
 		}
 
-		FUN_800242cc();
-		FUN_8006b240();
-		FUN_80061ea0();
+		PollHost();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		r = PadBuffer_getPress(s1);
 
@@ -130,7 +130,7 @@ int FUN_8005e0e0(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int 
 			a5(s2);
 
 		s2->vt->fn2((char *)s2 + s2->vt->off2);
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 
 		if (Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] ||
 		    Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] ||
@@ -158,10 +158,10 @@ int FUN_8005e0e0(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int 
 
 	do {
 		i++;
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 		VerticalMenu_erase(s2);
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	} while (i < 2);
 
 	if (s2)

@@ -35,7 +35,7 @@ B *GSkater;
 void FUN_8002ab20(void);
 void FUN_8002efa4(B *);
 void M3d_RenderSetup(char *, int, char *);
-void FUN_80083774(void);
+void M3d_RenderCleanup(void);
 void M3d_Render(int);
 void M3d_RenderBackground(int);
 void CBruce_TempRestore(B *);
@@ -83,5 +83,5 @@ void Display_Viewport(int a, int b) {
 	if (ViewportMode == 0)
 		M3d_RenderBackground(BackgroundList);
 
-	FUN_80083774();
+	M3d_RenderCleanup();
 }

@@ -1,4 +1,4 @@
-/* FUN_80056428 (0x80056428) */
+/* Front_UnloadSkaterTextures2P__Fv (0x80056428) */
 #include "names.h"
 
 typedef struct N {
@@ -16,17 +16,17 @@ extern int DAT_800d3758[];
 extern N *Pack_pFree;
 extern N *DAT_800d1c80;
 
-void FUN_80059618(int);
+void Front_SelectSkaterPack(int);
 void Pack_KillSlot(N *);
 N *Mem_NewX(int, int, int);
-void FUN_8006edb8(int);
+void Spool_RestorePSX(int);
 void ClearRegion(int, int, int);
 
-void FUN_80056428(void) {
+void Front_UnloadSkaterTextures2P(void) {
 	int i, n;
 	N *t;
 
-	FUN_80059618(0);
+	Front_SelectSkaterPack(0);
 
 	n = 2;
 
@@ -36,7 +36,7 @@ void FUN_80056428(void) {
 	for (i = 0; i < n; i++) {
 		if (DAT_800d231c[i]) {
 			ClearRegion(DAT_800d3758[DAT_800d2304[i]], 1, 1);
-			FUN_8006edb8(DAT_800d3758[DAT_800d2304[i]]);
+			Spool_RestorePSX(DAT_800d3758[DAT_800d2304[i]]);
 		}
 	}
 

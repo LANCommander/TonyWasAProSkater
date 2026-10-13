@@ -13,11 +13,11 @@ typedef struct {
 extern char Tfm[];
 extern SVECTOR *NearestHit_8[];
 
-void FUN_8008b3d4(char *, char *);
+void M3dMaths_RotMatrixYXZ__FP7SVECTORP6MATRIX(char *, char *);
 
 int M3dColij_GetLineInfo(SLineInfo *li) {
 	if (li->obj) {
-		FUN_8008b3d4(li->obj + 16, Tfm);
+		M3dMaths_RotMatrixYXZ__FP7SVECTORP6MATRIX(li->obj + 16, Tfm);
 		gte_SetRotMatrix(Tfm);
 		gte_ldv0(NearestHit_8[0]);
 		gte_rtv0();

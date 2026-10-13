@@ -1,15 +1,11 @@
-/* FUN_80061714 (0x80061714) -- 8-bit BMP to 16bpp at VRAM (0,0), line-doubled; variant of DownloadBMP__FPciiii */
+/* DownloadBMP16x2__FPc (0x80061714) -- 8-bit BMP to 16bpp at VRAM (0,0), line-doubled; variant of DownloadBMP__FPciiii */
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
-
-	int LoadImage(RECT *, u_long *);
-	int DrawSync(int);
-	void FUN_8008eebc(int);
-	void printf(char *, ...);
 }
 
+#include "game/psyq.h"
 #include "game/types.h"
 
 void *Mem_New(unsigned int, int, int);
@@ -42,7 +38,7 @@ void DownloadBMP16x2(char *pData) {
 
 		if (PC_BmpLayoutSize(pData, &lw, &lh) && lh == *(ushort *)(pData + 22)) {
 			((void (*)(char *))0x80061a10)(pData);
-			FUN_8008eebc(0);
+			VSync(0);
 			return;
 		}
 	}
@@ -174,6 +170,6 @@ void DownloadBMP16x2(char *pData) {
 	DrawSync(0);
 	LoadImage(&r, (u_long *)data);
 	DrawSync(0);
-	FUN_8008eebc(0);
+	VSync(0);
 	Mem_Delete(data);
 }

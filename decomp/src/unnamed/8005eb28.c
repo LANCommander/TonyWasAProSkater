@@ -1,4 +1,6 @@
-/* FUN_8005eb28 (0x8005eb28) */
+/* Front_StorePadMapping__Fi (0x8005eb28) */
+#include "names.h"
+
 typedef struct {
 	int a, b, c, d;
 } Q;
@@ -11,7 +13,7 @@ typedef struct {
 extern D GPreferences;
 extern Q DAT_800bf260[];
 
-void FUN_8005eb28(int i) {
+void Front_StorePadMapping(int i) {
 	GPreferences.q[i].a = DAT_800bf260[i].a;
 	GPreferences.q[i].c = DAT_800bf260[i].c;
 	GPreferences.q[i].b = DAT_800bf260[i].b;

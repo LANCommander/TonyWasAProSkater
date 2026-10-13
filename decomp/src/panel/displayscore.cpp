@@ -7,6 +7,9 @@
    Horse_DisplayWords jal delay slot stays empty; Sprite::draw takes ints (no &255 on the flash). */
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/mess.h"
+#include "game/panel.h"
+#include "game/psyq.h"
 
 class Sprite {
   public:
@@ -28,16 +31,6 @@ extern int GHorseLetters[2];
 extern SLevel Levels[];
 
 void Horse_DisplayWords(int *);
-
-extern "C" {
-	void FUN_8001f138(int);
-	int Career_Got__Fi(int);
-	void Panel_Tape__Fi(int);
-	void FUN_8008b900(char *, char *, unsigned);
-	void Mess_SetTextJustify__FUc(int);
-}
-
-struct POLY_G4;
 
 POLY_G4 *DrawGouraudPoly(int, int, int, int, uchar, uchar, uchar, uchar, uchar, uchar, int);
 void Mess_SetRGB(uchar, uchar, uchar, int);
@@ -63,7 +56,7 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 		return;
 	}
 
-	FUN_8001f138(DAT_800d1798);
+	Mess_SetCurrentFont(DAT_800d1798);
 
 	if (DoDisplay) {
 		{
@@ -128,18 +121,18 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 	}
 
 	if (DoDisplay && GGame == 1 && !Levels[GLevel].isCompetition) {
-		if (pBruce->mPanel.mTotalScore >= Levels[GLevel].HiScore && !Career_Got__Fi(0))
-			Panel_Tape__Fi(0);
+		if (pBruce->mPanel.mTotalScore >= Levels[GLevel].HiScore && !Career_Got(0))
+			Panel_Tape(0);
 
-		if (pBruce->mPanel.mTotalScore >= Levels[GLevel].ProScore && !Career_Got__Fi(4))
-			Panel_Tape__Fi(4);
+		if (pBruce->mPanel.mTotalScore >= Levels[GLevel].ProScore && !Career_Got(4))
+			Panel_Tape(4);
 	}
 
 	if (DoDisplay) {
 		char score[15];
 
 		if (pBruce->mPanel.mTotalScore > 999999) {
-			FUN_8008b900(score, "Yowza!", pBruce->mPanel.mTotalScore);
+			sprintf(score, "Yowza!", pBruce->mPanel.mTotalScore);
 			Mess_SetRGB((Xblanks % 20) * 12, 100, 100, 0);
 		} else {
 			Mess_SetRGB(128, 128, 128, 0);
@@ -152,14 +145,14 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 					GraffitiColor(pBruce);
 				}
 
-				FUN_8008b900(score, "%ld", Value);
+				sprintf(score, "%ld", Value);
 			}
 		}
 
-		Mess_SetTextJustify__FUc(2);
+		Mess_SetTextJustify(2);
 		Mess_SetScale(256);
 		Mess_DrawPanelText(xpos + 125, ypos - 4, score, 0, 0, 256);
 	}
 
-	FUN_8001f138(GStartTime);
+	Mess_SetCurrentFont(GStartTime);
 }

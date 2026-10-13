@@ -1,1 +1,1 @@
-{"PSXRegion":"0x800bf7a8","Pack_DefragmentFully__Fv":"0x8004a8cc","Spool_SkipPackets__FPUi":"0x8006f130","Pal_FindPaletteEntry__FUi":"0x8004abf4","Pack_Pack__FiiiPiT3iiUi":"0x8004982c","FUN_8008c714":"0x8008c714","FUN_8008f72c":"0x8008f72c"}
+{"PSXRegion":"0x800bf7a8","Pack_DefragmentFully__Fv":"0x8004a8cc","Spool_SkipPackets__FPUi":"0x8006f130","Pal_FindPaletteEntry__FUi":"0x8004abf4","Pack_Pack__FiiiPiT3iiUi":"0x8004982c","LoadImage":"0x8008c714","GetTPage":"0x8008f72c"}

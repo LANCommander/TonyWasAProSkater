@@ -11,14 +11,14 @@ struct E {
 	int t;
 };
 
-int FUN_8008f6fc(char *p, int a);
+int strcmp(char *p, int a);
 
 int FUN_80065f1c(char *p, int a) {
 	int i;
 	int r = 0;
 
 	for (i = 0; i < *(int *)(p + 8); i++) {
-		if (FUN_8008f6fc(p + 20 + i * 36, a) == 0) {
+		if (strcmp(p + 20 + i * 36, a) == 0) {
 			r = *(int *)(p + 16 + i * 36);
 			*(int *)(p + 16 + i * 36) = 0;
 			*(int *)(p + 48 + i * 36) = 0;

@@ -1,2 +1,4 @@
-/* FUN_8006e204 (0x8006e204) */
-void FUN_8006e204(void) {}
+/* Panel_Bonus__FP6CBrucei (0x8006e204) */
+#include "names.h"
+
+void Panel_Bonus(void) {}

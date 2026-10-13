@@ -7,8 +7,9 @@
 #include "game/powerup.h"
 #include "game/bruce.h"
 #include "game/career.h"
-
-enum EMedalType { MEDAL_0 };
+#include "game/mess.h"
+#include "game/sfx.h"
+#include "game/psyq.h"
 
 extern char *MedalMessage[9];
 extern SStats Stats[];
@@ -28,13 +29,6 @@ void Mess_SetRGB(uchar, uchar, uchar, int);
 int Redbook_Rnd(int);
 CPowerUp *Medal_Create(EMedalType, int, int, int, int, int);
 void Front_PrintCentredPrompt(const char *);
-
-extern "C" {
-	int Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	void Career_GiveMedal__Fi10EMedalType(int, int);
-	int SFX_PlayX__FUisi(int, short, int);
-	int FUN_8008b900(char *, const char *, ...);
-}
 
 void Competition_WinLoseDisplay() {
 	int our_placing;
@@ -137,49 +131,49 @@ void Competition_WinLoseDisplay() {
 
 	switch (our_placing) {
 		case 0:
-			Mess_DrawText__FiiPCciUiib(256, 40, "You win the Gold!", 0, 0, 256, 0);
+			Mess_DrawText(256, 40, "You win the Gold!", 0, 0, 256, 0);
 
 			if (!c->mMedal1) {
-				Career_GiveMedal__Fi10EMedalType(GLevel, 5);
+				Career_GiveMedal(GLevel, 5);
 
 				c->mMedal1 = Medal_Create((EMedalType)5, 0, -5, 140, 2048, 10);
 			}
 
 			if (!c->mWinLoseCheer) {
-				SFX_PlayX__FUisi(45, 0x2000, 0);
-				SFX_PlayX__FUisi(48, 0x2000, 0);
+				SFX_PlayX(45, 0x2000, 0);
+				SFX_PlayX(48, 0x2000, 0);
 
 				c->mWinLoseCheer = 1;
 			}
 
 			break;
 		case 1:
-			Mess_DrawText__FiiPCciUiib(256, 40, "You win the Silver!", 0, 0, 256, 0);
+			Mess_DrawText(256, 40, "You win the Silver!", 0, 0, 256, 0);
 
 			if (!c->mMedal1) {
-				Career_GiveMedal__Fi10EMedalType(GLevel, 6);
+				Career_GiveMedal(GLevel, 6);
 
 				c->mMedal1 = Medal_Create((EMedalType)6, 0, -5, 140, 2048, 10);
 			}
 
 			if (!c->mWinLoseCheer) {
-				SFX_PlayX__FUisi(48, 0x2000, 0);
+				SFX_PlayX(48, 0x2000, 0);
 
 				c->mWinLoseCheer = 1;
 			}
 
 			break;
 		case 2:
-			Mess_DrawText__FiiPCciUiib(256, 40, "You win the Bronze!", 0, 0, 256, 0);
+			Mess_DrawText(256, 40, "You win the Bronze!", 0, 0, 256, 0);
 
 			if (!c->mMedal1) {
-				Career_GiveMedal__Fi10EMedalType(GLevel, 7);
+				Career_GiveMedal(GLevel, 7);
 
 				c->mMedal1 = Medal_Create((EMedalType)7, 0, -5, 140, 2048, 10);
 			}
 
 			if (!c->mWinLoseCheer) {
-				SFX_PlayX__FUisi(45, 0x2000, 0);
+				SFX_PlayX(45, 0x2000, 0);
 
 				c->mWinLoseCheer = 1;
 			}
@@ -191,12 +185,12 @@ void Competition_WinLoseDisplay() {
 			int third;
 
 			if (!c->mWinLoseCheer) {
-				SFX_PlayX__FUisi(47, 0x2000, 0);
+				SFX_PlayX(47, 0x2000, 0);
 
 				c->mWinLoseCheer = 1;
 			}
 
-			Mess_DrawText__FiiPCciUiib(256, 40, "You lose!", 0, 0, 256, 0);
+			Mess_DrawText(256, 40, "You lose!", 0, 0, 256, 0);
 
 			{
 				int i;
@@ -215,18 +209,18 @@ void Competition_WinLoseDisplay() {
 
 			Mess_SetRGB(182, 132, 36, 0);
 			Mess_SetScale(160);
-			FUN_8008b900(buf, "%s: 1st place", Stats[c->mCompetitorList[first]].Name);
-			Mess_DrawText__FiiPCciUiib(256, 60, buf, 0, 0, 256, 0);
-			FUN_8008b900(buf, "%s: 2nd place", Stats[c->mCompetitorList[second]].Name);
-			Mess_DrawText__FiiPCciUiib(256, 70, buf, 0, 0, 256, 0);
-			FUN_8008b900(buf, "%s: 3rd place", Stats[c->mCompetitorList[third]].Name);
-			Mess_DrawText__FiiPCciUiib(256, 80, buf, 0, 0, 256, 0);
+			sprintf(buf, "%s: 1st place", Stats[c->mCompetitorList[first]].Name);
+			Mess_DrawText(256, 60, buf, 0, 0, 256, 0);
+			sprintf(buf, "%s: 2nd place", Stats[c->mCompetitorList[second]].Name);
+			Mess_DrawText(256, 70, buf, 0, 0, 256, 0);
+			sprintf(buf, "%s: 3rd place", Stats[c->mCompetitorList[third]].Name);
+			Mess_DrawText(256, 80, buf, 0, 0, 256, 0);
 			Mess_SetRGB(122, 122, 122, 0);
-			FUN_8008b900(buf, "%dth", our_placing + 1);
+			sprintf(buf, "%dth", our_placing + 1);
 			Mess_SetScale(384);
-			Mess_DrawText__FiiPCciUiib(256, 120, Stats[c->mCompetitorList[c->our_skater_num]].Name,
-			                           0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(256, 150, buf, 0, 0, 256, 0);
+			Mess_DrawText(256, 120, Stats[c->mCompetitorList[c->our_skater_num]].Name, 0, 0, 256,
+			              0);
+			Mess_DrawText(256, 150, buf, 0, 0, 256, 0);
 			break;
 		}
 	}
@@ -247,36 +241,36 @@ void Competition_WinLoseDisplay() {
 			c->mMedal1->mPos.vy = c->mMedal1->mOrgPos.vy - 0x5000;
 
 			if (MedalMessage[6])
-				Mess_DrawText__FiiPCciUiib(256, 155, MedalMessage[6], 0, 0, 256, 0);
+				Mess_DrawText(256, 155, MedalMessage[6], 0, 0, 256, 0);
 
 			if (MedalMessage[7])
-				Mess_DrawText__FiiPCciUiib(256, 175, MedalMessage[7], 0, 0, 256, 0);
+				Mess_DrawText(256, 175, MedalMessage[7], 0, 0, 256, 0);
 
 			if (MedalMessage[8])
-				Mess_DrawText__FiiPCciUiib(256, 195, MedalMessage[8], 0, 0, 256, 0);
+				Mess_DrawText(256, 195, MedalMessage[8], 0, 0, 256, 0);
 		} else {
 			switch ((GCareer.Options.MedalMessagesUsed[GSkater->mSkaterIndex] & c->medal_mask) ^
 			        c->medal_mask) {
 				case 8:
 					if (MedalMessage[0])
-						Mess_DrawText__FiiPCciUiib(256, 155, MedalMessage[0], 0, 0, 256, 0);
+						Mess_DrawText(256, 155, MedalMessage[0], 0, 0, 256, 0);
 
 					if (MedalMessage[1])
-						Mess_DrawText__FiiPCciUiib(256, 175, MedalMessage[1], 0, 0, 256, 0);
+						Mess_DrawText(256, 175, MedalMessage[1], 0, 0, 256, 0);
 
 					if (MedalMessage[2])
-						Mess_DrawText__FiiPCciUiib(256, 195, MedalMessage[2], 0, 0, 256, 0);
+						Mess_DrawText(256, 195, MedalMessage[2], 0, 0, 256, 0);
 
 					break;
 				case 64:
 					if (MedalMessage[3])
-						Mess_DrawText__FiiPCciUiib(256, 155, MedalMessage[3], 0, 0, 256, 0);
+						Mess_DrawText(256, 155, MedalMessage[3], 0, 0, 256, 0);
 
 					if (MedalMessage[4])
-						Mess_DrawText__FiiPCciUiib(256, 175, MedalMessage[4], 0, 0, 256, 0);
+						Mess_DrawText(256, 175, MedalMessage[4], 0, 0, 256, 0);
 
 					if (MedalMessage[5])
-						Mess_DrawText__FiiPCciUiib(256, 195, MedalMessage[5], 0, 0, 256, 0);
+						Mess_DrawText(256, 195, MedalMessage[5], 0, 0, 256, 0);
 
 					break;
 				case 256:
@@ -284,13 +278,13 @@ void Competition_WinLoseDisplay() {
 					c->mMedal1->mPos.vy = c->mMedal1->mOrgPos.vy - 0x5000;
 
 					if (MedalMessage[6])
-						Mess_DrawText__FiiPCciUiib(256, 155, MedalMessage[6], 0, 0, 256, 0);
+						Mess_DrawText(256, 155, MedalMessage[6], 0, 0, 256, 0);
 
 					if (MedalMessage[7])
-						Mess_DrawText__FiiPCciUiib(256, 175, MedalMessage[7], 0, 0, 256, 0);
+						Mess_DrawText(256, 175, MedalMessage[7], 0, 0, 256, 0);
 
 					if (MedalMessage[8])
-						Mess_DrawText__FiiPCciUiib(256, 195, MedalMessage[8], 0, 0, 256, 0);
+						Mess_DrawText(256, 195, MedalMessage[8], 0, 0, 256, 0);
 
 					break;
 			}

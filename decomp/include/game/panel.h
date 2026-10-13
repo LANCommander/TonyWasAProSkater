@@ -12,6 +12,13 @@
 
 #pragma interface /* see class.h */
 
+/* SDK headers wrapped as in m3d.h (Panel_DrawFlatShadedPoly returns a POLY_F4) */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
+
 #include "game/types.h"
 #include "game/class.h"
 #include "game/mess.h"
@@ -129,6 +136,7 @@ class CPanelData {
 	void Trick(char *, int, int);                /* 0x8006e804 */
 	void Land();                                 /* 0x8006e8ec */
 	void OutOfBounds();                          /* 0x8006eba4 */
+	int TotalScore();                            /* 0x8006ebdc */
 };
 
 /* the trick-tip monitor (one global, TrickTipMonitor; layout = demo, vtable 0x800a2498) */
@@ -187,5 +195,20 @@ class CTrickTipMonitor : public CClass {
 	void ShowFoundTip(int);
 	void Update();
 };
+
+/* functions */
+void Panel_Update(); /* 0x8006c4e8 */
+POLY_F4 *Panel_DrawFlatShadedPoly(int x, int y, int w, int h, uchar r, uchar g, uchar b,
+                                  int sort);                       /* 0x8006c610 */
+void GraffitiColor(CBruce *);                                      /* 0x8006ca1c */
+void Panel_TakeOff(CBruce *pSkater, int a);                        /* 0x8006e168 */
+void Panel_Trick(CBruce *pSkater, char *pName, int score, int a3); /* 0x8006e19c */
+void Panel_HoldTrick(CBruce *pSkater, int Score);                  /* 0x8006e1bc */
+void Panel_Bonus(CBruce *pSkater, int Score);                      /* 0x8006e204 */
+void Panel_Land(CBruce *pSkater);                                  /* 0x8006e20c */
+void Panel_Bail(CBruce *pSkater);                                  /* 0x8006e22c */
+void Panel_Tape(int);                                              /* 0x8006e2fc */
+void Panel_GoalCounter(int goals);                                 /* 0x8006e454 */
+char *Panel_SwitchText(CBruce *pSkater);                           /* 0x8006e534 */
 
 #endif

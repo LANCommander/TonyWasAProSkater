@@ -1,6 +1,8 @@
-/* FUN_800642d4 (0x800642d4) */
+/* PadBuffer_SetNumPlayers__Fi (0x800642d4) */
+#include "names.h"
+
 int DAT_800d1d9c;
 
-void FUN_800642d4(int a) {
+void PadBuffer_SetNumPlayers(int a) {
 	DAT_800d1d9c = a == 1;
 }

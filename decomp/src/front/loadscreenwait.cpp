@@ -1,12 +1,22 @@
-/* FUN_8005d3dc (0x8005d3dc) */
+/* LoadingScreen_Wait__Fv (0x8005d3dc) */
 /* C++ (front end, THPS1-only; no demo twin). Loading-screen frame for the picture screens
    (DAT_800d1cf8 = 1, 3, 4, 5; dispatched by FUN_8005d370). Called once per load callback while
    loading (DAT_800d1cec = 0) and, after FUN_8005dc8c sets DAT_800d1cec, it loops until the player
    continues: draws the background, the level picture (DAT_800d1d0c) and the blinking "Press X"
    sprite (DAT_800d1d04, toggled by the DAT_800d1d08 counter). START/X or GAutoTest continue
    (sound 6, fade 64); triangle backs out (sound 2). Afterwards it deletes the two sprites. */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
+
 #include "game/shellutils.h"
 #include "game/pad.h"
+#include "game/psyq.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/main.h"
 
 extern SControl Pad[2];
 extern int DAT_800bf0d4[]; /* picture x by screen */
@@ -27,43 +37,37 @@ int DAT_800d1d14;     /* redraw picture */
 int SFX_PlayX(uint, short, int);
 void Pause(int);
 
-extern "C" {
-	void FUN_8008eebc(int);
-	int DrawSync(int);
-	void FUN_8006b2f4(void);
-	void FUN_8006b240(void);
-	void FUN_80061ea0(void);
-	void FUN_800242cc(void);
-	void DrawColoredBox__FiiiiUcUcUc(int, int, int, int, int, int, int);
-	void SetClippingBox__Fiiii(int, int, int, int);
-	void FUN_80070ff4(void);
-	void FUN_8005c68c(void);
-}
-
-extern "C" void FUN_8005d3dc(void) {
+void LoadingScreen_Wait(void) {
 	do {
 		if (DAT_800d1cec)
-			FUN_8008eebc(0);
+			VSync(0);
+
 		DrawSync(0);
-		FUN_8006b2f4();
-		FUN_8006b240();
-		FUN_80061ea0();
-		FUN_800242cc();
+		HiRes_DrawOTagNoSync();
+		HiRes_ClearOTag();
+		ResetOT();
+		PollHost();
+
 		if (BackOut) {
-			DrawColoredBox__FiiiiUcUcUc(0, 0, 512, 240, 0, 0, 0);
+			DrawColoredBox(0, 0, 512, 240, 0, 0, 0);
 			return;
 		}
-		SetClippingBox__Fiiii(0, 0, 512, 240);
+
+		SetClippingBox(0, 0, 512, 240);
+
 		if (DAT_800d1d14) {
 			DAT_800d1d14 = 0;
+
 			if (DAT_800d1cf8 == 4)
 				DAT_800d1d0c->draw(DAT_800bf0d4[1], DAT_800bf0e0[1], 0, -1, -1, -1);
 			else
 				DAT_800d1d0c->draw(DAT_800bf0d4[2], DAT_800bf0e0[2], 0, -1, -1, -1);
 		}
+
 		if (DAT_800d1cec) {
 			if (--DAT_800d1d08 == 0)
 				DAT_800d1d08 = 92;
+
 			if (DAT_800d1d08 == 91) {
 				if (DAT_800d1cf8 == 4)
 					DAT_800d1d04->draw(88, 196, 0, -1, -1, -1);
@@ -76,26 +80,32 @@ extern "C" void FUN_8005d3dc(void) {
 					DAT_800d1d0c->draw(DAT_800bf0d4[2], DAT_800bf0e0[2], 0, -1, -1, -1);
 			}
 		}
-		FUN_80070ff4();
-		FUN_8005c68c();
+
+		Pad_Update();
+		Front_CheckSoftReset();
+
 		if (DAT_800d1cb8) {
 			DAT_800d1ce8 = 0;
 			BackOut = 1;
 			break;
 		}
+
 		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
 		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered || GAutoTest) {
 			SFX_PlayX(6, 8192, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
+
 			GameFade = 64;
 			break;
 		}
+
 		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
 			SFX_PlayX(2, 8192, 0);
 			Pause(20);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
+
 			DAT_800d1ce8 = 0;
 			BackOut = 1;
 		}

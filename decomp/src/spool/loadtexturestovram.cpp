@@ -12,18 +12,13 @@ extern "C" {
 }
 
 #include "game/m3d.h"
+#include "game/pack.h"
 
 extern SPSXRegion PSXRegion[];
 
 void Pack_DefragmentFully(void);
 uint *Spool_SkipPackets(uint *);
 tag_S_Pal *Pal_FindPaletteEntry(uint);
-
-extern "C" {
-	int Pack_Pack__FiiiPiT3iiUi(int, int, int, int *, int *, int, int, uint);
-	void FUN_8008c714(RECT *, uint *);
-	ushort FUN_8008f72c(int, int, int, int);
-}
 
 #ifdef PC_PORT
 #include "pc_dctex.h"
@@ -121,8 +116,8 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				int AlignedWidth = (Width + 1) & ~1;
 				RECT rec;
 
-				Pack_Pack__FiiiPiT3iiUi(0, AlignedWidth, Height, &x, &y, 8, (Flags & 1) ? 2 : 0,
-				                        pTextureEntry->Checksum);
+				Pack_Pack(0, AlignedWidth, Height, &x, &y, 8, (Flags & 1) ? 2 : 0,
+				          pTextureEntry->Checksum);
 				ushort sx = x;
 				ushort sy = y;
 
@@ -132,15 +127,15 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				rec.y = sy;
 				rec.w = AlignedWidth / 2;
 				rec.h = Height;
-				FUN_8008c714(&rec, pTextureData);
+				LoadImage(&rec, (u_long *)pTextureData);
 			}
 
 			if (NumColours == 16) {
 				int AlignedWidth = (Width + 3) & ~3;
 				RECT rec;
 
-				Pack_Pack__FiiiPiT3iiUi(0, AlignedWidth, Height, &x, &y, 4, (Flags & 1) ? 2 : 0,
-				                        pTextureEntry->Checksum);
+				Pack_Pack(0, AlignedWidth, Height, &x, &y, 4, (Flags & 1) ? 2 : 0,
+				          pTextureEntry->Checksum);
 				ushort sx = x;
 				ushort sy = y;
 
@@ -150,14 +145,14 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				rec.y = sy;
 				rec.w = AlignedWidth / 4;
 				rec.h = Height;
-				FUN_8008c714(&rec, pTextureData);
+				LoadImage(&rec, (u_long *)pTextureData);
 			}
 
 			pPal = Pal_FindPaletteEntry(PaletteChecksum);
 			pPal->Usage++;
 			pTextureEntry->pPalette = pPal;
 			pTextureEntry->clut = pPal->Clut;
-			pTextureEntry->tpage = FUN_8008f72c(NumColours == 256, 0, x, y);
+			pTextureEntry->tpage = GetTPage(NumColours == 256, 0, x, y);
 
 			{
 				int t = x & 63;

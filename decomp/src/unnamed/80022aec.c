@@ -1,4 +1,6 @@
-/* FUN_80022aec (0x80022aec) */
+/* GameFMV_AddSoundSource__FPC7CVector (0x80022aec) */
+#include "names.h"
+
 struct V {
 	int x, y, z;
 };
@@ -8,7 +10,7 @@ int GameFMV_NumSoundSources;
 
 extern struct V DAT_800a6388[];
 
-void FUN_80022aec(struct V *s) {
+void GameFMV_AddSoundSource(struct V *s) {
 	int n;
 
 	if (GameFMV_Active == 0) {

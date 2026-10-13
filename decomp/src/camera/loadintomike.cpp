@@ -1,4 +1,9 @@
 /* LoadIntoMikeCamera__7CCamera (0x80078b04) flags=-fstructure-noalias */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+}
+
 #include "game/camera.h"
 #include "game/bruce.h"
 
@@ -8,7 +13,6 @@ extern CVector Camera_CamOffset;
 int Camera_CurrentMikeCamera;
 
 void QToM(const CQuat &, MATRIX &);
-extern "C" void FUN_80093100(MATRIX *, VECTOR *);
 
 void CCamera::LoadIntoMikeCamera() {
 	VECTOR v;
@@ -32,6 +36,6 @@ void CCamera::LoadIntoMikeCamera() {
 	MikeCamera[Camera_CurrentMikeCamera].Focus.vy = (mFocusPos.vy + Camera_CamOffset.vy) >> 12;
 	MikeCamera[Camera_CurrentMikeCamera].Focus.vz = (mFocusPos.vz + Camera_CamOffset.vz) >> 12;
 	QToM(mO, MikeCamera[Camera_CurrentMikeCamera].Transform);
-	FUN_80093100(&MikeCamera[Camera_CurrentMikeCamera].Transform,
-	             &MikeCamera[Camera_CurrentMikeCamera].Position);
+	TransMatrix(&MikeCamera[Camera_CurrentMikeCamera].Transform,
+	            &MikeCamera[Camera_CurrentMikeCamera].Position);
 }

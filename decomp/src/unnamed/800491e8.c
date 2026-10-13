@@ -1,4 +1,4 @@
-/* FUN_800491e8 (0x800491e8) flags=-fstructure-noalias */
+/* Db_Init__Fv (0x800491e8) flags=-fstructure-noalias */
 #include "names.h"
 
 typedef struct {
@@ -42,24 +42,24 @@ extern R DAT_800d1a40[];
 char *pDoubleBuffer, *pOtherBuffer;
 
 extern void FUN_8008c3d0(int);
-extern int FUN_8008c468(int);
+extern int DrawSync(int);
 extern char *Mem_NewX(int, int, int);
 extern void FUN_80092e70(void *, int, int, int, int);
-extern void FUN_800914fc(void *, int, int, int, int);
+extern void SetDefDispEnv(void *, int, int, int, int);
 extern void FUN_80048d00(void);
 extern void Db_UpdateSky(void);
 extern void FUN_8008c94c(void *);
-extern void FUN_8008ca0c(void *);
-extern int FUN_80048c74(void);
+extern void PutDispEnv(void *);
+extern int Db_OTSize(void);
 extern void FUN_8008c7d4(void *, int);
 extern int FUN_8008c67c(void *, int, int, int);
 extern void M3dInit_SetResolution(int, int);
 
-void FUN_800491e8(void) {
+void Db_Init(void) {
 	R r;
 
 	FUN_8008c3d0(0);
-	FUN_8008c468(0);
+	DrawSync(0);
 
 	Db_SkyColor = 0;
 
@@ -74,12 +74,12 @@ void FUN_800491e8(void) {
 	DoubleBuffer.f1013c = 0x100;
 	FUN_80092e70(&DoubleBuffer, 0, 0, 512, 240);
 	FUN_80092e70(DAT_800b09c8, 0, 256, 512, 240);
-	FUN_800914fc((char *)&DoubleBuffer + 92, 0, 256, 512, 240);
-	FUN_800914fc(DAT_800b0a24, 0, 0, 512, 240);
+	SetDefDispEnv((char *)&DoubleBuffer + 92, 0, 256, 512, 240);
+	SetDefDispEnv(DAT_800b0a24, 0, 0, 512, 240);
 	FUN_80048d00();
 	Db_UpdateSky();
 	FUN_8008c94c(&DoubleBuffer);
-	FUN_8008ca0c((char *)&DoubleBuffer + 92);
+	PutDispEnv((char *)&DoubleBuffer + 92);
 
 	DoubleBuffer.f70 = 0;
 	DoubleBuffer.f811c = 0;
@@ -91,17 +91,17 @@ void FUN_800491e8(void) {
 	DoubleBuffer.f8120 = 0;
 	pDoubleBuffer = DAT_800b09c8;
 	pOtherBuffer = (char *)&DoubleBuffer;
-	FUN_8008c7d4((char *)&DoubleBuffer + 132, FUN_80048c74());
-	FUN_8008c7d4(DAT_800b0a4c, FUN_80048c74());
+	FUN_8008c7d4((char *)&DoubleBuffer + 132, Db_OTSize());
+	FUN_8008c7d4(DAT_800b0a4c, Db_OTSize());
 
 	r = DAT_800d1a40[0];
 	FUN_8008c67c(&r, 0, 0, 0);
-	FUN_8008c468(0);
+	DrawSync(0);
 
 	r.y = 511;
 	r.h = 1;
 	FUN_8008c67c(&r, 0, 0, 0);
-	FUN_8008c468(0);
+	DrawSync(0);
 	FUN_8008c3d0(1);
 	M3dInit_SetResolution(512, 240);
 }

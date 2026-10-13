@@ -6,12 +6,9 @@ extern "C" {
 }
 
 #include "game/bruce.h"
+#include "game/m3dasm.h"
+#include "game/vector.h"
 
-extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
-extern "C" int Mips_FixMul__Fii(int, int);
-extern "C" int FUN_8008b5dc(int);
-extern "C" void FUN_80093130(MATRIX *, MATRIX *);
-extern "C" void FUN_80093240(SVECTOR *, MATRIX *);
 void M3dUtils_NormaliseVector(CVector *);
 
 void CBruce::ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle) {
@@ -35,15 +32,15 @@ void CBruce::ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle) {
 		TmpCV.vz = _z;
 	}
 
-	dot = Mips_CVecDotProd__FP7CVectorT0(&mVel, &TmpCV);
+	dot = Mips_CVecDotProd(&mVel, &TmpCV);
 
 	if (dot < 0) {
-		mVel.vx -= Mips_FixMul__Fii(Normal.vx, dot);
-		mVel.vy -= Mips_FixMul__Fii(Normal.vy, dot);
-		mVel.vz -= Mips_FixMul__Fii(Normal.vz, dot);
-		mVel.vx += Mips_FixMul__Fii(Normal.vx, 205);
-		mVel.vy += Mips_FixMul__Fii(Normal.vy, 205);
-		mVel.vz += Mips_FixMul__Fii(Normal.vz, 205);
+		mVel.vx -= Mips_FixMul(Normal.vx, dot);
+		mVel.vy -= Mips_FixMul(Normal.vy, dot);
+		mVel.vz -= Mips_FixMul(Normal.vz, dot);
+		mVel.vx += Mips_FixMul(Normal.vx, 205);
+		mVel.vy += Mips_FixMul(Normal.vy, 205);
+		mVel.vz += Mips_FixMul(Normal.vz, 205);
 	}
 
 	{
@@ -56,7 +53,7 @@ void CBruce::ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle) {
 		TmpCV.vz = _z;
 	}
 
-	dot = Mips_CVecDotProd__FP7CVectorT0(&mFront, &TmpCV);
+	dot = Mips_CVecDotProd(&mFront, &TmpCV);
 
 	if (dot < 0) {
 		int sin;
@@ -64,10 +61,10 @@ void CBruce::ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle) {
 		short *pShort;
 		SVECTOR RotAngle;
 
-		sin = FUN_8008b5dc(0x1000000 - dot * dot);
+		sin = M3dMaths_SquareRoot0(0x1000000 - dot * dot);
 		pShort = (short *)&SurfaceRotMatrix;
 		cos = dot;
-		dot = Mips_CVecDotProd__FP7CVectorT0(&mRight, &TmpCV);
+		dot = Mips_CVecDotProd(&mRight, &TmpCV);
 
 		if (dot > 0)
 			sin = -sin;
@@ -81,13 +78,13 @@ void CBruce::ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle) {
 		pShort[6] = sin;
 		pShort[7] = 0;
 		pShort[8] = cos;
-		FUN_80093130(&mRotMatrix, &SurfaceRotMatrix);
+		MulMatrix(&mRotMatrix, &SurfaceRotMatrix);
 
 		RotAngle.vz = 0;
 		RotAngle.vx = 0;
 		RotAngle.vy = (dot > 0 ? Angle - 1024 : 1024 - Angle) & 4095;
-		FUN_80093240(&RotAngle, &SurfaceRotMatrix);
-		FUN_80093130(&mRotMatrix, &SurfaceRotMatrix);
+		RotMatrixYXZ(&RotAngle, &SurfaceRotMatrix);
+		MulMatrix(&mRotMatrix, &SurfaceRotMatrix);
 		FRUVectorsFromRotMatrix();
 		M3dUtils_NormaliseVector(&mFront);
 		M3dUtils_NormaliseVector(&mUp);

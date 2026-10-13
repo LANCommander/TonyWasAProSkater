@@ -10,7 +10,10 @@ extern "C" {
 	#include <libgpu.h>
 }
 
+#include "game/gamefmv.h"
+#include "game/mem.h"
 #include "game/pad.h"
+#include "game/psyq.h"
 
 struct CdlATV {
 	uchar val0, val1, val2, val3;
@@ -57,22 +60,7 @@ void handleLidOpen(void);
 void Pad_ClearTriggers(SControl *);
 
 extern "C" {
-	void FUN_80023168(int); /* GameFMV_SetStartTrack */
-	void *Mem_NewX__FUiii(int, int, int);
-	void Mem_Delete__FPv(void *);
 	void DecDCTvlcBuild3(void);
-	DISPENV *FUN_800914fc(DISPENV *, int, int, int, int);
-	void FUN_8008eebc(int);
-	int FUN_8008ca0c(DISPENV *);
-	void FUN_8008f620(CdlATV *);
-	void strInit__Fv(void);
-	void FUN_80070ff4(void);
-	void FUN_800902c0(u_long *, int);
-	void FUN_8009033c(u_long *, int);
-	int FUN_8008f264(int, int, uchar *);
-	void FUN_8009035c(int);
-	void FUN_8009074c(void);
-	void FUN_8008f4d4(int, int, int);
 }
 
 #ifdef PC_PORT
@@ -88,7 +76,7 @@ void GameFMV_PlayMovie(int track) {
 		return;
 
 	GameFMV_IsMovie = 1;
-	FUN_80023168(track);
+	GameFMV_SetStartTrack(track);
 
 	GameFMV_StartX = (320 - GameFMV_Width) / 2;
 	GameFMV_EndX = GameFMV_StartX + (GameFMV_Is24Bit ? (GameFMV_Width * 3) / 2 : GameFMV_Width);
@@ -111,11 +99,11 @@ void GameFMV_PlayMovie(int track) {
 		int i;
 
 		for (i = 0; i < 2; i++)
-			if (!(vlcBuffer[i] = (u_long *)Mem_NewX__FUiii(GameFMV_VLCBufferSize, 1, 0)))
+			if (!(vlcBuffer[i] = (u_long *)Mem_NewX(GameFMV_VLCBufferSize, 1, 0)))
 				goto InsufficientMemory;
 	}
 
-	pRingBuffer = (u_long *)Mem_NewX__FUiii(GameFMV_RingBufferSectors << 11, 1, 0);
+	pRingBuffer = (u_long *)Mem_NewX(GameFMV_RingBufferSectors << 11, 1, 0);
 
 	if (!pRingBuffer)
 		goto InsufficientMemory;
@@ -129,7 +117,7 @@ void GameFMV_PlayMovie(int track) {
 			int h = GameFMV_Height;
 
 			if (!(decodeSliceBuffer[i] =
-			          (u_long *)Mem_NewX__FUiii(GameFMV_Is24Bit ? h * 48 : h * 32, 1, 0)))
+			          (u_long *)Mem_NewX(GameFMV_Is24Bit ? h * 48 : h * 32, 1, 0)))
 				goto InsufficientMemory;
 		}
 	}
@@ -139,9 +127,9 @@ void GameFMV_PlayMovie(int track) {
 
 		GameFMV_Active = 1;
 		Front_ClearScreen();
-		FUN_800914fc(&disp, 0, 256, 320, 240);
-		FUN_8008eebc(0);
-		FUN_8008ca0c(&disp);
+		SetDefDispEnv(&disp, 0, 256, 320, 240);
+		VSync(0);
+		PutDispEnv(&disp);
 
 		atv.val2 = 0;
 		atv.val3 = 0;
@@ -161,11 +149,11 @@ void GameFMV_PlayMovie(int track) {
 			atv.val1 = fmv_level;
 		}
 
-		FUN_8008f620(&atv);
+		CdMix(&atv);
 	}
 
-	strInit__Fv();
-	FUN_80070ff4();
+	strInit();
+	Pad_Update();
 
 	Pad[0].Pause.Triggered = 0;
 	Pad[0].MenuAccept.Triggered = 0;
@@ -177,15 +165,15 @@ void GameFMV_PlayMovie(int track) {
 	/* a Dreamcast film: its audio streams as an STR's would, the pictures come from
 	   pc_movie.c in 24-bit at (0, 256) */
 	if (PC_MovieOpen()) {
-		FUN_800914fc(&disp, 0, 256, 480, 240);
+		SetDefDispEnv(&disp, 0, 256, 480, 240);
 
 		disp.isrgb24 = 1;
 		disp.disp.w = 320;
-		FUN_8008eebc(0);
-		FUN_8008ca0c(&disp);
+		VSync(0);
+		PutDispEnv(&disp);
 
 		while (PC_MovieFrame()) {
-			FUN_80070ff4();
+			Pad_Update();
 
 			if (Pad[0].Pause.Triggered || Pad[0].MenuAccept.Triggered || Pad[0].MenuBack.Triggered)
 				break;
@@ -207,14 +195,14 @@ void GameFMV_PlayMovie(int track) {
 #endif
 
 	for (;;) {
-		FUN_800902c0(vlcBuffer[currentVlcBuffer], GameFMV_Is24Bit ? 3 : 2);
-		FUN_8009033c(decodeSliceBuffer[currentDecodeBuffer], decodeSlice_4 * decodeSlice_6 / 2);
+		DecDCTin(vlcBuffer[currentVlcBuffer], GameFMV_Is24Bit ? 3 : 2);
+		DecDCTout(decodeSliceBuffer[currentDecodeBuffer], decodeSlice_4 * decodeSlice_6 / 2);
 
 		{
 			uchar result[8];
 			int count;
 
-			FUN_8008f264(1, 0, result);
+			CdControl(1, 0, result);
 
 			if (result[0] & 16) {
 				handleLidOpen();
@@ -250,20 +238,20 @@ void GameFMV_PlayMovie(int track) {
 				break;
 		}
 
-		FUN_800914fc(&disp, 0, (decodeSlice_2 < 256) << 8, GameFMV_Is24Bit ? 480 : 320, 240);
+		SetDefDispEnv(&disp, 0, (decodeSlice_2 < 256) << 8, GameFMV_Is24Bit ? 480 : 320, 240);
 
 		if (GameFMV_Is24Bit) {
 			disp.isrgb24 = 1;
 			disp.disp.w = disp.disp.w * 2 / 3;
 		}
 
-		FUN_8008eebc(0);
-		FUN_8008ca0c(&disp);
+		VSync(0);
+		PutDispEnv(&disp);
 
 		if (GameFMV_RewindSwitch)
 			break;
 
-		FUN_80070ff4();
+		Pad_Update();
 
 		if (Pad[0].Pause.Triggered)
 			break;
@@ -284,20 +272,20 @@ end:
 	disp.isrgb24 = 0;
 	disp.disp.w = 512;
 	disp.screen.w = old_screen_w;
-	FUN_8008eebc(0);
-	FUN_8008ca0c(&disp);
+	VSync(0);
+	PutDispEnv(&disp);
 
 	atv.val0 = 0;
 	atv.val1 = 0;
 	atv.val2 = 0;
 	atv.val3 = 0;
-	FUN_8008f620(&atv);
-	FUN_8009035c(0);
-	FUN_8009074c();
-	FUN_8008f4d4(9, 0, 0);
+	CdMix(&atv);
+	DecDCToutCallback(0);
+	StUnSetRing();
+	CdControlB(9, 0, 0);
 InsufficientMemory:
 	if (pRingBuffer) {
-		Mem_Delete__FPv(pRingBuffer);
+		Mem_Delete(pRingBuffer);
 
 		pRingBuffer = 0;
 	}
@@ -307,7 +295,7 @@ InsufficientMemory:
 
 		for (i = 0; i < 2; i++) {
 			if (vlcBuffer[i]) {
-				Mem_Delete__FPv(vlcBuffer[i]);
+				Mem_Delete(vlcBuffer[i]);
 
 				vlcBuffer[i] = 0;
 			}
@@ -319,7 +307,7 @@ InsufficientMemory:
 
 		for (i = 0; i < GameFMV_SliceBuffers; i++) {
 			if (decodeSliceBuffer[i]) {
-				Mem_Delete__FPv(decodeSliceBuffer[i]);
+				Mem_Delete(decodeSliceBuffer[i]);
 
 				decodeSliceBuffer[i] = 0;
 			}

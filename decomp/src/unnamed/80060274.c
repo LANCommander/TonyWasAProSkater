@@ -1,4 +1,6 @@
 /* FUN_80060274 (0x80060274) */
+#include "names.h"
+
 typedef struct {
 	int w[7];
 } T;
@@ -20,13 +22,13 @@ extern D GPreferences;
 int DAT_800d1d28;
 
 int FUN_8005ffac(int);
-void FUN_8005c97c(int);
-void FUN_8005ca64(void);
-int FUN_8005ca3c(char *);
-void FUN_80061714(int);
-int FUN_8008b900(char *, char *, int, int);
-int FUN_8005e0e0(T *, int *, int, int, int *, int (*)(int), int, int, int);
-void FUN_8005f6bc(int);
+void FrontLoader_LoadSet(int);
+void FrontLoader_Defragment(void);
+int FrontLoader_TakeFile(char *);
+void DownloadBMP16x2(int);
+int sprintf(char *, char *, int, int);
+int Front_RunMenu(T *, int *, int, int, int *, int (*)(int), int, int, int);
+void Front_ControllerOptions(int);
 void FUN_8005fd50(int);
 void FUN_800601fc(int);
 
@@ -45,9 +47,9 @@ int FUN_80060274(int a) {
 	int k[8];
 	int v, i;
 
-	FUN_8005c97c(11);
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("options.bmp"));
+	FrontLoader_LoadSet(11);
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("options.bmp"));
 
 	for (;;) {
 		for (i = 0; i < 5; i++)
@@ -60,18 +62,18 @@ int FUN_80060274(int a) {
 		for (i = 0; i < 8; i++)
 			k[i] = 0;
 
-		FUN_8008b900(A, "%s %s", GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
+		sprintf(A, "%s %s", GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
 
 		t[3] = (int)A;
-		FUN_8008b900(B, "%s %s", GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
+		sprintf(B, "%s %s", GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
 
 		t[4] = (int)B;
-		v = FUN_8005e0e0((T *)t, k, 8, 80, &a, FUN_8005ffac, 0, 0, 0);
+		v = Front_RunMenu((T *)t, k, 8, 80, &a, FUN_8005ffac, 0, 0, 0);
 
 		if (v == -1 || v == 88) {
-			FUN_8005c97c(0);
-			FUN_8005ca64();
-			FUN_80061714(FUN_8005ca3c("main_h.bmp"));
+			FrontLoader_LoadSet(0);
+			FrontLoader_Defragment();
+			DownloadBMP16x2(FrontLoader_TakeFile("main_h.bmp"));
 
 			return -1;
 		}
@@ -80,7 +82,7 @@ int FUN_80060274(int a) {
 			case 81:
 			case 82:
 				DAT_800d1d28 = v != 81;
-				FUN_8005f6bc(a);
+				Front_ControllerOptions(a);
 				break;
 			case 83:
 				FUN_8005fd50(a);
@@ -107,9 +109,9 @@ int FUN_80060274(int a) {
 	int k[7] __attribute__((aligned(8)));
 	int v, r;
 
-	FUN_8005c97c(11);
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("options.bmp"));
+	FrontLoader_LoadSet(11);
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("options.bmp"));
 
 	for (;;) {
 		t = DAT_800a1df8;
@@ -120,18 +122,18 @@ int FUN_80060274(int a) {
 		k[4] = 0;
 		k[5] = 0;
 		k[6] = 0;
-		FUN_8008b900(A, "%s %s", GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
+		sprintf(A, "%s %s", GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
 
 		t.w[3] = (int)A;
-		FUN_8008b900(B, "%s %s", GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
+		sprintf(B, "%s %s", GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
 
 		t.w[4] = (int)B;
-		v = FUN_8005e0e0(&t, k, 7, 80, &a, FUN_8005ffac, 0, 0, 0);
+		v = Front_RunMenu(&t, k, 7, 80, &a, FUN_8005ffac, 0, 0, 0);
 
 		if (v == -1 || v == 87) {
-			FUN_8005c97c(0);
-			FUN_8005ca64();
-			FUN_80061714(FUN_8005ca3c("main_h.bmp"));
+			FrontLoader_LoadSet(0);
+			FrontLoader_Defragment();
+			DownloadBMP16x2(FrontLoader_TakeFile("main_h.bmp"));
 
 			v = -1;
 		} else {
@@ -141,7 +143,7 @@ int FUN_80060274(int a) {
 					v ^= 81;
 					v = v != 0;
 					DAT_800d1d28 = v;
-					FUN_8005f6bc(a);
+					Front_ControllerOptions(a);
 
 					v = -1;
 					break;

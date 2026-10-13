@@ -26,7 +26,7 @@ P *RailList;
 
 unsigned short *Trig_GetLinksPointer(int);
 Q *Trig_GetPosition(V *, int);
-int FUN_8004f578(unsigned short *);
+int Rail_NextNode(unsigned short *);
 
 P *FUN_8004f684(P *p, int idx) {
 	V a, b;
@@ -86,7 +86,7 @@ P *FUN_8004f684(P *p, int idx) {
 		if (*l == 0)
 			break;
 
-		idx = FUN_8004f578(l);
+		idx = Rail_NextNode(l);
 	}
 
 	return p;

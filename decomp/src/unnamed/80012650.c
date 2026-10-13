@@ -1,11 +1,13 @@
-/* FUN_80012650 (0x80012650) */
+/* FillInDefaultName__Fv (0x80012650) */
+#include "names.h"
+
 int GSaveAction;
 int DAT_800d113c;
 int DAT_800d1140;
 
 extern char SaveGameName[];
 
-void FUN_80012650(void) {
+void FillInDefaultName(void) {
 	if (!GSaveAction) {
 		SaveGameName[0] = 'V';
 		SaveGameName[1] = 'I';

@@ -11,6 +11,8 @@ extern "C" {
 }
 
 #include "game/m3d.h"
+#include "game/m3dasm.h"
+#include "game/mem.h"
 #include "game/ob.h"
 
 #define MTC2(n, v) __asm__ volatile("mtc2 %0, $" #n : : "r"(v))
@@ -21,11 +23,6 @@ extern SMatrix TweenBuffer[];
 
 void M3dUtils_InBetween(CSuper *);
 uchar *DecompressStream(uchar *, short *, int, int);
-
-extern "C" {
-	void *Mem_NewX__FUiii(int, int, int);
-	void FUN_8008b3d4(SEulerPivot *, SMatrix *);
-}
 
 SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 	SPSXRegion *pRegion;
@@ -68,12 +65,12 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 						pHeader++;
 					}
 
-					pSuper->mpDecompressedFrame = (SMatrix *)Mem_NewX__FUiii(
+					pSuper->mpDecompressedFrame = (SMatrix *)Mem_NewX(
 					    NumModels * sizeof(SMatrix) + MaxFrames * NumModels * sizeof(SEulerPivot),
 					    1, 1);
 				}
 
-				pSuper->mpCalculationOrder = (ushort *)Mem_NewX__FUiii(NumModels * 2, 0, 1);
+				pSuper->mpCalculationOrder = (ushort *)Mem_NewX(NumModels * 2, 0, 1);
 				pSuper->mRoot = 0xffff;
 
 				{
@@ -151,7 +148,7 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 				ushort *pModel;
 				uint i;
 
-				FUN_8008b3d4(pRootEuler, pMat);
+				M3dMaths_RotMatrixYXZ((SVECTOR *)pRootEuler, (MATRIX *)pMat);
 
 				pMat->t[0] = pRootEuler->px;
 				pMat->t[1] = pRootEuler->py;
@@ -166,7 +163,7 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 					pMat = pSuper->mpDecompressedFrame + m;
 					pEulerPivot = pEulerPivots + m;
 					pParentMat = pSuper->mpDecompressedFrame + pRegion->pHierarchy[m];
-					FUN_8008b3d4(pEulerPivot, pMat);
+					M3dMaths_RotMatrixYXZ((SVECTOR *)pEulerPivot, (MATRIX *)pMat);
 
 					if (!((int)pEulerPivot & 3)) {
 						SVECTOR vec;

@@ -2,8 +2,8 @@
 int GameFMV_StartSector;
 
 unsigned char *FUN_800912bc(int, unsigned char *);
-int FUN_8008f264(int, unsigned char *, unsigned char *);
-int FUN_8008f0ec(int);
+int CdControl(int, unsigned char *, unsigned char *);
+int CdRead2(int);
 
 void strKickCD(void) {
 	unsigned char loc[4];
@@ -13,10 +13,10 @@ void strKickCD(void) {
 	FUN_800912bc(GameFMV_StartSector, loc);
 
 	do {
-		while (!FUN_8008f264(2, loc, 0))
+		while (!CdControl(2, loc, 0))
 			;
 
-		while (!FUN_8008f264(14, param, 0))
+		while (!CdControl(14, param, 0))
 			;
-	} while (!FUN_8008f0ec(480));
+	} while (!CdRead2(480));
 }

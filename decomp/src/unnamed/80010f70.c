@@ -1,4 +1,4 @@
-/* FUN_80010f70 (0x80010f70) */
+/* Crowd_Ahh__Fi (0x80010f70) */
 #include "names.h"
 
 struct S {
@@ -15,7 +15,7 @@ int Crowd_Bored;
 
 void SFX_PlayX(int a, int b, int c);
 
-void FUN_80010f70(int a) {
+void Crowd_Ahh(int a) {
 	int s;
 
 	if (Levels[GLevel].f && GGame == 1) {

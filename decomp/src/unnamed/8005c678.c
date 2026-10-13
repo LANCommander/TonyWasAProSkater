@@ -1,8 +1,10 @@
-/* FUN_8005c678 (0x8005c678) */
+/* ClearSoftReset__Fv (0x8005c678) */
+#include "names.h"
+
 int DAT_800d1cb8;
 int DAT_800d2348;
 
-void FUN_8005c678(void) {
+void ClearSoftReset(void) {
 	DAT_800d1cb8 = 0;
 	DAT_800d2348 = 110;
 }

@@ -1,4 +1,6 @@
-/* FUN_800666f4 (0x800666f4) */
+/* LevelSelect_StartPicLoad__Fi (0x800666f4) */
+#include "names.h"
+
 int DAT_800d2374;
 int DAT_800d2380;
 int DAT_800d2388;
@@ -12,7 +14,7 @@ extern int DAT_800bf2f0[];
 extern int DAT_800d3810[];
 extern int DAT_800d3840[];
 
-void FUN_800666f4(int a) {
+void LevelSelect_StartPicLoad(int a) {
 	int i;
 	int n = DAT_800d237c;
 

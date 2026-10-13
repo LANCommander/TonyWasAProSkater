@@ -18,7 +18,7 @@ void FUN_800971a4(void);
 void FUN_8008c1a0(int a);
 void FUN_8008c314(int a);
 void FUN_800491a0(void);
-void FUN_8008c5ec(R *r, int a, int b, int c);
+void ClearImage(R *r, int a, int b, int c);
 void FUN_80096c14(void (*a)(void));
 void FUN_8008c3d0(int a);
 void FUN_800785cc(int a);
@@ -40,7 +40,7 @@ void FUN_80071d60(void) {
 	FUN_800491a0();
 
 	r = DAT_800d1f8c[0];
-	FUN_8008c5ec(&r, 0, 0, 0);
+	ClearImage(&r, 0, 0, 0);
 	FUN_80096c14(FUN_80047870);
 	FUN_8008c3d0(1);
 	FUN_800785cc(0x9f6ad);

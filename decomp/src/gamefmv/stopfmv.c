@@ -14,13 +14,13 @@ unsigned char GameFMV_SliceBuffers;
 short GameFMV_StartX;
 unsigned short GameFMV_StartY, GameFMV_Width, GameFMV_Height;
 
-void FUN_8008f620(unsigned char *);
-void FUN_8009035c(int);
-void FUN_8009074c(void);
+void CdMix(unsigned char *);
+void DecDCToutCallback(int);
+void StUnSetRing(void);
 void FUN_800912bc(int, unsigned char *);
-void FUN_8008f264(int, unsigned char *, int);
+void CdControl(int, unsigned char *, int);
 void Mem_Delete(int);
-void FUN_8008c5ec(RECT *, int, int, int);
+void ClearImage(RECT *, int, int, int);
 
 void GameFMV_StopFMV(void) {
 	unsigned char p[4];
@@ -36,13 +36,13 @@ void GameFMV_StopFMV(void) {
 		p[1] = 0;
 		p[2] = 0;
 		p[3] = 0;
-		FUN_8008f620(p);
+		CdMix(p);
 
 		GameFMV_Active = 0;
-		FUN_8009035c(0);
-		FUN_8009074c();
+		DecDCToutCallback(0);
+		StUnSetRing();
 		FUN_800912bc(GameFMV_StartSector, loc);
-		FUN_8008f264(22, loc, 0);
+		CdControl(22, loc, 0);
 
 		if (pRingBuffer) {
 			Mem_Delete(pRingBuffer);
@@ -71,7 +71,7 @@ void GameFMV_StopFMV(void) {
 			r.y = GameFMV_StartY;
 			r.w = GameFMV_Width;
 			r.h = GameFMV_Height;
-			FUN_8008c5ec(&r, 1, 1, 1);
+			ClearImage(&r, 1, 1, 1);
 		}
 	}
 }

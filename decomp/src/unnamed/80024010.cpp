@@ -1,6 +1,8 @@
-/* FUN_80024010 (0x80024010) */
+/* GameFMV_SetCDMixForPos__FRC7CVector (0x80024010) */
 /* C++ (GAMEFMV). Sets the CD-audio mixer for a sound at pos: the spatial attenuation's left/right
    (12 bits each) are scaled by the current volume and added to a 3/4-volume base. */
+#include "game/gamefmv.h"
+#include "game/psyq.h"
 #include "game/vector.h"
 
 struct CdlATV {
@@ -11,22 +13,20 @@ extern int XALEVEL;
 
 unsigned int Utils_CalculateSpatialAttenuation(const CVector &, int, int);
 
-extern "C" {
-	int FUN_80023fb0(int);
-	int FUN_8008f620(CdlATV *);
-}
-
-extern "C" void FUN_80024010(const CVector &pos) {
+void GameFMV_SetCDMixForPos(const CVector &pos) {
 	CdlATV atv;
 	unsigned int att = Utils_CalculateSpatialAttenuation(pos, 1024, 16384);
-	int vol = FUN_80023fb0(XALEVEL);
+	int vol = GameFMV_ScaleMusicVolume(XALEVEL);
 	int l = ((att & 0xfff) * vol) >> 18;
 	int r = (((att >> 16) & 0xfff) * vol) >> 18;
 	int base;
+
 	if (l > 255)
 		l = 255;
+
 	if (r > 255)
 		r = 255;
+
 	base = (vol * 192) >> 14;
 	l = base + l / 4;
 	r = base + r / 4;
@@ -35,5 +35,5 @@ extern "C" void FUN_80024010(const CVector &pos) {
 	atv.val3 = 0;
 	atv.val2 = 0;
 
-	FUN_8008f620(&atv);
+	CdMix(&atv);
 }

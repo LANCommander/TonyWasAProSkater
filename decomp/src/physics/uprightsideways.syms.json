@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","Mips_CVecDotProd__FP7CVectorT0":"0x800720ec","FUN_80093130":"0x80093130","FUN_80093240":"0x80093240","FRUVectorsFromRotMatrix__6CBruce":"0x8003a5a4","WorldUp":"0x800a7f1c"}
+{"gp":"0x800d1080","Mips_CVecDotProd__FP7CVectorT0":"0x800720ec","MulMatrix":"0x80093130","RotMatrixYXZ":"0x80093240","FRUVectorsFromRotMatrix__6CBruce":"0x8003a5a4","WorldUp":"0x800a7f1c"}

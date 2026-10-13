@@ -17,6 +17,9 @@ extern "C" {
 #include "game/camera.h"
 #include "game/bruce.h"
 #include "game/colij.h"
+#include "game/m3d.h"
+#include "game/vector.h"
+#include "game/m3dasm.h"
 
 extern MATRIX tm;
 extern CVector Camera_CamOffset;
@@ -27,10 +30,6 @@ int Camera_CamPitch;
 
 void QToM(const CQuat &, MATRIX &);
 void MToQ(const MATRIX &, CQuat &);
-extern "C" VECTOR *FUN_80092f60(MATRIX *, VECTOR *, VECTOR *);
-extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
-extern "C" int FUN_8008b5dc(int);
-extern "C" int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
 void M3dColij_InitLineInfo(SLineInfo *);
 void Utils_CalcUnit(CVector &, const CVector &);
 CQuat Quat_FromXRot(short);
@@ -114,7 +113,7 @@ void CCamera::MoveToDesiredPos(uint normal_slerp) {
 			Dist.vz = 0;
 		}
 
-		mSpeedBuffer[0] = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&Dist, &Dist)) << 6;
+		mSpeedBuffer[0] = M3dMaths_SquareRoot0(Mips_CVecDotProd(&Dist, &Dist)) << 6;
 	}
 
 	Spd = 0;
@@ -148,7 +147,7 @@ void CCamera::MoveToDesiredPos(uint normal_slerp) {
 		v.vy = 0;
 		v.vz = -(Camera_CamDist << 12);
 		QToM(wouldbeO, m);
-		FUN_80092f60(&m, &v, &vCheck);
+		ApplyMatrixLV(&m, &v, &vCheck);
 
 		line_info.StartCoords.vx = mTripodPos.vx;
 		line_info.StartCoords.vy = mTripodPos.vy;
@@ -160,7 +159,7 @@ void CCamera::MoveToDesiredPos(uint normal_slerp) {
 
 		line_info.RecordTriggerZoneHits = 0;
 		CameraCollisionCheck = 1;
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+		M3dZone_LineToItemNotSCached(&line_info, 1);
 
 		CameraCollisionCheck = 0;
 
@@ -256,12 +255,12 @@ void CCamera::MoveToDesiredPos(uint normal_slerp) {
 	MATRIX m;
 
 	QToM(mO, m);
-	FUN_80092f60(&m, &v1, &v2);
+	ApplyMatrixLV(&m, &v1, &v2);
 
 	v1.vx = Camera_CamOffset.vx;
 	v1.vy = Camera_CamOffset.vy;
 	v1.vz = Camera_CamOffset.vz;
-	FUN_80092f60(&m, &v1, &real_cam_offset);
+	ApplyMatrixLV(&m, &v1, &real_cam_offset);
 
 	mPos.vx = mTripodPos.vx + v2.vx;
 	mPos.vy = mTripodPos.vy + v2.vy;

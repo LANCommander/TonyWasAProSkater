@@ -1,23 +1,24 @@
-/* FUN_80059794 (0x80059794) size=9180 flags=-fstructure-noalias,-fstrict-aliasing */
-/* C++ (front end, 1-player skater select; called from the screen dispatcher FUN_8005bb70). The
+/* Front_SkaterSelect1P__Fv (0x80059794) size=9180 flags=-fstructure-noalias,-fstrict-aliasing */
+/* C++ (front end, 1-player skater select; called from the screen dispatcher Front_Main). The
    selected skater (DAT_800d1c40) spins as a 3D CBruce in the right-hand window and slides out/in
    when left/right is pressed (or a "LOADING" label slides while the model streams in). The name
    slides in under a bar, four stat rows draw bar sprites (skater stats plus the best unlocked
    board's), the six bio lines are printed, and the career's tapes and the three competition medals
    (Skate Park, Burnside, Roswell) are shown in an item box. The secret 11th skater unlocks once any
    skater has 30 tapes. X/Start picks the skater (returns its index), triangle backs out (-1).
-   size=9180 covers the whole TU tail: this function, FUN_8005bad0, and the out-of-line copy of
+   size=9180 covers the whole TU tail: this function, Front_CalcSkaterPreviewBounds, and the out-of-line copy of
    CItem's inline virtual destructor (FUN_8005bb3c). No #pragma interface, so _vt.5CItem lands in
    .rdata before the jump tables, as in retail. Levers: the main loop is a for(;;) whose exits are
    all `goto done` (a `break` lets expand_end_loop roll the leading exit test to the bottom), and
-   FUN_80093240 (RotMatrix) returns MATRIX*. */
+   RotMatrixYXZ (RotMatrix) returns MATRIX*. */
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+	#include <libgpu.h>
 }
 
 /* emit this TU's out-of-line copy of CClass's inline destructor and its vtable (retail
-   0x8005bb3c / 0x800a18e4, after FUN_8005bad0), as retail's FRONT end TU did */
+   0x8005bb3c / 0x800a18e4, after Front_CalcSkaterPreviewBounds), as retail's FRONT end TU did */
 #pragma implementation "class.h"
 #include "game/class.h"
 #include "game/shellutils.h"
@@ -26,6 +27,16 @@ extern "C" {
 #include "game/pad.h"
 #include "game/front.h"
 #include "game/bruce.h"
+#include "game/mess.h"
+#include "game/fileio.h"
+#include "game/m3d.h"
+#include "game/sfx.h"
+#include "game/spool.h"
+#include "game/psyq.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/main.h"
+#include "game/ob.h"
 
 extern SControl Pad[];
 extern SCareer GCareer;
@@ -73,55 +84,7 @@ void Mess_LoadFont(char *, int, int, int);
 void Mess_UnloadFont();
 void M3d_BuildTransform(CSuper *);
 
-extern "C" {
-	void FUN_8005c97c(int);
-	void *FUN_8005ca3c(char *);
-	void FUN_8005ca64(void);
-	void FUN_80061714(void *);
-	void FUN_80059520(int);
-	int FUN_8008b900(char *, const char *, ...);
-	void FUN_8008c468(int);
-	void FUN_80059050(void);
-	short *FUN_8006b1c8(void);
-	int Mess_TextHeightBelowBaseline__FPCc(const char *);
-	int Mess_TextWidth__FPCc(char *);
-	int Mess_TextHeightAboveBaseline__FPCc(char *);
-	void Mess_SetTextJustify__FUc(int);
-	void Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	void FUN_8005c8dc(int);
-	void FUN_80059618(int);
-	void FUN_8005c780(void);
-	void FUN_80070ff4(void);
-	void FUN_8005c68c(void);
-	void FUN_800242cc(void);
-	void FUN_8006b240(void);
-	void FUN_80061ea0(void);
-	void FUN_80059094(void);
-	void FUN_8005c934(void);
-	void SFX_PlayX__FUisi(int, int, int);
-	void FUN_8006ed2c(int);
-	void ProcessNewPSX__Fi(int);
-	CBruce *FUN_8005933c(void);
-	void ClearRegion__Fiii(int, int, int);
-	void FUN_8006edb8(int);
-	void FUN_800596a0(void);
-	MATRIX *FUN_80093240(SVECTOR *, MATRIX *);
-	void FUN_80043f70(CBruce *);
-	void M3d_RenderSetup__FP7SCameraP9SViewportPUi(char *, short *, char *);
-	void M3d_Render__FPv(char *);
-	void FUN_80083774(void);
-	void FUN_80059018(void);
-	int FUN_8008f6fc(char *, char *);
-	void SetClippingBox__Fiiii(int, int, int, int);
-	void FUN_8005948c(void);
-	void FUN_8006b2f4(void);
-	void FUN_8006af64(void);
-	void FileIO_Sync__Fv(void);
-	void FUN_800591c0(void);
-	void FUN_80059758(void);
-}
-
-extern "C" int FUN_80059794() {
+int Front_SkaterSelect1P() {
 	char text[40]; /* unused */
 	char name[16];
 	Sprite *bar[5];
@@ -133,6 +96,7 @@ extern "C" int FUN_80059794() {
 
 	int result = 0;
 	int numSkaters = 10;
+
 	DAT_800d1c60 = 0;
 	DAT_800d1c40 = GCareer.LastSkater[0];
 
@@ -147,23 +111,24 @@ extern "C" int FUN_80059794() {
 		DAT_800d1c40 = 10;
 	else if (DAT_800d1c40 == 10 && !DAT_800d1c60)
 		DAT_800d1c40 = 0;
+
 	DAT_800d1c64 = DAT_800d1c60;
 
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
-	FUN_8005c97c(1);
-	Mem_Delete(FUN_8005ca3c("select2p.bmp"));
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("selectp.bmp"));
+	FrontLoader_LoadSet(1);
+	Mem_Delete(FrontLoader_TakeFile("select2p.bmp"));
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("selectp.bmp"));
 	Pack_DefragmentFully();
 	Mess_LoadFont("stats1.fnt", -1, -1, -1);
-	FUN_80059520(1);
+	Front_InitSkaterPack(1);
 
 	for (i = 0; i < 5; i++) {
 		if (i < 4)
-			FUN_8008b900(name, "bar%d.bmp", i + 1);
+			sprintf(name, "bar%d.bmp", i + 1);
 		else
-			FUN_8008b900(name, "bar9.bmp", i + 1);
+			sprintf(name, "bar9.bmp", i + 1);
 
 		bar[i] = new Sprite(name, 1, 32, 128);
 		bar[i]->removeFromMemory();
@@ -189,7 +154,7 @@ extern "C" int FUN_80059794() {
 	char *comps[3] = { "Skate Park", "Burnside", "Roswell" };
 
 	for (i = 0; i < 3; i++) {
-		FUN_8008b900(name, "medal%d.bmp", i + 1);
+		sprintf(name, "medal%d.bmp", i + 1);
 
 		medal[i] = new Sprite(name, 1, 32, 128);
 		medal[i]->removeFromMemory();
@@ -200,7 +165,7 @@ extern "C" int FUN_80059794() {
 	Sprite *arrow[4];
 
 	for (i = 0; i < 4; i++) {
-		FUN_8008b900(name, "levbut%d.bmp", i + 1);
+		sprintf(name, "levbut%d.bmp", i + 1);
 
 		arrow[i] = new Sprite(name, 1, 32, 128);
 		arrow[i]->removeFromMemory();
@@ -217,13 +182,14 @@ extern "C" int FUN_80059794() {
 
 	topBox->removeFromMemory();
 	bottomBox->removeFromMemory();
-	FUN_8008c468(0);
-	FUN_80059050();
-	FUN_8008c468(0);
+	DrawSync(0);
+	Front_InitSkaterSpool1P();
+	DrawSync(0);
 
 	SVECTOR rot;
+
 	rot.vx = rot.vy = rot.vz = 0;
-	short *viewport = FUN_8006b1c8();
+	short *viewport = (short *)HiRes_SetupCamera();
 	CBruce *pBruce = 0;
 	int state = 0;
 	int speed = DAT_800d1c58;
@@ -232,6 +198,7 @@ extern "C" int FUN_80059794() {
 	int wait;
 	int loadX = 491;
 	int noTapes = 1;
+
 	viewport[0] = 640;
 	viewport[1] = 480;
 
@@ -255,6 +222,7 @@ extern "C" int FUN_80059794() {
 	int hintX[2]; /* unused */
 	char first[16];
 	int hintY[2];
+
 	hintY[0] = 193;
 	hintY[1] = 213;
 
@@ -267,10 +235,11 @@ extern "C" int FUN_80059794() {
 	Mess_SetFontScale(255);
 
 	char tapes[3];
+
 	tapes[0] = '0';
 	tapes[1] = '0';
 	tapes[2] = 0;
-	int tapesY = (Mess_TextHeight(tapes) >> 1) + 385 - Mess_TextHeightBelowBaseline__FPCc(tapes);
+	int tapesY = (Mess_TextHeight(tapes) >> 1) + 385 - Mess_TextHeightBelowBaseline(tapes);
 
 	PadBuffer input(-1);
 
@@ -279,26 +248,26 @@ extern "C" int FUN_80059794() {
 	int medalTimer = 0;
 	uchar *flags = (uchar *)Mem_NewX(10, 1, 1);
 
-	FUN_8005c8dc(9);
-	FUN_80059618(0);
+	FrontLoader_SetFiles(9);
+	Front_SelectSkaterPack(0);
 
 	for (;;) {
-		FUN_8005c780();
-		FUN_80070ff4();
-		FUN_8005c68c();
+		Front_UpdateMusicLoop();
+		Pad_Update();
+		Front_CheckSoftReset();
 
 		if (DAT_800d1cb8)
 			goto done;
 
-		FUN_800242cc();
-		FUN_8006b240();
-		FUN_80061ea0();
+		PollHost();
+		HiRes_ClearOTag();
+		ResetOT();
 		input.update();
 
 		if (!DAT_800d2340)
-			FUN_80059094();
+			Front_SpoolNextSkater1P();
 		else
-			FUN_8005c934();
+			FrontLoader_Continue();
 
 		int done = 0;
 
@@ -311,7 +280,7 @@ extern "C" int FUN_80059794() {
 					int press = input.getPress();
 
 					if (press == 2) {
-						SFX_PlayX__FUisi(148, 0x2000, 0);
+						SFX_PlayX(148, 0x2000, 0);
 
 						state = 1;
 						nameState = 4;
@@ -319,7 +288,7 @@ extern "C" int FUN_80059794() {
 						dir = 0;
 						blink = 96;
 					} else if (press == 1) {
-						SFX_PlayX__FUisi(148, 0x2000, 0);
+						SFX_PlayX(148, 0x2000, 0);
 
 						state = 2;
 						nameState = 4;
@@ -333,19 +302,19 @@ extern "C" int FUN_80059794() {
 					DAT_800d2344 = 1;
 
 					if (*Stats[DAT_800d1c40].FrontName) {
-						FUN_8006ed2c(DAT_800d37b4[DAT_800d1c40]);
+						Spool_BackupPSX(DAT_800d37b4[DAT_800d1c40]);
 
 						if (Cheat_BigHead) {
 							GHeadPart = Stats[DAT_800d1c40].Head;
 							GHeadUp = Stats[DAT_800d1c40].Neck;
 						}
 
-						ProcessNewPSX__Fi(DAT_800d37b4[DAT_800d1c40]);
+						ProcessNewPSX(DAT_800d37b4[DAT_800d1c40]);
 
 						GHeadPart = -1;
 					}
 
-					pBruce = FUN_8005933c();
+					pBruce = Front_CreateSkaterModel1P();
 					pBruce->mPos.vx = DAT_800d232c;
 				}
 
@@ -401,14 +370,14 @@ extern "C" int FUN_80059794() {
 					int press = input.getPress();
 
 					if (press == 2) {
-						SFX_PlayX__FUisi(148, 0x2000, 0);
+						SFX_PlayX(148, 0x2000, 0);
 
 						state = 1;
 						nameState = 4;
 						rightTimer = 20;
 						dir = 0;
 					} else if (press == 1) {
-						SFX_PlayX__FUisi(148, 0x2000, 0);
+						SFX_PlayX(148, 0x2000, 0);
 
 						state = 2;
 						nameState = 4;
@@ -437,14 +406,14 @@ extern "C" int FUN_80059794() {
 					int press = input.getPress();
 
 					if (press == 2) {
-						SFX_PlayX__FUisi(148, 0x2000, 0);
+						SFX_PlayX(148, 0x2000, 0);
 
 						state = 1;
 						nameState = 4;
 						rightTimer = 20;
 						dir = 0;
 					} else if (press == 1) {
-						SFX_PlayX__FUisi(148, 0x2000, 0);
+						SFX_PlayX(148, 0x2000, 0);
 
 						state = 2;
 						nameState = 4;
@@ -462,8 +431,8 @@ extern "C" int FUN_80059794() {
 					delete pBruce;
 
 					if (*Stats[DAT_800d1c40].FrontName) {
-						ClearRegion__Fiii(DAT_800d37b4[DAT_800d1c40], 1, 1);
-						FUN_8006edb8(DAT_800d37b4[DAT_800d1c40]);
+						ClearRegion(DAT_800d37b4[DAT_800d1c40], 1, 1);
+						Spool_RestorePSX(DAT_800d37b4[DAT_800d1c40]);
 					}
 				}
 
@@ -473,7 +442,7 @@ extern "C" int FUN_80059794() {
 					DAT_800d1c40 = numSkaters - 1;
 
 				DAT_800d2344 = 0;
-				FUN_800596a0();
+				Front_ResetSkaterPack();
 
 				if (itemBoxBack)
 					itemBoxBack->pack();
@@ -486,7 +455,7 @@ extern "C" int FUN_80059794() {
 					if (itemBoxBack)
 						itemBoxBack->unpack();
 
-					FUN_800596a0();
+					Front_ResetSkaterPack();
 				}
 
 				break;
@@ -495,19 +464,19 @@ extern "C" int FUN_80059794() {
 
 				if (DAT_800d2344) {
 					if (*Stats[DAT_800d1c40].FrontName) {
-						FUN_8006ed2c(DAT_800d37b4[DAT_800d1c40]);
+						Spool_BackupPSX(DAT_800d37b4[DAT_800d1c40]);
 
 						if (Cheat_BigHead) {
 							GHeadUp = Stats[DAT_800d1c40].Neck;
 							GHeadPart = Stats[DAT_800d1c40].Head;
 						}
 
-						ProcessNewPSX__Fi(DAT_800d37b4[DAT_800d1c40]);
+						ProcessNewPSX(DAT_800d37b4[DAT_800d1c40]);
 
 						GHeadPart = -1;
 					}
 
-					pBruce = FUN_8005933c();
+					pBruce = Front_CreateSkaterModel1P();
 
 					if (dir == 1)
 						pBruce->mPos.vx = DAT_800d2334;
@@ -536,7 +505,7 @@ extern "C" int FUN_80059794() {
 		bottomBox->draw(400, 203, 0, -1, -1, -1);
 
 		if (DAT_800d2344) {
-			FUN_80093240(&rot, &pBruce->mRotMatrix);
+			RotMatrixYXZ(&rot, &pBruce->mRotMatrix);
 
 			pBruce->mRotMatrix.m[0][1] = -pBruce->mRotMatrix.m[0][1];
 			pBruce->mRotMatrix.m[1][1] = -pBruce->mRotMatrix.m[1][1];
@@ -544,11 +513,11 @@ extern "C" int FUN_80059794() {
 
 			if (pBruce->mPos.vx >= DAT_800d2334 && pBruce->mPos.vx <= DAT_800d2330) {
 				M3d_BuildTransform(pBruce);
-				FUN_80043f70(pBruce);
-				M3d_RenderSetup__FP7SCameraP9SViewportPUi(MikeCamera, viewport,
-				                                          pDoubleBuffer + 140);
-				M3d_Render__FPv(MechList);
-				FUN_80083774();
+				pBruce->UpdateFrame();
+				M3d_RenderSetup((SCamera *)MikeCamera, (SViewport *)viewport,
+				                (uint *)(pDoubleBuffer + 140));
+				M3d_Render(MechList);
+				M3d_RenderCleanup();
 			}
 
 			if (--blink == 0)
@@ -558,7 +527,7 @@ extern "C" int FUN_80059794() {
 			    blink >= 23 && GGame == 1) {
 				Mess_SetCurrentFont("stats1.fnt");
 				Mess_SetRGB(250, 190, 60, 0);
-				Mess_SetTextJustify__FUc(0);
+				Mess_SetTextJustify(0);
 				int n;
 
 				for (n = 0; n < 15; n++) {
@@ -569,14 +538,14 @@ extern "C" int FUN_80059794() {
 				}
 
 				first[n] = 0;
-				Mess_DrawText__FiiPCciUiib(491, hintY[0], sStart, 1, 0, 256, 0);
-				Mess_DrawText__FiiPCciUiib(491, hintY[1], first, 1, 0, 256, 0);
+				Mess_DrawText(491, hintY[0], sStart, 1, 0, 256, 0);
+				Mess_DrawText(491, hintY[1], first, 1, 0, 256, 0);
 			}
 		} else if (!state) {
 			Mess_SetCurrentFont("stats1.fnt");
 			Mess_SetRGB(128, 128, 128, 0);
-			Mess_SetTextJustify__FUc(0);
-			Mess_DrawText__FiiPCciUiib(loadX, 203, "LOADING", 0, 0, 256, 0);
+			Mess_SetTextJustify(0);
+			Mess_DrawText(loadX, 203, "LOADING", 0, 0, 256, 0);
 		}
 
 		if (leftTimer) {
@@ -596,8 +565,8 @@ extern "C" int FUN_80059794() {
 		if (medalTimer && GGame == 1 && GCareer.CharacterProgress[DAT_800d1c40].NumTapes) {
 			itemBox->draw(395, 313, 0, -1, -1, -1);
 			Mess_SetCurrentFont("tapes1.fnt");
-			Mess_SetTextJustify__FUc(1);
-			Mess_DrawText__FiiPCciUiib(476, tapesY, tapes, 0, 0, 256, 0);
+			Mess_SetTextJustify(1);
+			Mess_DrawText(476, tapesY, tapes, 0, 0, 256, 0);
 			int my = 333;
 
 			for (int m = 0; m < 3; m++) {
@@ -610,7 +579,7 @@ extern "C" int FUN_80059794() {
 			itemBoxBack->draw(395, 313, 0, -1, -1, -1);
 		}
 
-		FUN_80059018();
+		FlickerSync();
 
 		if (statTimer) {
 			statTimer--;
@@ -662,37 +631,31 @@ extern "C" int FUN_80059794() {
 
 			Mess_SetCurrentFont("stats1.fnt");
 			Mess_SetRGB(128, 128, 128, 0);
-			Mess_SetTextJustify__FUc(1);
-			Mess_DrawText__FiiPCciUiib(
-			    203,
-			    299 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[0]) >> 1) +
-			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[0]),
-			    Stats[DAT_800d1c40].pBio[0], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(
-			    203,
-			    320 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[1]) >> 1) +
-			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[1]),
-			    Stats[DAT_800d1c40].pBio[1], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(
-			    203,
-			    341 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[2]) >> 1) +
-			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[2]),
-			    Stats[DAT_800d1c40].pBio[2], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(
-			    203,
-			    362 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[3]) >> 1) +
-			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[3]),
-			    Stats[DAT_800d1c40].pBio[3], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(
-			    203,
-			    383 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[4]) >> 1) +
-			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[4]),
-			    Stats[DAT_800d1c40].pBio[4], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(
-			    203,
-			    404 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[5]) >> 1) +
-			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[5]),
-			    Stats[DAT_800d1c40].pBio[5], 0, 0, 256, 0);
+			Mess_SetTextJustify(1);
+			Mess_DrawText(203,
+			              299 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[0]) >> 1) +
+			                  Mess_TextHeightAboveBaseline(Stats[DAT_800d1c40].pBio[0]),
+			              Stats[DAT_800d1c40].pBio[0], 0, 0, 256, 0);
+			Mess_DrawText(203,
+			              320 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[1]) >> 1) +
+			                  Mess_TextHeightAboveBaseline(Stats[DAT_800d1c40].pBio[1]),
+			              Stats[DAT_800d1c40].pBio[1], 0, 0, 256, 0);
+			Mess_DrawText(203,
+			              341 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[2]) >> 1) +
+			                  Mess_TextHeightAboveBaseline(Stats[DAT_800d1c40].pBio[2]),
+			              Stats[DAT_800d1c40].pBio[2], 0, 0, 256, 0);
+			Mess_DrawText(203,
+			              362 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[3]) >> 1) +
+			                  Mess_TextHeightAboveBaseline(Stats[DAT_800d1c40].pBio[3]),
+			              Stats[DAT_800d1c40].pBio[3], 0, 0, 256, 0);
+			Mess_DrawText(203,
+			              383 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[4]) >> 1) +
+			                  Mess_TextHeightAboveBaseline(Stats[DAT_800d1c40].pBio[4]),
+			              Stats[DAT_800d1c40].pBio[4], 0, 0, 256, 0);
+			Mess_DrawText(203,
+			              404 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[5]) >> 1) +
+			                  Mess_TextHeightAboveBaseline(Stats[DAT_800d1c40].pBio[5]),
+			              Stats[DAT_800d1c40].pBio[5], 0, 0, 256, 0);
 
 			if (textTimer == 0)
 				medalTimer = 3;
@@ -707,13 +670,12 @@ extern "C" int FUN_80059794() {
 			tapes[1] = n % 10 + '0';
 			tapes[2] = 0;
 			medalTimer--;
-			tapesY =
-			    (Mess_TextHeight(tapes) >> 1) + 385 - Mess_TextHeightBelowBaseline__FPCc(tapes);
+			tapesY = (Mess_TextHeight(tapes) >> 1) + 385 - Mess_TextHeightBelowBaseline(tapes);
 
 			for (int c = 0; c < 3; c++) {
 				int j = 0;
 
-				while (FUN_8008f6fc(Levels[j].pLevelName, comps[c]))
+				while (strcmp(Levels[j].pLevelName, comps[c]))
 					j++;
 
 				*flags = pCareer->Tapes[j];
@@ -735,14 +697,14 @@ extern "C" int FUN_80059794() {
 				Mess_SetCurrentFont("mainf.fnt");
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
-				Mess_SetTextJustify__FUc(0);
+				Mess_SetTextJustify(0);
 
 				nameR = 320;
-				nameX = -Mess_TextWidth__FPCc(Stats[DAT_800d1c40].Name) >> 1;
+				nameX = -Mess_TextWidth(Stats[DAT_800d1c40].Name) >> 1;
 				nameStep = (nameR - nameX) / 6;
 				nameState = 3;
 				nameY = 70 - (Mess_TextHeight(Stats[DAT_800d1c40].Name) >> 1) +
-				        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].Name);
+				        Mess_TextHeightAboveBaseline(Stats[DAT_800d1c40].Name);
 				nameR -= nameStep;
 				nameL = nameX - nameStep;
 				break;
@@ -758,8 +720,8 @@ extern "C" int FUN_80059794() {
 				Mess_SetCurrentFont("mainf.fnt");
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
-				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
+				Mess_SetTextJustify(0);
+				Mess_DrawText(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
 				break;
 			case 4:
 				nameX -= nameStep;
@@ -771,16 +733,16 @@ extern "C" int FUN_80059794() {
 				Mess_SetCurrentFont("mainf.fnt");
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
-				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
+				Mess_SetTextJustify(0);
+				Mess_DrawText(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
 				break;
 			case 5:
 				nameBar->draw(0, 54, 0, -1, -1, -1);
 				Mess_SetCurrentFont("mainf.fnt");
 				Mess_SetFontScale(255);
 				Mess_SetRGB(128, 128, 128, 0);
-				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
+				Mess_SetTextJustify(0);
+				Mess_DrawText(nameX, nameY, Stats[DAT_800d1c40].Name, 0, 0, 256, 0);
 
 				nameState = 2;
 				break;
@@ -789,9 +751,9 @@ extern "C" int FUN_80059794() {
 				break;
 		}
 
-		SetClippingBox__Fiiii(400, 92, 183, 222);
-		FUN_8005948c();
-		FUN_8006b2f4();
+		SetClippingBox(400, 92, 183, 222);
+		Front_ResetDrawArea1P();
+		HiRes_DrawOTagNoSync();
 
 		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
 		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered) {
@@ -799,7 +761,7 @@ extern "C" int FUN_80059794() {
 			Pad_ClearTriggers(&Pad[1]);
 
 			result = DAT_800d1c40;
-			SFX_PlayX__FUisi(145, 0x2000, 0);
+			SFX_PlayX(145, 0x2000, 0);
 
 			if (GCareer.LastSkater[0] != DAT_800d1c40) {
 				GCareer.LastSkater[0] = 0;
@@ -817,32 +779,38 @@ extern "C" int FUN_80059794() {
 			result = -1;
 			Pad[0].MenuBack.Triggered = 0;
 			Pad[1].MenuBack.Triggered = 0;
-			SFX_PlayX__FUisi(147, 0x2000, 0);
+			SFX_PlayX(147, 0x2000, 0);
 			goto done;
 		}
 	}
 
 done:
 
-	FUN_8006af64();
+	HiRes_BlankScreen();
+
 	if (Loading)
-		FileIO_Sync__Fv();
+		FileIO_Sync();
+
 	Mem_Delete(flags);
 
 	if (DAT_800d2344)
 		delete pBruce;
 
-	FUN_800591c0();
-	FUN_80059758();
+	Front_FreeSkaterSpool1P();
+	Front_FreeSkaterPack();
 
 	for (i = 0; i < 5; i++)
 		delete bar[i];
+
 	delete itemBox;
 	delete itemBoxBack;
+
 	for (i = 0; i < 3; i++)
 		delete medal[i];
+
 	for (i = 0; i < 4; i++)
 		delete arrow[i];
+
 	delete statBox;
 	delete nameBar;
 	delete topBox;
@@ -861,10 +829,10 @@ done:
 	return result;
 }
 
-/* FUN_8005bad0: the CBruce preview's screen-space limits (also in src/unnamed/8005bad0.c). The TU
+/* Front_CalcSkaterPreviewBounds: the CBruce preview's screen-space limits (also in src/unnamed/8005bad0.c). The TU
    ends with the out-of-line copy of CItem's inline virtual destructor (FUN_8005bb3c, _._5CItem),
    whose vtable _vt.5CItem g++ puts in .rdata ahead of this TU's jump tables. */
-extern "C" void FUN_8005bad0() {
+void Front_CalcSkaterPreviewBounds() {
 	DAT_800d2334 = (80 - DAT_800d1c50) * DAT_800d1c48;
 	DAT_800d232c = DAT_800d1c48 * 171;
 	DAT_800d2330 = (DAT_800d1c50 + 263) * DAT_800d1c48;

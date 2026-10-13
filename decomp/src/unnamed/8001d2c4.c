@@ -1,6 +1,8 @@
-/* FUN_8001d2c4 (0x8001d2c4) */
+/* Mess_SetSort__Fi (0x8001d2c4) */
+#include "names.h"
+
 short Sort;
 
-void FUN_8001d2c4(short v) {
+void Mess_SetSort(short v) {
 	Sort = v;
 }

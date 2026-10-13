@@ -11,6 +11,7 @@ extern "C" {
 #include "game/m3d.h"
 #include "game/colij.h"
 #include "game/career.h"
+#include "game/psyq.h"
 
 extern SVideoInfo GVInfo1, GVInfo2;
 extern int PosBits[], EulerBits[], FlipAngleBits[];
@@ -27,8 +28,6 @@ int ReplaySoundLockout;
 int GetBit(SVideoInfo *);
 int GetNBitsSigned(SVideoInfo *, int);
 u_long GetNBitsUnsigned(SVideoInfo *, int);
-extern "C" MATRIX *FUN_80095e50(SVECTOR *, MATRIX *);
-extern "C" void FUN_8008eebc(int);
 void M3d_BuildTransform(CSuper *);
 int SFX_PlayX(u_int, short, int);
 void SFX_Stop(u_int);
@@ -78,7 +77,7 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 	VInfo->OldEuler = VInfo->Euler;
 
 	if (NChunks == 1) {
-		FUN_80095e50(&VInfo->Euler, &pSkater->mRotMatrix);
+		RotMatrixYXZ_gte(&VInfo->Euler, &pSkater->mRotMatrix);
 
 		pSkater->mRotMatrix.m[0][1] = -pSkater->mRotMatrix.m[0][1];
 		pSkater->mRotMatrix.m[1][1] = -pSkater->mRotMatrix.m[1][1];
@@ -134,7 +133,7 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 		int n = VInfo->Yblanks - Xblanks;
 
 		for (i = 0; i < n; i++)
-			FUN_8008eebc(0);
+			VSync(0);
 	}
 
 	if (GetBit(VInfo)) {

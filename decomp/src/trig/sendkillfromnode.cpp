@@ -6,6 +6,7 @@
 #include "game/bruce.h"
 #include "game/platform.h"
 #include "game/bit.h"
+#include "game/trig.h"
 
 short **OffsetList;
 
@@ -18,10 +19,6 @@ ushort *Trig_GetLinksPointer(int);
 void Trig_SendPulse(ushort *);
 Item *Spool_FindEnviroItem(uint);
 void Exp_HitEnvItem(Item *, uint *, int);
-
-extern "C" {
-	void FUN_80045774(int, CBody *, int);
-}
 
 void SendKillFromNode(int Node, int How) {
 	ushort *pNodes;
@@ -57,8 +54,8 @@ void SendKillFromNode(int Node, int How) {
 				}
 
 				if (!Bounced) {
-					FUN_80045774(KillNode, BaddyList, How);
-					FUN_80045774(KillNode, EnvironmentalObjectList, How);
+					KillInList(KillNode, BaddyList, How);
+					KillInList(KillNode, EnvironmentalObjectList, How);
 				}
 
 				break;

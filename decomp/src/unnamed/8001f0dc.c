@@ -1,4 +1,4 @@
-/* FUN_8001f0dc (0x8001f0dc) */
+/* Mess_UnloadAllFonts__Fv (0x8001f0dc) */
 #include "names.h"
 
 struct S {
@@ -12,7 +12,7 @@ int Current_font;
 
 void Mess_UnloadFont(void);
 
-void FUN_8001f0dc(void) {
+void Mess_UnloadAllFonts(void) {
 	int i;
 
 	for (i = 0; i < 10; i++) {

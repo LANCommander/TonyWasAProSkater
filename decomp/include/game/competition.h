@@ -74,4 +74,9 @@ class CCompetition : public CClass {
 
 extern CCompetition theCompetition;
 
+/* functions */
+int Competition_WonGameAllGold();      /* 0x8007401c */
+void Competition_FullyDisplayJudge();  /* 0x80076484 */
+void Competition_FullyDisplayLadder(); /* 0x80076494 */
+
 #endif

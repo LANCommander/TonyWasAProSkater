@@ -18,7 +18,9 @@ extern "C" {
 	#include <libgpu.h>
 }
 
+#include "game/debug.h"
 #include "game/pre.h"
+#include "game/psyq.h"
 
 int CurrentPos;
 int FileOpen;
@@ -35,19 +37,13 @@ extern RECT DAT_800d1b20[];
 extern uchar Pad_50[];
 extern uchar Directory[];
 
-extern "C" {
-	void FUN_80047774(const char *, int, char *);
-	int FUN_8008c5ec(RECT *, int, int, int);
-	void FUN_8008c190(void *);
-}
-
 int FileIO_Open(const char *filename) {
 	char *header;
 	char *scan;
 	int len;
 
 	CurrentPos = 0;
-	FUN_80047774(filename, 299, "fileio.cpp");
+	Debug_String(filename, 299, "fileio.cpp");
 
 	LoadFromPRE = 0;
 
@@ -61,7 +57,7 @@ int FileIO_Open(const char *filename) {
 		}
 	}
 
-	FUN_80047774(filename, 323, "fileio.cpp");
+	Debug_String(filename, 323, "fileio.cpp");
 
 	header = (char *)Directory;
 	Opening = filename;
@@ -88,10 +84,10 @@ int FileIO_Open(const char *filename) {
 			if (*header == 255) {
 				RECT rect = DAT_800d1b20[0];
 
-				FUN_8008c5ec(&rect, 0, 0, 255);
+				ClearImage(&rect, 0, 0, 255);
 
 				rect.y += 256;
-				FUN_8008c5ec(&rect, 0, 0, 255);
+				ClearImage(&rect, 0, 0, 255);
 			}
 		} else if (!*scan) {
 			if (*header) {
@@ -106,10 +102,10 @@ int FileIO_Open(const char *filename) {
 				if (*header == 255) {
 					RECT rect = DAT_800d1b20[0];
 
-					FUN_8008c5ec(&rect, 0, 0, 255);
+					ClearImage(&rect, 0, 0, 255);
 
 					rect.y += 256;
-					FUN_8008c5ec(&rect, 0, 0, 255);
+					ClearImage(&rect, 0, 0, 255);
 				}
 			}
 		}
@@ -130,8 +126,8 @@ int FileIO_Open(const char *filename) {
 	FileOpen = 1;
 
 	if (Pad_50[0])
-		FUN_8008c190("(%d) ");
+		printf("(%d) ");
 
-	FUN_80047774(filename, 495, "fileio.cpp");
+	Debug_String(filename, 495, "fileio.cpp");
 	return FileSize;
 }

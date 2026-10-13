@@ -4,10 +4,9 @@
    queue, banking the previous landed total when the queue is empty. FUN_8006e514 = CTrick::Set,
    FUN_8006e7c0 = TrickMessage, the panel refresh. Called via the CBruce wrapper at 0x8006e19c (&mPanel = +0x924). */
 #include "game/panel.h"
+#include "game/psyq.h"
 
 int DAT_800d1ec4; /* points x10 cheat */
-
-extern "C" int FUN_8008c190(const char *, ...);
 
 void CPanelData::Trick(char *pName, int Points, int Dep) {
 	mLastHoldingScore = 1;
@@ -35,7 +34,7 @@ void CPanelData::Trick(char *pName, int Points, int Dep) {
 
 			break;
 		default:
-			FUN_8008c190("Unexpected trick status: %d\n", mTrickStatus);
+			printf("Unexpected trick status: %d\n", mTrickStatus);
 			break;
 	}
 

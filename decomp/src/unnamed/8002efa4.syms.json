@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","FUN_8002efa4":"0x8002efa4","FUN_80093100":"0x80093100","FUN_80092f60":"0x80092f60","FUN_80093130":"0x80093130","FUN_80093240":"0x80093240","M3d_BuildTransform__FP6CSuper":"0x80085130"}
+{"gp":"0x800d1080","FUN_8002efa4":"0x8002efa4","TransMatrix":"0x80093100","ApplyMatrixLV":"0x80092f60","MulMatrix":"0x80093130","RotMatrixYXZ":"0x80093240","M3d_BuildTransform__FP6CSuper":"0x80085130"}

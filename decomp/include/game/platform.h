@@ -49,4 +49,7 @@ class CPlatform : public CBaddy {
 	virtual short GetVariable(ushort);          /* slot 9: 0x8003f624 */
 };
 
+/* functions */
+void Platform_HandleBounce(); /* 0x8003f65c */
+
 #endif

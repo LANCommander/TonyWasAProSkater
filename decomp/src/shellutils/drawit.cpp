@@ -8,9 +8,6 @@ extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
-
-	void DrawPrim(void *);
-	int DrawSync(int);
 }
 
 void DrawIt(RECT *r, int x, int y, int bpp, int clut) {

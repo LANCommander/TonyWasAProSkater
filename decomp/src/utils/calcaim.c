@@ -10,7 +10,7 @@ typedef struct {
 } V;
 
 int FUN_80093604(int);
-int FUN_8008b5dc(int);
+int M3dMaths_SquareRoot0__Fi(int);
 
 int Utils_CalcAim(SV *o, const V *a, const V *b) {
 	int dx = (b->x - a->x) >> 12;
@@ -27,7 +27,7 @@ int Utils_CalcAim(SV *o, const V *a, const V *b) {
 		o->y = dx <= 0 ? 1024 : -1024;
 	}
 
-	d = FUN_8008b5dc(dx * dx + dz * dz);
+	d = M3dMaths_SquareRoot0__Fi(dx * dx + dz * dz);
 
 	if (d != 0) {
 		if (dy > 0)

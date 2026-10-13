@@ -6,6 +6,7 @@
 #include "game/platform.h"
 #include "game/bruce.h"
 #include "game/m3d.h"
+#include "game/sfx.h"
 
 extern SPSXRegion PSXRegion[];
 extern CBruce *MechList;
@@ -13,11 +14,6 @@ extern CBruce *MechList;
 void SFX_Stop(uint);
 ushort *Trig_GetPosition(CVector &, int);
 void Shatter_Item(Item *, int, int);
-
-extern "C" {
-	int SFX_PlayX__FUisi(int, short, int);
-	int SFX_PlayPos__FUiRC7CVectori(int, const CVector &, int);
-}
 
 int CPlatform::ExecuteCommand(ushort command) {
 	switch (command) {
@@ -51,7 +47,7 @@ int CPlatform::ExecuteCommand(ushort command) {
 			if (mLoopingSound)
 				SFX_Stop(mLoopingSound);
 
-			mLoopingSound = SFX_PlayX__FUisi(*mpScript++, 0x2000, 0);
+			mLoopingSound = SFX_PlayX(*mpScript++, 0x2000, 0);
 			mLoopingSoundUpdate = -1;
 			break;
 		case 17672: {
@@ -62,7 +58,7 @@ int CPlatform::ExecuteCommand(ushort command) {
 
 			id = *mpScript++;
 			mLoopingSoundUpdate = *mpScript++;
-			mLoopingSound = SFX_PlayPos__FUiRC7CVectori(id, mPos, 0);
+			mLoopingSound = SFX_PlayPos(id, mPos, 0);
 			break;
 		}
 		case 17673:

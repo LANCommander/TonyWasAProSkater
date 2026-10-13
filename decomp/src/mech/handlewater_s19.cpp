@@ -1,12 +1,7 @@
 /* HandleWater__6CBruce (0x80043258) */
 #include "game/trig.h"
 #include "game/bruce.h"
-
-extern "C" {
-	void *__nw__4CBitUi(unsigned int);
-	void __11CFlatRippleRC7CVectoriUcUcUcii(void *, const CVector &, int, uchar, uchar, uchar, int,
-	                                        int);
-}
+#include "game/bit.h"
 
 extern int GNumberOfPlayers;
 extern int CurrentWaterLevel;
@@ -56,11 +51,7 @@ void CBruce::HandleWater() {
 					p.vz += offset * e->c;
 				}
 
-				void *r = __nw__4CBitUi(116);
-
-				if (r)
-					__11CFlatRippleRC7CVectoriUcUcUcii(r, p, Rnd(24) + 40, 221, 238, 255, 12,
-					                                   Rnd(3) + 4);
+				new CFlatRipple(p, Rnd(24) + 40, 221, 238, 255, 12, Rnd(3) + 4);
 			}
 		} else {
 			mFlags &= ~8;

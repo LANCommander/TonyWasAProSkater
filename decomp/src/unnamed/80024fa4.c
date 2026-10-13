@@ -1,4 +1,4 @@
-/* FUN_80024fa4 (0x80024fa4) */
+/* Display__Fv (0x80024fa4) */
 #include "names.h"
 #include "game/padbuttons.h"
 #ifdef PC_PORT
@@ -53,7 +53,7 @@ void Mess_Display(void);
 void Mess_SetRGB(int, int, int, int);
 void Mess_SetScale(int);
 
-void FUN_80024fa4(void) {
+void Display(void) {
 	int f, a, b, c;
 
 	if (DAT_800d16dc) {

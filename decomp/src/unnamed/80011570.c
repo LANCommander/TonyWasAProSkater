@@ -1,4 +1,6 @@
-/* FUN_80011570 (0x80011570) */
+/* Front_FreeBackground__Fv (0x80011570) */
+#include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;
@@ -20,7 +22,7 @@ int FreeSprite;
 
 extern struct E BGCache[];
 
-void FUN_80011570(void) {
+void Front_FreeBackground(void) {
 	int i;
 
 	for (i = 0; i < FreeSprite; i++) {

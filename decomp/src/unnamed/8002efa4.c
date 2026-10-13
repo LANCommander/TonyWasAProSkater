@@ -30,10 +30,10 @@ typedef struct {
 	V v7cc;
 } B;
 
-int FUN_80093100(MATRIX *, VA *);
-int FUN_80092f60(MATRIX *, VA *, VA *);
-int FUN_80093130(MATRIX *, MATRIX *);
-int FUN_80093240(SV *, MATRIX *);
+int TransMatrix(MATRIX *, VA *);
+int ApplyMatrixLV(MATRIX *, VA *, VA *);
+int MulMatrix(MATRIX *, MATRIX *);
+int RotMatrixYXZ(SV *, MATRIX *);
 void M3d_BuildTransform(B *);
 
 void FUN_8002efa4(B *p) {
@@ -51,20 +51,20 @@ void FUN_8002efa4(B *p) {
 		a.z = 0;
 		a.y = 0;
 		a.x = 0;
-		FUN_80093100(&p->m1, &a);
-		FUN_80093100(&m, &a);
+		TransMatrix(&p->m1, &a);
+		TransMatrix(&m, &a);
 
 		b.x = 0;
 		b.y = 0x46000;
 		b.z = 0;
-		FUN_80092f60(&p->m1, &b, &c1);
+		ApplyMatrixLV(&p->m1, &b, &c1);
 
 		ang.z = 0;
 		ang.y = 0;
 		ang.x = p->a724 & 4095;
-		FUN_80093240(&ang, &m);
-		FUN_80093130(&p->m1, &m);
-		FUN_80092f60(&p->m1, &b, &c2);
+		RotMatrixYXZ(&ang, &m);
+		MulMatrix(&p->m1, &m);
+		ApplyMatrixLV(&p->m1, &b, &c2);
 
 		p->pos.x = p->pos.x + c1.x - c2.x;
 		p->pos.y = p->pos.y + c1.y - c2.y;

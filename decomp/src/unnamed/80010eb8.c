@@ -1,4 +1,4 @@
-/* FUN_80010eb8 (0x80010eb8) */
+/* Crowd_Oww__Fi (0x80010eb8) */
 #include "names.h"
 
 typedef struct {
@@ -15,7 +15,7 @@ int Crowd_Bored;
 
 int SFX_PlayX(int, short, int);
 
-void FUN_80010eb8(int Speed) {
+void Crowd_Oww(int Speed) {
 	int Volume;
 
 	if (Levels[GLevel].f4c) {

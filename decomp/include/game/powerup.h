@@ -42,6 +42,7 @@ class CPowerUp : public CBody {
 	void SetGravity(int, int);                                     /* 0x8001feb8 */
 	void CreateBit();                                              /* 0x8001fec4 */
 	virtual void DeleteStuff();                                    /* slot 6: 0x8001fed8 */
+	void SetNode(int Node);                                        /* 0x8001ff34 */
 	virtual void Die();                                            /* slot 1: 0x8001ff44 */
 	void DoPhysics();                                              /* 0x8001ff84 */
 	void TakeEffect(CBruce *);                                     /* 0x80020328 */

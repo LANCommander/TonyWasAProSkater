@@ -1,4 +1,4 @@
-/* FUN_80055f80 (0x80055f80) */
+/* Front_SpoolNextSkater2P__Fv (0x80055f80) */
 #include "names.h"
 
 struct E {
@@ -22,7 +22,7 @@ int FUN_80070830(void);
 void Spool_Sync(void);
 int Spool_PSX(char *a, int b, int c);
 
-void FUN_80055f80(void) {
+void Front_SpoolNextSkater2P(void) {
 	int a;
 	int n;
 

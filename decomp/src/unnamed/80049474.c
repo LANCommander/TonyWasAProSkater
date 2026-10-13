@@ -1,10 +1,12 @@
 /* FUN_80049474 (0x80049474) */
+#include "names.h"
+
 extern char DoubleBuffer[];
 
 char *pDoubleBuffer;
 int pPoly;
 
-int FUN_80048c74(void);
+int Db_OTSize(void);
 void FUN_8008c7d4(char *a, int b);
 
 void FUN_80049474(void) {
@@ -14,7 +16,7 @@ void FUN_80049474(void) {
 		a = a + 32940;
 
 	pDoubleBuffer = a;
-	FUN_8008c7d4(pDoubleBuffer + 132, FUN_80048c74());
+	FUN_8008c7d4(pDoubleBuffer + 132, Db_OTSize());
 
 #ifdef PC_PORT
 	/* the PS1 drew through KUSEG (bit 31 clear); on PC main RAM is only at 0x80000000 */

@@ -82,4 +82,14 @@ struct SVideoRestart {
 	int GGame;      /* 0x10 */
 }; /* size 0x14 */
 
+/* functions */
+class CBruce;
+
+int HasSoundCmd();                                /* 0x80068df8 */
+void Video_SyncObsIfNeeded();                     /* 0x800695f4 */
+void Video_Cleanup();                             /* 0x80069670 */
+void Video_Start(CBruce *, EVideoMode, int, int); /* 0x80069684 */
+void GetDataChunk(CBruce *pSkater, int NChunks);  /* 0x8006a158 */
+void Video_HandleStepping();                      /* 0x8006ac84 */
+
 #endif

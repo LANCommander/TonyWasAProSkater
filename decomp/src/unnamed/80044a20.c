@@ -1,4 +1,4 @@
-/* FUN_80044a20 (0x80044a20) */
+/* Trig_TriggerCommandPoint__FUib (0x80044a20) */
 #include "names.h"
 
 /* Fires the trigger with the given id: marks it hit for this side (1 or 2) and, the first time
@@ -21,7 +21,7 @@ extern int GSkater;
 
 void ExecuteCommandList(char *, int, int);
 
-STrig *FUN_80044a20(int id) {
+STrig *Trig_TriggerCommandPoint(int id) {
 	STrig *t;
 
 	for (t = HashTable[id & 0xff]; t; t = t->pNext) {

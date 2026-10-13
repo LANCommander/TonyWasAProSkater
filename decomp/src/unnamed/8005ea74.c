@@ -1,4 +1,6 @@
-/* FUN_8005ea74 (0x8005ea74) */
+/* Front_GetPadFunctionName__Fi (0x8005ea74) */
+#include "names.h"
+
 typedef struct {
 	int a, b, c, d, e;
 } S;
@@ -13,7 +15,7 @@ extern T GPreferences;
 
 int DAT_800d1d28;
 
-int FUN_8005ea74(int i) {
+int Front_GetPadFunctionName(int i) {
 	int cur = DAT_800d1d28;
 
 	switch (i) {

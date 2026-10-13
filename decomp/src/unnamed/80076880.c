@@ -71,7 +71,7 @@ void Pad_ClearAll(void);
 void Pad_ClearTriggers(char *);
 void Pad_ActuatorOff(int, int);
 void Mess_DeleteAll(void);
-void FUN_8008f4d4(int, int, int);
+void CdControlB(int, int, int);
 void Pause__Fi(int);
 void Mem_Delete(int);
 void GameFMV_PlayMovie(int);
@@ -79,7 +79,7 @@ void Flash_Reset(void);
 int Mem_NewX(int, int, int);
 int CMenu_FindEntry(char *, char *);
 void CMenu_SetLine(char *, unsigned char);
-int FUN_8007401c(void);
+int Competition_WonGameAllGold(void);
 void Flash_Fade(int, int);
 
 void Competition_EndGameLogic(int *a, int *b) {
@@ -117,7 +117,7 @@ void Competition_EndGameLogic(int *a, int *b) {
 			Pad_ActuatorOff(0, 0);
 			Pad_ActuatorOff(0, 1);
 			Mess_DeleteAll();
-			FUN_8008f4d4(8, 0, 0);
+			CdControlB(8, 0, 0);
 			Pause__Fi(10);
 			Mem_Delete(DoubleBuffer.a);
 			GameFMV_PlayMovie(-(*(int *)(GSkater + 744) + 12));
@@ -140,7 +140,7 @@ void Competition_EndGameLogic(int *a, int *b) {
 			GRollCredits = 1;
 			CMenu_SetLine(pYesNoMenu, CMenu_FindEntry(pYesNoMenu, GameText_1b4[0]));
 
-			if (FUN_8007401c()) {
+			if (Competition_WonGameAllGold()) {
 				theCompetition.f = 1;
 				Flash_Fade(32, 0);
 				return;

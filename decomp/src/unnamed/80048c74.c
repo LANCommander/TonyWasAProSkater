@@ -1,6 +1,8 @@
-/* FUN_80048c74 (0x80048c74) */
+/* Db_OTSize__Fv (0x80048c74) */
+#include "names.h"
+
 extern int GNumberOfPlayers;
 
-int FUN_80048c74(void) {
+int Db_OTSize(void) {
 	return (GNumberOfPlayers << 12) | 2;
 }

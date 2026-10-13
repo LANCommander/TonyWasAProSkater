@@ -1,4 +1,4 @@
-/* FUN_8003159c (0x8003159c) */
+/* ScoreCurrentTrick__6CBruce (0x8003159c) */
 /* C++ (PHYSICS.CPP). Called by HandleStickToRail when a trick is in progress (m35C): unless already
    scored (m364), plays the landing sound for anims 62..66 and scores the held trick (m368 & 0xff,
    0x4000/0x2000 states, the same test as the Limit block there) via Trick_Trick from the 44-byte
@@ -12,29 +12,29 @@ extern STrick Group[];
 
 int SFX_PlayX(unsigned int, short, int);
 
-extern "C" void FUN_8003159c(CBruce *pBruce) {
-	if (pBruce->m364)
+void CBruce::ScoreCurrentTrick() {
+	if (m364)
 		return;
 
-	if ((ushort)(pBruce->mAnim - 62) < 5)
+	if ((ushort)(mAnim - 62) < 5)
 		SFX_PlayX(162, 0x2000, 0);
 
-	int State = pBruce->m368;
+	int State = m368;
 	int Trick = State & 0xff;
 	int Score;
 
 	if (State & 0x4000) {
 		Score = Group[Trick].Score;
-		pBruce->m424++;
-		pBruce->Trick_Trick(Trick, Group[Trick].pName, Score, 0);
+		m424++;
+		Trick_Trick(Trick, Group[Trick].pName, Score, 0);
 
-		pBruce->m368 |= 0x800;
+		m368 |= 0x800;
 	} else if (State & 0x2000) {
 		Score = Group[Trick].Score;
-		pBruce->m424++;
-		pBruce->Trick_Trick(Trick, Group[Trick].pName, Score, 0);
+		m424++;
+		Trick_Trick(Trick, Group[Trick].pName, Score, 0);
 
 		if (Group[Trick].Frames)
-			pBruce->m368 |= 0x800;
+			m368 |= 0x800;
 	}
 }

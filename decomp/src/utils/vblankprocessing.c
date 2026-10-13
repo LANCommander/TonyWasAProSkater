@@ -16,8 +16,8 @@ volatile int GameFade;
 
 extern int SFX_ReverbDepthSetTimer;
 
-int FUN_8008c468(int);
-void FUN_8008c880(void *);
+int DrawSync(int);
+void DrawPrim(void *);
 void SFX_SetReverbDepth(int, int);
 
 void Utils_VblankProcessing(void) {
@@ -49,10 +49,10 @@ void Utils_VblankProcessing(void) {
 		p.x3 = 512;
 		p.y2 = 240;
 		p.y3 = 240;
-		FUN_8008c468(0);
-		FUN_8008c880(&m);
-		FUN_8008c880(&p);
-		FUN_8008c468(0);
+		DrawSync(0);
+		DrawPrim(&m);
+		DrawPrim(&p);
+		DrawSync(0);
 	}
 
 	if (SFX_ReverbDepthSetTimer) {

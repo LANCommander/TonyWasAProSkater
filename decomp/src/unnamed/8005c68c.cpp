@@ -1,4 +1,4 @@
-/* FUN_8005c68c (0x8005c68c) */
+/* Front_CheckSoftReset__Fv (0x8005c68c) */
 /* Hold START+SELECT on either pad to count DAT_800d2348 down from 110 (eating the START trigger);
    at zero stop the looping sound and set DAT_800d1cb8. Called from 9 sites. */
 #include "game/pad.h"
@@ -12,7 +12,7 @@ int DAT_800d1cb8;
 
 void SFX_Stop(unsigned);
 
-void FUN_8005c68c(void) {
+void Front_CheckSoftReset(void) {
 	if (!DAT_800d2348) {
 		SFX_Stop(DAT_800d1ca4);
 

@@ -4,7 +4,15 @@
    Init_ForGame, loads the game, then (unless a restart was requested) primes the pads and plays
    levels, looping back to DUN while the game mode says to carry on. */
 #include "game/card.h"
+#include "game/career.h"
+#include "game/db.h"
+#include "game/front.h"
+#include "game/hires.h"
+#include "game/init.h"
+#include "game/main.h"
 #include "game/pad.h"
+#include "game/psyq.h"
+#include "game/trig.h"
 
 enum EPackInitType { PACK_0, PACK_1 };
 
@@ -31,20 +39,6 @@ void DumpAutoTest();
 void Horse_Reset();
 void Trig_ParseTRGFile();
 
-extern "C" {
-	void FUN_80071f3c(void);
-	void FUN_800171e8(const SPreferences *);
-	void FUN_8005cba0(void);
-	void FUN_8001ccf8(SSaveGame *);
-	void PlayAway__Fv(void);
-	int FUN_8008c190(const char *, ...);
-	void Init_Cleanup__Fi(int);
-	void FUN_80025a88(void);
-	void Trig_ExecuteRestart__Fv(void);
-	void FUN_800491e8(void);
-	void FUN_8006b01c(int);
-}
-
 int LaunchGame() {
 	int Result = 0;
 
@@ -54,20 +48,20 @@ int LaunchGame() {
 	{
 		SSaveGame tmp = StartupGameState;
 
-		FUN_80071f3c();
+		Init_ForGame();
 
 		StartupGameState = tmp;
 	}
 
-	FUN_800171e8(&StartupGameState.Preferences);
+	Front_SetPreferences(StartupGameState.Preferences);
 
 	if (!Result) {
-		FUN_8005cba0();
+		LoadingScreen_Main();
 
 		if (GAutoTest)
 			DumpAutoTest();
 
-		FUN_8001ccf8(&StartupGameState);
+		Front_LoadGame(&StartupGameState);
 	}
 
 	if (BackOut) {
@@ -93,27 +87,27 @@ DUN:
 	if (GNumberOfPlayers == 2 && GGame != 7)
 		ViewportMode = 1;
 
-	PlayAway__Fv();
+	PlayAway();
 
 	GClear1 = 0;
 	GClear2 = 0;
 	GHorseDoneStart = 0;
 
 	if (EndCode == 7) {
-		FUN_8008c190("ENDCODE_TWEAKJUMP\n");
-		Init_Cleanup__Fi(1);
+		printf("ENDCODE_TWEAKJUMP\n");
+		Init_Cleanup(1);
 		Trig_ParseTRGFile();
-		FUN_80025a88();
-		Trig_ExecuteRestart__Fv();
+		CreateSkatersAndCameras();
+		Trig_ExecuteRestart();
 		goto DUN;
 	}
 
-	FUN_8008c190(DAT_8009f5cc);
+	printf(DAT_8009f5cc);
 	Init_Restart(PACK_0, 16);
-	FUN_800491e8();
+	Db_Init();
 
 	GNumberOfPlayers = 1;
 	Init_Restart(PACK_1, 16);
-	FUN_8006b01c(1);
+	HiRes_Init(1);
 	return 0;
 }

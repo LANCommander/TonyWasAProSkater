@@ -17,6 +17,7 @@ extern "C" {
 #include "game/car.h"
 #include "game/bruce.h"
 #include "game/bit.h"
+#include "game/sfx.h"
 
 extern int GameText_c0[];
 extern int BitCount;
@@ -26,14 +27,6 @@ extern char ZeroVector[];
 unsigned int Utils_CrapDist(const CVector &, const CVector &);
 int Redbook_Rnd(int);
 void Bit_SetSparkTrajectory(const CSVector &);
-
-extern "C" {
-	void SFX_Grunt__FP6CBruce(CBruce *);
-	int SFX_PlayX__FUisi(int, short, int);
-	void Bit_SetSparkTrajectoryCone__FRC8CSVector(CSVector *);
-	/* CBruce::Bail(int, ELimitBailVel), called without its second argument (retail leaves a2 alone) */
-	void Bail__6CBrucei13ELimitBailVel(CBruce *, int);
-}
 
 void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBox) {
 	if (pCar == pSkater->mLastCar)
@@ -133,8 +126,8 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 				pSkater->mVel.vz >>= 1;
 				pSkater->mVel.vy -= 0x1e000;
 				pSkater->Vibrate(8, 1, 150);
-				SFX_Grunt__FP6CBruce(pSkater);
-				SFX_PlayX__FUisi(40, 0x2000, 0);
+				SFX_Grunt(pSkater);
+				SFX_PlayX(40, 0x2000, 0);
 				pSkater->Trick_Trick(78, (char *)GameText_c0[0], -1000, 0);
 
 				{
@@ -156,7 +149,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 					cone.vx = 450;
 					cone.vy = 900;
 					cone.vz = 0;
-					Bit_SetSparkTrajectoryCone__FRC8CSVector(&cone);
+					Bit_SetSparkTrajectoryCone(cone);
 
 					UseCacheForBits = 0;
 
@@ -211,11 +204,11 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 		}
 
 		pSkater->mLastCar = pCar;
-		Bail__6CBrucei13ELimitBailVel(pSkater, 1);
+		pSkater->Bail(1);
 		pSkater->BloodSplat(1, 100);
 		pSkater->Vibrate(12, 1, 255);
-		SFX_Grunt__FP6CBruce(pSkater);
-		SFX_PlayX__FUisi(114, 0x2000, 0);
+		SFX_Grunt(pSkater);
+		SFX_PlayX(114, 0x2000, 0);
 
 		{
 			int sfx;
@@ -237,7 +230,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 					return;
 			}
 
-			SFX_PlayX__FUisi(sfx, 0x2000, 0);
+			SFX_PlayX(sfx, 0x2000, 0);
 		}
 	}
 }

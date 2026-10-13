@@ -2,20 +2,24 @@
 /* C++ (PAL). Plays sound effect id at a volume (clamped to 16384): records it for replays, then
    keys the VAB voice. Each table entry is {voice, note:16 | pitch:16}. A note of 0 means 60
    (middle C). The pitch is scaled by the global percentage SFXLEVEL. */
+#include "game/sfx.h"
+
 extern int DAT_800b8a9c[];
 extern int SFXLEVEL;
 
 int SFX_v;
 
 void Video_SFXPlay(int, short, int);
-extern "C" int playSFX__FUiUcssiUs(int, unsigned char, short, short, int);
 
-extern "C" int SFX_PlayX__FUisi(int id, short vol, int pan) {
+int SFX_PlayX(uint id, short vol, int pan) {
 	int p, note, v, i;
-	if (id < 0 || id == 0xffff)
+
+	if ((int)id < 0 || id == 0xffff)
 		return 0;
+
 	if (vol > 16384)
 		vol = 16384;
+
 	i = id * 2;
 
 	if (DAT_800b8a9c[i] >= 0)
@@ -33,5 +37,5 @@ extern "C" int SFX_PlayX__FUisi(int id, short vol, int pan) {
 	p = SFXLEVEL * p / 100;
 	v = (vol * p * 4) >> 16;
 
-	return playSFX__FUiUcssiUs(DAT_800b8a9c[i], note, v, v, pan);
+	return playSFX(DAT_800b8a9c[i], note, v, v, pan);
 }

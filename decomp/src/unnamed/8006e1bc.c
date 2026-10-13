@@ -1,4 +1,4 @@
-/* FUN_8006e1bc (0x8006e1bc) */
+/* Panel_HoldTrick__FP6CBrucei (0x8006e1bc) */
 #include "names.h"
 
 typedef struct {
@@ -16,7 +16,7 @@ typedef struct {
 
 void CPanelData_TrickMessageRefresh(char *);
 
-void FUN_8006e1bc(P *p, int s) {
+void Panel_HoldTrick(P *p, int s) {
 	p->tq[p->n - 1].Score += s;
 	CPanelData_TrickMessageRefresh(p->sub);
 }

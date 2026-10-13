@@ -25,6 +25,11 @@ extern "C" {
 #include "game/bruce.h"
 #include "game/bit.h"
 #include "game/career.h"
+#include "game/m3d.h"
+#include "game/mem.h"
+#include "game/sfx.h"
+#include "game/vector.h"
+#include "game/m3dasm.h"
 
 #define SetVector(v, x, y, z)                                                                      \
 	{                                                                                              \
@@ -61,23 +66,6 @@ void CVectorRotateToPlane(CVector *, SVECTOR *, CVector *);
 void M3dColij_InitLineInfo(SLineInfo *);
 int GetFaceFlags(SLineInfo *);
 
-extern "C" {
-	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
-	int FUN_8008b5dc(int);
-	int Mips_FixMul__Fii(int, int);
-	int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
-	SMemHandle FUN_8004d7ac(void *);
-	void Bit_SetSparkTrajectoryCone__FRC8CSVector(CSVector *);
-	void Bit_SetSparkSize__FUi(int);
-	void Bit_SetSparkRGB__FUcUcUc(int, int, int);
-	void Bit_SetSparkFadeRGB__FUcUcUc(int, int, int);
-	int Mem_GetFree__Fc(int);
-	int FUN_800343f0(CBruce *, int);
-	void FUN_8003434c(CBruce *);
-	void FUN_8002f1a0(CBruce *);
-	void SFX_Grunt__FP6CBruce(CBruce *);
-}
-
 void CBruce::DoOnGroundPhysics() {
 	CVector u0, u1, u2; /* unused: retail's frame keeps their slots */
 	CVector vMovement;
@@ -105,7 +93,7 @@ void CBruce::DoOnGroundPhysics() {
 	if (!mPhysicsState)
 		m724 = 0;
 
-	Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+	Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 	if ((mTerrain == 5 || mTerrain == 6 || mTerrain == 3) && BitCount < 200) {
 		SetAnglesFromHeading();
@@ -113,30 +101,30 @@ void CBruce::DoOnGroundPhysics() {
 		CSVector Cone;
 
 		Cone.Set(512, 4096, 0);
-		Bit_SetSparkTrajectoryCone__FRC8CSVector(&Cone);
-		Bit_SetSparkSize__FUi(1);
+		Bit_SetSparkTrajectoryCone(Cone);
+		Bit_SetSparkSize(1);
 
 		if (Speed > 0x10000) {
 			int i;
 
 			switch (mTerrain) {
 				case 5:
-					Bit_SetSparkRGB__FUcUcUc(2, 160, 32);
+					Bit_SetSparkRGB(2, 160, 32);
 					break;
 				case 6:
-					Bit_SetSparkRGB__FUcUcUc(160, 160, 160);
+					Bit_SetSparkRGB(160, 160, 160);
 					break;
 				case 3:
-					Bit_SetSparkRGB__FUcUcUc(128, 64, 32);
+					Bit_SetSparkRGB(128, 64, 32);
 					break;
 			}
 
-			Bit_SetSparkFadeRGB__FUcUcUc(0, 0, 0);
+			Bit_SetSparkFadeRGB(0, 0, 0);
 
 			UseCacheForBits = 0;
 
 			for (i = 0; i < 6; i++) {
-				if (Mem_GetFree__Fc(1) > 10000) {
+				if (Mem_GetFree(1) > 10000) {
 					CSpark *p = new CSpark(mPos, 20, Speed >> 16, 20);
 
 					p->mVel += mVel;
@@ -181,7 +169,7 @@ void CBruce::DoOnGroundPhysics() {
 		FlipToVelocity();
 
 	vMovement = mPos - mOldPos;
-	((void (*)(int))FUN_8008b5dc)(Mips_CVecDotProd__FP7CVectorT0(&vMovement, &vMovement));
+	((void (*)(int))M3dMaths_SquareRoot0)(Mips_CVecDotProd(&vMovement, &vMovement));
 	TurnAngle = mLeanAngle >> 12;
 	mFallLineTurn = 0;
 
@@ -202,7 +190,7 @@ void CBruce::DoOnGroundPhysics() {
 		m1FC = 0;
 	}
 
-	Mips_FixMul__Fii(TurnAngle, 3072);
+	Mips_FixMul(TurnAngle, 3072);
 	RotateHeadingAndVelocity((TurnAngle * TimeScale) >> 8, !OnInvisible, 0);
 
 	mTallyAngles += (TurnAngle * TimeScale) >> 8;
@@ -225,7 +213,7 @@ void CBruce::DoOnGroundPhysics() {
 	    SetVector(&line_info.EndCoords, mPos.vx, mPos.vy, mPos.vz) vMovement = mPos - mOldPos;
 
 	if (vMovement != ZeroVector) {
-		Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&vMovement, &vMovement)) << 6;
+		Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&vMovement, &vMovement)) << 6;
 
 		if (mInAir ? Speed < 0x64000 : Speed < 0x1e000) {
 			if (Speed < 2048)
@@ -240,7 +228,7 @@ void CBruce::DoOnGroundPhysics() {
 		}
 
 		M3dColij_InitLineInfo(&line_info);
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+		M3dZone_LineToItemNotSCached(&line_info, 1);
 		GetFaceFlags(&line_info);
 
 		if (line_info.pItem) {
@@ -253,15 +241,14 @@ void CBruce::DoOnGroundPhysics() {
 				if (mAnim != 12 && !mInAir && !m368) {
 					CVector WallFloorNormal;
 
-					SetVector(
-					    &WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
-					    line_info.Normal.vz) if (Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal,
-						                                                        &mFront) > 2896) {
+					SetVector(&WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
+					          line_info.Normal.vz) if (Mips_CVecDotProd(&WallFloorNormal, &mFront) >
+					                                   2896) {
 						mAnimSpeed = 0x10000;
 						Debug_RunAnim(12, 4120);
 
 						TurnAway = 200;
-						SFX_Grunt__FP6CBruce(this);
+						SFX_Grunt(this);
 					}
 				}
 
@@ -272,8 +259,7 @@ void CBruce::DoOnGroundPhysics() {
 					int UpDot;
 
 					SetVector(&WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
-					          line_info.Normal.vz) UpDot =
-					    Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal, &mUp);
+					          line_info.Normal.vz) UpDot = Mips_CVecDotProd(&WallFloorNormal, &mUp);
 
 					if (UpDot > -2048 && UpDot < 2048) {
 						int TurnAway = 0;
@@ -314,12 +300,11 @@ void CBruce::DoOnGroundPhysics() {
 
 								SetVector(
 								    &WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
-								    line_info.Normal
-								        .vz) if (Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal,
-										                                        &mFront) > 2896) {
+								    line_info.Normal.vz) if (Mips_CVecDotProd(&WallFloorNormal,
+									                                          &mFront) > 2896) {
 									mAnimSpeed = 0x10000;
 									Debug_RunAnim(12, 4219);
-									SFX_Grunt__FP6CBruce(this);
+									SFX_Grunt(this);
 
 									TurnAway = 200;
 								}
@@ -349,7 +334,7 @@ void CBruce::DoOnGroundPhysics() {
 		}
 	}
 
-	Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+	Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 	if (mMaxSpeed < Speed)
 		m304 = 1;
@@ -358,11 +343,11 @@ void CBruce::DoOnGroundPhysics() {
 
 	CVector Old = mPos;
 
-	if (FUN_800343f0(this, -1)) {
-		if (FUN_800343f0(this, 1))
+	if (CheckSide(-1)) {
+		if (CheckSide(1))
 			mPos = Old;
-	} else if (FUN_800343f0(this, 1)) {
-		if (FUN_800343f0(this, -1))
+	} else if (CheckSide(1)) {
+		if (CheckSide(-1))
 			mPos = Old;
 	}
 
@@ -375,7 +360,7 @@ void CBruce::DoOnGroundPhysics() {
 	line_info.EndCoords.vy = line_info.StartCoords.vy - mUp.vy * 256;
 	line_info.EndCoords.vz = line_info.StartCoords.vz - mUp.vz * 256;
 	M3dColij_InitLineInfo(&line_info);
-	M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+	M3dZone_LineToItemNotSCached(&line_info, 1);
 	GetFaceFlags(&line_info);
 
 	if (line_info.pItem) {
@@ -403,7 +388,7 @@ void CBruce::DoOnGroundPhysics() {
 				mPos.vz = line_info.Position.vz + mUp.vz * 30;
 				CVector Move = Orig - mPos;
 
-				if (Mips_CVecDotProd__FP7CVectorT0(&Move, &Move) < 4096)
+				if (Mips_CVecDotProd(&Move, &Move) < 4096)
 					mPos = Orig;
 
 				if (Face_Air) {
@@ -412,8 +397,8 @@ void CBruce::DoOnGroundPhysics() {
 						SVECTOR N;
 
 						N = line_info.Normal;
-						mVel.vx -= Mips_FixMul__Fii(N.vx, Speed / 4);
-						mVel.vz -= Mips_FixMul__Fii(N.vz, Speed / 4);
+						mVel.vx -= Mips_FixMul(N.vx, Speed / 4);
+						mVel.vz -= Mips_FixMul(N.vz, Speed / 4);
 						mVel.vy /= 2;
 
 						if (!mPhysicsState) {
@@ -422,7 +407,7 @@ void CBruce::DoOnGroundPhysics() {
 						}
 
 						StateTransition(PHYSICS_IN_AIR, 4466);
-						FUN_8002f1a0(this);
+						Trick_TakeOff();
 
 						m768 = 0;
 						mAnimSpeed = 0x10000;
@@ -438,7 +423,7 @@ void CBruce::DoOnGroundPhysics() {
 						}
 
 						if (mPhysicsState != 2) {
-							FUN_8002f1a0(this);
+							Trick_TakeOff();
 
 							mTallyAngles = 0;
 							mNum180Spins = 0;
@@ -458,21 +443,21 @@ void CBruce::DoOnGroundPhysics() {
 						SetVector(&NewNormal, line_info.Normal.vx, line_info.Normal.vy,
 						          line_info.Normal.vz)
 						    SetVector(&LastNormal, mNormal.vx, mNormal.vy, mNormal.vz) Dot =
-						        Mips_CVecDotProd__FP7CVectorT0(&LastNormal, &NewNormal);
+						        Mips_CVecDotProd(&LastNormal, &NewNormal);
 
-						if (Mips_CVecDotProd__FP7CVectorT0(&mFront, &NewNormal) < 0 &&
-						    mVel.vy <= 0 && Dot > 0 && Dot < 3000)
-							FUN_8003434c(this);
+						if (Mips_CVecDotProd(&mFront, &NewNormal) < 0 && mVel.vy <= 0 && Dot > 0 &&
+						    Dot < 3000)
+							SkateOffGround();
 					} else {
 						StateTransition(PHYSICS_ON_GROUND, 4551);
 					}
 
 					if (!OnInvisible) {
 						mpWallItem = line_info.pItem;
-						mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Region].pPSX);
+						mWallHandle = Mem_GetHandle(PSXRegion[line_info.pItem->Region].pPSX);
 					}
 				} else {
-					FUN_8003434c(this);
+					SkateOffGround();
 				}
 
 				if (mPhysicsState != 1) {
@@ -489,13 +474,13 @@ void CBruce::DoOnGroundPhysics() {
 				}
 			} else {
 				m768 = ((SFace *)line_info.pFace)->Flags2 & 0x20;
-				FUN_8003434c(this);
+				SkateOffGround();
 			}
 		} else {
-			FUN_8003434c(this);
+			SkateOffGround();
 		}
 	} else {
-		FUN_8003434c(this);
+		SkateOffGround();
 	}
 
 	if (mPhysicsState != 1 && line_info.pItem) {
@@ -522,44 +507,44 @@ void CBruce::DoOnGroundPhysics() {
 		CVector ForwardsVelocity;
 		int dot;
 
-		dot = Mips_CVecDotProd__FP7CVectorT0(&mVel, &mRight);
-		SideVelocity.vx = Mips_FixMul__Fii(dot, mRight.vx);
-		SideVelocity.vy = Mips_FixMul__Fii(dot, mRight.vy);
-		SideVelocity.vz = Mips_FixMul__Fii(dot, mRight.vz);
+		dot = Mips_CVecDotProd(&mVel, &mRight);
+		SideVelocity.vx = Mips_FixMul(dot, mRight.vx);
+		SideVelocity.vy = Mips_FixMul(dot, mRight.vy);
+		SideVelocity.vz = Mips_FixMul(dot, mRight.vz);
 		mVel -= SideVelocity;
-		dot = Mips_CVecDotProd__FP7CVectorT0(&mVel, &mFront);
-		ForwardsVelocity.vx = Mips_FixMul__Fii(dot, mFront.vx);
-		ForwardsVelocity.vy = Mips_FixMul__Fii(dot, mFront.vy);
-		ForwardsVelocity.vz = Mips_FixMul__Fii(dot, mFront.vz);
+		dot = Mips_CVecDotProd(&mVel, &mFront);
+		ForwardsVelocity.vx = Mips_FixMul(dot, mFront.vx);
+		ForwardsVelocity.vy = Mips_FixMul(dot, mFront.vy);
+		ForwardsVelocity.vz = Mips_FixMul(dot, mFront.vz);
 
 		if (!m304) {
 			if (AutoKickEnabled) {
-				mAcc.vx -= Mips_FixMul__Fii(8, ForwardsVelocity.vx);
-				mAcc.vy -= Mips_FixMul__Fii(8, ForwardsVelocity.vy);
-				mAcc.vz -= Mips_FixMul__Fii(8, ForwardsVelocity.vz);
+				mAcc.vx -= Mips_FixMul(8, ForwardsVelocity.vx);
+				mAcc.vy -= Mips_FixMul(8, ForwardsVelocity.vy);
+				mAcc.vz -= Mips_FixMul(8, ForwardsVelocity.vz);
 			}
 		} else {
-			mAcc.vx -= Mips_FixMul__Fii(82, ForwardsVelocity.vx);
-			mAcc.vy -= Mips_FixMul__Fii(82, ForwardsVelocity.vy);
-			mAcc.vz -= Mips_FixMul__Fii(82, ForwardsVelocity.vz);
+			mAcc.vx -= Mips_FixMul(82, ForwardsVelocity.vx);
+			mAcc.vy -= Mips_FixMul(82, ForwardsVelocity.vy);
+			mAcc.vz -= Mips_FixMul(82, ForwardsVelocity.vz);
 		}
 
 		if (mTerrain == 5) {
-			mAcc.vx -= Mips_FixMul__Fii(120, ForwardsVelocity.vx);
-			mAcc.vy -= Mips_FixMul__Fii(120, ForwardsVelocity.vy);
-			mAcc.vz -= Mips_FixMul__Fii(120, ForwardsVelocity.vz);
+			mAcc.vx -= Mips_FixMul(120, ForwardsVelocity.vx);
+			mAcc.vy -= Mips_FixMul(120, ForwardsVelocity.vy);
+			mAcc.vz -= Mips_FixMul(120, ForwardsVelocity.vz);
 		}
 
 		if (mTerrain == 6) {
-			mAcc.vx -= Mips_FixMul__Fii(120, ForwardsVelocity.vx);
-			mAcc.vy -= Mips_FixMul__Fii(120, ForwardsVelocity.vy);
-			mAcc.vz -= Mips_FixMul__Fii(120, ForwardsVelocity.vz);
+			mAcc.vx -= Mips_FixMul(120, ForwardsVelocity.vx);
+			mAcc.vy -= Mips_FixMul(120, ForwardsVelocity.vy);
+			mAcc.vz -= Mips_FixMul(120, ForwardsVelocity.vz);
 		}
 
 		if (mTerrain == 3) {
-			mAcc.vx -= Mips_FixMul__Fii(180, ForwardsVelocity.vx);
-			mAcc.vy -= Mips_FixMul__Fii(180, ForwardsVelocity.vy);
-			mAcc.vz -= Mips_FixMul__Fii(180, ForwardsVelocity.vz);
+			mAcc.vx -= Mips_FixMul(180, ForwardsVelocity.vx);
+			mAcc.vy -= Mips_FixMul(180, ForwardsVelocity.vy);
+			mAcc.vz -= Mips_FixMul(180, ForwardsVelocity.vz);
 		}
 	}
 }

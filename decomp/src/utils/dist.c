@@ -3,7 +3,7 @@ typedef struct {
 	int x, y, z;
 } V;
 
-int FUN_8008b5dc(int);
+int M3dMaths_SquareRoot0__Fi(int);
 
 int Utils_Dist(V *a, V *b) {
 	V d;
@@ -11,5 +11,5 @@ int Utils_Dist(V *a, V *b) {
 	d.x = (a->x - b->x) >> 12;
 	d.y = (a->y - b->y) >> 12;
 	d.z = (a->z - b->z) >> 12;
-	return FUN_8008b5dc(d.x * d.x + d.y * d.y + d.z * d.z);
+	return M3dMaths_SquareRoot0__Fi(d.x * d.x + d.y * d.y + d.z * d.z);
 }

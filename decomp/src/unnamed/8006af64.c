@@ -1,4 +1,5 @@
-/* FUN_8006af64 (0x8006af64) */
+/* HiRes_BlankScreen__Fv (0x8006af64) */
+#include "names.h"
 /* Blanks the display: clears the screen rectangle and the bottom VRAM line, then re-puts the
    draw environment with dithering-on-display and background clear turned off. */
 #include <sys/types.h>
@@ -8,7 +9,7 @@
 extern RECT DAT_800d1e20[];
 extern DRAWENV DoubleBuffer;
 
-void FUN_8006af64(void) {
+void HiRes_BlankScreen(void) {
 	RECT r;
 
 	SetDispMask(0);

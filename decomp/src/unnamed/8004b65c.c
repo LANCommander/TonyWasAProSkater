@@ -14,7 +14,7 @@ extern int SFXLEVEL;
 
 unsigned short SFXFalloffArray[48];
 
-void FUN_80093e54(int, S *);
+void SpuNSetVoiceAttr(int, S *);
 unsigned Utils_CalculateSpatialAttenuation(void *, int, int);
 
 void SFX_ModifyPos(unsigned a, void *pos, int b) {
@@ -71,7 +71,7 @@ void SFX_ModifyPos(unsigned a, void *pos, int b) {
 					s.v = y;
 				}
 
-				FUN_80093e54(i, &s);
+				SpuNSetVoiceAttr(i, &s);
 			}
 
 			tab += 1;

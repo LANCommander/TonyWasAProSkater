@@ -1,7 +1,9 @@
 /* FUN_800827ac (0x800827ac) */
-void FUN_80082738(int a);
+#include "names.h"
+
+void M3dZone_FreePSX(int a);
 
 void FUN_800827ac(void) {
-	FUN_80082738(0);
-	FUN_80082738(1);
+	M3dZone_FreePSX(0);
+	M3dZone_FreePSX(1);
 }

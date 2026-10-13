@@ -1,4 +1,4 @@
-/* FUN_80010d84 (0x80010d84) */
+/* Crowd_Cheer__Fi (0x80010d84) */
 #include "names.h"
 
 typedef struct {
@@ -16,7 +16,7 @@ int DAT_800d10e8;
 
 int SFX_PlayX(int, short, int);
 
-void FUN_80010d84(int a) {
+void Crowd_Cheer(int a) {
 	int v;
 
 	if (a) {

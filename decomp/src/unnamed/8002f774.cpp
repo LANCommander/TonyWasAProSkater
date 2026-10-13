@@ -7,20 +7,15 @@ extern "C" {
 }
 
 #include "game/bruce.h"
+#include "game/crowd.h"
+#include "game/m3dasm.h"
+#include "game/panel.h"
 
 struct Message;
 
 extern int GGame;
 
 int Mips_CVecDotProd(CVector *, CVector *);
-
-extern "C" {
-	void FUN_80042700(CBruce *, int, int, int, int);
-	int FUN_8008b5dc(int);
-	void FUN_80010f70(int);
-	void FUN_80010eb8(int);
-	void FUN_8006e22c(CBruce *);
-}
 
 void CBruce::Trick_Bail() {
 	int i, Score, Speed, Spins;
@@ -38,9 +33,9 @@ void CBruce::Trick_Bail() {
 	mNoSpin = 0;
 	mBalanceTime = 0;
 	mBalanceFlash = 0;
-	FUN_80042700(this, 0, 0, 0, 10);
+	SetGlow(0, 0, 0, 10);
 
-	Speed = FUN_8008b5dc(Mips_CVecDotProd(&mVel, &mVel)) << 6;
+	Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 	Score = 0;
 
 	for (i = 0; i < mPanel.mTQStack; i++)
@@ -54,16 +49,16 @@ void CBruce::Trick_Bail() {
 		Score = (Score * (mPanel.mTQStack * 2 + (Spins * 2 - 2))) >> 1;
 
 	if (Score != 0)
-		FUN_80010f70(Score);
+		Crowd_Ahh(Score);
 	else
-		FUN_80010eb8(Speed >> 12);
+		Crowd_Oww(Speed >> 12);
 
 	for (i = 0; i < 80; i++) {
 		m428[i] -= m568[i];
 		m568[i] = 0;
 	}
 
-	FUN_8006e22c(this);
+	Panel_Bail(this);
 
 	m364 = 0;
 	m368 = 0;

@@ -26,7 +26,7 @@ extern E Stats[];
 
 char *MechList;
 
-int FUN_8007cd64(int);
+int CCamera_InCompetitionIntro(int);
 void Video_Record(char *);
 void Video_Playback(char *);
 void FUN_80042708(char *);
@@ -38,7 +38,7 @@ void FUN_800427cc(char *, int);
 void CPowerUp_TakeEffect(int, char *);
 void CBruce_DoShadowCheck(char *);
 void CBruce_GlowUpdate(char *);
-void FUN_8008b900(char *, char *, int, int, int, int);
+void sprintf(char *, char *, int, int, int, int);
 void Font_String(int, int, char *, int, int, int, int);
 
 #define CC     (I(0x254) || Cheat_Fire)
@@ -55,7 +55,7 @@ void FUN_80042d04(char *a) {
 	char *p2;
 
 	if (GamePaused == 0) {
-		if (FUN_8007cd64(CameraList)) {
+		if (CCamera_InCompetitionIntro(CameraList)) {
 			I(0x330) = XFrames + 0xe2e;
 			return;
 		}
@@ -184,34 +184,34 @@ void FUN_80042d04(char *a) {
 						}
 					}
 
-					FUN_8008b900(p1, p2, a2, a3, t0 ? t0 : ({
-						             int e2 = Stats[I(0x2e8)].f20;
-						             int u2 = (*(unsigned char **)(a + 0x198))[2];
-						             int r2;
+					sprintf(p1, p2, a2, a3, t0 ? t0 : ({
+						        int e2 = Stats[I(0x2e8)].f20;
+						        int u2 = (*(unsigned char **)(a + 0x198))[2];
+						        int r2;
 
-						             if (CC) {
-							             r2 = u2 + 3;
-							             n4 = e2 + r2;
-							             r2 = n4;
-						             } else
-							             r2 = e2 + u2;
+						        if (CC) {
+							        r2 = u2 + 3;
+							        n4 = e2 + r2;
+							        r2 = n4;
+						        } else
+							        r2 = e2 + u2;
 
-						             r2;
-					             }),
-					             Cheat_StatsOverride ? Cheat_StatsOverride : ({
-						             int e3 = Stats[I(0x2e8)].f24;
-						             int u3 = (*(unsigned char **)(a + 0x198))[3];
-						             int r3;
+						        r2;
+					        }),
+					        Cheat_StatsOverride ? Cheat_StatsOverride : ({
+						        int e3 = Stats[I(0x2e8)].f24;
+						        int u3 = (*(unsigned char **)(a + 0x198))[3];
+						        int r3;
 
-						             if (CC) {
-							             r3 = u3 + 3;
-							             n5 = e3 + r3;
-							             r3 = n5;
-						             } else
-							             r3 = e3 + u3;
+						        if (CC) {
+							        r3 = u3 + 3;
+							        n5 = e3 + r3;
+							        r3 = n5;
+						        } else
+							        r3 = e3 + u3;
 
-						             r3;
-					             }));
+						        r3;
+					        }));
 					Font_String(420, 200, DAT_800d25f0, 90, 90, 100, 0);
 				}
 			}

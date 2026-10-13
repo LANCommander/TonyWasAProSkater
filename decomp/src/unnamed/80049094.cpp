@@ -2,8 +2,16 @@
 /* C++ (DB.CPP). Demo twin Db_Render: waits for the other buffer's render, sets the draw area to
    this buffer's 512x240 window, links the clip prim into the OT, kicks off the draw and swaps the
    two buffer pointers. THPS1's SDoubleBuffer embeds the OT (0x84..0x8090) instead of pointing at it.
-   FUN_8008cf34 = SetDrawArea; FUN_80089ddc (the OT draw) returns a value (call_value matters). */
+   SetDrawArea = SetDrawArea; CompactOTagR (the OT draw) returns a value (call_value matters). */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
+
+#include "game/db.h"
 #include "game/m3d.h"
+#include "game/m3dasm.h"
 
 extern SDoubleBuffer DoubleBuffer[2];
 
@@ -11,9 +19,6 @@ SDoubleBuffer *pDoubleBuffer;
 SDoubleBuffer *pOtherBuffer;
 
 void Pause(int);
-extern "C" void FUN_8008cf34(DR_AREA *, RECT *);
-extern "C" int FUN_80048c74(void);
-extern "C" int FUN_80089ddc(unsigned long *, int);
 
 #ifdef PC_PORT
 #include <stdio.h>
@@ -34,13 +39,13 @@ void Db_Render() {
 	}
 
 	setRECT(&pDoubleBuffer->Window, 0, pDoubleBuffer->Top, 512, 240);
-	FUN_8008cf34(&pDoubleBuffer->Clip, &pDoubleBuffer->Window);
+	SetDrawArea(&pDoubleBuffer->Clip, &pDoubleBuffer->Window);
 
 	pDoubleBuffer->Clip.tag =
 	    (pDoubleBuffer->Clip.tag & 0xff000000) | (pDoubleBuffer->OT & 0xffffff);
 	pDoubleBuffer->OT =
 	    (pDoubleBuffer->OT & 0xff000000) | ((unsigned long)&pDoubleBuffer->Clip & 0xffffff);
-	FUN_80089ddc(&pDoubleBuffer->OT2D, FUN_80048c74());
+	CompactOTagR(&pDoubleBuffer->OT2D, Db_OTSize());
 
 	pDoubleBuffer->RenderNow = 1;
 #ifdef PC_PORT

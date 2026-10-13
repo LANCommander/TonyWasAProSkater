@@ -1,4 +1,6 @@
-/* FUN_80023168 (0x80023168) */
+/* GameFMV_SetStartTrack__Fi (0x80023168) */
+#include "names.h"
+
 typedef struct {
 	int w0;
 	unsigned short h4, h6, h8, h10;
@@ -21,7 +23,7 @@ unsigned char GameFMV_Is24Bit;
 int GameFMV_MusicScale;
 int GameFMV_StartSector;
 
-void FUN_80023168(int a) {
+void GameFMV_SetStartTrack(int a) {
 	if (GameFMV_Active)
 		return;
 

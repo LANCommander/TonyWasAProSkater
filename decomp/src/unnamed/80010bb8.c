@@ -1,4 +1,4 @@
-/* FUN_80010bb8 (0x80010bb8) */
+/* Crowd_Update__Fv (0x80010bb8) */
 #include "names.h"
 
 typedef struct {
@@ -23,7 +23,7 @@ void FUN_80011060(int);
 void SFX_ModifyVol(int, int, int);
 int Redbook_Rnd(int);
 
-void FUN_80010bb8(void) {
+void Crowd_Update(void) {
 	int i;
 
 	if (Levels[GLevel].f4c) {

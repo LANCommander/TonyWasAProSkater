@@ -9,10 +9,10 @@ extern int GVInfo1[];
 unsigned LastHoldingScore;
 
 extern void Mess_SetTextJustify(int);
-extern void FUN_8001e0a4(void *, int);
+extern void FallingTextEffect_bind(void *, int);
 extern void GraffitiColor(void *);
 extern void CPanelData_TrickMessage(void *);
-extern void FUN_8008b900(char *, char *, int);
+extern void sprintf(char *, char *, int);
 extern int Mess_DrawPanelText(int, int, char *, int, int, int);
 extern void Mess_SetRGB(int, int, int, int);
 extern void Mess_SetScale(int);
@@ -55,7 +55,7 @@ void FUN_8006d0c8(char *o, int x0, int y0) {
 			s2 = *(unsigned *)(o + 0xa64);
 
 		if (s2 || *(int *)(o + 0xa70) == 5) {
-			FUN_8008b900(b1, "%ld", *(int *)(o + 0xa70) == 5 ? LastHoldingScore : s2);
+			sprintf(b1, "%ld", *(int *)(o + 0xa70) == 5 ? LastHoldingScore : s2);
 			Mess_SetRGB(128, 128, 128, 0);
 			GraffitiColor(o);
 
@@ -69,9 +69,9 @@ void FUN_8006d0c8(char *o, int x0, int y0) {
 			Mess_SetScale(256);
 
 			if (s5) {
-				FUN_8001e0a4(o + 0xa88, *(int *)(o + 0xa70) == 5);
+				FallingTextEffect_bind(o + 0xa88, *(int *)(o + 0xa70) == 5);
 				Mess_DrawPanelText(x, y, b1, 0, 0, 256);
-				FUN_8001e0a4(o + 0xa88, 0);
+				FallingTextEffect_bind(o + 0xa88, 0);
 			}
 
 			if (*(int *)(o + 0xe18) > 0)
@@ -79,9 +79,9 @@ void FUN_8006d0c8(char *o, int x0, int y0) {
 
 			if (!s4) {
 				if (s3 & 1)
-					FUN_8008b900(b2, " x%d.5", s3 >> 1);
+					sprintf(b2, " x%d.5", s3 >> 1);
 				else
-					FUN_8008b900(b2, " x%d", s3 >> 1);
+					sprintf(b2, " x%d", s3 >> 1);
 
 				Mess_SetRGB(128, 128, 128, 0);
 				GraffitiColor(o);

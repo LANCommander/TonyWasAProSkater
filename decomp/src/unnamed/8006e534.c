@@ -1,4 +1,6 @@
-/* FUN_8006e534 (0x8006e534) */
+/* Panel_SwitchText__FP6CBruce (0x8006e534) */
+#include "names.h"
+
 struct E {
 	char pad[64];
 	char *name;
@@ -7,7 +9,7 @@ struct E {
 
 extern struct E Stats[];
 
-char *FUN_8006e534(char *p) {
+char *Panel_SwitchText(char *p) {
 	int r = 0;
 	unsigned w = *(unsigned *)(p + 308);
 	char c = *Stats[*(int *)(p + 744)].name;

@@ -1,4 +1,4 @@
-/* FUN_8005cba0 (0x8005cba0) */
+/* LoadingScreen_Main__Fv (0x8005cba0) */
 #include "names.h"
 #include <sys/types.h>
 #include <libgte.h>
@@ -18,16 +18,14 @@ unsigned DAT_800d1cf8;
 
 void Pad_ClearTriggers(char *);
 DRAWENV *FUN_80092e70(DRAWENV *, int, int, int, int);
-DISPENV *FUN_800914fc(DISPENV *, int, int, int, int);
-int FUN_8008c5ec(RECT *, int, int, int);
-void FUN_8008eebc(int);
+DISPENV *SetDefDispEnv(DISPENV *, int, int, int, int);
+void VSync(int);
 void FUN_8008c94c(DRAWENV *);
-void FUN_8008ca0c(DISPENV *);
 void FUN_8005cd14();
 void FUN_8005d00c();
 void FUN_8005d28c();
 
-void FUN_8005cba0(void) {
+void LoadingScreen_Main(void) {
 	DISPENV de;
 	DRAWENV dr;
 	RECT r;
@@ -36,15 +34,15 @@ void FUN_8005cba0(void) {
 	Pad_ClearTriggers(Pad);
 	Pad_ClearTriggers(Pad + 364);
 	FUN_80092e70(&dr, 0, 0, 512, 240);
-	FUN_800914fc(&de, 0, 0, 512, 240);
+	SetDefDispEnv(&de, 0, 0, 512, 240);
 
 	r.x = 0;
 	r.y = 0;
 	r.w = 512;
 	r.h = 240;
-	FUN_8008c5ec(&r, 0, 0, 0);
-	FUN_8008eebc(0);
-	FUN_8008c5ec(&r, 0, 0, 0);
+	ClearImage(&r, 0, 0, 0);
+	VSync(0);
+	ClearImage(&r, 0, 0, 0);
 
 	dr.dfe = 0;
 	dr.isbg = 0;
@@ -52,7 +50,7 @@ void FUN_8005cba0(void) {
 	dr.g0 = 0;
 	dr.b0 = 0;
 	FUN_8008c94c(&dr);
-	FUN_8008ca0c(&de);
+	PutDispEnv(&de);
 
 	if (DAT_800d1cf8 < 6) {
 		switch (DAT_800d1cf8) {

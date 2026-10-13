@@ -7,13 +7,11 @@ extern "C" {
 }
 
 #include "game/bruce.h"
+#include "game/panel.h"
 
 struct Message;
 
 extern int GGame;
-
-extern "C" int FUN_8002f290(CBruce *, int, int);
-extern "C" void FUN_8006e19c(CBruce *, char *, int, int);
 
 void CBruce::Trick_Trick(int Trick, char *pName, int Score, int) {
 	if (m760) {
@@ -26,7 +24,7 @@ void CBruce::Trick_Trick(int Trick, char *pName, int Score, int) {
 		if (Score < 0)
 			Score = -Score;
 		else
-			Score = FUN_8002f290(this, Trick, Score);
+			Score = Trick_RepeatScore(Trick, Score);
 
 		if (m34C == 4) {
 			m428[Trick]--;
@@ -34,6 +32,6 @@ void CBruce::Trick_Trick(int Trick, char *pName, int Score, int) {
 			m568[Trick]--;
 		}
 
-		FUN_8006e19c(this, pName, Score, 0);
+		Panel_Trick(this, pName, Score, 0);
 	}
 }

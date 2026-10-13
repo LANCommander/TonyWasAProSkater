@@ -171,4 +171,9 @@ struct SVector {
 	short vz; /* 0x4 */
 };
 
+
+/* functions */
+int Mips_FixMul(int, int); /* 0x80072090 */
+int Mips_CVecDotProd(CVector *, CVector *); /* 0x800720ec */
+
 #endif

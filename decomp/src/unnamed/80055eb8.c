@@ -1,4 +1,6 @@
-/* FUN_80055eb8 (0x80055eb8) */
+/* Front_InitSkaterSpool2P__Fv (0x80055eb8) */
+#include "names.h"
+
 /* Credits state reset. The start position is the midpoint of two career values on a circular
    scale of 11, taking the shorter way round. */
 typedef struct {
@@ -15,7 +17,7 @@ int DAT_800d230c;
 int DAT_800d2310;
 int DAT_800d2314;
 
-void FUN_80055eb8(void) {
+void Front_InitSkaterSpool2P(void) {
 	int i;
 	unsigned char hi, lo;
 

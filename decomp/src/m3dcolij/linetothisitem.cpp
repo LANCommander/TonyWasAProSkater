@@ -11,6 +11,8 @@ extern "C" {
 }
 
 #include "game/colij.h"
+#include "game/m3dasm.h"
+#include "game/trig.h"
 
 struct SProjectedVertex;
 
@@ -25,21 +27,10 @@ int TriggerCollisionCheck;
 
 int Spool_GetEnvIndex(int);
 
-extern "C" {
-	void FUN_800972bc(MATRIX *);
-	void FUN_8008b3d4(short *, MATRIX *);
-	void FUN_8008b4e0(Item *, MATRIX *);
-	void FUN_8008b314(MATRIX *, MATRIX *);
-	void FUN_8008b238(MATRIX *);
-	int FUN_8008aa50(SModel *, SProjectedVertex *, int, VECTOR *);
-	void FUN_8008ab28(SModel *, SProjectedVertex *, SLineInfo *, Item *);
-	void FUN_80044a20(int, int);
-}
-
 static inline void FireNode(int node, int env) {
 	OtherEnvIndex = env ^ 1;
 	TriggerCollisionCheck = 0;
-	FUN_80044a20(node, 1);
+	Trig_TriggerCommandPoint(node, 1);
 }
 
 void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
@@ -75,31 +66,32 @@ void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
 			gte_stlvnl(&Tfm.t[0]);
 		}
 
-		FUN_800972bc(&Tfm);
+		SetTransMatrix(&Tfm);
 
 		PosnRelStart.vx = 0;
 		PosnRelStart.vy = 0;
 		PosnRelStart.vz = 0;
 
 		if (*(int *)&pItem->Angles || pItem->Angles.vz) {
-			FUN_8008b3d4((short *)&pItem->Angles, &Tfm);
+			M3dMaths_RotMatrixYXZ((SVECTOR *)&pItem->Angles, &Tfm);
 
 			if (pItem->Flags & 0x200)
-				FUN_8008b4e0(pItem, &Tfm);
+				M3dMaths_ScaleMatrix(pItem, &Tfm);
 
-			FUN_8008b314(&Tfm, &Tfm);
+			M3dMaths_MulLcmMatrix(&Tfm, &Tfm);
 			gte_SetColorMatrix(&Tfm);
 		} else {
-			FUN_8008b238(&Tfm);
-			FUN_8008b4e0(pItem, &Tfm);
-			FUN_8008b314(&Tfm, &Tfm);
+			M3dMaths_SetIdentityRotation(&Tfm);
+			M3dMaths_ScaleMatrix(pItem, &Tfm);
+			M3dMaths_MulLcmMatrix(&Tfm, &Tfm);
 			gte_SetColorMatrix(&Tfm);
 		}
 	}
 
-	if (!(FUN_8008aa50(pModel, pVertices, pInfo->Length, &PosnRelStart) & 0x60f)) {
+	if (!(M3dAsm_LineColijProcessVertices(pModel, pVertices, pInfo->Length, &PosnRelStart) &
+	      0x60f)) {
 		CollidedTriggerModel = -1;
-		FUN_8008ab28(pModel, pVertices, pInfo, pItem);
+		M3dAsm_LineColijProcessFaces(pModel, pVertices, pInfo, pItem);
 
 		if (CollidedTriggerModel != -1) {
 			int i = Spool_GetEnvIndex(pItem->Region);

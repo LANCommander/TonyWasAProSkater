@@ -1,6 +1,8 @@
-/* FUN_80023260 (0x80023260) */
+/* GameFMV_StartFrameBufferCopy__Fv (0x80023260) */
+#include "names.h"
+
 int GameFMV_FrameBufferCopyActive;
 
-void FUN_80023260(void) {
+void GameFMV_StartFrameBufferCopy(void) {
 	GameFMV_FrameBufferCopyActive = 1;
 }

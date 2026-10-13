@@ -1,4 +1,4 @@
-/* FUN_8004d6a0 (0x8004d6a0) */
+/* Mem_Shrink__FPvUi (0x8004d6a0) */
 #include "names.h"
 
 typedef struct B {
@@ -16,7 +16,7 @@ unsigned Used_4;
 
 void AddToFreeList(B *b, int i);
 
-void FUN_8004d6a0(char *p, unsigned n) {
+void Mem_Shrink(char *p, unsigned n) {
 	B *b = (B *)(p - 8);
 	unsigned l, n8;
 	int f = b->flags;

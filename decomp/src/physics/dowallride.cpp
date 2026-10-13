@@ -16,6 +16,11 @@ extern "C" {
 
 #include "game/colij.h"
 #include "game/bruce.h"
+#include "game/m3d.h"
+#include "game/sfx.h"
+#include "game/vector.h"
+#include "game/m3dasm.h"
+#include "game/mem.h"
 
 #define SetVector(v, x, y, z)                                                                      \
 	{                                                                                              \
@@ -42,16 +47,6 @@ void M3dUtils_NormaliseVector(CVector *);
 void CVectorRotateToPlane(CVector *, SVECTOR *, CVector *);
 void M3dColij_InitLineInfo(SLineInfo *);
 int GetFaceFlags(SLineInfo *);
-
-extern "C" {
-	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
-	int FUN_8008b5dc(int);
-	int Mips_FixMul__Fii(int, int);
-	int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
-	SMemHandle FUN_8004d7ac(void *);
-	void FUN_8002f1a0(CBruce *);
-	void SFX_Grunt__FP6CBruce(CBruce *);
-}
 
 void CBruce::DoWallRidePhysics() {
 	CVector u0, u1, u2; /* unused: retail's frame keeps their slots */
@@ -80,7 +75,7 @@ void CBruce::DoWallRidePhysics() {
 	mPos += ((mVel * TimeScale) >> 8) + ((mAcc * TimeScaleSquared) >> 8) / 2;
 	vMovement = mPos - mOldPos;
 	/* result unused; called as void so v0 isn't reserved (retail's register choice) */
-	((void (*)(int))FUN_8008b5dc)(Mips_CVecDotProd__FP7CVectorT0(&vMovement, &vMovement));
+	((void (*)(int))M3dMaths_SquareRoot0)(Mips_CVecDotProd(&vMovement, &vMovement));
 	TurnAngle = 0;
 
 	if (!m720 && !mTapTurn) {
@@ -89,14 +84,14 @@ void CBruce::DoWallRidePhysics() {
 		TurnAngle = mFallLineTurn;
 	}
 
-	Mips_FixMul__Fii(TurnAngle, 3072);
+	Mips_FixMul(TurnAngle, 3072);
 	RotateHeadingAndVelocity((TurnAngle * TimeScale) >> 8, !OnInvisible, 0);
 
 	SetVector(&line_info.StartCoords, mOldPos.vx, mOldPos.vy, mOldPos.vz)
 	    SetVector(&line_info.EndCoords, mPos.vx, mPos.vy, mPos.vz) vMovement = mPos - mOldPos;
 
 	if (vMovement != ZeroVector) {
-		Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&vMovement, &vMovement)) << 6;
+		Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&vMovement, &vMovement)) << 6;
 
 		if (mInAir ? Speed < 0x64000 : Speed < 0x1e000) {
 			if (Speed < 2048)
@@ -111,7 +106,7 @@ void CBruce::DoWallRidePhysics() {
 		}
 
 		M3dColij_InitLineInfo(&line_info);
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+		M3dZone_LineToItemNotSCached(&line_info, 1);
 		GetFaceFlags(&line_info);
 
 		if (line_info.pItem) {
@@ -122,7 +117,7 @@ void CBruce::DoWallRidePhysics() {
 
 				if (!OnInvisible) {
 					mpWallItem = line_info.pItem;
-					mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Region].pPSX);
+					mWallHandle = Mem_GetHandle(PSXRegion[line_info.pItem->Region].pPSX);
 				}
 
 				if (*(int *)&line_info.Normal == *(int *)&mNormal &&
@@ -158,7 +153,7 @@ void CBruce::DoWallRidePhysics() {
 		}
 	}
 
-	if (mMaxSpeed < FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6)
+	if (mMaxSpeed < M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6)
 		m304 = 1;
 	else
 		m304 = 0;
@@ -172,7 +167,7 @@ void CBruce::DoWallRidePhysics() {
 	line_info.EndCoords.vy = line_info.StartCoords.vy - mUp.vy * 128;
 	line_info.EndCoords.vz = line_info.StartCoords.vz - mUp.vz * 128;
 	M3dColij_InitLineInfo(&line_info);
-	M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+	M3dZone_LineToItemNotSCached(&line_info, 1);
 	GetFaceFlags(&line_info);
 
 	if (line_info.pItem) {
@@ -187,7 +182,7 @@ void CBruce::DoWallRidePhysics() {
 
 			if (!OnInvisible) {
 				mpWallItem = line_info.pItem;
-				mWallHandle = FUN_8004d7ac(PSXRegion[line_info.pItem->Region].pPSX);
+				mWallHandle = Mem_GetHandle(PSXRegion[line_info.pItem->Region].pPSX);
 			}
 
 			if (*(int *)&line_info.Normal == *(int *)&mNormal &&
@@ -225,7 +220,7 @@ void CBruce::DoWallRidePhysics() {
 					m740 = 1;
 					mAcc += Gravity;
 					ReflectHeadingVelocityInPlane(line_info.Normal, 200);
-					SFX_Grunt__FP6CBruce(this);
+					SFX_Grunt(this);
 				}
 			}
 		}
@@ -239,7 +234,7 @@ void CBruce::DoWallRidePhysics() {
 		CVectorRotateToPlane(&mVel, &line_info.Normal, &mVel);
 	} else {
 		StateTransition(PHYSICS_IN_AIR, 6040);
-		FUN_8002f1a0(this);
+		Trick_TakeOff();
 
 		mTallyAngles = 0;
 		mNum180Spins = 0;

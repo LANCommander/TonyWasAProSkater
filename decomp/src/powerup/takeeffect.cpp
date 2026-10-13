@@ -2,9 +2,10 @@
 /* C++ (POWERUP.CPP). Fuzzy demo twin (0.81 by opcode); locals from its MAIN.SYM. A skater picks up a
    power-up: letters and the tape hand out their panel message, the bonus types score a trick and
    pitch the pickup sound, then the item fires its trigger links and, if it did something, dies.
-   THPS1 asks the skater whether a letter/tape counts (FUN_80042744) instead of always taking it. */
+   THPS1 asks the skater whether a letter/tape counts (CBruce::CanCollect) instead of always taking it. */
 #include "game/powerup.h"
 #include "game/bruce.h"
+#include "game/panel.h"
 
 struct SMessageProg;
 
@@ -20,12 +21,6 @@ void Mess_DeleteAll();
 void Mess_Message(const char *, SMessageProg *, bool, short, short);
 ushort *Trig_GetLinksPointer(int);
 void Trig_SendPulse(ushort *);
-
-extern "C" {
-	int FUN_80042744(CBruce *, short);
-	void Panel_Tape__Fi(int);
-	void FUN_8002f1a0(CBruce *);
-}
 
 void CPowerUp::TakeEffect(CBruce *pMech) {
 	int HadEffect;
@@ -45,7 +40,7 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 		case 14:
 		case 15:
 		case 16:
-			HadEffect = FUN_80042744(pMech, mHealth);
+			HadEffect = pMech->CanCollect(mHealth);
 
 			if (!HadEffect)
 				break;
@@ -92,7 +87,7 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 
 						break;
 					case 16:
-						Panel_Tape__Fi(3);
+						Panel_Tape(3);
 
 						pMess = 0;
 						break;
@@ -112,7 +107,7 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 			HadEffect = 1;
 
 			if (!pMech->mPhysicsState)
-				FUN_8002f1a0(pMech);
+				pMech->Trick_TakeOff();
 
 			{
 				int Pong = SFX_PlayX(18, 8192, 0);

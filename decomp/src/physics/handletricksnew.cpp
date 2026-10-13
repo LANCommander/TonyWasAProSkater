@@ -18,11 +18,6 @@ extern SStats Stats[];
 extern STrick Group[];
 extern int XFrames;
 
-extern "C" {
-	void FUN_8003159c(CBruce *);
-	void FUN_80031500(CBruce *);
-}
-
 void CBruce::HandleTricksNew() {
 	if (!mDoingATrick && !m740)
 		m424 = 0;
@@ -270,13 +265,13 @@ void CBruce::HandleTricksNew() {
 	}
 
 	if (m360) {
-		FUN_8003159c(this);
+		ScoreCurrentTrick();
 
 		m364 = 1;
 	}
 
 	if (!m1EC)
-		FUN_80031500(this);
+		HandleHoldTrick();
 
 	if (!mAnimFinished)
 		return;

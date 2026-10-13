@@ -8,15 +8,13 @@ extern "C" {
 
 extern int DAT_800c110c[];
 
-extern "C" int FUN_8009722c(int);
-
 void MToQ(const MATRIX &m, CQuat &q) {
 	int tr, s, i, j, k;
 
 	tr = m.m[0][0] + m.m[1][1] + m.m[2][2];
 
 	if (tr > 0) {
-		s = FUN_8009722c((tr + 4096) << 12);
+		s = ::SquareRoot0((tr + 4096) << 12);
 		q.w = s >> 1;
 
 		if (s)
@@ -33,7 +31,7 @@ void MToQ(const MATRIX &m, CQuat &q) {
 
 		j = DAT_800c110c[i];
 		k = DAT_800c110c[j];
-		s = FUN_8009722c(((m.m[i][i] - (m.m[j][j] + m.m[k][k])) + 4096) << 12);
+		s = ::SquareRoot0(((m.m[i][i] - (m.m[j][j] + m.m[k][k])) + 4096) << 12);
 
 		switch (i) {
 			case 0:

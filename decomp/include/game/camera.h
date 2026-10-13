@@ -301,4 +301,9 @@ class CCamera : public CBody {
 
 void SendShake(const CVector &pos, CBody *list, EShakeType type); /* 0x800789a8 */
 
+/* functions */
+class CBruce;
+
+void CamPt_SetClosestCamera(CBruce *pSkater); /* 0x8004e268 */
+
 #endif

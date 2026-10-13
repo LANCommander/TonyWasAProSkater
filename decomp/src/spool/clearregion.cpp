@@ -3,6 +3,7 @@
    its texture usage counts and, unless it stays in memory, clears the region record, detaches its
    environment and frees the PSX file. Optionally purges unused textures. */
 #include "game/m3d.h"
+#include "game/mem.h"
 
 extern SPSXRegion PSXRegion[];
 
@@ -12,11 +13,6 @@ void DecrementTextureUsage(int);
 int Spool_GetEnvIndex(int);
 void DetachOldEnviro(uchar);
 void Spool_RemoveUnusedTextures(void);
-
-extern "C" {
-	void FUN_80082738(int);
-	void Mem_Delete__FPv(void *);
-}
 
 void ClearRegion(int Region, int cleanuptextures, int KeepInMemory) {
 	if (Region == -1)
@@ -43,14 +39,14 @@ void ClearRegion(int Region, int cleanuptextures, int KeepInMemory) {
 			int EnvIndex = Spool_GetEnvIndex(Region);
 
 			if (EnvIndex != -1) {
-				FUN_80082738(EnvIndex);
+				M3dZone_FreePSX(EnvIndex);
 				DetachOldEnviro(EnvIndex);
 
 				EnvRegions[EnvIndex] = -1;
 			}
 		}
 
-		Mem_Delete__FPv(PSXRegion[Region].pPSX);
+		Mem_Delete(PSXRegion[Region].pPSX);
 
 		PSXRegion[Region].pPSX = 0;
 	}

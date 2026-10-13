@@ -11,6 +11,8 @@ extern "C" {
 
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/m3dasm.h"
+#include "game/vector.h"
 
 extern SStats Stats[];
 
@@ -25,11 +27,6 @@ extern int GLevel;
 		 : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +              \
 		       mpStatBonus[n])
 #define MaxSpeed (((GetStat(1) + 50) << 12) * 3 * 15 / 28)
-
-extern "C" {
-	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
-	int FUN_8008b5dc(int);
-}
 
 int SFX_PlayX(unsigned int, short, int);
 int SFX_GetVoicePitch(unsigned int);
@@ -174,7 +171,7 @@ void CBruce::HandleContinuousSounds() {
 			unsigned short NewPitch;
 			unsigned short NewVol;
 
-			Spd = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+			Spd = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 			if (mPhysicsState == 8)
 				Spd = 300000;
@@ -205,7 +202,7 @@ void CBruce::HandleContinuousSounds() {
 	}
 
 	if (mRollSnd) {
-		int Spd = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+		int Spd = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 		SFX_GetVoicePitch(mRollSnd);
 		int NewPitch = (Spd * 2048) / MaxSpeed;

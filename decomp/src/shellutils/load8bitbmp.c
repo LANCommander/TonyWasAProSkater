@@ -5,7 +5,7 @@ int FileIO_Open(char *);
 char *Mem_NewX(int, int, int);
 void FileIO_Load(char *);
 void FileIO_Sync(void);
-void FUN_8008c190(char *, char *);
+void printf(char *, char *);
 void Load8BitBMP2(char *, char **, int *, int *, unsigned short *);
 
 int Load8BitBMP(char *name, char **a, int *b, int *c, unsigned short *d) {
@@ -13,7 +13,7 @@ int Load8BitBMP(char *name, char **a, int *b, int *c, unsigned short *d) {
 	char *p;
 
 	if (r <= 0) {
-		FUN_8008c190("\nFile %s not found", name);
+		printf("\nFile %s not found", name);
 		return 0;
 	}
 
@@ -26,6 +26,6 @@ int Load8BitBMP(char *name, char **a, int *b, int *c, unsigned short *d) {
 		return 1;
 	}
 
-	FUN_8008c190("\nNot enough memory to load %s", name);
+	printf("\nNot enough memory to load %s", name);
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* FUN_8002357c (0x8002357c) */
+/* GameFMV_SyncFMV__Fi (0x8002357c) */
 #include "names.h"
 
 typedef struct {
@@ -16,17 +16,17 @@ extern V DAT_800a6388[];
 extern int decodeSliceBuffer[];
 
 extern int Utils_CrapDist(void *, void *);
-extern void FUN_80024010(void *);
+extern void GameFMV_SetCDMixForPos(void *);
 extern void DecDCTvlcBuild3(void);
-extern void FUN_800902c0(int, int);
-extern void FUN_8009033c(int, int);
-extern void FUN_8008f19c(int, int, int);
-extern void FUN_8008f4d4(int, int, int);
-extern void FUN_8008f0ec(int);
+extern void DecDCTin(int, int);
+extern void DecDCTout(int, int);
+extern void StSetMask(int, int, int);
+extern void CdControlB(int, int, int);
+extern void CdRead2(int);
 extern void strKickCD(void);
 extern int strNextVlc(int);
 
-void FUN_8002357c(int a) {
+void GameFMV_SyncFMV(int a) {
 	int i, best, bi, d;
 	V *p;
 
@@ -46,7 +46,7 @@ void FUN_8002357c(int a) {
 				}
 			}
 
-			FUN_80024010((char *)DAT_800a6388 + bi * 12);
+			GameFMV_SetCDMixForPos((char *)DAT_800a6388 + bi * 12);
 
 			DAT_800d1650 = 4;
 		}
@@ -64,11 +64,11 @@ void FUN_8002357c(int a) {
 			}
 
 			if (sendVLC) {
-				FUN_800902c0(vlcBuffer[currentVlcBuffer], 2);
+				DecDCTin(vlcBuffer[currentVlcBuffer], 2);
 
 				w = decodeSlice_4 * decodeSlice_6;
 				currentVlcBuffer = 1 - currentVlcBuffer;
-				FUN_8009033c(decodeSliceBuffer[currentDecodeBuffer], w / 2);
+				DecDCTout(decodeSliceBuffer[currentDecodeBuffer], w / 2);
 			}
 
 			sendVLC = strNextVlc(a);
@@ -77,13 +77,13 @@ void FUN_8002357c(int a) {
 		if (GamePaused || GameFrozen || MusicStopped) {
 			if (alreadyHandledPause == 0) {
 				alreadyHandledPause = 1;
-				FUN_8008f19c(1, 0, -1);
-				FUN_8008f4d4(9, 0, 0);
+				StSetMask(1, 0, -1);
+				CdControlB(9, 0, 0);
 			}
 		} else if (alreadyHandledPause) {
 			alreadyHandledPause = 0;
-			FUN_8008f19c(0, 0, -1);
-			FUN_8008f0ec(480);
+			StSetMask(0, 0, -1);
+			CdRead2(480);
 		}
 	}
 }

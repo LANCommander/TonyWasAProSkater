@@ -18,6 +18,10 @@ typedef unsigned int uint;
 #include "game/tapes.h"
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/mess.h"
+#include "game/panel.h"
+#include "game/psyq.h"
+#include "game/shell.h"
 
 struct STrig {
 	short s, c;
@@ -50,7 +54,7 @@ extern int StatsRight[];
 extern SCareer GCareer;
 extern SLevel Levels[];
 extern SStats Stats[];
-extern char DAT_800a5b28[];
+extern FallingTextEffect DAT_800a5b28[]; /* GHorseFallingText */
 
 int Status;
 int GamePaused;
@@ -94,19 +98,6 @@ void Competition_LadderDisplay();
 void Competition_WinLoseDisplay();
 void Competition_EndGameDisplay();
 
-extern "C" {
-	void Panel_DrawFlatShadedPoly__FiiiiUcUcUci(int, int, int, int, uchar, uchar, uchar, int);
-	void FUN_800785c4(void);
-	void FUN_80017898(void);
-	void Mess_SetTextJustify__FUc(int);
-	int Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	int FUN_8008b900(char *, const char *, ...);
-	void FUN_8001e07c(char *);
-	void FUN_8001e0a4(char *, int);
-	void FUN_8001e0f8(char *, short);
-	ushort FUN_8001e108(char *);
-}
-
 void Front_Display() {
 	CBruce *pMan;
 	static char Score1[20];
@@ -118,12 +109,12 @@ void Front_Display() {
 	int Line;
 
 	if (Cheat_GameInfo)
-		Panel_DrawFlatShadedPoly__FiiiiUcUcUci(19, 190, 194, 42, 0, 0, 0, 0);
+		Panel_DrawFlatShadedPoly(19, 190, 194, 42, 0, 0, 0, 0);
 
 	if (GamePaused)
-		FUN_800785c4();
+		Shell_PauseScreen();
 
-	Mess_SetTextJustify__FUc(0);
+	Mess_SetTextJustify(0);
 	Mess_SetScale(256);
 
 	switch (Status) {
@@ -131,7 +122,7 @@ void Front_Display() {
 			Front_MemCardDisplay();
 			break;
 		case 1:
-			FUN_80017898();
+			PrintPaused();
 
 			if (Cheat_GameInfo)
 				Front_PrintSelect();
@@ -157,21 +148,20 @@ void Front_Display() {
 
 			break;
 		case 3:
-			FUN_80017898();
+			PrintPaused();
 			Front_PrintGoBackSelect();
 			Mess_SetRGB(150, 100, 25, 0);
-			Mess_DrawText__FiiPCciUiib(256, 95, GameText.pReallyQuit, 0, 0, 256, 0);
+			Mess_DrawText(256, 95, GameText.pReallyQuit, 0, 0, 256, 0);
 
 			pYesNoMenu->mY = 135;
 			pYesNoMenu->Display();
 			break;
 		case 4:
-			FUN_80017898();
+			PrintPaused();
 			Mess_SetRGB(180, 10, 10, 0);
 
 			if ((TTime / 10) & 1)
-				Mess_DrawText__FiiPCciUiib(256, 184, GameText.pPleaseReinsertController, 0, 0, 256,
-				                           0);
+				Mess_DrawText(256, 184, GameText.pPleaseReinsertController, 0, 0, 256, 0);
 
 			break;
 		case 11: {
@@ -239,10 +229,10 @@ void Front_Display() {
 				static char GotATape[25];
 
 				if (NumTapes == 1) {
-					Mess_DrawText__FiiPCciUiib(256, 40, GameText.pYouGotATape, 0, 0, 256, 0);
+					Mess_DrawText(256, 40, GameText.pYouGotATape, 0, 0, 256, 0);
 				} else {
-					FUN_8008b900(GotATape, GameText.pYouGotNTapes, NumTapes);
-					Mess_DrawText__FiiPCciUiib(256, 40, GotATape, 0, 0, 256, 0);
+					sprintf(GotATape, GameText.pYouGotNTapes, NumTapes);
+					Mess_DrawText(256, 40, GotATape, 0, 0, 256, 0);
 				}
 			}
 
@@ -253,7 +243,7 @@ void Front_Display() {
 		case 7:
 		case 12:
 			Mess_SetRGB(150, 100, 25, 0);
-			Mess_DrawText__FiiPCciUiib(256, 80, GameText.pSaveCareerQM, 0, 0, 256, 0);
+			Mess_DrawText(256, 80, GameText.pSaveCareerQM, 0, 0, 256, 0);
 
 			pYesNoMenu->mY = 130;
 			pYesNoMenu->Display();
@@ -261,7 +251,7 @@ void Front_Display() {
 			break;
 		case 17:
 			Mess_SetRGB(150, 100, 25, 0);
-			Mess_DrawText__FiiPCciUiib(256, 80, GameText.pAreYouSure, 0, 0, 256, 0);
+			Mess_DrawText(256, 80, GameText.pAreYouSure, 0, 0, 256, 0);
 
 			pYesNoMenu->mY = 130;
 			pYesNoMenu->Display();
@@ -305,9 +295,9 @@ void Front_Display() {
 			int termFound = 0;
 			int i;
 
-			Mess_SetTextJustify__FUc(0);
+			Mess_SetTextJustify(0);
 			Mess_SetRGB(122, 122, 122, 0);
-			Mess_DrawText__FiiPCciUiib(256, 80, GameText.pHorsePlayTo, 0, 0, 256, 0);
+			Mess_DrawText(256, 80, GameText.pHorsePlayTo, 0, 0, 256, 0);
 
 			horseBuf[1] = 0;
 
@@ -331,11 +321,11 @@ void Front_Display() {
 				}
 
 				if (!termFound)
-					Mess_DrawText__FiiPCciUiib(i * 20 + 156, 120, horseBuf, 0, 0, 256, 0);
+					Mess_DrawText(i * 20 + 156, 120, horseBuf, 0, 0, 256, 0);
 
 				horseBuf[0] = '_';
 				Mess_SetScale(256);
-				Mess_DrawText__FiiPCciUiib(i * 20 + 156, 130, horseBuf, 0, 0, 256, 0);
+				Mess_DrawText(i * 20 + 156, 130, horseBuf, 0, 0, 256, 0);
 			}
 
 			Front_PrintCentredPrompt(GameText.pToAccept);
@@ -352,17 +342,17 @@ void Front_Display() {
 
 			if (GHorseMode == 0) {
 				if (GHorsePlayer == 0)
-					Mess_DrawText__FiiPCciUiib(256, 120, "PLAYER 1 SET SCORE", 0, 0, 256, 0);
+					Mess_DrawText(256, 120, "PLAYER 1 SET SCORE", 0, 0, 256, 0);
 				else
-					Mess_DrawText__FiiPCciUiib(256, 120, "PLAYER 2 SET SCORE", 0, 0, 256, 0);
+					Mess_DrawText(256, 120, "PLAYER 2 SET SCORE", 0, 0, 256, 0);
 			} else {
 				if (GHorsePlayer == 0)
-					Mess_DrawText__FiiPCciUiib(256, 120, "PLAYER 1 MATCH", 0, 0, 256, 0);
+					Mess_DrawText(256, 120, "PLAYER 1 MATCH", 0, 0, 256, 0);
 				else
-					Mess_DrawText__FiiPCciUiib(256, 120, "PLAYER 2 MATCH", 0, 0, 256, 0);
+					Mess_DrawText(256, 120, "PLAYER 2 MATCH", 0, 0, 256, 0);
 
-				FUN_8008b900(Score, "%d", GHorseScore);
-				Mess_DrawText__FiiPCciUiib(256, 140, Score, 0, 0, 256, 0);
+				sprintf(Score, "%d", GHorseScore);
+				Mess_DrawText(256, 140, Score, 0, 0, 256, 0);
 			}
 
 			Horse_DisplayWords(GHorseLetters);
@@ -373,9 +363,9 @@ void Front_Display() {
 			int i;
 
 			Mess_SetScale(256);
-			FUN_8008b900(highScoreBuf, GameText.pHighScores, Levels[GLevel].pLevelName);
+			sprintf(highScoreBuf, GameText.pHighScores, Levels[GLevel].pLevelName);
 			Mess_SetRGB(182, 132, 36, 0);
-			Mess_DrawText__FiiPCciUiib(256, 40, highScoreBuf, 0, 0, 256, 0);
+			Mess_DrawText(256, 40, highScoreBuf, 0, 0, 256, 0);
 			Mess_SetRGB(122, 122, 122, 0);
 
 			for (i = 0; i < 8; i++) {
@@ -399,53 +389,49 @@ void Front_Display() {
 
 				highScoreBuf[1] = 0;
 				highScoreBuf[0] = GCareer.HighScore[GLevel][i].Name[0];
-				Mess_SetTextJustify__FUc(0);
+				Mess_SetTextJustify(0);
 
 				if (i == GHighScoreLineIndex && GHighScoreInitialCursorPos == 0)
 					Mess_SetScale(SizeUp * 6 + 256);
 				else
 					Mess_SetScale(256);
 
-				Mess_DrawText__FiiPCciUiib(StatsLeft[i] - 80, (i + 1) * 19 + 40, highScoreBuf, 0, 0,
-				                           256, 0);
+				Mess_DrawText(StatsLeft[i] - 80, (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
 				Mess_SetScale(256);
 
 				highScoreBuf[0] = GCareer.HighScore[GLevel][i].Name[1];
-				Mess_SetTextJustify__FUc(0);
+				Mess_SetTextJustify(0);
 
 				if (i == GHighScoreLineIndex && GHighScoreInitialCursorPos == 1)
 					Mess_SetScale(SizeUp * 6 + 256);
 				else
 					Mess_SetScale(256);
 
-				Mess_DrawText__FiiPCciUiib(StatsLeft[i] - 60, (i + 1) * 19 + 40, highScoreBuf, 0, 0,
-				                           256, 0);
+				Mess_DrawText(StatsLeft[i] - 60, (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
 				Mess_SetScale(256);
 
 				highScoreBuf[0] = GCareer.HighScore[GLevel][i].Name[2];
-				Mess_SetTextJustify__FUc(0);
+				Mess_SetTextJustify(0);
 
 				if (i == GHighScoreLineIndex && GHighScoreInitialCursorPos == 2)
 					Mess_SetScale(SizeUp * 6 + 256);
 				else
 					Mess_SetScale(256);
 
-				Mess_DrawText__FiiPCciUiib(StatsLeft[i] - 40, (i + 1) * 19 + 40, highScoreBuf, 0, 0,
-				                           256, 0);
+				Mess_DrawText(StatsLeft[i] - 40, (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
 				Mess_SetScale(256);
 
 				if (i == GHighScoreLineIndex && (TTime / 10) & 1) {
 					int x;
 
-					FUN_8008b900(highScoreBuf, "_");
-					Mess_SetTextJustify__FUc(0);
+					sprintf(highScoreBuf, "_");
+					Mess_SetTextJustify(0);
 
 					x = GHighScoreInitialCursorPos * 20 - 80;
-					Mess_DrawText__FiiPCciUiib(StatsLeft[i] + x, (i + 1) * 19 + 48, highScoreBuf, 0,
-					                           0, 256, 0);
+					Mess_DrawText(StatsLeft[i] + x, (i + 1) * 19 + 48, highScoreBuf, 0, 0, 256, 0);
 				}
 
-				FUN_8008b900(highScoreBuf, "%s", Stats[GCareer.HighScore[GLevel][i].Skater].Name);
+				sprintf(highScoreBuf, "%s", Stats[GCareer.HighScore[GLevel][i].Skater].Name);
 
 				{
 					char *p = highScoreBuf;
@@ -460,13 +446,11 @@ void Front_Display() {
 					}
 				}
 
-				Mess_SetTextJustify__FUc(1);
-				Mess_DrawText__FiiPCciUiib(StatsLeft[i], (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256,
-				                           0);
-				FUN_8008b900(highScoreBuf, "%d", GCareer.HighScore[GLevel][i].Score);
-				Mess_SetTextJustify__FUc(2);
-				Mess_DrawText__FiiPCciUiib(StatsRight[i], (i + 1) * 19 + 40, highScoreBuf, 0, 0,
-				                           256, 0);
+				Mess_SetTextJustify(1);
+				Mess_DrawText(StatsLeft[i], (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
+				sprintf(highScoreBuf, "%d", GCareer.HighScore[GLevel][i].Score);
+				Mess_SetTextJustify(2);
+				Mess_DrawText(StatsRight[i], (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
 			}
 
 			Front_PrintCentredPrompt(GameText.pToAccept);
@@ -476,14 +460,14 @@ void Front_Display() {
 
 			if (GNumberOfPlayers == 1) {
 				Mess_SetRGB(182, 132, 36, 0);
-				Mess_DrawText__FiiPCciUiib(256, 40, GameText.pStatistics, 0, 0, 256, 0);
+				Mess_DrawText(256, 40, GameText.pStatistics, 0, 0, 256, 0);
 			} else {
 				Mess_SetRGB(182, 132, 36, 0);
 
 				if (GGame == 7)
-					Mess_DrawText__FiiPCciUiib(256, 40, "TIME IS UP!", 0, 0, 256, 0);
+					Mess_DrawText(256, 40, "TIME IS UP!", 0, 0, 256, 0);
 				else
-					Mess_DrawText__FiiPCciUiib(256, 40, "GAME OVER", 0, 0, 256, 0);
+					Mess_DrawText(256, 40, "GAME OVER", 0, 0, 256, 0);
 			}
 
 			Mess_SetRGB(122, 122, 122, 0);
@@ -493,7 +477,7 @@ void Front_Display() {
 				int Line;
 				int i;
 
-				Mess_SetTextJustify__FUc(1);
+				Mess_SetTextJustify(1);
 
 				for (i = 0; i < 5; i++) {
 					StatsLeft[i] += 30;
@@ -503,24 +487,20 @@ void Front_Display() {
 				}
 
 				Line = 0;
-				Mess_DrawText__FiiPCciUiib(StatsLeft[0], Line++ * 18 + 60, GameText.pTotalScore, 0,
-				                           0, 256, 0);
-				Mess_DrawText__FiiPCciUiib(StatsLeft[1], Line++ * 18 + 60, GameText.pHighScore, 0,
-				                           0, 256, 0);
+				Mess_DrawText(StatsLeft[0], Line++ * 18 + 60, GameText.pTotalScore, 0, 0, 256, 0);
+				Mess_DrawText(StatsLeft[1], Line++ * 18 + 60, GameText.pHighScore, 0, 0, 256, 0);
 
 				if (GGame == 1) {
-					Mess_DrawText__FiiPCciUiib(StatsLeft[2], Line++ * 18 + 60,
-					                           GameText.pTapesCollected, 0, 0, 256, 0);
+					Mess_DrawText(StatsLeft[2], Line++ * 18 + 60, GameText.pTapesCollected, 0, 0,
+					              256, 0);
 				}
 
-				Mess_DrawText__FiiPCciUiib(StatsLeft[3], Line++ * 18 + 60, GameText.pTricksLanded,
-				                           0, 0, 256, 0);
-				Mess_DrawText__FiiPCciUiib(StatsLeft[4], Line * 18 + 60, GameText.pBails, 0, 0, 256,
-				                           0);
-				Mess_SetTextJustify__FUc(0);
+				Mess_DrawText(StatsLeft[3], Line++ * 18 + 60, GameText.pTricksLanded, 0, 0, 256, 0);
+				Mess_DrawText(StatsLeft[4], Line * 18 + 60, GameText.pBails, 0, 0, 256, 0);
+				Mess_SetTextJustify(0);
 
 				pMan = MechList;
-				Mess_SetTextJustify__FUc(2);
+				Mess_SetTextJustify(2);
 
 				for (i = 0; i < 5; i++) {
 					StatsRight[i] -= 30;
@@ -530,49 +510,43 @@ void Front_Display() {
 				}
 
 				Line = 0;
-				FUN_8008b900(Score1, "%d", pMan->mPanel.mTotalScore);
-				Mess_DrawText__FiiPCciUiib(StatsRight[0], Line++ * 18 + 60, Score1, 0, 0, 256, 0);
-				FUN_8008b900(Score2, "%d", GCareer.HighScore[GLevel][0].Score);
-				Mess_DrawText__FiiPCciUiib(StatsRight[1], Line++ * 18 + 60, Score2, 0, 0, 256, 0);
+				sprintf(Score1, "%d", pMan->mPanel.mTotalScore);
+				Mess_DrawText(StatsRight[0], Line++ * 18 + 60, Score1, 0, 0, 256, 0);
+				sprintf(Score2, "%d", GCareer.HighScore[GLevel][0].Score);
+				Mess_DrawText(StatsRight[1], Line++ * 18 + 60, Score2, 0, 0, 256, 0);
 
 				if (GGame == 1) {
-					FUN_8008b900(Tapes, "%ld of %ld", Career_LevelTapes(GLevel), 5);
-					Mess_DrawText__FiiPCciUiib(StatsRight[2], Line++ * 18 + 60, Tapes, 0, 0, 256,
-					                           0);
+					sprintf(Tapes, "%ld of %ld", Career_LevelTapes(GLevel), 5);
+					Mess_DrawText(StatsRight[2], Line++ * 18 + 60, Tapes, 0, 0, 256, 0);
 				}
 
-				FUN_8008b900(Tricks, "%ld", pMan->mPanel.mNumTricksLanded);
-				Mess_DrawText__FiiPCciUiib(StatsRight[3], Line++ * 18 + 60, Tricks, 0, 0, 256, 0);
-				FUN_8008b900(Bails, "%ld", pMan->mPanel.mNumBails);
-				Mess_DrawText__FiiPCciUiib(StatsRight[4], Line * 18 + 60, Bails, 0, 0, 256, 0);
+				sprintf(Tricks, "%ld", pMan->mPanel.mNumTricksLanded);
+				Mess_DrawText(StatsRight[3], Line++ * 18 + 60, Tricks, 0, 0, 256, 0);
+				sprintf(Bails, "%ld", pMan->mPanel.mNumBails);
+				Mess_DrawText(StatsRight[4], Line * 18 + 60, Bails, 0, 0, 256, 0);
 
 				if (StatsLeft[0] == 90) {
-					Mess_SetTextJustify__FUc(0);
+					Mess_SetTextJustify(0);
 
 					if (!pMan->mPanel.mBestComboScore) {
 						Mess_SetScale(220);
-						Mess_DrawText__FiiPCciUiib(256, 151, GameText.pBestCombo, 0, 0, 256, 0);
+						Mess_DrawText(256, 151, GameText.pBestCombo, 0, 0, 256, 0);
 						Mess_SetScale(256);
-						Mess_DrawText__FiiPCciUiib(256, 168, GameText.pNone, 0, 0, 256, 0);
+						Mess_DrawText(256, 168, GameText.pNone, 0, 0, 256, 0);
 					} else {
 						if (pMan->mPanel.mNumTricksInCombo == 1)
-							FUN_8008b900(BestCombo, GameText.pBestComboNTrickNPoints,
-							             pMan->mPanel.mNumTricksInCombo,
-							             pMan->mPanel.mBestComboScore);
+							sprintf(BestCombo, GameText.pBestComboNTrickNPoints,
+							        pMan->mPanel.mNumTricksInCombo, pMan->mPanel.mBestComboScore);
 						else
-							FUN_8008b900(BestCombo, GameText.pBestComboNTricksNPoints,
-							             pMan->mPanel.mNumTricksInCombo,
-							             pMan->mPanel.mBestComboScore);
+							sprintf(BestCombo, GameText.pBestComboNTricksNPoints,
+							        pMan->mPanel.mNumTricksInCombo, pMan->mPanel.mBestComboScore);
 
 						Mess_SetScale(220);
-						Mess_DrawText__FiiPCciUiib(256, 151, BestCombo, 0, 0, 256, 0);
+						Mess_DrawText(256, 151, BestCombo, 0, 0, 256, 0);
 						Mess_SetScale(188);
-						Mess_DrawText__FiiPCciUiib(256, 166, pMan->mPanel.mBestComboName, 0, 0, 256,
-						                           0);
-						Mess_DrawText__FiiPCciUiib(256, 180, pMan->mPanel.mBestComboName2, 0, 0,
-						                           256, 0);
-						Mess_DrawText__FiiPCciUiib(256, 194, pMan->mPanel.mBestComboName3, 0, 0,
-						                           256, 0);
+						Mess_DrawText(256, 166, pMan->mPanel.mBestComboName, 0, 0, 256, 0);
+						Mess_DrawText(256, 180, pMan->mPanel.mBestComboName2, 0, 0, 256, 0);
+						Mess_DrawText(256, 194, pMan->mPanel.mBestComboName3, 0, 0, 256, 0);
 					}
 				}
 			} else {
@@ -589,11 +563,11 @@ void Front_Display() {
 				switch (GGame) {
 					case 8:
 						if (DAT_800d17cc->mGraffitiCount == GSkater->mGraffitiCount)
-							Mess_DrawText__FiiPCciUiib(256, 64, "TIE", 0, 0, 256, 0);
+							Mess_DrawText(256, 64, "TIE", 0, 0, 256, 0);
 						else if (GSkater->mGraffitiCount < DAT_800d17cc->mGraffitiCount)
-							Mess_DrawText__FiiPCciUiib(256, 64, "PLAYER TWO WINS", 0, 0, 256, 0);
+							Mess_DrawText(256, 64, "PLAYER TWO WINS", 0, 0, 256, 0);
 						else
-							Mess_DrawText__FiiPCciUiib(256, 64, "PLAYER ONE WINS", 0, 0, 256, 0);
+							Mess_DrawText(256, 64, "PLAYER ONE WINS", 0, 0, 256, 0);
 
 						Mess_SetScale(224);
 						Graffiti_Stats(GSkater, 30, 86, 32, 32, 128, GWins1, GLosses1, GStreak1,
@@ -621,27 +595,25 @@ void Front_Display() {
 							GHorseScore = GSkater->mPanel.mLandedTotal;
 
 							if (GHorseScore) {
-								FUN_8008b900(Score, "SCORE SET AT %d", GHorseScore);
-								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, Score, 0, 0, 256,
-								                           0);
+								sprintf(Score, "SCORE SET AT %d", GHorseScore);
+								Mess_DrawText(256, Line * 24 + 80, Score, 0, 0, 256, 0);
 
 								NextHorseMode ^= 1;
 								NextHorsePlayer ^= 1;
 							} else {
-								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, "NO SCORE   SWITCH",
-								                           0, 0, 256, 0);
+								Mess_DrawText(256, Line * 24 + 80, "NO SCORE   SWITCH", 0, 0, 256,
+								              0);
 
 								NextHorsePlayer ^= 1;
 							}
 						} else {
-							FUN_8008b900(Score, "GOING FOR %d", GHorseScore);
-							Mess_DrawText__FiiPCciUiib(256, Line++ * 24 + 80, Score, 0, 0, 256, 0);
-							FUN_8008b900(Score, "YOU SCORED %d", GSkater->mPanel.mLandedTotal);
-							Mess_DrawText__FiiPCciUiib(256, Line++ * 24 + 80, Score, 0, 0, 256, 0);
+							sprintf(Score, "GOING FOR %d", GHorseScore);
+							Mess_DrawText(256, Line++ * 24 + 80, Score, 0, 0, 256, 0);
+							sprintf(Score, "YOU SCORED %d", GSkater->mPanel.mLandedTotal);
+							Mess_DrawText(256, Line++ * 24 + 80, Score, 0, 0, 256, 0);
 
 							if (GSkater->mPanel.mLandedTotal == (uint)GHorseScore) {
-								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, "PUSH", 0, 0, 256,
-								                           0);
+								Mess_DrawText(256, Line * 24 + 80, "PUSH", 0, 0, 256, 0);
 
 								NextHorsePlayer ^= 1;
 							} else if (GSkater->mPanel.mLandedTotal < (uint)GHorseScore) {
@@ -652,9 +624,9 @@ void Front_Display() {
 									char c = GCareer.Options.HorseWord[0];
 
 									if (c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U')
-										FUN_8008b900(YouAre, "YOU ARE AN");
+										sprintf(YouAre, "YOU ARE AN");
 									else
-										FUN_8008b900(YouAre, "YOU ARE A");
+										sprintf(YouAre, "YOU ARE A");
 
 									if (!GHorseContinue) {
 										GHorseScale += 32;
@@ -666,10 +638,10 @@ void Front_Display() {
 										}
 
 										Mess_SetScale(GHorseScale);
-										Mess_DrawText__FiiPCciUiib(256, 152, YouAre, 0, 0, 256, 0);
+										Mess_DrawText(256, 152, YouAre, 0, 0, 256, 0);
 										Mess_SetScale(GHorseScale <= 512 ? GHorseScale : 512);
-										Mess_DrawText__FiiPCciUiib(
-										    256, 188, GCareer.Options.HorseWord, 0, 0, 256, 0);
+										Mess_DrawText(256, 188, GCareer.Options.HorseWord, 0, 0,
+										              256, 0);
 
 										GHorseWaitTime = 45;
 										Front_PrintCentredPrompt(GameText.pContinue);
@@ -680,19 +652,19 @@ void Front_Display() {
 											GHorseSounded = 1;
 										}
 
-										FUN_8001e07c(DAT_800a5b28);
-										FUN_8001e0f8(DAT_800a5b28, 512);
-										FUN_8001e0a4(DAT_800a5b28, 1);
-										Mess_DrawText__FiiPCciUiib(256, 152, YouAre, 0, 0, 256, 0);
+										DAT_800a5b28->update();
+										DAT_800a5b28->setScale(512);
+										DAT_800a5b28->bind(1);
+										Mess_DrawText(256, 152, YouAre, 0, 0, 256, 0);
 
-										if (FUN_8001e108(DAT_800a5b28))
+										if (DAT_800a5b28->handleComplete())
 											GHorseWaitTime = 45;
 
-										FUN_8001e0a4(DAT_800a5b28, 0);
-										FUN_8001e0a4(DAT_800a5b28, 1);
-										Mess_DrawText__FiiPCciUiib(
-										    256, 188, GCareer.Options.HorseWord, 0, 0, 256, 0);
-										FUN_8001e0a4(DAT_800a5b28, 0);
+										DAT_800a5b28->bind(0);
+										DAT_800a5b28->bind(1);
+										Mess_DrawText(256, 188, GCareer.Options.HorseWord, 0, 0,
+										              256, 0);
+										DAT_800a5b28->bind(0);
 									}
 
 									NextHorseMode = 2;
@@ -707,10 +679,10 @@ void Front_Display() {
 											GHorseScale = 512;
 
 										Mess_SetScale(GHorseScale <= 384 ? GHorseScale : 384);
-										Mess_DrawText__FiiPCciUiib(
-										    256, 152, GameText.pYouGetTheLetter, 0, 0, 256, 0);
+										Mess_DrawText(256, 152, GameText.pYouGetTheLetter, 0, 0,
+										              256, 0);
 										Mess_SetScale(GHorseScale <= 512 ? GHorseScale : 512);
-										Mess_DrawText__FiiPCciUiib(256, 188, YouAre, 0, 0, 256, 0);
+										Mess_DrawText(256, 188, YouAre, 0, 0, 256, 0);
 
 										GHorseWaitTime = 45;
 									} else {
@@ -720,20 +692,20 @@ void Front_Display() {
 											GHorseSounded = 1;
 										}
 
-										FUN_8001e07c(DAT_800a5b28);
-										FUN_8001e0f8(DAT_800a5b28, 384);
-										FUN_8001e0a4(DAT_800a5b28, 1);
-										Mess_DrawText__FiiPCciUiib(
-										    256, 152, GameText.pYouGetTheLetter, 0, 0, 256, 0);
+										DAT_800a5b28->update();
+										DAT_800a5b28->setScale(384);
+										DAT_800a5b28->bind(1);
+										Mess_DrawText(256, 152, GameText.pYouGetTheLetter, 0, 0,
+										              256, 0);
 
-										if (FUN_8001e108(DAT_800a5b28))
+										if (DAT_800a5b28->handleComplete())
 											GHorseWaitTime = 45;
 
-										FUN_8001e0a4(DAT_800a5b28, 0);
-										FUN_8001e0f8(DAT_800a5b28, 512);
-										FUN_8001e0a4(DAT_800a5b28, 1);
-										Mess_DrawText__FiiPCciUiib(256, 188, YouAre, 0, 0, 256, 0);
-										FUN_8001e0a4(DAT_800a5b28, 0);
+										DAT_800a5b28->bind(0);
+										DAT_800a5b28->setScale(512);
+										DAT_800a5b28->bind(1);
+										Mess_DrawText(256, 188, YouAre, 0, 0, 256, 0);
+										DAT_800a5b28->bind(0);
 									}
 
 									if (++NextHorseRestart == NumHorseRestarts)
@@ -743,8 +715,7 @@ void Front_Display() {
 									NextHorseMode ^= 1;
 								}
 							} else {
-								Mess_DrawText__FiiPCciUiib(256, Line * 24 + 80, "SWITCH", 0, 0, 256,
-								                           0);
+								Mess_DrawText(256, Line * 24 + 80, "SWITCH", 0, 0, 256, 0);
 
 								NextHorsePlayer ^= 1;
 								NextHorseScore = GSkater->mPanel.mLandedTotal;
@@ -755,17 +726,17 @@ void Front_Display() {
 					} break;
 					case 6:
 					default:
-						FUN_8008b900(Score1, "PLAYER ONE %d", s1);
-						FUN_8008b900(Score2, "PLAYER TWO %d", s2);
-						Mess_DrawText__FiiPCciUiib(256, 75, Score1, 0, 0, 256, 0);
-						Mess_DrawText__FiiPCciUiib(256, 99, Score2, 0, 0, 256, 0);
+						sprintf(Score1, "PLAYER ONE %d", s1);
+						sprintf(Score2, "PLAYER TWO %d", s2);
+						Mess_DrawText(256, 75, Score1, 0, 0, 256, 0);
+						Mess_DrawText(256, 99, Score2, 0, 0, 256, 0);
 
 						if (s2 < s1)
-							Mess_DrawText__FiiPCciUiib(256, 123, "PLAYER ONE WINS", 0, 0, 256, 0);
+							Mess_DrawText(256, 123, "PLAYER ONE WINS", 0, 0, 256, 0);
 						else if (s1 < s2)
-							Mess_DrawText__FiiPCciUiib(256, 123, "PLAYER TWO WINS", 0, 0, 256, 0);
+							Mess_DrawText(256, 123, "PLAYER TWO WINS", 0, 0, 256, 0);
 						else
-							Mess_DrawText__FiiPCciUiib(256, 123, "DRAW", 0, 0, 256, 0);
+							Mess_DrawText(256, 123, "DRAW", 0, 0, 256, 0);
 
 						break;
 				}
@@ -777,7 +748,7 @@ void Front_Display() {
 			break;
 		case 5:
 			Mess_SetRGB(150, 100, 25, 0);
-			Mess_DrawText__FiiPCciUiib(256, 103, GameText.pSave, 0, 0, 256, 0);
+			Mess_DrawText(256, 103, GameText.pSave, 0, 0, 256, 0);
 
 			pYesNoMenu->mY = 143;
 			pYesNoMenu->Display();

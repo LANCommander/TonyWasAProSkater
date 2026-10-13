@@ -70,11 +70,11 @@ unsigned MCState;
 int MCResolution;
 int CursorPos, SizeUp, GLoadAction, SaveNeedBlocks, SaveFreeBlocks;
 
-void FUN_80011214(void);
+void RGBGreen(void);
 void CMenu_Display(O *);
 void Mess_SetTextJustify(int);
 int Mess_DrawText(int, int, char *, int, int, int, int);
-void FUN_8008b900(char *, char *, int, char *);
+void sprintf(char *, char *, int, char *);
 void Front_PrintCentredPrompt(char *);
 void Front_PrintGoBackSelect(void);
 void Mess_SetRGB(int, int, int, int);
@@ -97,7 +97,7 @@ void Front_MemCardDisplay(void) {
 		case 1:
 		case 15:
 		case 16:
-			FUN_80011214();
+			RGBGreen();
 #ifndef PC_PORT /* PC: no card to check (pc_saves.h) */
 			Mess_DrawText(s2, 90, GameText.f200, 0, 0, 256, 0);
 			RGBRed();
@@ -126,7 +126,7 @@ void Front_MemCardDisplay(void) {
 			CMenu_Display(o);
 			break;
 		case 11:
-			FUN_80011214();
+			RGBGreen();
 
 			if ((TTime / 10) & 1)
 				Mess_DrawText(s2, 110, GameText_1f4[0], 0, 0, 256, 0);
@@ -138,7 +138,7 @@ void Front_MemCardDisplay(void) {
 #endif
 			break;
 		case 13:
-			FUN_80011214();
+			RGBGreen();
 			Mess_DrawText(s2, 110, GameText_240[0], 0, 0, 256, 0);
 			break;
 		case 12:
@@ -151,16 +151,16 @@ void Front_MemCardDisplay(void) {
 			Mess_DrawText(s2, 67, GameText.f208, 0, 0, 256, 0);
 			Mess_DrawText(s2, 85, GameText.f20c, 0, 0, 256, 0);
 			Mess_DrawText(s2, 103, GameText.f210, 0, 0, 256, 0);
-			FUN_8008b900(buf, GameText.f214, SaveNeedBlocks, SaveNeedBlocks == 1 ? "" : "s");
+			sprintf(buf, GameText.f214, SaveNeedBlocks, SaveNeedBlocks == 1 ? "" : "s");
 			Mess_DrawText(s2, 121, buf, 0, 0, 256, 0);
-			FUN_8008b900(buf, GameText.f218, SaveNeedBlocks - SaveFreeBlocks,
-			             SaveNeedBlocks - SaveFreeBlocks == 1 ? "" : "s");
+			sprintf(buf, GameText.f218, SaveNeedBlocks - SaveFreeBlocks,
+			        SaveNeedBlocks - SaveFreeBlocks == 1 ? "" : "s");
 			Mess_DrawText(s2, 139, buf, 0, 0, 256, 0);
 			Mess_DrawText(s2, 157, GameText.f21c, 0, 0, 256, 0);
 			Front_PrintCentredPrompt(GameText.f180);
 			break;
 		case 3:
-			FUN_80011214();
+			RGBGreen();
 			Mess_DrawText(s2, 50, GameText.f18, 0, 0, 256, 0);
 			Mess_DrawText(s2, 76, GameText.f1c, 0, 0, 256, 0);
 			Mess_DrawText(s2, 102, GameText.f228, 0, 0, 256, 0);
@@ -171,7 +171,7 @@ void Front_MemCardDisplay(void) {
 			CMenu_Display(o);
 			break;
 		case 4:
-			FUN_80011214();
+			RGBGreen();
 			Mess_DrawText(s2, 110, GameText.f234, 0, 0, 256, 0);
 #ifndef PC_PORT
 			RGBRed();
@@ -180,7 +180,7 @@ void Front_MemCardDisplay(void) {
 #endif
 			break;
 		case 7:
-			FUN_80011214();
+			RGBGreen();
 			Mess_DrawText(s2, 110, GameText.fd0, 0, 0, 256, 0);
 			Front_PrintCentredPrompt(GameText.f180);
 			break;
@@ -244,7 +244,7 @@ void Front_MemCardDisplay(void) {
 
 			break;
 		case 21:
-			FUN_80011214();
+			RGBGreen();
 			Mess_DrawText(s2, 110, "loading video file", 0, 0, 256, 0);
 #ifndef PC_PORT
 			RGBRed();

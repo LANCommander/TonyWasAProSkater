@@ -15,8 +15,8 @@ RECT decodeSlice;
 unsigned short GameFMV_EndX, decodeSlice_4;
 
 void FUN_8008f79c(void);
-void FUN_8009033c(int, int);
-void FUN_8008c714(RECT *, int);
+void DecDCTout(int, int);
+void LoadImage(RECT *, int);
 
 void strCallback(void) {
 	RECT r;
@@ -38,8 +38,7 @@ void strCallback(void) {
 	decodeSlice.x += decodeSlice_4;
 
 	if (decodeSlice.x < GameFMV_EndX) {
-		FUN_8009033c(decodeSliceBuffer[currentDecodeBuffer],
-		             (short)decodeSlice_4 * decodeSlice_6 / 2);
+		DecDCTout(decodeSliceBuffer[currentDecodeBuffer], (short)decodeSlice_4 * decodeSlice_6 / 2);
 	} else {
 		decodeSlice.x = GameFMV_StartX;
 
@@ -52,5 +51,5 @@ void strCallback(void) {
 	}
 
 	if (GameFMV_StartX != -1)
-		FUN_8008c714(&r, p);
+		LoadImage(&r, p);
 }

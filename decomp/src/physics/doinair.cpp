@@ -19,6 +19,10 @@ extern "C" {
 
 #include "game/colij.h"
 #include "game/bruce.h"
+#include "game/m3d.h"
+#include "game/vector.h"
+#include "game/m3dasm.h"
+#include "game/psyq.h"
 
 #define SetVector(v, x, y, z)                                                                      \
 	{                                                                                              \
@@ -53,22 +57,6 @@ int GetFaceFlags(SLineInfo *);
 int SFX_PlayX(unsigned int, short, int);
 int Rnd(int);
 
-extern "C" {
-	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
-	int FUN_8008b5dc(int);
-	int Mips_FixMul__Fii(int, int);
-	int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
-	MATRIX *FUN_80093100(MATRIX *, VECTOR *);
-	MATRIX *FUN_80093240(SVECTOR *, MATRIX *);
-	MATRIX *FUN_80093130(MATRIX *, MATRIX *);
-	VECTOR *FUN_80092f60(MATRIX *, VECTOR *, VECTOR *);
-	void Bail__6CBrucei13ELimitBailVel(CBruce *, int);
-	void FUN_8003036c(CBruce *);
-	void FUN_8002f1a0(CBruce *);
-	void FUN_80035f30(CBruce *, SVECTOR);
-	int printf(const char *, ...);
-}
-
 void CBruce::DoInAirPhysics() {
 	CVector u0, u1, u2; /* unused: retail's frame keeps their slots */
 	CVector vMovement;
@@ -90,20 +78,20 @@ void CBruce::DoInAirPhysics() {
 		zero.vz = 0;
 		zero.vy = 0;
 		zero.vx = 0;
-		FUN_80093100(&mRotMatrix, &zero);
-		FUN_80093100(&SurfaceRotMatrix, &zero);
+		TransMatrix(&mRotMatrix, &zero);
+		TransMatrix(&SurfaceRotMatrix, &zero);
 
 		v.vx = 0;
 		v.vy = 0x46000;
 		v.vz = 0;
-		FUN_80092f60(&mRotMatrix, &v, &v2);
+		ApplyMatrixLV(&mRotMatrix, &v, &v2);
 
 		RotAngle.vz = 0;
 		RotAngle.vy = 0;
 		RotAngle.vx = mPitchAngle & 4095;
-		FUN_80093240(&RotAngle, &SurfaceRotMatrix);
-		FUN_80093130(&mRotMatrix, &SurfaceRotMatrix);
-		FUN_80092f60(&mRotMatrix, &v, &v3);
+		RotMatrixYXZ(&RotAngle, &SurfaceRotMatrix);
+		MulMatrix(&mRotMatrix, &SurfaceRotMatrix);
+		ApplyMatrixLV(&mRotMatrix, &v, &v3);
 
 		mPos.vx = mPos.vx + v2.vx - v3.vx;
 		mPos.vy = mPos.vy + v2.vy - v3.vy;
@@ -111,16 +99,16 @@ void CBruce::DoInAirPhysics() {
 	}
 
 	vMovement = mPos - mOldPos;
-	((void (*)(int))FUN_8008b5dc)(Mips_CVecDotProd__FP7CVectorT0(&vMovement, &vMovement));
+	((void (*)(int))M3dMaths_SquareRoot0)(Mips_CVecDotProd(&vMovement, &vMovement));
 	TurnAngle = mLeanAngle >> 12;
-	Mips_FixMul__Fii(TurnAngle, 3072);
+	Mips_FixMul(TurnAngle, 3072);
 
 	if (TurnAngle && m814 == ZeroVector) {
 		RotAngle.vz = 0;
 		RotAngle.vx = 0;
 		RotAngle.vy = TurnAngle & 4095;
-		FUN_80093240(&RotAngle, &SurfaceRotMatrix);
-		FUN_80093130(&mRotMatrix, &SurfaceRotMatrix);
+		RotMatrixYXZ(&RotAngle, &SurfaceRotMatrix);
+		MulMatrix(&mRotMatrix, &SurfaceRotMatrix);
 
 		mTallyAngles += TurnAngle;
 
@@ -144,7 +132,7 @@ void CBruce::DoInAirPhysics() {
 
 	SetVector(&line_info.StartCoords, mOldPos.vx, mOldPos.vy, mOldPos.vz)
 	    SetVector(&line_info.EndCoords, mPos.vx, mPos.vy, mPos.vz) vMovement = mPos - mOldPos;
-	Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&vMovement, &vMovement)) << 6;
+	Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&vMovement, &vMovement)) << 6;
 
 	if (Speed < 0x2e000) {
 		if (Speed < 2048)
@@ -156,13 +144,13 @@ void CBruce::DoInAirPhysics() {
 	}
 
 	M3dColij_InitLineInfo(&line_info);
-	M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+	M3dZone_LineToItemNotSCached(&line_info, 1);
 	GetFaceFlags(&line_info);
 
 	if (Face_Air && !Face_Visible && mPhysicsState != 3) {
 		BulletCollisionCheck = 1;
 		M3dColij_InitLineInfo(&line_info);
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+		M3dZone_LineToItemNotSCached(&line_info, 1);
 		GetFaceFlags(&line_info);
 
 		BulletCollisionCheck = 0;
@@ -185,7 +173,7 @@ void CBruce::DoInAirPhysics() {
 			FaceNormal.vz = line_info.Normal.vz;
 			M3dUtils_NormaliseVector(&FaceNormal);
 
-			VelNormal = Mips_CVecDotProd__FP7CVectorT0(&FaceNormal, &UnitVel);
+			VelNormal = Mips_CVecDotProd(&FaceNormal, &UnitVel);
 
 			if (!Steep && ((VelNormal ^ (VelNormal >> 31)) - (VelNormal >> 31)) < 3547 &&
 			    XFrames - m208 >= 41) {
@@ -198,14 +186,14 @@ void CBruce::DoInAirPhysics() {
 					Limit = mNumFrames - Group[Trick].MinFrame;
 
 				if (mDoingATrick && !m360 && mFrame < Limit) {
-					Bail__6CBrucei13ELimitBailVel(this, 0);
+					Bail(0);
 
 					mTrickBails++;
 				} else
 					m360 = 1;
 
 				if (!mInAir) {
-					FUN_8003036c(this);
+					FrigDarkenObject();
 					StateTransition(PHYSICS_IN_WALLRIDE, 5197);
 
 					m208 = XFrames;
@@ -238,12 +226,12 @@ void CBruce::DoInAirPhysics() {
 					mAnimSpeed = 0x10000;
 
 					if (mExtraFlags & 2) {
-						if (Mips_CVecDotProd__FP7CVectorT0(&WallRight, &mVel) >= 0)
+						if (Mips_CVecDotProd(&WallRight, &mVel) >= 0)
 							Debug_RunAnim(35, 5238);
 						else
 							Debug_RunAnim(36, 5242);
 					} else {
-						if (Mips_CVecDotProd__FP7CVectorT0(&WallRight, &mVel) >= 0)
+						if (Mips_CVecDotProd(&WallRight, &mVel) >= 0)
 							Debug_RunAnim(36, 5249);
 						else
 							Debug_RunAnim(35, 5253);
@@ -254,7 +242,7 @@ void CBruce::DoInAirPhysics() {
 			} else {
 				mPos = mOldPos;
 				printf("...............New Bail..............\n");
-				Bail__6CBrucei13ELimitBailVel(this, 0);
+				Bail(0);
 			}
 		} else if (!Face_Skateable && (!Face_Air || mPhysicsState != 3)) {
 			switch (Face_Terrain) {
@@ -307,17 +295,17 @@ void CBruce::DoInAirPhysics() {
 
 					if (mpPad->Up.Pressed || mAY < -40) {
 						SVECTOR N;
-						int Spd = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+						int Spd = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 						N = line_info.Normal;
-						mVel.vx -= Mips_FixMul__Fii(N.vx, Spd / 4);
-						mVel.vz -= Mips_FixMul__Fii(N.vz, Spd / 4);
+						mVel.vx -= Mips_FixMul(N.vx, Spd / 4);
+						mVel.vz -= Mips_FixMul(N.vz, Spd / 4);
 					}
 
 					m768 = 0;
 
 					if (!m740 || !mDoingATrick) {
-						FUN_8002f1a0(this);
+						Trick_TakeOff();
 
 						mAnimSpeed = 0x10000;
 						Debug_RunAnim(14, 5457);
@@ -332,7 +320,7 @@ void CBruce::DoInAirPhysics() {
 
 				if (!mInAir) {
 					HandleBailPerpendicular(line_info.Normal);
-					FUN_80035f30(this, line_info.Normal);
+					HandleLeaningBail(line_info.Normal);
 					HandleBailOnLanding(5496);
 				}
 			}

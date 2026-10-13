@@ -11,10 +11,10 @@ void Options_Init(void);
 void Career_Init(void);
 void FUN_80071f84(int);
 void Init_Restart(int, int);
-void FUN_800491e8(void);
-void FUN_80070ff4(void);
+void Db_Init(void);
+void Pad_Update(void);
 void GameFMV_PlayMovie(int);
-void FUN_8006b01c(int);
+void HiRes_Init(int);
 void FUN_8006b3f8(void);
 
 int FUN_80026d44(void) {
@@ -25,8 +25,8 @@ int FUN_80026d44(void) {
 	Career_Init();
 	FUN_80071f84(1);
 	Init_Restart(0, 16);
-	FUN_800491e8();
-	FUN_80070ff4();
+	Db_Init();
+	Pad_Update();
 
 	p = Pad;
 
@@ -34,7 +34,7 @@ int FUN_80026d44(void) {
 	    (p[PAD_SPIN_LEFT + PAD_PRESSED] == 0 || p[PAD_TAP_SPIN_LEFT + PAD_PRESSED] == 0))
 		GameFMV_PlayMovie(-1);
 
-	FUN_80070ff4();
+	Pad_Update();
 
 	p = Pad;
 
@@ -42,7 +42,7 @@ int FUN_80026d44(void) {
 	    (p[PAD_SPIN_LEFT + PAD_PRESSED] == 0 || p[PAD_TAP_SPIN_LEFT + PAD_PRESSED] == 0))
 		GameFMV_PlayMovie(-2);
 
-	FUN_80070ff4();
+	Pad_Update();
 
 	p = Pad;
 
@@ -51,11 +51,11 @@ int FUN_80026d44(void) {
 		GameFMV_PlayMovie(-25);
 
 	Init_Restart(0, 16);
-	FUN_800491e8();
+	Db_Init();
 
 	GNumberOfPlayers = 1;
 	Init_Restart(1, 16);
-	FUN_8006b01c(1);
+	HiRes_Init(1);
 	FUN_8006b3f8();
 	return 0;
 }

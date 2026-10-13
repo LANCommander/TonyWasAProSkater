@@ -2,18 +2,14 @@
 /* C++ (SHELLUTILS.CPP, THPS1-only; no demo twin). A front-end file loader object (vtable
    0x800a2130, 32 entries of 36 bytes). This is its "load this set of files" call: it syncs
    any pending read, keeps entries that are still wanted and loaded (compacting them to the
-   front), unloads the rest (FUN_80065e04), appends the new names as unloaded entries, and
-   blanks the unused tail. FUN_8005c8dc calls it with a per-screen file list. */
-extern "C" {
-	int strcmp(const char *, const char *);
-	char *strcpy(char *, const char *);
-}
+   front), unloads the rest (FileLoader::unload), appends the new names as unloaded entries, and
+   blanks the unused tail. FrontLoader_SetFiles calls it with a per-screen file list. */
 
+#include "game/fileio.h"
+#include "game/psyq.h"
 #include "game/shellutils.h"
 
 void Spool_Sync();
-void FUN_8004cdd0();
-void FUN_8004c740(int);
 
 void FileLoader::setFiles(char **names, int num) {
 	int keep[32];
@@ -24,7 +20,7 @@ void FileLoader::setFiles(char **names, int num) {
 	if (mMode == 1)
 		Spool_Sync();
 	else
-		FUN_8004cdd0();
+		FileIO_Sync();
 
 	for (int k = 0; k < 32; k++)
 		keep[k] = 0;
@@ -62,5 +58,5 @@ void FileLoader::setFiles(char **names, int num) {
 
 	mCur = 0;
 	mMode = 0;
-	FUN_8004c740(4);
+	FileIO_SetSectorsPerFrame(4);
 }

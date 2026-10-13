@@ -1,4 +1,6 @@
 /* FUN_800605c0 (0x800605c0) */
+#include "names.h"
+
 typedef struct {
 	unsigned char b[14];
 } R;
@@ -10,7 +12,7 @@ typedef struct {
 extern R GCareer_c[];
 extern T DAT_800a1eb4;
 
-int FUN_8005e0e0(T *, int *, int, int, int *, int, int, int, int);
+int Front_RunMenu(T *, int *, int, int, int *, int, int, int, int);
 int FUN_80060738(int, int *);
 
 int FUN_800605c0(int a) {
@@ -36,7 +38,7 @@ int FUN_800605c0(int a) {
 		k[3] = cnt[2] < 3;
 		k[4] = cnt[3] < 3;
 		k[5] = cnt[4] < 3;
-		v = FUN_8005e0e0(&t, k, 7, 0x620, &a, 0, 0, 0, 0);
+		v = Front_RunMenu(&t, k, 7, 0x620, &a, 0, 0, 0, 0);
 
 		if (v != -1) {
 			if (v == 0x627)

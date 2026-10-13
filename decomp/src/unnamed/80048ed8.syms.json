@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","DoubleBuffer":"0x800a891c","Vblanks":"0x800d1a20","FUN_8008ca0c":"0x8008ca0c","FUN_80048d24":"0x80048d24"}
+{"gp":"0x800d1080","DoubleBuffer":"0x800a891c","Vblanks":"0x800d1a20","PutDispEnv":"0x8008ca0c","Db_DrawPending__Fv":"0x80048d24"}

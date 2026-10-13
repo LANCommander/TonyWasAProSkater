@@ -81,7 +81,9 @@ def map_body(s, fn):
 def current_aliases():
     if not os.path.exists(HEADER):
         return {}
-    return dict(re.findall(r"^#define (\w+) (\w+)  /\*", open(HEADER, encoding="utf-8").read(), re.M))
+    # as written, or as clang-format (tools/format.py) lays it out: aligned, or continued on the next line
+    return dict(re.findall(r"^#define (\w+)[ \t]+(?:\\[ \t]*\r?\n[ \t]*)?(\w+)[ \t]+/\*",
+                           open(HEADER, encoding="utf-8").read(), re.M))
 
 
 def main():

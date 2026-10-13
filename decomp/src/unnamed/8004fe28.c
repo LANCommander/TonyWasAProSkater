@@ -1,4 +1,4 @@
-/* FUN_8004fe28 (0x8004fe28) */
+/* Credits_Roll__Fii (0x8004fe28) */
 #include "names.h"
 #include "game/padbuttons.h"
 
@@ -9,8 +9,8 @@ int DAT_800d1b98[1];
 void Mess_SetTextJustify(int);
 int Mess_TextHeightAboveBaseline(char *);
 void Mess_DrawText(int, int, char *, int, int, int, int);
-void FUN_800242cc(void);
-void FUN_800491e8(void);
+void PollHost(void);
+void Db_Init(void);
 void FUN_80049474(void);
 void FUN_800494dc(void);
 void SFX_PlayX(int, int, int);
@@ -20,13 +20,13 @@ void FileIO_Sync(void);
 char *Mem_NewX(int, int, int);
 void Mem_Delete(char *);
 void FUN_8005027c(int, int, int);
-void FUN_8005c780(void);
+void Front_UpdateMusicLoop(void);
 void DrawColoredBox(int, int, int, int, int, int, int);
 void SetClippingBox(int, int, int, int);
-void FUN_80061ea0(void);
-void FUN_8006af64(void);
-void FUN_80070ff4(void);
-void FUN_8008eebc(int);
+void ResetOT(void);
+void HiRes_BlankScreen(void);
+void Pad_Update(void);
+void VSync(int);
 void Front_ClearScreen(void);
 void Mess_LoadFont__FPciii(char *, int, int, int);
 void Mess_SetRGB(int, int, int, int);
@@ -36,7 +36,7 @@ void Mess_UnloadFont(void);
 void Pack_DefragmentFully(void);
 void Pad_ClearTriggers(char *);
 
-void FUN_8004fe28(int a0, int a1) {
+void Credits_Roll(int a0, int a1) {
 	char *s0;
 	char *a2;
 
@@ -46,7 +46,7 @@ void FUN_8004fe28(int a0, int a1) {
 	int y, s7, i, s6, s3, s4, s2, th, bot, top, off, tog, s0i;
 
 	if (a1)
-		FUN_8006af64();
+		HiRes_BlankScreen();
 	else
 		Front_ClearScreen();
 
@@ -123,16 +123,16 @@ void FUN_8004fe28(int a0, int a1) {
 	s4 = *(int *)((char *)DAT_800d1b98 + off);
 	Pad_ClearTriggers(Pad);
 	Pad_ClearTriggers(Pad + 364);
-	FUN_800491e8();
+	Db_Init();
 
 	tog = 0;
 	FUN_8005027c(a0, 0, a1);
 
 	while (1) {
 		s2 = s6;
-		FUN_8005c780();
+		Front_UpdateMusicLoop();
 		FUN_80049474();
-		FUN_80061ea0();
+		ResetOT();
 		SetClippingBox(0, tog << 8, 512, 240);
 		DrawColoredBox(0, 0, 512, 240, 0, 0, 0);
 
@@ -165,12 +165,12 @@ void FUN_8004fe28(int a0, int a1) {
 			s3 += th;
 		}
 
-		FUN_8008eebc(0);
+		VSync(0);
 		FUN_8005027c(a0, 1, a1);
-		FUN_8008eebc(0);
+		VSync(0);
 		FUN_800494dc();
-		FUN_80070ff4();
-		FUN_800242cc();
+		Pad_Update();
+		PollHost();
 
 		if (Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] ||
 		    Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED] ||

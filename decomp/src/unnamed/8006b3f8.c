@@ -1,16 +1,16 @@
 /* FUN_8006b3f8 (0x8006b3f8) */
 #include "names.h"
 
-void FUN_800171f0(void);
+void Front_Init(void);
 void ResetMainDemoTimer(void);
-void FUN_8004b09c(char *p);
-void FUN_8005bb70(void);
+void SFX_Init(char *p);
+void Front_Main(void);
 
 void FUN_8006b3f8(void) {
 	volatile int pad[2];
 
-	FUN_800171f0();
+	Front_Init();
 	ResetMainDemoTimer();
-	FUN_8004b09c("shell.vab");
-	FUN_8005bb70();
+	SFX_Init("shell.vab");
+	Front_Main();
 }

@@ -21,14 +21,14 @@ extern int GameFade, DemoTimer;
 int DAT_800d1ce8, DAT_800d1cec, BackOut, DAT_800d1d14;
 O *DAT_800d1d0c;
 
-void FUN_8008c468(int);
-void FUN_8006b2f4(void);
-void FUN_8006b240(void);
-void FUN_80061ea0(void);
-void FUN_800242cc(void);
+void DrawSync(int);
+void HiRes_DrawOTagNoSync(void);
+void HiRes_ClearOTag(void);
+void ResetOT(void);
+void PollHost(void);
 void SetClippingBox(int, int, int, int);
 void Sprite_draw(O *, int, int, int, int, int, int);
-void FUN_80070ff4(void);
+void Pad_Update(void);
 int FUN_800718d0(void);
 void SFX_PlayX(int, int, int);
 void Pause__Fi(int);
@@ -38,15 +38,15 @@ void Mess_SetTextJustify(int);
 void Mess_SetScale(int);
 void Mess_SetRGB(int, int, int, int);
 void Mess_DrawText(int, int, char *, int, int, int, int);
-void FUN_8006b26c(void);
+void HiRes_DrawOTag(void);
 void Mess_UnloadFont(void);
 
 void FUN_8005da40(void) {
-	FUN_8008c468(0);
-	FUN_8006b2f4();
-	FUN_8006b240();
-	FUN_80061ea0();
-	FUN_800242cc();
+	DrawSync(0);
+	HiRes_DrawOTagNoSync();
+	HiRes_ClearOTag();
+	ResetOT();
+	PollHost();
 	SetClippingBox(0, 0, 512, 240);
 
 	if (DAT_800d1d14) {
@@ -54,7 +54,7 @@ void FUN_8005da40(void) {
 		Sprite_draw(DAT_800d1d0c, DAT_800bf0dc[0], DAT_800bf0e8[0], 0, -1, -1, -1);
 	}
 
-	FUN_80070ff4();
+	Pad_Update();
 
 	if (FUN_800718d0())
 #ifdef PC_PORT
@@ -83,8 +83,8 @@ void FUN_8005da40(void) {
 		}
 
 		Mess_LoadFont__FPciii("ingame1.fnt", -1, -1, -1);
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 		Mess_SetTextJustify(0);
 		Mess_SetScale(255);
 		Mess_SetRGB(150, 100, 25, 0);
@@ -92,7 +92,7 @@ void FUN_8005da40(void) {
 		Mess_DrawText(256, 110, "Loading Memory Card Data...", 1, 0, 256, 0);
 		Mess_DrawText(256, 130, "Loading Memory Card Data..." + 32, 1, 0, 256, 0);
 #endif
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 		Mess_UnloadFont();
 	}
 }

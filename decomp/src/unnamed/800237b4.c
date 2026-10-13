@@ -1,4 +1,6 @@
-/* FUN_800237b4 (0x800237b4) */
+/* GameFMV_RetargetScreenFaces__FUsP7Texture (0x800237b4) */
+#include "names.h"
+
 typedef unsigned char U8;
 
 typedef struct {
@@ -9,7 +11,7 @@ extern int EnvRegions[2];
 extern char *PSXRegion_10[][16];
 extern char *EnvironmentalObjectList;
 
-void FUN_800237b4(int arg0, char *a1) {
+void GameFMV_RetargetScreenFaces(int arg0, char *a1) {
 	unsigned short t9 = arg0;
 	int i;
 	int m, m2;

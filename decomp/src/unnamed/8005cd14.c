@@ -15,10 +15,10 @@ extern char Pad[];
 
 int DAT_800d1cf4, DAT_800d1cf8, DAT_800d1d04, DAT_800d1d0c, DAT_800d1cec, DAT_800d1d14;
 
-void FUN_8005c8dc(int);
-void FUN_8005c97c(int);
-void FUN_8005ca64(void);
-int FUN_8005ca3c(char *);
+void FrontLoader_SetFiles(int);
+void FrontLoader_LoadSet(int);
+void FrontLoader_Defragment(void);
+int FrontLoader_TakeFile(char *);
 void FUN_80061a10(int);
 void FUN_8005dc58(int);
 int FileIO_Open(int);
@@ -28,29 +28,29 @@ void FileIO_Sync(void);
 int __nw__6CClassUi(int);
 int FUN_80063a5c(int, int, int, int, int, int, int);
 void Pack_DefragmentFully(void);
-void FUN_8006b240(void);
-void FUN_80061ea0(void);
+void HiRes_ClearOTag(void);
+void ResetOT(void);
 
 void FUN_8005cd14(void) {
 	int o, s0, s1, o2;
 
 	if (DAT_800d1cf8 == 3) {
-		FUN_8005c8dc(7);
-		FUN_8005c97c(7);
-		FUN_8005ca64();
-		FUN_80061a10(FUN_8005ca3c("loadingg.bmp"));
+		FrontLoader_SetFiles(7);
+		FrontLoader_LoadSet(7);
+		FrontLoader_Defragment();
+		FUN_80061a10(FrontLoader_TakeFile("loadingg.bmp"));
 		FUN_8005dc58(8);
 	} else if (DAT_800d1cf8 == 1) {
-		FUN_8005c8dc(5);
-		FUN_8005c97c(5);
-		FUN_8005ca64();
-		FUN_80061a10(FUN_8005ca3c("loadingt.bmp"));
+		FrontLoader_SetFiles(5);
+		FrontLoader_LoadSet(5);
+		FrontLoader_Defragment();
+		FUN_80061a10(FrontLoader_TakeFile("loadingt.bmp"));
 		FUN_8005dc58(8);
 	} else if (DAT_800d1cf8 == 5) {
-		FUN_8005c8dc(14);
-		FUN_8005c97c(14);
-		FUN_8005ca64();
-		FUN_80061a10(FUN_8005ca3c("load_hor.bmp"));
+		FrontLoader_SetFiles(14);
+		FrontLoader_LoadSet(14);
+		FrontLoader_Defragment();
+		FUN_80061a10(FrontLoader_TakeFile("load_hor.bmp"));
 		FUN_8005dc58(8);
 	}
 
@@ -58,13 +58,13 @@ void FUN_8005cd14(void) {
 		o = __nw__6CClassUi(24);
 
 		if (o)
-			o = FUN_80063a5c(o, 8, FUN_8005ca3c("Bckgrnd1.bmp"), 0, 458, 64, 128);
+			o = FUN_80063a5c(o, 8, FrontLoader_TakeFile("Bckgrnd1.bmp"), 0, 458, 64, 128);
 
 		DAT_800d1d0c = o;
 	} else if (Levels[DAT_800d1cf4].fc != 0) {
-		FUN_8005c8dc(6);
-		FUN_8005c97c(6);
-		FUN_8005ca64();
+		FrontLoader_SetFiles(6);
+		FrontLoader_LoadSet(6);
+		FrontLoader_Defragment();
 
 		s0 = Mem_NewX(FileIO_Open(Levels[DAT_800d1cf4].f34), 1, 1);
 
@@ -95,7 +95,7 @@ void FUN_8005cd14(void) {
 	s0 = __nw__6CClassUi(24);
 
 	if (s0)
-		s0 = FUN_80063a5c(s0, 8, FUN_8005ca3c("Pressx.bmp"), 0, 440, 64, 128);
+		s0 = FUN_80063a5c(s0, 8, FrontLoader_TakeFile("Pressx.bmp"), 0, 440, 64, 128);
 
 	DAT_800d1d04 = s0;
 	Pad[PAD_MENU_START + PAD_TRIGGERED] = 0;
@@ -103,6 +103,6 @@ void FUN_8005cd14(void) {
 	DAT_800d1cec = 0;
 	DAT_800d1d14 = 0;
 	Pack_DefragmentFully();
-	FUN_8006b240();
-	FUN_80061ea0();
+	HiRes_ClearOTag();
+	ResetOT();
 }

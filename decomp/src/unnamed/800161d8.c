@@ -1,25 +1,25 @@
-/* FUN_800161d8 (0x800161d8) */
+/* Front_DisplayScreen__Fv (0x800161d8) */
 #include "names.h"
 
 extern volatile int GameFade;
 
-void FUN_8006af64(void);
+void HiRes_BlankScreen(void);
 void Mess_LoadFont__FPciii(char *, int, int, int);
 void FUN_8008c3d0(int);
-void FUN_8006b240(void);
-void FUN_80061ea0(void);
+void HiRes_ClearOTag(void);
+void ResetOT(void);
 void SetClippingBox(int, int, int, int);
 void Mess_SetTextJustify(int);
 void Mess_SetScale(int);
 void Mess_SetRGB(int, int, int, int);
 void Mess_DrawText(int, int, char *, int, int, int, int);
-void FUN_8006b26c(void);
+void HiRes_DrawOTag(void);
 void Mess_UnloadFont(void);
 
-void FUN_800161d8(void) {
+void Front_DisplayScreen(void) {
 	int i;
 
-	FUN_8006af64();
+	HiRes_BlankScreen();
 	Mess_LoadFont__FPciii("ingame1.fnt", -1, -1, -1);
 	FUN_8008c3d0(1);
 
@@ -27,8 +27,8 @@ void FUN_800161d8(void) {
 
 	do {
 		i++;
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		GameFade = 0;
 		SetClippingBox(0, 0, 640, 480);
@@ -36,7 +36,7 @@ void FUN_800161d8(void) {
 		Mess_SetScale(384);
 		Mess_SetRGB(150, 100, 25, 0);
 		Mess_DrawText(320, 240, "loading...", 1, 0, 256, 0);
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	} while (i < 2);
 
 	Mess_UnloadFont();

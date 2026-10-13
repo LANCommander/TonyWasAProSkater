@@ -5,6 +5,8 @@
    region), wait for the read, then process the PSX data and attach the environment. */
 #include "game/spool.h"
 #include "game/m3d.h"
+#include "game/fileio.h"
+#include "game/mem.h"
 
 extern SQueue SpoolQ[];
 extern SPSXRegion PSXRegion[];
@@ -22,13 +24,6 @@ void AttachNewEnviro(int);
 int Spool_GetEnvIndex(int);
 uint *Spool_SkipPackets(uint *);
 
-extern "C" {
-	int FileIO_Open__FPCc(char *);
-	uint *Mem_NewX__FUiii(int, int, int);
-	void FileIO_Load__FPv(uint *);
-	void ProcessNewPSX__Fi(int);
-}
-
 void Spool_Continue() {
 	SQueue *Q = &SpoolQ[SpoolPos];
 
@@ -37,7 +32,7 @@ void Spool_Continue() {
 
 	switch (DAT_800d1f08) {
 		case 0: {
-			int FileSize = FileIO_Open__FPCc(Q->Name);
+			int FileSize = FileIO_Open(Q->Name);
 
 			switch (Q->FileType) {
 				case 1: {
@@ -63,14 +58,14 @@ void Spool_Continue() {
 						*pDest++ = *pNew++;
 
 					*pDest = 0;
-					PSXRegion[Q->Region].pPSX = Mem_NewX__FUiii(FileSize, 1, 1);
-					FileIO_Load__FPv(PSXRegion[Q->Region].pPSX);
+					PSXRegion[Q->Region].pPSX = Mem_NewX(FileSize, 1, 1);
+					FileIO_Load(PSXRegion[Q->Region].pPSX);
 					break;
 				}
 				case 0:
 				case 2:
-					PSXRegion[Q->Region].pPSX = Mem_NewX__FUiii(FileSize, 1, 1);
-					FileIO_Load__FPv(PSXRegion[Q->Region].pPSX);
+					PSXRegion[Q->Region].pPSX = Mem_NewX(FileSize, 1, 1);
+					FileIO_Load(PSXRegion[Q->Region].pPSX);
 					break;
 			}
 
@@ -86,7 +81,7 @@ void Spool_Continue() {
 		case 2:
 			switch (Q->FileType) {
 				case 1:
-					ProcessNewPSX__Fi(Q->Region);
+					ProcessNewPSX(Q->Region);
 					AttachNewEnviro(Q->Region);
 
 					{
@@ -97,7 +92,7 @@ void Spool_Continue() {
 
 					break;
 				case 0:
-					ProcessNewPSX__Fi(Q->Region);
+					ProcessNewPSX(Q->Region);
 					break;
 				case 2:
 					break;

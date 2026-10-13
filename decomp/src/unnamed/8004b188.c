@@ -19,7 +19,7 @@ int FUN_800949a4(int);
 void FUN_800938b4(int);
 void FUN_80093df4(void *, int);
 void FUN_80094d94(int);
-void FUN_8004d6a0(void *, int);
+void Mem_Shrink(void *, int);
 
 int FUN_8004b188(char *name, SVabHead **out) {
 	SVabHead *vab = Mem_NewX(FileIO_Open(name) + 64, 1, 1);
@@ -36,7 +36,7 @@ int FUN_8004b188(char *name, SVabHead **out) {
 	FUN_80094d94(1);
 
 	vab->Size = addr;
-	FUN_8004d6a0(vab, head);
+	Mem_Shrink(vab, head);
 
 	*out = vab;
 	return 1;

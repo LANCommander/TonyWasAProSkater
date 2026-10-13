@@ -71,4 +71,7 @@ struct SFaceCache {
 	int ZMax;  /* 0x18 */
 };
 
+/* functions */
+void M3dColij_LineToItemZoned(Item **ppItem, SLineInfo *pInfo); /* 0x80080328 */
+
 #endif

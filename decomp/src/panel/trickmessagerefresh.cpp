@@ -2,18 +2,14 @@
 /* C++ (PANEL.CPP). Demo twin CPanelData::TrickMessageRefresh: THPS1 drops the per-trick spin
    display. Rebuilds the up-to-three trick-name lines: an optional spin prefix ("%d "), the
    stance name and the first trick, then each further trick appended to the current line,
-   wrapping when the line gets wider than the viewport allows. FUN_8008b900 = sprintf,
-   Mess_TextWidth__FPCc = text width, FUN_8006e534 = "SWITCH " or "" prefix. */
+   wrapping when the line gets wider than the viewport allows. sprintf = sprintf,
+   Mess_TextWidth__FPCc = text width, Panel_SwitchText = "SWITCH " or "" prefix. */
 #include "game/panel.h"
 #include "game/bruce.h"
+#include "game/mess.h"
+#include "game/psyq.h"
 
 extern int ViewportMode;
-
-extern "C" {
-	int FUN_8008b900(char *, const char *, ...);
-	int Mess_TextWidth__FPCc(char *);
-	char *FUN_8006e534(CBruce *);
-}
 
 void Mess_SetScale(int);
 
@@ -27,7 +23,7 @@ void CPanelData::TrickMessageRefresh() {
 	mTrickName3[0] = 0;
 
 	if (mpBruce->mNum180Spins > 0 && (mpBruce->mPhysicsState != 2 || mpBruce->mNum180Spins >= 2))
-		p = mTrickName + FUN_8008b900(mTrickName, "%d ", mpBruce->mNum180Spins * 180);
+		p = mTrickName + sprintf(mTrickName, "%d ", mpBruce->mNum180Spins * 180);
 	else
 		p = mTrickName;
 
@@ -50,13 +46,13 @@ void CPanelData::TrickMessageRefresh() {
 		return;
 	}
 
-	FUN_8008b900(p, "%s%s", FUN_8006e534(mpBruce), mTQ[0].name);
+	sprintf(p, "%s%s", Panel_SwitchText(mpBruce), mTQ[0].name);
 	Mess_SetScale(188);
 
 	for (int i = 1; i < mTQStack; i++) {
-		FUN_8008b900(tbuf, "%s + %s", p, mTQ[i].name);
+		sprintf(tbuf, "%s + %s", p, mTQ[i].name);
 
-		if (Mess_TextWidth__FPCc(tbuf) > lineWidth) {
+		if (Mess_TextWidth(tbuf) > lineWidth) {
 			currLine++;
 
 			if (currLine == 1)
@@ -65,12 +61,12 @@ void CPanelData::TrickMessageRefresh() {
 				p = mTrickName3;
 
 			if (currLine == 3) {
-				FUN_8008b900(p, "%s + ^...^", p);
+				sprintf(p, "%s + ^...^", p);
 				return;
 			}
 
-			FUN_8008b900(p, "+ %s", mTQ[i].name);
+			sprintf(p, "+ %s", mTQ[i].name);
 		} else
-			FUN_8008b900(p, tbuf);
+			sprintf(p, tbuf);
 	}
 }

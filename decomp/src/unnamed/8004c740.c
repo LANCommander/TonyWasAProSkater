@@ -1,6 +1,8 @@
-/* FUN_8004c740 (0x8004c740) */
+/* FileIO_SetSectorsPerFrame__Fi (0x8004c740) */
+#include "names.h"
+
 int SectorsPerFrame;
 
-void FUN_8004c740(int v) {
+void FileIO_SetSectorsPerFrame(int v) {
 	SectorsPerFrame = v;
 }

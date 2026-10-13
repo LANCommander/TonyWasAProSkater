@@ -1,4 +1,6 @@
 /* FUN_80060738 (0x80060738) */
+#include "names.h"
+
 typedef struct {
 	int v[7];
 } T;
@@ -6,7 +8,7 @@ typedef struct {
 extern T DAT_800a1f34;
 extern unsigned char DAT_800a6858[];
 
-int FUN_8005e0e0(T *a, T *b, int c, int d, int *e, int f, int g, int h, int i);
+int Front_RunMenu(T *a, T *b, int c, int d, int *e, int f, int g, int h, int i);
 
 int FUN_80060738(int arg, int *p) {
 	int flag = 0;
@@ -28,7 +30,7 @@ int FUN_80060738(int arg, int *p) {
 	b.v[4] = p[8] < 3;
 	b.v[5] = p[9] < 3;
 	b.v[6] = flag == 0;
-	r = FUN_8005e0e0(&a, &b, 7, 25200, &arg, 0, 0, 0, 0);
+	r = Front_RunMenu(&a, &b, 7, 25200, &arg, 0, 0, 0, 0);
 
 	if (r == 25201)
 		r = -1;

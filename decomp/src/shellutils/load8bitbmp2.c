@@ -20,10 +20,10 @@ typedef struct {
 
 extern int Pal256X, Pal256Y;
 
-int FUN_8008c190(char *, ...);
+int printf(char *, ...);
 int GetFree256Slot(void);
-int FUN_8008c714(RECT *, unsigned short *);
-int FUN_8008c468(int);
+int LoadImage(RECT *, unsigned short *);
+int DrawSync(int);
 char *Mem_NewX(int, int, int);
 void Mem_Delete(void *);
 unsigned short FUN_8008f70c(int, int);
@@ -42,7 +42,7 @@ int Load8BitBMP2(char *file, char **out, int *pw, int *ph, unsigned short *pclut
 	bpp = b->bpp;
 
 	if (bpp != 8) {
-		FUN_8008c190("\nNot 8 bits per pixel, is %d bits per pixel", bpp);
+		printf("\nNot 8 bits per pixel, is %d bits per pixel", bpp);
 		return 0;
 	}
 
@@ -85,8 +85,8 @@ int Load8BitBMP2(char *file, char **out, int *pw, int *ph, unsigned short *pclut
 	rc.y = y;
 	rc.w = 256;
 	rc.h = 1;
-	FUN_8008c714(&rc, pal);
-	FUN_8008c468(0);
+	LoadImage(&rc, pal);
+	DrawSync(0);
 
 	pad = w % 4;
 

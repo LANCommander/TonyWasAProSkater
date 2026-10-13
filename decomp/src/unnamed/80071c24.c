@@ -31,7 +31,7 @@ void FUN_800827ac(void);
 void Flash_Reset(void);
 void FUN_8004ee24(void);
 void FUN_8004f5d0(void);
-void FUN_8002ef24(V *);
+void SetGravity(V *);
 void Pad_ClearAll(void);
 
 static inline void VI(V *p, int x, int y, int z) {
@@ -74,7 +74,7 @@ void Init_Cleanup(int a) {
 	FUN_8004ee24();
 	FUN_8004f5d0();
 	VI(&v, 0, 0x8000, 0);
-	FUN_8002ef24(&v);
+	SetGravity(&v);
 
 	TTime = 0;
 	Pad_ClearAll();

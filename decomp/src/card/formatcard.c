@@ -1,7 +1,7 @@
 /* Card_FormatCard__Fii (0x80015474) */
 #include "names.h"
 
-void FUN_8008b900(char *, char *, int, int);
+void sprintf(char *, char *, int, int);
 void _clear_event_x(void);
 int FUN_8008eaa8(char *);
 int _card_event_x(void);
@@ -10,7 +10,7 @@ int Card_FormatCard(int a, int b) {
 	char buf[8];
 	int s, r;
 
-	FUN_8008b900(buf, "bu%1d%1d:", a, b);
+	sprintf(buf, "bu%1d%1d:", a, b);
 	_clear_event_x();
 
 	s = FUN_8008eaa8(buf);

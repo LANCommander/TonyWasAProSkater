@@ -2,6 +2,9 @@
 /* C++ (POWERUP.CPP). Fuzzy demo twin; body from the earlier C draft, as a real constructor so `this`
    is copied where retail copies it. Layout by THPS1 offsets; callees keep their linker names. */
 #include "game/powerup.h"
+#include "game/redbook.h"
+#include "game/spool.h"
+#include "game/utils.h"
 
 extern int GGame;
 extern CPowerUp *GPowS;
@@ -14,10 +17,6 @@ extern unsigned char CurrentItemsFileRegion;
 extern unsigned char CurrentMedalsFileRegion;
 
 char PowerUpList[8];
-
-extern "C" int Redbook_Rnd__Fi(int);
-extern "C" short Spool_GetModel__FUii(unsigned, int);
-extern "C" int Utils_GetGroundHeight__FRC7CVectorii(CVector *, int, int);
 
 CPowerUp::CPowerUp(ushort a1, const CVector &a2_, const CVector &a3_, uint a4, int a5) {
 	const CVector *a2 = &a2_, *a3 = &a3_;
@@ -43,7 +42,7 @@ CPowerUp::CPowerUp(ushort a1, const CVector &a2_, const CVector &a3_, uint a4, i
 	c[2] = 5;
 	this->mAngVel.vy = 100;
 	this->mAcc.vy = 0x8000;
-	this->mWobbleSpeed = Redbook_Rnd__Fi(20) + 90;
+	this->mWobbleSpeed = Redbook_Rnd(20) + 90;
 	this->mMaxWobbleAmplitude = 50;
 	this->mWobbleAmplitude = 50;
 
@@ -52,7 +51,7 @@ CPowerUp::CPowerUp(ushort a1, const CVector &a2_, const CVector &a3_, uint a4, i
 		this->mDropForever = 1;
 	} else if (a4 & 4) {
 		this->mDropping = 1;
-		this->mGroundY = Utils_GetGroundHeight__FRC7CVectorii(&this->mOrgPos, 0, 8000);
+		this->mGroundY = Utils_GetGroundHeight(this->mOrgPos, 0, 8000);
 	}
 
 	this->mRMinor = 300;
@@ -66,60 +65,60 @@ CPowerUp::CPowerUp(ushort a1, const CVector &a2_, const CVector &a3_, uint a4, i
 			InitItem("skmedals");
 
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x54636518, CurrentMedalsFileRegion);
+			this->mModel = Spool_GetModel(0x54636518, CurrentMedalsFileRegion);
 			break;
 		case 0x665:
 			InitItem("skmedals");
 
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0xba6d0434, CurrentMedalsFileRegion);
+			this->mModel = Spool_GetModel(0xba6d0434, CurrentMedalsFileRegion);
 			break;
 		case 0x666:
 			InitItem("skmedals");
 
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x2364558e, CurrentMedalsFileRegion);
+			this->mModel = Spool_GetModel(0x2364558e, CurrentMedalsFileRegion);
 			break;
 		case 5:
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x311d55d4, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0x311d55d4, CurrentItemsFileRegion);
 			break;
 		case 4:
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x2328a71c, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0x2328a71c, CurrentItemsFileRegion);
 			break;
 		case 6:
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x2ebf22ca, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0x2ebf22ca, CurrentItemsFileRegion);
 			break;
 		case 15:
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x34524351, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0x34524351, CurrentItemsFileRegion);
 			break;
 		case 10:
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x29b68a16, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0x29b68a16, CurrentItemsFileRegion);
 			break;
 		case 18:
 		case 16:
 			this->mAngVel.vy = 150;
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0xd5108e8c, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0xd5108e8c, CurrentItemsFileRegion);
 			break;
 		case 21:
 			this->mAngVel.vy = 200;
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x6f0f6b9f, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0x6f0f6b9f, CurrentItemsFileRegion);
 			break;
 		case 22:
 			this->mAngVel.vy = 200;
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0xf6063a25, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0xf6063a25, CurrentItemsFileRegion);
 			break;
 		case 23:
 			this->mAngVel.vy = 200;
 			this->mIs3d = 1;
-			this->mModel = Spool_GetModel__FUii(0x81010ab3, CurrentItemsFileRegion);
+			this->mModel = Spool_GetModel(0x81010ab3, CurrentItemsFileRegion);
 			break;
 	}
 

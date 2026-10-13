@@ -1,4 +1,6 @@
-/* FUN_800103a4 (0x800103a4) */
+/* Options_GetPreferences__Fv (0x800103a4) */
+#include "names.h"
+
 /* Copies the saved preferences (career block GCareer) into the live game settings
    (GPreferences): two words, the per-player controller settings and both name strings, with the
    first name zero-padded to 11 bytes. */
@@ -34,9 +36,9 @@ typedef struct {
 extern SGame GPreferences;
 extern SCareer GCareer;
 
-int FUN_8008b900(char *, const char *, ...);
+int sprintf(char *, const char *, ...);
 
-void FUN_800103a4(void) {
+void Options_GetPreferences(void) {
 	int i;
 
 	GPreferences.w0 = GCareer.w830;
@@ -53,7 +55,7 @@ void FUN_800103a4(void) {
 		GPreferences.Pad[i].d = GCareer.Pad[i].d;
 	}
 
-	FUN_8008b900(GPreferences.Name, GCareer.Name);
+	sprintf(GPreferences.Name, GCareer.Name);
 
 	GPreferences.NameLen = GCareer.NameLen;
 
@@ -64,5 +66,5 @@ void FUN_800103a4(void) {
 			GPreferences.Name[j] = 0;
 	}
 
-	FUN_8008b900(GPreferences.Str, GCareer.Str);
+	sprintf(GPreferences.Str, GCareer.Str);
 }

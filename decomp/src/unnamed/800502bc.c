@@ -26,11 +26,11 @@ extern short GameFMV_StartX, GameFMV_StartY, GameFMV_EndX;
 extern int pDoubleBuffer, OT_entry;
 extern int DAT_800be3d0[];
 
-void FUN_80023168(int);
-void FUN_8002357c(int);
+void GameFMV_SetStartTrack(int);
+void GameFMV_SyncFMV(int);
 P *Mem_NewX(int, int, int);
 void Mem_Delete(P *);
-int FUN_8008eebc(int);
+int VSync(int);
 void GameFMV_StartFMV(int);
 void GameFMV_StopFMV(void);
 
@@ -61,15 +61,15 @@ void FUN_800502bc(int a) {
 		case 1:
 			if (DAT_800d2274 == 0) {
 				if (DAT_800d2278 == 0) {
-					FUN_80023168(DAT_800be3d0[DAT_800d227c]);
+					GameFMV_SetStartTrack(DAT_800be3d0[DAT_800d227c]);
 
 					GameFMV_StartX = 512;
 					GameFMV_EndX = 608;
 					GameFMV_StartY = 0;
 					GameFMV_StartFMV(1);
 
-					DAT_800d226c = (FUN_8008eebc(1) + FUN_8008eebc(-1)) % 320;
-					DAT_800d2270 = (FUN_8008eebc(1) + FUN_8008eebc(-1)) % 112;
+					DAT_800d226c = (VSync(1) + VSync(-1)) % 320;
+					DAT_800d2270 = (VSync(1) + VSync(-1)) % 112;
 				}
 
 				DAT_800d2280->r = DAT_800d2278;
@@ -106,7 +106,7 @@ void FUN_800502bc(int a) {
 				}
 			}
 
-			FUN_8002357c(1);
+			GameFMV_SyncFMV(1);
 
 			if (GameFMV_RewindSwitch) {
 				DAT_800d2274 = 0;

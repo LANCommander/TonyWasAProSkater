@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","Mem_NewX__FUiii":"0x8004d068","FUN_8008c774":"0x8008c774","FUN_8008c714":"0x8008c714","Mem_Delete__FPv":"0x8004d5d0","FUN_800665ec__Fii":"0x800665ec"}
+{"gp":"0x800d1080","Mem_NewX__FUiii":"0x8004d068","StoreImage":"0x8008c774","LoadImage":"0x8008c714","Mem_Delete__FPv":"0x8004d5d0","MakeGreyClut__Fii":"0x800665ec"}

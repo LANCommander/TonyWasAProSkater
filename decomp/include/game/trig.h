@@ -28,4 +28,13 @@ struct SCommandPoint {
 	                             /* sizeof == 0x18 */
 };
 
+/* functions */
+class CBody;
+
+SCommandPoint *Trig_TriggerCommandPoint(uint, bool);                       /* 0x80044a20 */
+void Trig_ExecuteRestart();                                                /* 0x80044c84 */
+void Trig_SendPulseToNode(int idx);                                        /* 0x80045538 */
+void KillInList(int, CBody *, int);                                        /* 0x80045774 */
+void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling); /* 0x80046374 */
+
 #endif

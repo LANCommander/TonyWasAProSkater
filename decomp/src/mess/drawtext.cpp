@@ -11,6 +11,7 @@ extern "C" {
 
 #include "game/font.h"
 #include "game/m3d.h"
+#include "game/psyq.h"
 
 struct SWobble {
 	short Offsets[32];
@@ -39,7 +40,6 @@ void Mess_SetScale(int);
 void Mess_SetRGB(uchar, uchar, uchar, int);
 int GetCharIndex(char);
 void Panel_addPrim(void *);
-extern "C" unsigned int strlen(const char *);
 
 int Mess_DrawText(int x, int y, const char *pMessage, int DrawSolid, u_int FireRGB, int FireSquash,
                   bool IsPanel) {

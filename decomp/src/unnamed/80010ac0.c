@@ -1,4 +1,4 @@
-/* FUN_80010ac0 (0x80010ac0) */
+/* Crowd_Stop__Fv (0x80010ac0) */
 #include "names.h"
 
 struct S {
@@ -19,7 +19,7 @@ extern struct A Crowd[];
 
 void SFX_Stop(unsigned a);
 
-void FUN_80010ac0(void) {
+void Crowd_Stop(void) {
 	int i;
 
 	if (Levels[GLevel].f) {

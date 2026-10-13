@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","Db_Render__Fv":"0x80049094","DoubleBuffer":"0x800a891c","pDoubleBuffer":"0x800d1a48","pOtherBuffer":"0x800d1a4c","FUN_8008cf34":"0x8008cf34","FUN_80048c74":"0x80048c74","FUN_80089ddc":"0x80089ddc","Pause__Fi":"0x800478f4"}
+{"gp":"0x800d1080","Db_Render__Fv":"0x80049094","DoubleBuffer":"0x800a891c","pDoubleBuffer":"0x800d1a48","pOtherBuffer":"0x800d1a4c","SetDrawArea":"0x8008cf34","Db_OTSize__Fv":"0x80048c74","CompactOTagR":"0x80089ddc","Pause__Fi":"0x800478f4"}

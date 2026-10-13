@@ -1,2 +1,4 @@
-/* FUN_8006c4e8 (0x8006c4e8) */
-void FUN_8006c4e8(void) {}
+/* Panel_Update__Fv (0x8006c4e8) */
+#include "names.h"
+
+void Panel_Update(void) {}

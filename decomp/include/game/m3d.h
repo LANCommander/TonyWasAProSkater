@@ -323,4 +323,18 @@ struct SRainEntry {
 	CGPolyLine *p_line; /* 0x0c */
 };
 
+/* functions */
+struct SCamera;
+struct SLineInfo;
+
+void M3dZone_FreePSX(int region);                                       /* 0x80082738 */
+int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs); /* 0x800827d4 */
+void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot);       /* 0x800831f8 */
+void M3d_RenderCleanup();                                               /* 0x80083774 */
+void M3d_Render(void *p);                                               /* 0x80083838 */
+void RenderModel(SModel *pModel);                                       /* 0x80084d18 */
+void RenderModelFast(SModel *pModel, VECTOR *pPos);                     /* 0x80084dc0 */
+void RenderModelInSuper(SModel *pModel);                                /* 0x80084ebc */
+void RenderModelNonRotated(SModel *pModel, VECTOR *pPos);               /* 0x80085018 */
+
 #endif

@@ -1,4 +1,4 @@
-/* FUN_8006edb8 (0x8006edb8) */
+/* Spool_RestorePSX__Fi (0x8006edb8) */
 #include "names.h"
 
 typedef struct {
@@ -22,7 +22,7 @@ static int CopyWords(int *p) {
 }
 #endif
 
-void FUN_8006edb8(int i) {
+void Spool_RestorePSX(int i) {
 	int *d = PSXRegion[i].p14;
 	int *s = Memories[i];
 #ifdef PC_PORT

@@ -1,15 +1,17 @@
-/* FUN_8005c85c (0x8005c85c) */
+/* Front_StopMusicLoop__Fv (0x8005c85c) */
+#include "names.h"
+
 short DAT_800d1ca0;
 
-void FUN_8005c734(int a);
-void FUN_8005c780(void);
-int FUN_8008eebc(int a);
+void Front_SetMusicLoop(int a);
+void Front_UpdateMusicLoop(void);
+int VSync(int a);
 
-void FUN_8005c85c(void) {
-	FUN_8005c734(-1);
+void Front_StopMusicLoop(void) {
+	Front_SetMusicLoop(-1);
 
 	while (DAT_800d1ca0 >= 0) {
-		FUN_8005c780();
-		FUN_8008eebc(0);
+		Front_UpdateMusicLoop();
+		VSync(0);
 	}
 }

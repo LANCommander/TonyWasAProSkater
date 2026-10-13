@@ -1,4 +1,4 @@
-/* FUN_80060e98 (0x80060e98) */
+/* Front_TitleScreen__Fv (0x80060e98) */
 #include "names.h"
 #include "game/padbuttons.h"
 
@@ -49,30 +49,30 @@ int FileIO_Open(char *);
 void FileIO_Load(int);
 void FileIO_Sync(void);
 int Mem_NewX(int, int, int);
-void FUN_80061714(int);
+void DownloadBMP16x2(int);
 void Pad_ClearTriggers(char *);
 char *__nw__6CClassUi(unsigned);
 char *__6Spriteiiiiiii(char *, int, int, int, int, int, int, int);
-void FUN_8008c468(int);
+void DrawSync(int);
 int FUN_800154f4(int);
-void FUN_8005c8dc(int);
-void FUN_8005c780(void);
-void FUN_8006b240(void);
-void FUN_80061ea0(void);
-void FUN_8005c934(void);
+void FrontLoader_SetFiles(int);
+void Front_UpdateMusicLoop(void);
+void HiRes_ClearOTag(void);
+void ResetOT(void);
+void FrontLoader_Continue(void);
 void Mess_SetRGB(int, int, int, int);
 void Mess_SetTextJustify(int);
 void Sprite_draw(struct O *, int, int, int, int, int, int);
-void FUN_8001f1b4(int);
+void Mess_SetFontShadowOffset(int);
 void Mess_DrawText(int, int, char *, int, int, int, int);
-void FUN_80070ff4(void);
-void FUN_8005c68c(void);
+void Pad_Update(void);
+void Front_CheckSoftReset(void);
 void Mess_Update(void);
 void Mess_Display(void);
-void FUN_8006b26c(void);
+void HiRes_DrawOTag(void);
 void SFX_PlayX(int, int, int);
 
-void FUN_80060e98(void) {
+void Front_TitleScreen(void) {
 	int v, w;
 	int s0;
 	char *p;
@@ -88,7 +88,7 @@ void FUN_80060e98(void) {
 		FileIO_Sync();
 	}
 
-	FUN_80061714(v);
+	DownloadBMP16x2(v);
 	Pad_ClearTriggers(Pad);
 	Pad_ClearTriggers(Pad + 364);
 
@@ -102,7 +102,7 @@ void FUN_80060e98(void) {
 		p = __6Spriteiiiiiii(p, DAT_800d1d8c, DAT_800d1d8e, DAT_800d1d90, DAT_800d1d92, 1, 32, 128);
 
 	DAT_800d1d88 = (struct O *)p;
-	FUN_8008c468(0);
+	DrawSync(0);
 
 	{
 		struct C30 a = DAT_800a1fd0;
@@ -116,43 +116,43 @@ void FUN_80060e98(void) {
 			DAT_800d1d80 = FUN_800154f4(w);
 		}
 
-		FUN_8005c8dc(0);
+		FrontLoader_SetFiles(0);
 
 		DemoTimer = 1600;
 
 		while (1) {
-			FUN_8005c780();
+			Front_UpdateMusicLoop();
 
 			if (!DemoTimer)
 				break;
 
 			DemoTimer--;
 			s0--;
-			FUN_8006b240();
-			FUN_80061ea0();
-			FUN_8005c934();
+			HiRes_ClearOTag();
+			ResetOT();
+			FrontLoader_Continue();
 			Mess_SetRGB(128, 128, 128, 0);
 			Mess_SetTextJustify(0);
 
 			if (s0 < 32)
 				Sprite_draw(DAT_800d1d88, DAT_800d1d8c, DAT_800d1d8e, 0, -1, -1, -1);
 			else if (s0 < 128) {
-				FUN_8001f1b4(4);
+				Mess_SetFontShadowOffset(4);
 				Mess_DrawText(320, 357, GameText.s, 1, 0, 256, 0);
 			}
 
 			if (!s0)
 				s0 = 128;
 
-			FUN_80070ff4();
-			FUN_8005c68c();
+			Pad_Update();
+			Front_CheckSoftReset();
 
 			if (DAT_800d1cb8)
 				break;
 
 			Mess_Update();
 			Mess_Display();
-			FUN_8006b26c();
+			HiRes_DrawOTag();
 
 			if (s0 > 128 || !(Pad[PAD_MENU_START + PAD_TRIGGERED] ||
 			                  Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED]))

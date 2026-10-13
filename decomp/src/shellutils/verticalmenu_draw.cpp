@@ -3,22 +3,17 @@
    vertical text menu: erases the old selection triangles (ticks 63/64), redraws every item (the
    selected one large and orange, greyed ones dark), rebuilds the triangles' erase sprites at
    tick 61 (the selected item's width is re-measured at tick 63), and draws the selection triangles while the tick counts down. */
+#include "game/mess.h"
 #include "game/shellutils.h"
 
 void Mess_SetFontScale(uint);
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);
 
-extern "C" {
-	void Mess_SetTextJustify__FUc(int);
-	int Mess_TextWidth__FPCc(char *);
-	void Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-}
-
 void VerticalMenu::draw() {
 	int tri_off;
 	int y;
 
-	Mess_SetTextJustify__FUc(0);
+	Mess_SetTextJustify(0);
 	Mess_SetFontScale(font_scale);
 
 	if ((uint)(tick - 63) < 2) {
@@ -33,7 +28,7 @@ void VerticalMenu::draw() {
 			                 -1, -1);
 
 		if (tick == 63)
-			list[selected].w = Mess_TextWidth__FPCc(list[selected].string);
+			list[selected].w = Mess_TextWidth(list[selected].string);
 	}
 
 	{
@@ -58,7 +53,7 @@ void VerticalMenu::draw() {
 				y = list[i].y - (list[i].h >> 1) + list[i].baseline;
 			}
 
-			Mess_DrawText__FiiPCciUiib(list[i].x, y, list[i].string, 0, 0, 256, 0);
+			Mess_DrawText(list[i].x, y, list[i].string, 0, 0, 256, 0);
 			Mess_SetFontScale(font_scale);
 		}
 	}

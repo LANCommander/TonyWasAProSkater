@@ -10,6 +10,7 @@
    - The `0xff00U` masks matter: an unsigned mask stops the store to a ushort narrowing the AND
      into `li -256`. */
 #include "game/m3d.h"
+#include "game/psyq.h"
 
 extern SPSXRegion PSXRegion[];
 

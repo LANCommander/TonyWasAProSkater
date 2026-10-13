@@ -4,17 +4,13 @@
    computes -(n*50)), refresh the panel, fire the pending item, and feed the crowd meter into the
    special meter. */
 #include "game/bruce.h"
+#include "game/crowd.h"
+#include "game/mem.h"
+#include "game/panel.h"
+#include "game/psyq.h"
+#include "game/trickob.h"
 
 extern int GGame;
-
-extern "C" {
-	void FUN_8006e20c(CBruce *);
-	int FUN_8004d83c(void *);
-	int FUN_8004f000(Item *, CBruce *, int);
-	void FUN_80010d84(int);
-	void FUN_80042700(CBruce *, int, int, int, int);
-	void FUN_8008c190(char *);
-}
 
 void CBruce::Trick_Land() {
 	mTricks++;
@@ -69,23 +65,23 @@ void CBruce::Trick_Land() {
 		}
 	}
 
-	FUN_8006e20c(this);
+	Panel_Land(this);
 
 	if (m364) {
-		if (mpWallItem && FUN_8004d83c(&mWallHandle)) {
-			FUN_8004f000(mpWallItem, this, mPanel.mLandedTotal);
+		if (mpWallItem && Mem_CheckHandle(&mWallHandle)) {
+			TrickOb_TrickedOnItem(mpWallItem, this, mPanel.mLandedTotal);
 
 			mpWallItem = 0;
 		}
 
 		if (m364 && GGame == 7) {
-			FUN_8008c190("Setting Playtime to 0\n");
+			printf("Setting Playtime to 0\n");
 
 			mTime = 0;
 		}
 	}
 
-	FUN_80010d84(mPanel.mLandedTotal);
+	Crowd_Cheer(mPanel.mLandedTotal);
 	unsigned Cheer = mPanel.mLandedTotal;
 
 	if (m364) {
@@ -95,7 +91,7 @@ void CBruce::Trick_Land() {
 			if (mBalanceTime >= 3000) {
 				mBalanceTime = 0;
 				mBalanceFlash = 750;
-				FUN_80042700(this, 20, 20, 20, 5);
+				SetGlow(20, 20, 20, 5);
 			}
 		} else {
 			mBalanceFlash += Cheer / 5;

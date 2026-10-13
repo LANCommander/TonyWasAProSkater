@@ -5,6 +5,8 @@
    are one extern array: an unsized extern gives the split lui/addiu that keeps the if/else (a
    single `la` lets jump.c turn it into `VInfo = B; if (...) VInfo = A`). */
 #include "game/bruce.h"
+#include "game/mess.h"
+#include "game/psyq.h"
 #include "game/video.h"
 
 extern int GGame;
@@ -24,11 +26,6 @@ void Mess_SetTextJustify(uchar);
 void Mess_SetScale(int);
 int Mess_DrawPanelText(int, int, const char *, int, uint, int);
 
-extern "C" {
-	void FUN_8001f138(int);
-	int FUN_8008b900(char *, const char *, ...);
-}
-
 void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 	char time[8];
 	int ticks;
@@ -41,7 +38,7 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 	if (GGame == 7 && !pBruce->mTime)
 		return;
 
-	FUN_8001f138(GSkaterRegion);
+	Mess_SetCurrentFont(GSkaterRegion);
 
 	{
 		SVideoInfo *VInfo;
@@ -61,7 +58,7 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 				mins = 0;
 			}
 
-			FUN_8008b900(time, "%ld:%02ld", mins, secs);
+			sprintf(time, "%ld:%02ld", mins, secs);
 			Mess_SetRGB(128, 0, 0, 0);
 			Mess_SetTextJustify(0);
 			Mess_SetScale(256);
@@ -95,5 +92,5 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 		}
 	}
 
-	FUN_8001f138(GStartTime);
+	Mess_SetCurrentFont(GStartTime);
 }

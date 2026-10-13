@@ -23,10 +23,10 @@ void Card_GetDirAndFreeBlocks(int, int);
 int Mem_NewX(int, int, int);
 void Card_SetSelectedFile(E *);
 int Card_Load(int, int, int);
-int FUN_8008eebc(int);
+int VSync(int);
 void Front_ExtractASCIINameFromSJIS(char *, char *);
 void Mem_Delete(int);
-void FUN_800103a4(void);
+void Options_GetPreferences(void);
 void Options_SetPreferences(void);
 
 #ifdef PC_PORT
@@ -63,7 +63,7 @@ int FUN_800154f4(void) {
 				if (Card_Load(0, p, 0) == 0) {
 #ifndef PC_PORT
 					if (s2 == 0)
-						s2 = FUN_8008eebc(-1);
+						s2 = VSync(-1);
 
 					FUN_80061270(1);
 #endif
@@ -89,11 +89,11 @@ int FUN_800154f4(void) {
 
 		if (s4 >= 0) {
 			Card_SetSelectedFile(&SLOT_DIR[s4]);
-			FUN_800103a4();
+			Options_GetPreferences();
 			Options_SetPreferences();
 		}
 
-		while (s2 != 0 && FUN_8008eebc(-1) < s2 + 60)
+		while (s2 != 0 && VSync(-1) < s2 + 60)
 			;
 
 		return r;

@@ -6,6 +6,8 @@
 #include "game/video.h"
 #include "game/career.h"
 #include "game/mess.h"
+#include "game/front.h"
+#include "game/psyq.h"
 
 extern SVideoInfo GVInfo1;
 extern SVideoInfo GVInfo2;
@@ -29,11 +31,6 @@ int GHorseContinue;
 void Video_Stop(CBruce *);
 void InitStatsSwisch();
 int SFX_PlayX(unsigned int, short, int);
-
-extern "C" {
-	void CommonSwitchOnMenuCode__Fv(void);
-	int FUN_8008b900(char *, const char *, ...);
-}
 
 void Front_SwitchOnEndLevelMenu() {
 	CBruce *pSkater;
@@ -90,8 +87,7 @@ void Front_SwitchOnEndLevelMenu() {
 
 				GCareer.HighScore[GLevel][i].Score = pSkater->mPanel.mTotalScore;
 				GCareer.HighScore[GLevel][i].Skater = GSkater->mSkaterIndex;
-				FUN_8008b900(GCareer.HighScore[GLevel][i].Name,
-				             GCareer.Options.LastHighScoreInitials);
+				sprintf(GCareer.HighScore[GLevel][i].Name, GCareer.Options.LastHighScoreInitials);
 
 				GHighScoreLineIndex = i;
 				i = 8;
@@ -107,6 +103,6 @@ void Front_SwitchOnEndLevelMenu() {
 		GHorseContinue = 0;
 	}
 
-	CommonSwitchOnMenuCode__Fv();
+	CommonSwitchOnMenuCode();
 	InitStatsSwisch();
 }

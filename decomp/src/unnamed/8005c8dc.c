@@ -1,4 +1,6 @@
-/* FUN_8005c8dc (0x8005c8dc) */
+/* FrontLoader_SetFiles__Fi (0x8005c8dc) */
+#include "names.h"
+
 struct T {
 	char pad[128];
 	int f;
@@ -9,11 +11,11 @@ extern char DAT_800bec34[];
 
 int DAT_800d1cac;
 
-void FUN_8005c8bc(void);
+void FrontLoader_CheckSet(void);
 void FUN_80065594(char *a, struct T *b, int c);
 
-void FUN_8005c8dc(int a) {
+void FrontLoader_SetFiles(int a) {
 	DAT_800d1cac = a;
-	FUN_8005c8bc();
+	FrontLoader_CheckSet();
 	FUN_80065594(DAT_800bec34, &DAT_800be478[a], DAT_800be478[a].f);
 }

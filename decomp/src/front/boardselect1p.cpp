@@ -1,5 +1,5 @@
-/* FUN_80054510 (0x80054510) */
-/* C++ (front end, 1-player board select; called from the screen dispatcher FUN_8005bb70). Three
+/* Front_BoardSelect1P__Fi (0x80054510) */
+/* C++ (front end, 1-player board select; called from the screen dispatcher Front_Main). Three
    columns (deck, trucks, wheels) each scroll a pair of SlicedImage pictures vertically through a
    clipped box; left/right moves between columns, up/down scrolls the selected column. A text bar
    shows the deck's name (or "Get %d tapes to unlock" / "Unlock in career mode"), and five stat
@@ -10,6 +10,12 @@
 #include "game/pre.h"
 #include "game/career.h"
 #include "game/pad.h"
+#include "game/mess.h"
+#include "game/sfx.h"
+#include "game/psyq.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/main.h"
 
 extern SControl Pad[];
 extern SCareer GCareer;
@@ -33,35 +39,7 @@ void Mess_SetFontScale(uint);
 void Mess_SetCurrentFont(char *);
 int Mess_TextHeight(const char *);
 
-extern "C" {
-	void FUN_8005c97c(int);
-	void FUN_8005ca64(void);
-	int FUN_8005ca3c(char *);
-	void FUN_80061714(int);
-	void Mess_SetTextJustify__FUc(int);
-	int FUN_8008b900(char *, const char *, ...);
-	void FUN_8008e904(char *, char *);
-	int Mess_TextWidth__FPCc(char *);
-	int Mess_TextHeightBelowBaseline__FPCc(const char *);
-	void Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	void SFX_PlayX__FUisi(int, int, int);
-	void FUN_8005c8dc(int);
-	void FUN_80053dbc(void);
-	void FUN_8005c780(void);
-	void FUN_80070ff4(void);
-	void FUN_8005c68c(void);
-	void FUN_800242cc(void);
-	void FUN_8005c934(void);
-	void FUN_80054134(void);
-	void FUN_8006b240(void);
-	void FUN_80061ea0(void);
-	void SetClippingBox__Fiiii(int, int, int, int);
-	void FUN_8006b26c(void);
-	void FUN_8006af64(void);
-	void FUN_800543d4(void);
-}
-
-extern "C" int FUN_80054510(int player) {
+int Front_BoardSelect1P(int player) {
 	int x[3][2];
 	int y[3][2];
 	int idx[3][2];
@@ -84,23 +62,25 @@ extern "C" int FUN_80054510(int player) {
 	int col;
 	int i;
 
-	FUN_8005c97c(9);
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("select_b.bmp"));
+	FrontLoader_LoadSet(9);
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("select_b.bmp"));
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
 	Pack_DefragmentFully();
 	Mess_SetRGB(128, 128, 128, 0);
 	Mess_SetFontScale(256);
-	Mess_SetTextJustify__FUc(1);
+	Mess_SetTextJustify(1);
 
 	x[0][1] = x[0][0] = 144;
 	y[0][0] = 117;
 	y[0][1] = 397;
 	idx[0][0] = GCareer.LastDeck[0];
 	idx[0][1] = GCareer.LastDeck[0] + 1;
+
 	if (idx[0][1] == DAT_800d33c4[0])
 		idx[0][1] = 0;
+
 	img[0][1] = img[0][0] = 0;
 	xoff[0] = 31;
 	yoff[0] = 12;
@@ -114,8 +94,10 @@ extern "C" int FUN_80054510(int player) {
 	y[1][1] = 395;
 	idx[1][0] = GCareer.LastTrucks[0];
 	idx[1][1] = GCareer.LastTrucks[0] + 1;
+
 	if (idx[1][1] == DAT_800d33c4[1])
 		idx[1][1] = 0;
+
 	img[1][1] = img[1][0] = 0;
 	xoff[1] = 13;
 	yoff[1] = 17;
@@ -129,8 +111,10 @@ extern "C" int FUN_80054510(int player) {
 	y[2][1] = 383;
 	idx[2][0] = GCareer.LastWheel[0];
 	idx[2][1] = GCareer.LastWheel[0] + 1;
+
 	if (idx[2][1] == DAT_800d33c4[2])
 		idx[2][1] = 0;
+
 	img[2][1] = img[2][0] = 0;
 	xoff[2] = 27;
 	yoff[2] = 23;
@@ -151,9 +135,9 @@ extern "C" int FUN_80054510(int player) {
 		char name[16];
 
 		if (i < 4)
-			FUN_8008b900(name, "bar%d.bmp", i + 1);
+			sprintf(name, "bar%d.bmp", i + 1);
 		else
-			FUN_8008b900(name, "bar9.bmp");
+			sprintf(name, "bar9.bmp");
 
 		bar[i] = new Sprite(name, 1, 32, 128);
 		row[i] = new Sprite(398, i * 24 + 116, 200, 20, 1, 32, 128);
@@ -193,6 +177,7 @@ extern "C" int FUN_80054510(int player) {
 	int statsTimer = 2;
 	int state = 1;
 	int timer = 3;
+
 	col = 0;
 	int dir = 0;
 	int speed = 0;
@@ -203,54 +188,57 @@ extern "C" int FUN_80054510(int player) {
 
 	char text[48];
 
-	FUN_8008e904(text, Stats[DAT_800d22f0].Boards[deck].Name);
+	strcpy(text, Stats[DAT_800d22f0].Boards[deck].Name);
 
 	Sprite *textBar = new Sprite(0, 49, 585, 43, 1, 32, 128);
 
 	Mess_SetCurrentFont("mainf.fnt");
 
-	int textX = -Mess_TextWidth__FPCc(text);
+	int textX = -Mess_TextWidth(text);
 	int textY;
 
 	{
 		int h = Mess_TextHeight(text);
-		textY = (h >> 1) + 71 + Mess_TextHeightBelowBaseline__FPCc(text);
+
+		textY = (h >> 1) + 71 + Mess_TextHeightBelowBaseline(text);
 	}
 
 	int textSpeed = (117 - textX) / 10;
+
 	textX = 117 - textSpeed * 10;
 
 	Sprite *title[3];
+
 	title[0] = new Sprite("Box1_01.bmp", 1, 32, 128);
 	title[1] = new Sprite("Box1_02.bmp", 1, 32, 128);
 	title[2] = new Sprite("Box1_03.bmp", 1, 32, 128);
 	PadBuffer *input = new PadBuffer(-1);
 	int result;
 
-	FUN_8005c8dc(3);
-	FUN_80053dbc();
+	FrontLoader_SetFiles(3);
+	Front_InitBoardPictures1P();
 
 	while (1) {
 		int again;
 
-		FUN_8005c780();
-		FUN_80070ff4();
-		FUN_8005c68c();
+		Front_UpdateMusicLoop();
+		Pad_Update();
+		Front_CheckSoftReset();
 
 		if (DAT_800d1cb8)
 			break;
 
-		FUN_800242cc();
+		PollHost();
 
 		if (DAT_800d22ec) {
 			DAT_800d22dc->unpack();
-			FUN_8005c934();
+			FrontLoader_Continue();
 		} else {
-			FUN_80054134();
+			Front_StreamBoardPictures1P();
 		}
 
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		{
 			int c = col;
@@ -294,7 +282,7 @@ extern "C" int FUN_80054510(int player) {
 					int j;
 
 					title[c]->draw(boxX[c], boxY[c], 0, -1, -1, -1);
-					SetClippingBox__Fiiii(boxX[c] + 6, boxY[c] + 9, boxW[c] - 12, boxH[c] - 18);
+					SetClippingBox(boxX[c] + 6, boxY[c] + 9, boxW[c] - 12, boxH[c] - 18);
 
 					for (j = 0; j < 2; j++) {
 						if (img[c][j] == 0) {
@@ -314,7 +302,7 @@ extern "C" int FUN_80054510(int player) {
 							                   0, 0);
 					}
 
-					SetClippingBox__Fiiii(0, 0, 640, 480);
+					SetClippingBox(0, 0, 640, 480);
 				}
 			}
 		}
@@ -322,7 +310,7 @@ extern "C" int FUN_80054510(int player) {
 		if (textState != 3 && textState != 1) {
 			textBar->draw(0, 49, 0, -1, -1, -1);
 			Mess_SetCurrentFont("mainf.fnt");
-			Mess_DrawText__FiiPCciUiib(textX, textY, text, 0, 0, 256, 0);
+			Mess_DrawText(textX, textY, text, 0, 0, 256, 0);
 		}
 
 		int ry = 116;
@@ -358,7 +346,7 @@ extern "C" int FUN_80054510(int player) {
 			}
 		}
 
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 		input->update();
 
 		do {
@@ -375,14 +363,14 @@ extern "C" int FUN_80054510(int player) {
 							DAT_800d22e8 = 3;
 
 						if (press == 1) {
-							SFX_PlayX__FUisi(144, 0x2000, 0);
+							SFX_PlayX(144, 0x2000, 0);
 
 							timer = 4;
 							state = 1;
 							dir = -1;
 							again = 1;
 						} else if (press == 2) {
-							SFX_PlayX__FUisi(144, 0x2000, 0);
+							SFX_PlayX(144, 0x2000, 0);
 
 							timer = 4;
 							state = 1;
@@ -392,11 +380,11 @@ extern "C" int FUN_80054510(int player) {
 							int k;
 
 							if (col == 0)
-								SFX_PlayX__FUisi(149, 0x2000, 0);
+								SFX_PlayX(149, 0x2000, 0);
 							else if (col == 1)
-								SFX_PlayX__FUisi(150, 0x2000, 0);
+								SFX_PlayX(150, 0x2000, 0);
 							else if (col == 2)
-								SFX_PlayX__FUisi(151, 0x2000, 0);
+								SFX_PlayX(151, 0x2000, 0);
 
 							timer = 10;
 							speed = boxH[col] / 10;
@@ -414,11 +402,11 @@ extern "C" int FUN_80054510(int player) {
 							img[col][k] = 0;
 						} else if (press == 4) {
 							if (col == 0)
-								SFX_PlayX__FUisi(149, 0x2000, 0);
+								SFX_PlayX(149, 0x2000, 0);
 							else if (col == 1)
-								SFX_PlayX__FUisi(150, 0x2000, 0);
+								SFX_PlayX(150, 0x2000, 0);
 							else if (col == 2)
-								SFX_PlayX__FUisi(151, 0x2000, 0);
+								SFX_PlayX(151, 0x2000, 0);
 
 							timer = 10;
 							state = 2;
@@ -551,23 +539,23 @@ extern "C" int FUN_80054510(int player) {
 				if (textTimer == 0) {
 					if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes >=
 					    Stats[DAT_800d22f0].Boards[deck].Req) {
-						FUN_8008e904(text, Stats[DAT_800d22f0].Boards[deck].Name);
+						strcpy(text, Stats[DAT_800d22f0].Boards[deck].Name);
 					} else if (GGame == 1) {
-						FUN_8008b900(text, "Get %d tapes to unlock",
-						             Stats[DAT_800d22f0].Boards[deck].Req);
+						sprintf(text, "Get %d tapes to unlock",
+						        Stats[DAT_800d22f0].Boards[deck].Req);
 					} else {
-						FUN_8008b900(text, "Unlock in career mode",
-						             Stats[DAT_800d22f0].Boards[deck].Req);
+						sprintf(text, "Unlock in career mode",
+						        Stats[DAT_800d22f0].Boards[deck].Req);
 					}
 
 					Mess_SetCurrentFont("mainf.fnt");
 
-					textX = -Mess_TextWidth__FPCc(text);
+					textX = -Mess_TextWidth(text);
 
 					{
 						int h = Mess_TextHeight(text);
 
-						textY = (h >> 1) + 71 + Mess_TextHeightBelowBaseline__FPCc(text);
+						textY = (h >> 1) + 71 + Mess_TextHeightBelowBaseline(text);
 					}
 
 					textState = 2;
@@ -632,7 +620,7 @@ extern "C" int FUN_80054510(int player) {
 				   registers first, and the loop note before the call frees sched2. */
 				do {
 					do {
-						SFX_PlayX__FUisi(145, 0x2000, 0);
+						SFX_PlayX(145, 0x2000, 0);
 
 						j = y[0][0] >= y[0][1];
 						GCareer.LastDeck[0] = idx[0][j];
@@ -646,11 +634,11 @@ extern "C" int FUN_80054510(int player) {
 				break;
 			}
 
-			SFX_PlayX__FUisi(146, 0x2000, 0);
+			SFX_PlayX(146, 0x2000, 0);
 		}
 
 		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
-			SFX_PlayX__FUisi(147, 0x2000, 0);
+			SFX_PlayX(147, 0x2000, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
@@ -659,7 +647,7 @@ extern "C" int FUN_80054510(int player) {
 		}
 	}
 
-	FUN_8006af64();
+	HiRes_BlankScreen();
 	SpoolerBlocksFileIO->unloadPRE("Equip1.pre");
 
 	delete input;
@@ -675,8 +663,8 @@ extern "C" int FUN_80054510(int player) {
 		delete row[i];
 	}
 
-	FUN_800543d4();
-	FUN_8005ca64();
+	Front_FreeBoardPictures1P();
+	FrontLoader_Defragment();
 	Pack_DefragmentFully();
 
 	return result;

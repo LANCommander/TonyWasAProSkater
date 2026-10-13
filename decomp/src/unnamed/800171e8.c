@@ -1,2 +1,4 @@
-/* FUN_800171e8 (0x800171e8) */
-void FUN_800171e8(void) {}
+/* Front_SetPreferences__FRC12SPreferences (0x800171e8) */
+#include "names.h"
+
+void Front_SetPreferences(void) {}

@@ -64,7 +64,7 @@ struct W {
 
 extern struct W *GSkater;
 
-void FUN_80010ac0(void);
+void Crowd_Stop(void);
 void Flash_Reset(void);
 int Flash_FadeFinished(void);
 void GameFMV_PlayMovie(int);
@@ -72,7 +72,7 @@ int Mem_NewX(int, int, int);
 void Mem_Delete(int);
 int FUN_80073f9c(void);
 int FUN_80077124(void *);
-void FUN_8008f4d4(int, int, int);
+void CdControlB(int, int, int);
 int CMenu_FindEntry(int, int);
 void Flash_Fade(int, int);
 void Flash_Update(void);
@@ -116,7 +116,7 @@ void Competition_WinLoseLogic(int *a0, int *a1) {
 			Pad_ActuatorOff(0, 0);
 			Pad_ActuatorOff(0, 1);
 			Mess_DeleteAll();
-			FUN_8008f4d4(8, 0, 0);
+			CdControlB(8, 0, 0);
 			Pause__Fi(10);
 			Mem_Delete(DoubleBuffer.a);
 			GameFMV_PlayMovie(-11);
@@ -127,7 +127,7 @@ void Competition_WinLoseLogic(int *a0, int *a1) {
 			*a0 = 27;
 		}
 	} else {
-		FUN_80010ac0();
+		Crowd_Stop();
 
 		if (*a1) {
 			if (FUN_80077124(g)) {

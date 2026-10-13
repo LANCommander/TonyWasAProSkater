@@ -1,8 +1,10 @@
-/* FUN_8005c8ac (0x8005c8ac) */
+/* FrontLoader_Reset__Fv (0x8005c8ac) */
+#include "names.h"
+
 int DAT_800d1ca8;
 int DAT_800d1cac;
 
-void FUN_8005c8ac(void) {
+void FrontLoader_Reset(void) {
 	DAT_800d1ca8 = 0;
 	DAT_800d1cac = 0;
 }

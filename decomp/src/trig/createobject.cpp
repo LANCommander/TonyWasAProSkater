@@ -6,6 +6,7 @@
 #include "game/baddy.h"
 #include "game/platform.h"
 #include "game/car.h"
+#include "game/powerup.h"
 
 short **OffsetList;
 
@@ -19,10 +20,6 @@ uchar *SkipFlags(uchar *);
 ushort *Trig_GetPosition(CVector &, int);
 ushort *Trig_GetLinksPointer(int);
 CBody *PowerUp_Create(ushort, const CVector &, uint, int, CVector &);
-
-extern "C" {
-	void FUN_8001ff34(CBody *, int);
-}
 
 CBody *Trig_CreateObject(int NodeIndex) {
 	int Type;
@@ -79,7 +76,7 @@ CBody *Trig_CreateObject(int NodeIndex) {
 			}
 
 			if (*Trig_GetLinksPointer(NodeIndex))
-				FUN_8001ff34(NewObject, NodeIndex);
+				((CPowerUp *)NewObject)->SetNode(NodeIndex);
 
 			NotSuspendedAtStart = 1;
 			break;

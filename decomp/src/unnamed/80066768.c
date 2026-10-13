@@ -1,4 +1,4 @@
-/* FUN_80066768 (0x80066768) */
+/* LevelSelect_ContinueLoading__Fv (0x80066768) */
 #include "names.h"
 
 typedef struct {
@@ -18,10 +18,10 @@ void FileIO_Continue(void);
 int FileIO_Load(int);
 int FileIO_Open(char *);
 int Mem_NewX(int, int, int);
-void FUN_8008c190(char *, char *);
-void FUN_8008e904(char *, int);
+void printf(char *, char *);
+void strcpy(char *, int);
 
-void FUN_80066768(void) {
+void LevelSelect_ContinueLoading(void) {
 	char buf[16];
 	int n, t, one;
 
@@ -54,12 +54,12 @@ void FUN_80066768(void) {
 		if (DAT_800d2360 >= DAT_800d237c)
 			DAT_800d2360 -= DAT_800d237c;
 
-		FUN_8008e904(buf, Levels[DAT_800d2360].f24);
+		strcpy(buf, Levels[DAT_800d2360].f24);
 
 		n = FileIO_Open(buf);
 
 		if (n <= 0) {
-			FUN_8008c190("\nFile %s not found", buf);
+			printf("\nFile %s not found", buf);
 			return;
 		}
 

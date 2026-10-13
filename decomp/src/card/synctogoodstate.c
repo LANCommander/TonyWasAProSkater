@@ -3,7 +3,7 @@
 
 int CardStatusMode, CardLoadFlag, CardStatusTemp, CardStatus;
 
-void FUN_8008eebc(int);
+void VSync(int);
 int Card_CheckStatus(int, int);
 
 int SyncToGoodState(void) {
@@ -22,7 +22,7 @@ int SyncToGoodState(void) {
 	CardLoadFlag = 0;
 
 	for (;;) {
-		FUN_8008eebc(0);
+		VSync(0);
 		Card_CheckStatus(0, 0);
 
 		if (CardLoadFlag == 1)

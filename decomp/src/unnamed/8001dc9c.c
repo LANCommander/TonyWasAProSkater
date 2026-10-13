@@ -20,7 +20,7 @@ extern B Font_table[];
 unsigned char NewFont;
 int Current_font;
 
-int CBruce_Trick_HoldTrick(unsigned char *s, int a);
+int Mess_TextHeightAboveBaseline2(unsigned char *s, int a);
 int GetCharIndex(int c);
 
 int Mess_TextHeightAboveBaseline(unsigned char *s, int a1) {
@@ -30,7 +30,7 @@ int Mess_TextHeightAboveBaseline(unsigned char *s, int a1) {
 	unsigned char *p;
 
 	if (!NewFont)
-		return CBruce_Trick_HoldTrick(s, a1);
+		return Mess_TextHeightAboveBaseline2(s, a1);
 
 	m = 0;
 	p = s;

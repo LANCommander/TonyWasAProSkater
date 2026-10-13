@@ -1,4 +1,6 @@
-/* FUN_80084ebc (0x80084ebc) */
+/* RenderModelInSuper__FP6SModel (0x80084ebc) */
+#include "names.h"
+
 typedef struct {
 	int a, b;
 } E;
@@ -22,7 +24,7 @@ int FUN_80085e98(E *, int);
 void FUN_80086500(int, int);
 void FUN_80086f40(E *, E *, int);
 
-void FUN_80084ebc(P *p) {
+void RenderModelInSuper(P *p) {
 	int n = p->n;
 	E *v = p->v;
 	int r;

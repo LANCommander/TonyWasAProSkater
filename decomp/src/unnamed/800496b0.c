@@ -1,4 +1,4 @@
-/* FUN_800496b0 (0x800496b0) */
+/* Pack_NewFull__Fiiii (0x800496b0) */
 #include "names.h"
 
 typedef struct {
@@ -9,7 +9,7 @@ TSPack *Pack_pFull;
 
 TSPack *Pack_New(TSPack **);
 
-TSPack *FUN_800496b0(int a, int b, int c, int d) {
+TSPack *Pack_NewFull(int a, int b, int c, int d) {
 	TSPack *p = Pack_New(&Pack_pFull);
 
 	p->a = a;

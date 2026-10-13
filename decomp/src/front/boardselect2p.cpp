@@ -1,5 +1,5 @@
-/* FUN_80051660 (0x80051660) */
-/* C++ (front end, 2-player board select). The 2-player twin of FUN_80054510 (boardselect1p.cpp):
+/* Front_BoardSelect2P__Fi (0x80051660) */
+/* C++ (front end, 2-player board select). The 2-player twin of Front_BoardSelect1P (boardselect1p.cpp):
    every piece of per-screen state is an array indexed by player. Each player has three columns
    (deck, trucks, wheels) scrolling pairs of SlicedImage pictures through a clipped box, a sliding
    text bar with the deck's name (or "Get %d tapes"), and four stat rows of bar sprites. X/Start
@@ -9,6 +9,12 @@
 #include "game/pre.h"
 #include "game/career.h"
 #include "game/pad.h"
+#include "game/mess.h"
+#include "game/sfx.h"
+#include "game/psyq.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/main.h"
 
 extern SControl Pad[];
 extern SCareer GCareer;
@@ -47,35 +53,7 @@ void Mess_SetFontScale(uint);
 void Mess_SetCurrentFont(char *);
 int Mess_TextHeight(const char *);
 
-extern "C" {
-	void FUN_8005c97c(int);
-	void FUN_8005ca64(void);
-	int FUN_8005ca3c(char *);
-	void FUN_80061714(int);
-	void Mess_SetTextJustify__FUc(int);
-	int FUN_8008b900(char *, const char *, ...);
-	void FUN_8008e904(char *, char *);
-	int Mess_TextWidth__FPCc(char *);
-	int Mess_TextHeightBelowBaseline__FPCc(const char *);
-	void Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	void SFX_PlayX__FUisi(int, int, int);
-	void FUN_8005c8dc(int);
-	void FUN_80050c5c(void);
-	void FUN_8005c780(void);
-	void FUN_80070ff4(void);
-	void FUN_8005c68c(void);
-	void FUN_800242cc(void);
-	void FUN_8005c934(void);
-	void FUN_8005115c(void);
-	void FUN_8006b240(void);
-	void FUN_80061ea0(void);
-	void SetClippingBox__Fiiii(int, int, int, int);
-	void FUN_8006b26c(void);
-	void FUN_8006af64(void);
-	void FUN_800514f0(void);
-}
-
-extern "C" int FUN_80051660(int player) {
+int Front_BoardSelect2P(int player) {
 	int x[2][3][2];
 	int y[2][3][2];
 	int idx[2][3][2];
@@ -96,9 +74,9 @@ extern "C" int FUN_80051660(int player) {
 	int statsTimer[2];
 	int i;
 
-	FUN_8005c97c(10);
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("select2b.bmp"));
+	FrontLoader_LoadSet(10);
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("select2b.bmp"));
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
 	Pack_DefragmentFully();
@@ -177,9 +155,9 @@ extern "C" int FUN_80051660(int player) {
 		char name[16];
 
 		if (i < 4)
-			FUN_8008b900(name, "bar%d.bmp", i + 1);
+			sprintf(name, "bar%d.bmp", i + 1);
 		else
-			FUN_8008b900(name, "bar9.bmp");
+			sprintf(name, "bar9.bmp");
 
 		bar[i] = new Sprite(name, 1, 32, 128);
 		row[i] = new Sprite(DAT_800d1bc4[0], i * 22 + 294, 200, 20, 1, 32, 128);
@@ -238,6 +216,7 @@ extern "C" int FUN_80051660(int player) {
 	int lx[2];
 	int ly[2];
 	EraseSprite *popup[2];
+
 	lx[0] = DAT_800d1be4[0];
 	lx[1] = DAT_800d1be4[1];
 	ly[0] = 180;
@@ -247,7 +226,7 @@ extern "C" int FUN_80051660(int player) {
 
 	Mess_SetCurrentFont("mainf.fnt");
 	Mess_SetFontScale(200);
-	Mess_SetTextJustify__FUc(1);
+	Mess_SetTextJustify(1);
 
 	int textState[2];
 	int textTimer[2];
@@ -264,17 +243,17 @@ extern "C" int FUN_80051660(int player) {
 		textTimer[p] = 2;
 		savedTextState[p] = 2;
 		savedTextTimer[p] = 10;
-		FUN_8008e904(text[p], Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
+		strcpy(text[p], Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
 
 		if (p == 0)
-			textX[p] = -Mess_TextWidth__FPCc(text[0]);
+			textX[p] = -Mess_TextWidth(text[0]);
 		else
 			textX[p] = 640;
 
 		{
 			int h = Mess_TextHeight(text[p]);
 
-			textY[p] = (h >> 1) + 75 + Mess_TextHeightBelowBaseline__FPCc(text[p]);
+			textY[p] = (h >> 1) + 75 + Mess_TextHeightBelowBaseline(text[p]);
 		}
 
 		textSpeed[p] = (DAT_800d1bbc[p] - textX[p]) / 10;
@@ -283,37 +262,39 @@ extern "C" int FUN_80051660(int player) {
 	}
 
 	Sprite *title[3];
+
 	title[0] = new Sprite("Box2_01.bmp", 1, 32, 128);
 	title[1] = new Sprite("Box2_02.bmp", 1, 32, 128);
 	title[2] = new Sprite("Box2_03.bmp", 1, 32, 128);
 	PadBuffer *input[2];
+
 	input[0] = new PadBuffer(0);
 	input[1] = new PadBuffer(1);
 
-	FUN_8005c8dc(3);
-	FUN_80050c5c();
+	FrontLoader_SetFiles(3);
+	Front_InitBoardPictures2P();
 
 	int result = 0;
 
 	while (!result) {
-		FUN_8005c780();
-		FUN_80070ff4();
-		FUN_8005c68c();
+		Front_UpdateMusicLoop();
+		Pad_Update();
+		Front_CheckSoftReset();
 
 		if (DAT_800d1cb8)
 			break;
 
-		FUN_800242cc();
+		PollHost();
 
 		if (DAT_800d22cc) {
 			DAT_800d22b0->unpack();
-			FUN_8005c934();
+			FrontLoader_Continue();
 		} else {
-			FUN_8005115c();
+			Front_StreamBoardPictures2P();
 		}
 
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		for (int p = 0; p < 2; p++) {
 			int c = col[p];
@@ -361,8 +342,7 @@ extern "C" int FUN_80051660(int player) {
 					int j;
 
 					title[c]->draw(boxX[p][c], boxY[p][c], 0, -1, -1, -1);
-					SetClippingBox__Fiiii(boxX[p][c] + 3, boxY[p][c] + 5, boxW[p][c] - 6,
-					                      boxH[p][c] - 10);
+					SetClippingBox(boxX[p][c] + 3, boxY[p][c] + 5, boxW[p][c] - 6, boxH[p][c] - 10);
 
 					for (j = 0; j < 2; j++) {
 						if (img[p][c][j] == 0) {
@@ -382,7 +362,7 @@ extern "C" int FUN_80051660(int player) {
 							                   -1, -1, -1, 0, 0);
 					}
 
-					SetClippingBox__Fiiii(0, 0, 640, 480);
+					SetClippingBox(0, 0, 640, 480);
 				}
 			}
 
@@ -391,8 +371,8 @@ extern "C" int FUN_80051660(int player) {
 				Mess_SetCurrentFont("mainf.fnt");
 				Mess_SetFontScale(200);
 				Mess_SetRGB(128, 128, 128, 0);
-				Mess_SetTextJustify__FUc(1);
-				Mess_DrawText__FiiPCciUiib(textX[p], textY[p], text[p], 0, 0, 256, 0);
+				Mess_SetTextJustify(1);
+				Mess_DrawText(textX[p], textY[p], text[p], 0, 0, 256, 0);
 			}
 
 			int ry = 294;
@@ -424,9 +404,9 @@ extern "C" int FUN_80051660(int player) {
 				Mess_SetCurrentFont("mainf.fnt");
 				Mess_SetFontScale(150);
 				Mess_SetRGB(250, 190, 60, 0);
-				Mess_SetTextJustify__FUc(0);
-				Mess_DrawText__FiiPCciUiib(lx[p], ly[0], sBoard, 1, 0, 256, 0);
-				Mess_DrawText__FiiPCciUiib(lx[p], ly[1], sChosen, 1, 0, 256, 0);
+				Mess_SetTextJustify(0);
+				Mess_DrawText(lx[p], ly[0], sBoard, 1, 0, 256, 0);
+				Mess_DrawText(lx[p], ly[1], sChosen, 1, 0, 256, 0);
 			}
 
 			if (chosen[p] == 5) {
@@ -437,7 +417,7 @@ extern "C" int FUN_80051660(int player) {
 			}
 		}
 
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 
 		for (int p = 0; p < 2; p++) {
 			int again;
@@ -463,14 +443,14 @@ extern "C" int FUN_80051660(int player) {
 								DAT_800d22c8 = 3;
 
 							if (press == 1) {
-								SFX_PlayX__FUisi(144, 0x2000, 0);
+								SFX_PlayX(144, 0x2000, 0);
 
 								timer[p] = 4;
 								state[p] = 1;
 								dir[p] = -1;
 								again = 1;
 							} else if (press == 2) {
-								SFX_PlayX__FUisi(144, 0x2000, 0);
+								SFX_PlayX(144, 0x2000, 0);
 
 								timer[p] = 4;
 								state[p] = 1;
@@ -480,11 +460,11 @@ extern "C" int FUN_80051660(int player) {
 								int k;
 
 								if (col[p] == 0)
-									SFX_PlayX__FUisi(149, 0x2000, 0);
+									SFX_PlayX(149, 0x2000, 0);
 								else if (col[p] == 1)
-									SFX_PlayX__FUisi(150, 0x2000, 0);
+									SFX_PlayX(150, 0x2000, 0);
 								else if (col[p] == 2)
-									SFX_PlayX__FUisi(151, 0x2000, 0);
+									SFX_PlayX(151, 0x2000, 0);
 
 								timer[p] = 10;
 								state[p] = 2;
@@ -502,11 +482,11 @@ extern "C" int FUN_80051660(int player) {
 								img[p][col[p]][k] = 0;
 							} else if (press == 4) {
 								if (col[p] == 0)
-									SFX_PlayX__FUisi(149, 0x2000, 0);
+									SFX_PlayX(149, 0x2000, 0);
 								else if (col[p] == 1)
-									SFX_PlayX__FUisi(150, 0x2000, 0);
+									SFX_PlayX(150, 0x2000, 0);
 								else if (col[p] == 2)
-									SFX_PlayX__FUisi(151, 0x2000, 0);
+									SFX_PlayX(151, 0x2000, 0);
 
 								timer[p] = 10;
 								state[p] = 2;
@@ -639,22 +619,22 @@ extern "C" int FUN_80051660(int player) {
 					if (textTimer[p] == 0) {
 						if (GCareer.CharacterProgress[DAT_800d22d0[p]].NumTapes >=
 						    Stats[DAT_800d22d0[p]].Boards[deck[p]].Req)
-							FUN_8008e904(text[p], Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
+							strcpy(text[p], Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
 						else
-							FUN_8008b900(text[p], "Get %d tapes",
-							             Stats[DAT_800d22d0[p]].Boards[deck[p]].Req);
+							sprintf(text[p], "Get %d tapes",
+							        Stats[DAT_800d22d0[p]].Boards[deck[p]].Req);
 
 						Mess_SetCurrentFont("mainf.fnt");
 
 						if (p == 0)
-							textX[p] = -Mess_TextWidth__FPCc(text[0]);
+							textX[p] = -Mess_TextWidth(text[0]);
 						else
 							textX[p] = 640;
 
 						{
 							int h = Mess_TextHeight(text[p]);
 
-							textY[p] = (h >> 1) + 75 + Mess_TextHeightBelowBaseline__FPCc(text[p]);
+							textY[p] = (h >> 1) + 75 + Mess_TextHeightBelowBaseline(text[p]);
 						}
 
 						textSpeed[p] = (DAT_800d1bbc[p] - textX[p]) / 10;
@@ -721,12 +701,12 @@ extern "C" int FUN_80051660(int player) {
 								deck[p] = 0;
 						}
 
-						SFX_PlayX__FUisi(145, 0x2000, 0);
+						SFX_PlayX(145, 0x2000, 0);
 
 						chosen[p] = 1;
 					}
 				} else {
-					SFX_PlayX__FUisi(146, 0x2000, 0);
+					SFX_PlayX(146, 0x2000, 0);
 				}
 
 				if (chosen[0] && chosen[1])
@@ -735,7 +715,7 @@ extern "C" int FUN_80051660(int player) {
 
 			if (Pad[p].MenuBack.Triggered) {
 				if (chosen[p] || !chosen[1 - p])
-					SFX_PlayX__FUisi(147, 0x2000, 0);
+					SFX_PlayX(147, 0x2000, 0);
 
 				Pad_ClearTriggers(&Pad[p]);
 
@@ -748,7 +728,7 @@ extern "C" int FUN_80051660(int player) {
 		}
 	}
 
-	FUN_8006af64();
+	HiRes_BlankScreen();
 	SpoolerBlocksFileIO->unloadPRE("Equip2.pre");
 
 	delete popup[0];
@@ -768,7 +748,7 @@ extern "C" int FUN_80051660(int player) {
 		delete row[i];
 	}
 
-	FUN_800514f0();
+	Front_FreeBoardPictures2P();
 
 	return result;
 }

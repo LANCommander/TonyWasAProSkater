@@ -22,12 +22,12 @@ void Pad_ClearTriggers(unsigned char *);
 O *__nw__6CClassUi(int);
 O *FUN_800652e4(O *, int, int, int, int, int, int, int, int);
 O *PadBuffer_ctor(O *, int);
-void FUN_8005c934(void);
-void FUN_80070ff4(void);
-void FUN_800242cc(void);
-void FUN_8006b240(void);
-void FUN_80061ea0(void);
-void FUN_8006b26c(void);
+void FrontLoader_Continue(void);
+void Pad_Update(void);
+void PollHost(void);
+void HiRes_ClearOTag(void);
+void ResetOT(void);
+void HiRes_DrawOTag(void);
 void SFX_PlayX(int, int, int);
 void VerticalMenu_erase(O *);
 
@@ -51,13 +51,13 @@ int FUN_8005e4ec(int a, int b, int c) {
 		n = PadBuffer_ctor(n, -1);
 
 	do {
-		FUN_8005c934();
-		FUN_80070ff4();
-		FUN_800242cc();
-		FUN_8006b240();
-		FUN_80061ea0();
+		FrontLoader_Continue();
+		Pad_Update();
+		PollHost();
+		HiRes_ClearOTag();
+		ResetOT();
 		m->vt->fn2((char *)m + m->vt->off2);
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 
 		if (Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] ||
 		    Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] ||
@@ -82,10 +82,10 @@ int FUN_8005e4ec(int a, int b, int c) {
 
 	do {
 		i++;
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 		VerticalMenu_erase(m);
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	} while (i < 2);
 
 	if (m)

@@ -8,6 +8,7 @@
    (not X0/Z0), raising X/Z's priority to s0/s1. The walk's bounds checks are part of the while
    condition (one source line in the demo). */
 #include "game/colij.h"
+#include "game/m3dasm.h"
 
 extern SZone Zones[2];
 extern Item *EnvironmentalObjectList;
@@ -21,8 +22,6 @@ extern int M3dColij_OneMask;
 
 void M3dColij_LineToItem(Item *, SLineInfo *);
 int M3dColij_GetLineInfo(SLineInfo *);
-extern "C" void M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Item *, SLineInfo *);
-extern "C" int FUN_8008b62c(int, int, int);
 
 int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 	int x0, x1, z0, z1;
@@ -86,55 +85,55 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 				if (Z == Zones[EnvIndex].Height)
 					Z--;
 
-				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Ptr[X][Z], pInfo);
+				M3dColij_LineToItemZoned((Item **)Zones[EnvIndex].Ptr[X][Z], pInfo);
 				continue;
 			}
 
 			if (x0 < xL) {
-				z0 = z0 < z1 ? z0 + FUN_8008b62c(xL - x0, z1 - z0, x1 - x0)
-				             : z1 + FUN_8008b62c(x1 - xL, z0 - z1, x1 - x0);
+				z0 = z0 < z1 ? z0 + M3dMaths_MulDiv64(xL - x0, z1 - z0, x1 - x0)
+				             : z1 + M3dMaths_MulDiv64(x1 - xL, z0 - z1, x1 - x0);
 				x0 = xL;
 			}
 
 			if (x1 < xL) {
-				z1 = z1 < z0 ? z1 + FUN_8008b62c(xL - x1, z0 - z1, x0 - x1)
-				             : z0 + FUN_8008b62c(x0 - xL, z1 - z0, x0 - x1);
+				z1 = z1 < z0 ? z1 + M3dMaths_MulDiv64(xL - x1, z0 - z1, x0 - x1)
+				             : z0 + M3dMaths_MulDiv64(x0 - xL, z1 - z0, x0 - x1);
 				x1 = xL;
 			}
 
 			if (x0 > xH) {
-				z0 = z1 < z0 ? z1 + FUN_8008b62c(xH - x1, z0 - z1, x0 - x1)
-				             : z0 + FUN_8008b62c(x0 - xH, z1 - z0, x0 - x1);
+				z0 = z1 < z0 ? z1 + M3dMaths_MulDiv64(xH - x1, z0 - z1, x0 - x1)
+				             : z0 + M3dMaths_MulDiv64(x0 - xH, z1 - z0, x0 - x1);
 				x0 = xH;
 			}
 
 			if (x1 > xH) {
-				z1 = z0 < z1 ? z0 + FUN_8008b62c(xH - x0, z1 - z0, x1 - x0)
-				             : z1 + FUN_8008b62c(x1 - xH, z0 - z1, x1 - x0);
+				z1 = z0 < z1 ? z0 + M3dMaths_MulDiv64(xH - x0, z1 - z0, x1 - x0)
+				             : z1 + M3dMaths_MulDiv64(x1 - xH, z0 - z1, x1 - x0);
 				x1 = xH;
 			}
 
 			if (z0 < zL) {
-				x0 = x0 < x1 ? x0 + FUN_8008b62c(zL - z0, x1 - x0, z1 - z0)
-				             : x1 + FUN_8008b62c(z1 - zL, x0 - x1, z1 - z0);
+				x0 = x0 < x1 ? x0 + M3dMaths_MulDiv64(zL - z0, x1 - x0, z1 - z0)
+				             : x1 + M3dMaths_MulDiv64(z1 - zL, x0 - x1, z1 - z0);
 				z0 = zL;
 			}
 
 			if (z1 < zL) {
-				x1 = x1 < x0 ? x1 + FUN_8008b62c(zL - z1, x0 - x1, z0 - z1)
-				             : x0 + FUN_8008b62c(z0 - zL, x1 - x0, z0 - z1);
+				x1 = x1 < x0 ? x1 + M3dMaths_MulDiv64(zL - z1, x0 - x1, z0 - z1)
+				             : x0 + M3dMaths_MulDiv64(z0 - zL, x1 - x0, z0 - z1);
 				z1 = zL;
 			}
 
 			if (z0 > zH) {
-				x0 = x1 < x0 ? x1 + FUN_8008b62c(zH - z1, x0 - x1, z0 - z1)
-				             : x0 + FUN_8008b62c(z0 - zH, x1 - x0, z0 - z1);
+				x0 = x1 < x0 ? x1 + M3dMaths_MulDiv64(zH - z1, x0 - x1, z0 - z1)
+				             : x0 + M3dMaths_MulDiv64(z0 - zH, x1 - x0, z0 - z1);
 				z0 = zH;
 			}
 
 			if (z1 > zH) {
-				x1 = x0 < x1 ? x0 + FUN_8008b62c(zH - z0, x1 - x0, z1 - z0)
-				             : x1 + FUN_8008b62c(z1 - zH, x0 - x1, z1 - z0);
+				x1 = x0 < x1 ? x0 + M3dMaths_MulDiv64(zH - z0, x1 - x0, z1 - z0)
+				             : x1 + M3dMaths_MulDiv64(z1 - zH, x0 - x1, z1 - z0);
 				z1 = zH;
 			}
 
@@ -177,15 +176,15 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 			if (Z1 == Zones[EnvIndex].Height)
 				Z1--;
 
-			qw = FUN_8008b62c(w, s0, l);
-			qh = FUN_8008b62c(h, r0, l);
+			qw = M3dMaths_MulDiv64(w, s0, l);
+			qh = M3dMaths_MulDiv64(h, r0, l);
 			X = X0;
 			Z = Z0;
 			d = (x0 < x1 ? qh - h : -qh) + (z0 < z1 ? w - qw : qw);
 
 			while ((X != X1 || Z != Z1) && X >= 0 && X < Zones[EnvIndex].Width && Z >= 0 &&
 			       Z < Zones[EnvIndex].Height) {
-				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Ptr[X][Z], pInfo);
+				M3dColij_LineToItemZoned((Item **)Zones[EnvIndex].Ptr[X][Z], pInfo);
 
 				if (d >= 0) {
 					d -= h;
@@ -197,7 +196,7 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 			}
 
 			if (X >= 0 && X < Zones[EnvIndex].Width && Z >= 0 && Z < Zones[EnvIndex].Height)
-				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Ptr[X][Z], pInfo);
+				M3dColij_LineToItemZoned((Item **)Zones[EnvIndex].Ptr[X][Z], pInfo);
 		}
 	}
 

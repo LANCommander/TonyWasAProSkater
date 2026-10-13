@@ -1,4 +1,4 @@
-/* FUN_80059520 (0x80059520) flags=-fstructure-noalias */
+/* Front_InitSkaterPack__Fi (0x80059520) flags=-fstructure-noalias */
 #include "names.h"
 
 typedef struct {
@@ -19,7 +19,7 @@ char DAT_800d1c98[8];
 S *Pack_Pack(int a, int b, int c, char *d, char *e, int f, int g, int h);
 S *Mem_NewX(int a, int b, int c);
 
-void FUN_80059520(int m) {
+void Front_InitSkaterPack(int m) {
 	S *s;
 	int t1, t2;
 	int w = 256;

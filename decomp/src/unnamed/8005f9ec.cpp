@@ -1,8 +1,10 @@
-/* FUN_8005f9ec (0x8005f9ec) */
+/* Front_SoundOptionsHandler__FP12VerticalMenu (0x8005f9ec) */
 #include "game/shellutils.h"
 #include "game/pad.h"
 #include "game/vector.h"
 #include "game/career.h"
+#include "game/sfx.h"
+#include "game/gamefmv.h"
 
 extern SOptions GPreferences;
 extern SControl Pad[2];
@@ -13,22 +15,16 @@ extern short GameFMV_StartX;
 Sprite *DAT_800d1d5c;
 Sprite *DAT_800d1d60;
 
-extern "C" {
-	void FUN_8002357c(int);
-	void SFX_PlayX__FUisi(int, int, int);
-	void FUN_80023168(int);
-	void FUN_80022aec(CVector *);
-}
-
 void GameFMV_StopFMV(void);
 void GameFMV_StartFMV(int);
 
-extern "C" void FUN_8005f9ec(VerticalMenu *a) {
+void Front_SoundOptionsHandler(VerticalMenu *a) {
 	int v, w, u, i, dir;
+
 	XALEVEL = a->getSelected() == 1 ? GPreferences.MusicVolume * 0x555 : 0;
 	SFXLEVEL = GPreferences.SFXVolume * 0x555;
 
-	FUN_8002357c(0);
+	GameFMV_SyncFMV(0);
 
 	if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered || Pad[0].MenuRight.Triggered ||
 	    Pad[1].MenuRight.Triggered) {
@@ -59,7 +55,7 @@ extern "C" void FUN_8005f9ec(VerticalMenu *a) {
 			}
 
 			SFXLEVEL = v * 0x555;
-			SFX_PlayX__FUisi(145, 8192, 0);
+			SFX_PlayX(145, 8192, 0);
 		}
 
 		if (a->getSelected() == 1) {
@@ -83,7 +79,7 @@ extern "C" void FUN_8005f9ec(VerticalMenu *a) {
 		if (a->getSelected() == 0) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
-			SFX_PlayX__FUisi(145, 8192, 0);
+			SFX_PlayX(145, 8192, 0);
 		}
 
 		if (a->getSelected() == 1) {
@@ -92,8 +88,8 @@ extern "C" void FUN_8005f9ec(VerticalMenu *a) {
 			GameFMV_StopFMV();
 			CVector t(0, 0, 0);
 
-			FUN_80023168(2);
-			FUN_80022aec(&t);
+			GameFMV_SetStartTrack(2);
+			GameFMV_AddSoundSource(&t);
 
 			GameFMV_StartX = -1;
 			GameFMV_StartFMV(0);

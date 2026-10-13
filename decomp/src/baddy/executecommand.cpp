@@ -8,6 +8,9 @@
 #include "game/camera.h"
 #include "game/bit.h"
 #include "game/career.h"
+#include "game/trig.h"
+#include "game/gamefmv.h"
+#include "game/panel.h"
 
 extern CVector ZeroVector;
 extern CBruce *MechList;
@@ -48,15 +51,6 @@ void Bit_SetSparkRGB(uchar, uchar, uchar);
 void Bit_SetSparkFadeRGB(uchar, uchar, uchar);
 int Mem_GetFree(char);
 void Flash_Screen(uchar, uchar, uchar, int, uchar, int);
-
-extern "C" {
-	void FUN_80023168(int);
-	void FUN_800229ec(int);
-	void FUN_80022aec(CVector *);
-	void FUN_80023260();
-	void Trig_SendPulseToNode__Fi(int);
-	void FUN_8006e454(int);
-}
 
 int CBaddy::ExecuteCommand(ushort command) {
 	switch (command) {
@@ -162,12 +156,12 @@ int CBaddy::ExecuteCommand(ushort command) {
 			SFX_MIDIFadeOut(*mpScript++);
 			break;
 		case 17049:
-			FUN_80023168(*mpScript++);
+			GameFMV_SetStartTrack(*mpScript++);
 			break;
 		case 17043: {
 			int *p = (int *)(((int)mpScript + 3) & ~3);
 
-			FUN_800229ec(*p++);
+			GameFMV_SetScreenTexture(*p++);
 
 			mpScript = (ushort *)p;
 			break;
@@ -175,12 +169,12 @@ int CBaddy::ExecuteCommand(ushort command) {
 		case 17044: {
 			CVector pos;
 
-			FUN_80022aec(&mPos);
+			GameFMV_AddSoundSource(&mPos);
 			ushort *p_links = Trig_GetLinksPointer(mNode);
 
 			for (int i = 0; i < *p_links; i++) {
 				Trig_GetPosition(pos, p_links[i + 1]);
-				FUN_80022aec(&mPos);
+				GameFMV_AddSoundSource(&mPos);
 			}
 
 			if (GGame == 7)
@@ -190,8 +184,8 @@ int CBaddy::ExecuteCommand(ushort command) {
 			break;
 		}
 		case 17053:
-			FUN_80022aec(&mPos);
-			FUN_80023260();
+			GameFMV_AddSoundSource(&mPos);
+			GameFMV_StartFrameBufferCopy();
 			break;
 		case 17045:
 			GameFMV_StopFMV();
@@ -227,7 +221,7 @@ int CBaddy::ExecuteCommand(ushort command) {
 				break;
 			}
 
-			Trig_SendPulseToNode__Fi(node);
+			Trig_SendPulseToNode(node);
 			break;
 		}
 		case 17088: {
@@ -237,7 +231,7 @@ int CBaddy::ExecuteCommand(ushort command) {
 				int ok = GVInfo1[0] != 2;
 
 				if (ok)
-					FUN_8006e454(goals);
+					Panel_GoalCounter(goals);
 			}
 
 			break;

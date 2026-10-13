@@ -15,6 +15,10 @@ extern "C" {
 
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/m3dasm.h"
+#include "game/panel.h"
+#include "game/sfx.h"
+#include "game/vector.h"
 
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
 #define SetVector(v, x, y, z)                                                                      \
@@ -42,16 +46,6 @@ extern int GState;
 		       mpStatBonus[n])
 
 int Redbook_Rnd(int);
-
-extern "C" {
-	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
-	int FUN_8008b5dc(int);
-	int Mips_FixMul__Fii(int, int);
-	void SFX_PlayX__FUisi(int, int, int);
-	int FUN_8006ebdc(CPanelData *);
-	void FUN_8002f1a0(CBruce *);
-	void FUN_8002f458(CBruce *, int);
-}
 
 void CBruce::HandleJump() {
 	int Speed;
@@ -134,18 +128,18 @@ void CBruce::HandleJump() {
 		if (!mInAir) {
 			switch (mTerrain) {
 				case 2:
-					SFX_PlayX__FUisi(Redbook_Rnd(2) + 38, 0x2000, 0);
+					SFX_PlayX(Redbook_Rnd(2) + 38, 0x2000, 0);
 					break;
 				case 10:
 				case 12:
-					SFX_PlayX__FUisi(35, 0x2000, 0);
+					SFX_PlayX(35, 0x2000, 0);
 					break;
 				case 6:
 					break;
 				case 1:
 				case 15:
 				default:
-					SFX_PlayX__FUisi(5, 0x2000, 0);
+					SFX_PlayX(5, 0x2000, 0);
 					break;
 			}
 
@@ -170,9 +164,9 @@ void CBruce::HandleJump() {
 				   leave the x>>31 sra. See the README "Still unexplained" note. */
 				__asm__ volatile("lui $3,0x6666; ori $3,$3,0x6667; mult %0,$3"
 				                 :
-				                 : "r"(FUN_8006ebdc(&mPanel))
+				                 : "r"(mPanel.TotalScore())
 				                 : "$3");
-				int Bonus = FUN_8006ebdc(&mPanel) / 100;
+				int Bonus = mPanel.TotalScore() / 100;
 
 				if (Bonus > 20)
 					Bonus = 20;
@@ -180,7 +174,7 @@ void CBruce::HandleJump() {
 				m340 = 30;
 				m344 = 30;
 				m33C += Bonus;
-				FUN_8002f458(this, Bonus);
+				Trick_Bonus(Bonus);
 				Trick_Land();
 			}
 		}
@@ -238,7 +232,7 @@ void CBruce::HandleJump() {
 			mJumpPending = 0;
 			m740 = 1;
 			m74C = mJumpStrength;
-			m2F8 = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+			m2F8 = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 			if (m6DC) {
 				int a;
@@ -250,10 +244,10 @@ void CBruce::HandleJump() {
 				mFront = mRailDir;
 				AlignHeadingOnRail();
 
-				Speed = Mips_CVecDotProd__FP7CVectorT0(&mRailDir, &mVel);
-				mVel.vx = Mips_FixMul__Fii(mRailDir.vx, Speed);
-				mVel.vy = Mips_FixMul__Fii(mRailDir.vy, Speed);
-				mVel.vz = Mips_FixMul__Fii(mRailDir.vz, Speed);
+				Speed = Mips_CVecDotProd(&mRailDir, &mVel);
+				mVel.vx = Mips_FixMul(mRailDir.vx, Speed);
+				mVel.vy = Mips_FixMul(mRailDir.vy, Speed);
+				mVel.vz = Mips_FixMul(mRailDir.vz, Speed);
 				a = 0;
 
 				if (mpPad->Left.Pressed)
@@ -289,7 +283,9 @@ void CBruce::HandleJump() {
 						Sfx = 6;
 				}
 
-				SFX_PlayX__FUisi(Sfx, 0x2000, 0);
+				/* called as returning void: retail's register choice around it (README: callee
+				   return types change register allocation) */
+				((void (*)(uint, short, int))SFX_PlayX)(Sfx, 0x2000, 0);
 			}
 
 			if (ABS(mUp.vy) < 2500)
@@ -333,20 +329,20 @@ void CBruce::HandleJump() {
 					mNum180Spins = 0;
 
 					if (m268 == 1 && XFrames - m26C < 35) {
-						FUN_8002f1a0(this);
+						Trick_TakeOff();
 						Trick_Trick(65, "FASTPLANT", 250, 0);
 
 						mVel.vy -= 0x5000;
 						Debug_RunAnim1(45, 16, 6508);
 					} else {
-						FUN_8002f1a0(this);
+						Trick_TakeOff();
 						Trick_Trick(75, "NOLLIE", 200, 0);
 						Debug_RunAnim(13, 6515);
 					}
 
 					m364 = 1;
 				} else {
-					FUN_8002f1a0(this);
+					Trick_TakeOff();
 					Debug_RunAnim(4, 6523);
 				}
 			}

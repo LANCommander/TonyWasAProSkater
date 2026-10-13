@@ -1,7 +1,7 @@
-/* FUN_8006ed2c (0x8006ed2c) */
+/* Spool_BackupPSX__Fi (0x8006ed2c) */
 #include "names.h"
 
-/* Copy of FUN_8006edb8 in the other direction; the loop keeps its entry jump, which comes from
+/* Copy of Spool_RestorePSX in the other direction; the loop keeps its entry jump, which comes from
    a goto loop (cc1 rotates while/for loops). */
 typedef struct {
 	char pad[20];
@@ -24,7 +24,7 @@ static int CopyWords(int *p) {
 }
 #endif
 
-void FUN_8006ed2c(int i) {
+void Spool_BackupPSX(int i) {
 	int *s = PSXRegion[i].p14;
 #ifdef PC_PORT
 	int n = CopyWords(s);

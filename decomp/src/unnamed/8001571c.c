@@ -1,4 +1,4 @@
-/* FUN_8001571c (0x8001571c) */
+/* Card_GetNextTimeStamp__Fv (0x8001571c) */
 #include "names.h"
 
 struct B {
@@ -16,7 +16,7 @@ void Card_SetSelectedFile(char *);
 int Card_Load(int, int, int);
 void Mem_Delete(int);
 
-void FUN_8001571c(void) {
+void Card_GetNextTimeStamp(void) {
 	struct B buf;
 	int i, p;
 	char *name;

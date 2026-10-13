@@ -1,4 +1,4 @@
-/* FUN_8006b1c8 (0x8006b1c8) */
+/* HiRes_SetupCamera__Fv (0x8006b1c8) */
 #include "names.h"
 
 typedef struct {
@@ -28,18 +28,18 @@ typedef struct {
 extern SCamera MikeCamera;
 extern SViewport DAT_800bf614;
 
-void FUN_8008b238(MATRIX *);
-MATRIX *FUN_80093100(MATRIX *, VECTOR *);
+void M3dMaths_SetIdentityRotation__FP6MATRIX(MATRIX *);
+MATRIX *TransMatrix(MATRIX *, VECTOR *);
 void M3dInit_SetFoggingParams(int, int, unsigned int);
 
-SViewport *FUN_8006b1c8(void) {
+SViewport *HiRes_SetupCamera(void) {
 	DAT_800bf614.m = 3413;
-	FUN_8008b238(&MikeCamera.Transform);
+	M3dMaths_SetIdentityRotation__FP6MATRIX(&MikeCamera.Transform);
 
 	MikeCamera.Position.vx = 0;
 	MikeCamera.Position.vy = 0;
 	MikeCamera.Position.vz = -200;
-	FUN_80093100(&MikeCamera.Transform, &MikeCamera.Position);
+	TransMatrix(&MikeCamera.Transform, &MikeCamera.Position);
 	M3dInit_SetFoggingParams(10, 6000, 2048);
 	return &DAT_800bf614;
 }

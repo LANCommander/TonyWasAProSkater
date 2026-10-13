@@ -8,10 +8,9 @@ extern "C" {
 
 #include "game/platform.h"
 #include "game/colij.h"
+#include "game/m3dasm.h"
 
-extern "C" void FUN_8008b3d4(CSVector *, MATRIX *);
 void M3dColij_InitLineInfo(SLineInfo *);
-void M3dZone_LineToItemNotSCached(SLineInfo *, int);
 int Mips_CVecDotProd(CVector *, CVector *);
 int Mips_FixMul(int, int);
 int Rnd(int);
@@ -55,7 +54,7 @@ void CPlatform::BouncyAI() {
 
 	mAngles += mAngVel;
 	mAngles.Mask();
-	FUN_8008b3d4(&mAngles, &m);
+	M3dMaths_RotMatrixYXZ((SVECTOR *)&mAngles, &m);
 
 	ObjectExtent =
 	    (mWidth * ABS(m.m[1][0]) + mHeight * ABS(m.m[1][1]) + mDepth * ABS(m.m[1][2])) >> 1;
@@ -173,7 +172,7 @@ void CPlatform::BouncyAI() {
 			if (mNumBounces >= 19) {
 				mAngles.vx = mTargetAngles.vx;
 				mAngles.vz = mTargetAngles.vz;
-				FUN_8008b3d4(&mAngles, &m);
+				M3dMaths_RotMatrixYXZ((SVECTOR *)&mAngles, &m);
 
 				NewVel.vz = 0;
 				NewVel.vy = 0;

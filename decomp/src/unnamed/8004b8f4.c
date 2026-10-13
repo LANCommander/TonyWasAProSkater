@@ -12,7 +12,7 @@ int SFXPaused;
 extern unsigned short pitchPriorToPause[];
 
 void FUN_80094424(int a, unsigned short *b);
-void FUN_80093e54(int a, struct S *s);
+void SpuNSetVoiceAttr(int a, struct S *s);
 void FUN_8008f3a0(int a, int b);
 
 void SFX_Pause(void) {
@@ -29,7 +29,7 @@ void SFX_Pause(void) {
 
 		for (; i < 24; i++) {
 			FUN_80094424(i, q);
-			FUN_80093e54(i, &s);
+			SpuNSetVoiceAttr(i, &s);
 
 			q++;
 		}

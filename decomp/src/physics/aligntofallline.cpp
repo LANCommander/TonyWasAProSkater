@@ -10,12 +10,12 @@ extern "C" {
 }
 
 #include "game/bruce.h"
+#include "game/vector.h"
 
 extern int XFrames;
 
 void M3dUtils_NormaliseVector(CVector *);
 void ProjectCVectorToPlane(CVector *, SVECTOR);
-extern "C" int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
 
 void CBruce::AlignToFallLine(int Amount) {
 	int Speed;
@@ -32,8 +32,8 @@ void CBruce::AlignToFallLine(int Amount) {
 	if (mInAir)
 		return;
 
-	Speed = SquareRoot0(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
-	PolyTilt = SquareRoot0(Mips_CVecDotProd__FP7CVectorT0(&mFallLine, &mFallLine)) << 6;
+	Speed = SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
+	PolyTilt = SquareRoot0(Mips_CVecDotProd(&mFallLine, &mFallLine)) << 6;
 	angle = PolyTilt / 260;
 	angle = angle * PolyTilt / 13000;
 
@@ -63,8 +63,8 @@ void CBruce::AlignToFallLine(int Amount) {
 	FrontInPlane = mFront;
 	ProjectCVectorToPlane(&FrontInPlane, mPolyNormal);
 
-	dot = Mips_CVecDotProd__FP7CVectorT0(&FrontInPlane, &FallLineUnit);
-	dot = Mips_CVecDotProd__FP7CVectorT0(&mFront, &FallLinePerp);
+	dot = Mips_CVecDotProd(&FrontInPlane, &FallLineUnit);
+	dot = Mips_CVecDotProd(&mFront, &FallLinePerp);
 
 	if (dot >= 42) {
 		if (mFallLineSide != 2) {

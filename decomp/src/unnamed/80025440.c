@@ -1,4 +1,4 @@
-/* FUN_80025440 (0x80025440) */
+/* FPS_Display__Fv (0x80025440) */
 #include "names.h"
 
 extern int GamePaused;
@@ -9,12 +9,12 @@ extern char DAT_800d2580[];
 int DAT_800d1750, LastXblanks, Cheat_SlowMo, TimeScale, XFramesShifted, XFrames, TimeScaleSquared,
     Cheat_FPS, DAT_800d2230, GameFrozen;
 
-int FUN_8008b900(char *, char *, int);
+int sprintf(char *, char *, int);
 void Font_String(unsigned short, unsigned short, char *, unsigned char, unsigned char,
                  unsigned char, unsigned char);
 void Font_Display(void);
 
-int FUN_80025440(void) {
+int FPS_Display(void) {
 	int a1, i, s1, t;
 
 	if (GamePaused == 0) {
@@ -53,7 +53,7 @@ int FUN_80025440(void) {
 
 	if (Cheat_FPS) {
 		DAT_800d2230 = (DAT_800d2230 + 10) & 127;
-		FUN_8008b900(DAT_800d2580, " %d FPS", s1);
+		sprintf(DAT_800d2580, " %d FPS", s1);
 
 		if (GameFrozen == 0) {
 			if (s1 >= 25)

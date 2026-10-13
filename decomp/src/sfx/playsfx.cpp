@@ -1,4 +1,4 @@
-/* playSFX__FUiUcssiUs (0x8004bb74) */
+/* playSFX__FUiUcssi (0x8004bb74) */
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
@@ -56,11 +56,9 @@ extern "C" {
 		short vag;
 		short reserved[4];
 	};
-
-	unsigned short FUN_80094e44(short, short, short, short);
-	void FUN_80093e54(int, SpuVoiceAttr *);
 }
 
+#include "game/psyq.h"
 #include "game/types.h"
 
 int Redbook_Rnd(int);
@@ -72,7 +70,7 @@ unsigned nko_flag, keyon_queue, keyoff_queue, voiceon_flag, loop_flag, voicefree
 
 extern ushort SFXFalloffArray[];
 
-int playSFX(uint sfx, uchar pitch, short vl, short vr, int pitch_offset, ushort volMod) {
+int playSFX(uint sfx, uchar pitch, short vl, short vr, int pitch_offset) {
 	int looping;
 	ushort prog;
 	ushort tones;
@@ -172,7 +170,7 @@ int playSFX(uint sfx, uchar pitch, short vl, short vr, int pitch_offset, ushort 
 								attr.volume.left = vl;
 								attr.volume.right = vr;
 								attr.pitch =
-								    FUN_80094e44(pitch, 0, p_vagatr->center, p_vagatr->shift);
+								    SsPitchFromNote(pitch, 0, p_vagatr->center, p_vagatr->shift);
 								SFXFalloffArray[v] = attr.pitch;
 
 								{
@@ -190,7 +188,7 @@ int playSFX(uint sfx, uchar pitch, short vl, short vr, int pitch_offset, ushort 
 
 								attr.adsr1 = p_vagatr->adsr1;
 								attr.adsr2 = p_vagatr->adsr2;
-								FUN_80093e54(v, &attr);
+								SpuNSetVoiceAttr(v, &attr);
 
 								if (looping)
 									loop_flag |= 1 << v;

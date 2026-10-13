@@ -1,4 +1,4 @@
-/* FUN_8002566c (0x8002566c) */
+/* PlayAway_Init__Fv (0x8002566c) */
 #include "names.h"
 
 /* PlayAway_Init (demo twin PlayAway_Init). b826/b827 pick each player's skater, b828[] the W1*.bmp
@@ -38,7 +38,7 @@ void Pad_ClearAll(void);
 void Redbook_InitialRand(int);
 void ReplaceTexture(int, char *);
 
-void FUN_8002566c(void) {
+void PlayAway_Init(void) {
 	char nm[2][16];
 	int i, j, k;
 

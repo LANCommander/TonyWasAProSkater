@@ -1,7 +1,7 @@
 /* Card_ReadFileHeader__FPcP9SCardHead (0x8001508c) */
 #include "names.h"
 
-void FUN_8008b900(char *, char *, char *);
+void sprintf(char *, char *, char *);
 int FUN_8008eb4c(char *, int);
 void _clear_event(void);
 int FUN_8008ead8(int, void *, int);
@@ -23,7 +23,7 @@ int Card_ReadFileHeader(char *name, short *out) {
 	return 0;
 #endif
 
-	FUN_8008b900(buf, "bu00:%s", name);
+	sprintf(buf, "bu00:%s", name);
 
 	for (i = 0; i < 8; i++) {
 		fd = FUN_8008eb4c(buf, 1);

@@ -10,6 +10,8 @@ extern "C" {
 #include "game/camera.h"
 #include "game/bruce.h"
 #include "game/colij.h"
+#include "game/m3d.h"
+#include "game/vector.h"
 
 extern int GamePaused;
 extern int GameFrozen;
@@ -20,9 +22,6 @@ int Camera_CamDist;
 
 void QToM(const CQuat &, MATRIX &);
 void M3dColij_InitLineInfo(SLineInfo *);
-extern "C" int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
-extern "C" VECTOR *FUN_80092f60(MATRIX *, VECTOR *, VECTOR *);
-extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
 void Utils_CalcUnit(CVector &, const CVector &);
 
 CQuat Quat_FromXRot(short);
@@ -73,7 +72,7 @@ void CCamera::ReactToCollision() {
 		M3dColij_InitLineInfo(&line_info);
 
 		line_info.RecordTriggerZoneHits = 0;
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+		M3dZone_LineToItemNotSCached(&line_info, 1);
 
 		if (line_info.pItem) {
 			mDownDist = line_info.Distance;
@@ -101,7 +100,7 @@ void CCamera::ReactToCollision() {
 			vTemp.vx = 0;
 			vTemp.vy = Camera_CamDist << 13;
 			vTemp.vz = 0;
-			FUN_80092f60(&m, &vTemp, &vBack);
+			ApplyMatrixLV(&m, &vTemp, &vBack);
 
 			line_info.StartCoords.vx = mPos.vx;
 			line_info.StartCoords.vy = mPos.vy;
@@ -113,7 +112,7 @@ void CCamera::ReactToCollision() {
 
 			line_info.RecordTriggerZoneHits = 0;
 			CameraCollisionCheck = 1;
-			M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+			M3dZone_LineToItemNotSCached(&line_info, 1);
 
 			CameraCollisionCheck = 0;
 			mColAngBuffer[2] = 0;
@@ -144,7 +143,7 @@ void CCamera::ReactToCollision() {
 		vTemp.vx = -(Camera_CamDist << 13);
 	} while (0);
 
-	FUN_80092f60(&m, &vTemp, &vLeft);
+	ApplyMatrixLV(&m, &vTemp, &vLeft);
 
 	vRight.vx = -vLeft.vx;
 	vRight.vy = -vLeft.vy;
@@ -174,7 +173,7 @@ void CCamera::ReactToCollision() {
 
 			line_info.RecordTriggerZoneHits = 0;
 			CameraCollisionCheck = 1;
-			M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+			M3dZone_LineToItemNotSCached(&line_info, 1);
 
 			CameraCollisionCheck = 0;
 			mColAngBuffer[0] = 0;
@@ -216,7 +215,7 @@ void CCamera::ReactToCollision() {
 
 			line_info.RecordTriggerZoneHits = 0;
 			CameraCollisionCheck = 1;
-			M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+			M3dZone_LineToItemNotSCached(&line_info, 1);
 
 			CameraCollisionCheck = 0;
 			mColAngBuffer[1] = 0;
@@ -239,12 +238,12 @@ void CCamera::ReactToCollision() {
 	vTemp.vx = 0;
 	vTemp.vy = 0;
 	vTemp.vz = -(Camera_CamDist << 12);
-	FUN_80092f60(&m, &vTemp, &vBack);
+	ApplyMatrixLV(&m, &vTemp, &vBack);
 
 	vTemp.vx = 0x64000;
 	vTemp.vy = 0;
 	vTemp.vz = 0;
-	FUN_80092f60(&m, &vTemp, &vOffset);
+	ApplyMatrixLV(&m, &vTemp, &vOffset);
 
 	if (big_air_timer <= 0 && ((CBruce *)mTripod)->mPhysicsState != 2 && mCollisionBack) {
 		uint ratioL;
@@ -262,7 +261,7 @@ void CCamera::ReactToCollision() {
 
 		line_info.RecordTriggerZoneHits = 0;
 		CameraCollisionCheck = 1;
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+		M3dZone_LineToItemNotSCached(&line_info, 1);
 
 		CameraCollisionCheck = 0;
 		ratioL = 0;
@@ -286,7 +285,7 @@ void CCamera::ReactToCollision() {
 
 		line_info.RecordTriggerZoneHits = 0;
 		CameraCollisionCheck = 1;
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+		M3dZone_LineToItemNotSCached(&line_info, 1);
 
 		CameraCollisionCheck = 0;
 
@@ -343,7 +342,7 @@ void CCamera::ReactToCollision() {
 
 		line_info.RecordTriggerZoneHits = 0;
 		CameraCollisionCheck = 1;
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&line_info, 1);
+		M3dZone_LineToItemNotSCached(&line_info, 1);
 
 		CameraCollisionCheck = 0;
 		Utils_CalcUnit(vVel, mVel);
@@ -401,7 +400,7 @@ void CCamera::ReactToCollision() {
 		v_temp.vx = 0;
 		v_temp.vy = 4096;
 		v_temp.vz = 0;
-		FUN_80092f60(&m, &v_temp, &v_temp2);
+		ApplyMatrixLV(&m, &v_temp, &v_temp2);
 
 		vdown.vx = v_temp2.vx;
 		vdown.vy = v_temp2.vy;
@@ -411,13 +410,13 @@ void CCamera::ReactToCollision() {
 		v_temp.vx = 0;
 		v_temp.vy = 0;
 		v_temp.vz = 4096;
-		FUN_80092f60(&mstop, &v_temp, &v_temp2);
+		ApplyMatrixLV(&mstop, &v_temp, &v_temp2);
 
 		vstop.vx = v_temp2.vx;
 		vstop.vy = v_temp2.vy;
 		vstop.vz = v_temp2.vz;
-		dot_stop = ABS(Mips_CVecDotProd__FP7CVectorT0(&vdown, &vstop));
-		ABS(Mips_CVecDotProd__FP7CVectorT0(&vworlddown, &vstop));
+		dot_stop = ABS(Mips_CVecDotProd(&vdown, &vstop));
+		ABS(Mips_CVecDotProd(&vworlddown, &vstop));
 
 		if (mDownDist < 0 || dot_stop >= 1901)
 			mStoppedOValid = 0;

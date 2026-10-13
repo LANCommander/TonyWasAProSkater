@@ -1,4 +1,4 @@
-/* FUN_80070ff4 (0x80070ff4) */
+/* Pad_Update__Fv (0x80070ff4) */
 #include "names.h"
 
 typedef struct {
@@ -48,7 +48,7 @@ static const signed char s_slotAction[20] = {
 	PC_ACT_MENU_LEFT, PC_ACT_MENU_RIGHT,    PC_ACT_MENU_ACCEPT, PC_ACT_MENU_BACK,
 };
 
-int FUN_80070ff4(void) {
+int Pad_Update(void) {
 	int i, j, any = 0;
 
 	for (i = 0; i < 2; i++) {
@@ -88,7 +88,7 @@ int FUN_80070ff4(void) {
 #define B Pad
 #define R theControllers
 
-int FUN_80070ff4(void) {
+int Pad_Update(void) {
 	int a;
 	int b;
 	unsigned s2;

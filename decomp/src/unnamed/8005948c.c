@@ -1,5 +1,6 @@
-/* FUN_8005948c (0x8005948c) */
-/* Byte-identical copy of FUN_80056394. */
+/* Front_ResetDrawArea1P__Fv (0x8005948c) */
+#include "names.h"
+/* Byte-identical copy of Front_ResetDrawArea2P. */
 #include <sys/types.h>
 #include <libgte.h>
 #include <libgpu.h>
@@ -7,7 +8,7 @@
 extern u_long *pDoubleBuffer;
 extern u_char *pPoly;
 
-void FUN_8005948c(void) {
+void Front_ResetDrawArea1P(void) {
 	DR_AREA *p = (DR_AREA *)pPoly;
 	RECT r;
 

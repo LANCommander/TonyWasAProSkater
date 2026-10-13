@@ -28,7 +28,6 @@ CBody *CameraList;
 
 void Ob_AI(CBody **);
 void QToM(const CQuat &, MATRIX &);
-extern "C" VECTOR *FUN_80092f60(MATRIX *, VECTOR *, VECTOR *);
 CQuat Quat_FromXRot(short);
 CQuat Quat_FromYRot(short);
 CQuat Quat_FromZRot(short);
@@ -65,12 +64,12 @@ void CCamera::CM_CompetitionIntro() {
 		v1.vy = 0;
 		v1.vz = -(speed_lag_dist << 12);
 		QToM(mO, m);
-		FUN_80092f60(&m, &v1, &v2);
+		ApplyMatrixLV(&m, &v1, &v2);
 
 		v1.vx = Camera_CamOffset.vx;
 		v1.vy = Camera_CamOffset.vy;
 		v1.vz = Camera_CamOffset.vz;
-		FUN_80092f60(&m, &v1, &real_cam_offset);
+		ApplyMatrixLV(&m, &v1, &real_cam_offset);
 
 		mPos.vx = mTripodPos.vx + v2.vx;
 		mPos.vy = mTripodPos.vy + v2.vy;

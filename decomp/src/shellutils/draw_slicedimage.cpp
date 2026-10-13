@@ -10,16 +10,12 @@ extern "C" {
 
 #include "game/shellutils.h"
 #include "game/m3d.h"
+#include "game/psyq.h"
 
 extern SDoubleBuffer *pDoubleBuffer;
 extern char *pPoly;
 
 int OT_entry;
-
-extern "C" {
-	int FUN_8008c190(const char *, ...); /* printf */
-	int FUN_8008c880(void *);            /* DrawPrim */
-}
 
 void SlicedImage::draw(int x, int y, int otFront, int r, int g, int b, int semiTrans, int drawNow) {
 	drawScaled(x, y, 0, 0, otFront, r, g, b, semiTrans, drawNow);
@@ -35,7 +31,7 @@ void SlicedImage::drawScaled(int x, int y, int w, int h, int otFront, int r, int
 	u_long *ot;
 
 	if ((u_int)OT_entry >= 0x2000)
-		FUN_8008c190("\nOT_entry is %d", OT_entry);
+		printf("\nOT_entry is %d", OT_entry);
 
 	if (otFront)
 		ot = &pDoubleBuffer->OT2D;
@@ -120,7 +116,7 @@ void SlicedImage::drawScaled(int x, int y, int w, int h, int otFront, int r, int
 			if (!drawNow)
 				addPrim(ot, p);
 			else
-				FUN_8008c880(p);
+				DrawPrim(p);
 
 			if (ot != &pDoubleBuffer->OT2D)
 				OT_entry--;

@@ -1,4 +1,5 @@
-/* FUN_80083774 (0x80083774) */
+/* M3d_RenderCleanup__Fv (0x80083774) */
+#include "names.h"
 /* Clips drawing to the current zone's screen box with a DR_AREA at the last OT slot (4095). */
 #include <sys/types.h>
 #include <libgte.h>
@@ -22,7 +23,7 @@ SOT *CurrentOrderingTable;
 extern SDispBuf *pDoubleBuffer;
 extern u_char *pPoly;
 
-void FUN_80083774(void) {
+void M3d_RenderCleanup(void) {
 	RECT r;
 	DR_AREA *p;
 

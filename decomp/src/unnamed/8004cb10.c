@@ -26,7 +26,7 @@ int Loading;
 int CurrentPos;
 
 void Mem_Copy(void *a, void *b, int c);
-void FUN_8008c190(char *a, int b, int c);
+void printf(char *a, int b, int c);
 void GameFMV_StopFMV(void);
 int FUN_800912bc(int a, char *b);
 void FileIO_Continue(void);
@@ -45,7 +45,7 @@ void FileIO_Load(char *p) {
 	a2 = DAT_800be09c[1].b - DAT_800be09c[1].a - Used_4;
 
 	if (Pad_50[0])
-		FUN_8008c190(" Heaps: Small(0) %d, Large(1) %d", a3, a2);
+		printf(" Heaps: Small(0) %d, Large(1) %d", a3, a2);
 
 	GameFMV_StopFMV();
 

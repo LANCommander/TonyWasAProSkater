@@ -1,4 +1,4 @@
-/* FUN_80014ba4 (0x80014ba4) */
+/* Card_LoadDemoReplay__FPCc (0x80014ba4) */
 #include "names.h"
 
 typedef struct {
@@ -27,7 +27,7 @@ void FileIO_Load(char *a);
 void FileIO_Sync(void);
 void Mem_Delete(char *a);
 
-short FUN_80014ba4(const char *name) {
+short Card_LoadDemoReplay(const char *name) {
 	H *h;
 	char *b;
 	int i;

@@ -2,11 +2,7 @@
 /* C++ (PRE.CPP). Walks a .PRE archive (count, then per file: word-aligned name, size, word-aligned
    data) and returns the data of the file called pName, storing its size, or null. */
 #include "game/pre.h"
-
-extern "C" {
-	int FUN_8008f6ec(char *);         /* strlen */
-	int FUN_8008f6fc(char *, char *); /* strcmp */
-}
+#include "game/psyq.h"
 
 char *PREManager::parsePRE(char *pPre, char *pName, int *pSize) {
 	int numFiles = *(int *)pPre;
@@ -17,11 +13,11 @@ char *PREManager::parsePRE(char *pPre, char *pName, int *pSize) {
 		char *pFileName = pPre;
 		int size;
 
-		pPre += (FUN_8008f6ec(pPre) + 4) & ~3;
+		pPre += (strlen(pPre) + 4) & ~3;
 		size = *(int *)pPre;
 		pPre += 4;
 
-		if (!FUN_8008f6fc(pFileName, pName)) {
+		if (!strcmp(pFileName, pName)) {
 			*pSize = size;
 			return pPre;
 		}

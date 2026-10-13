@@ -38,21 +38,21 @@ int DAT_800d2284, DAT_800d2288, DAT_800d228c, DAT_800d1ba8;
 P *DAT_800d229c;
 short *DAT_800d22a0;
 
-void FUN_80043f70(P *);
+void CSuper_UpdateFrame(P *);
 void FileIO_Continue(void);
 P *FUN_800506d0(int);
-P *FUN_8006b1c8(void);
-void FUN_8006ed2c(int);
-void FUN_8006edb8(int);
+P *HiRes_SetupCamera(void);
+void Spool_BackupPSX(int);
+void Spool_RestorePSX(int);
 void ProcessNewPSX(int);
 void ClearRegion(int, int, int);
 int Spool_PSX(int, int, int);
 void Spool_Continue(void);
 int FUN_80070830(void);
 void M3d_RenderSetup(char *, short *, char *);
-void FUN_80083774(void);
+void M3d_RenderCleanup(void);
 void M3d_Render(char *);
-void FUN_80093240(short *, P *);
+void RotMatrixYXZ(short *, P *);
 void M3d_BuildTransform(P *);
 void Spool_ClearPSX(int);
 void Spool_Sync(void);
@@ -71,7 +71,7 @@ void FUN_800507e4(int a, int b) {
 			DAT_800d2294[2] = 0;
 			DAT_800d2294[1] = 0;
 			DAT_800d2294[0] = 0;
-			q = (short *)FUN_8006b1c8();
+			q = (short *)HiRes_SetupCamera();
 			DAT_800d22a0 = q;
 			q[0] = 512;
 			q[1] = 240;
@@ -87,12 +87,12 @@ void FUN_800507e4(int a, int b) {
 						DAT_800d229c->vt->fn((char *)DAT_800d229c + DAT_800d229c->vt->off, 3);
 
 					ClearRegion(DAT_800d2bf0[DAT_800d2284], 1, 1);
-					FUN_8006edb8(DAT_800d2bf0[DAT_800d2284]);
+					Spool_RestorePSX(DAT_800d2bf0[DAT_800d2284]);
 					ProcessNewPSX(DAT_800d2bf0[DAT_800d2284]);
 					Spool_ClearPSX(Stats[DAT_800d2284].f8);
 				}
 
-				FUN_8006ed2c(DAT_800d2bf0[DAT_800d2288]);
+				Spool_BackupPSX(DAT_800d2bf0[DAT_800d2288]);
 				ProcessNewPSX(DAT_800d2bf0[DAT_800d2288]);
 
 				DAT_800d229c = FUN_800506d0(DAT_800d2288);
@@ -111,7 +111,7 @@ void FUN_800507e4(int a, int b) {
 			if (DAT_800d228c <= 0)
 				DAT_800d228c = 500;
 
-			FUN_80093240(DAT_800d2294, (P *)((char *)DAT_800d229c + 0x78c));
+			RotMatrixYXZ(DAT_800d2294, (P *)((char *)DAT_800d229c + 0x78c));
 
 			{
 				P *q2 = DAT_800d229c;
@@ -123,14 +123,14 @@ void FUN_800507e4(int a, int b) {
 				M3d_BuildTransform(q2);
 			}
 
-			FUN_80043f70(DAT_800d229c);
+			CSuper_UpdateFrame(DAT_800d229c);
 
 			if (b)
-				FUN_80043f70(DAT_800d229c);
+				CSuper_UpdateFrame(DAT_800d229c);
 
 			M3d_RenderSetup(MikeCamera, DAT_800d22a0, (char *)pDoubleBuffer + 0x8c);
 			M3d_Render(MechList);
-			FUN_80083774();
+			M3d_RenderCleanup();
 
 			DAT_800d2294[1] += 10;
 			break;
@@ -139,7 +139,7 @@ void FUN_800507e4(int a, int b) {
 				DAT_800d229c->vt->fn((char *)DAT_800d229c + DAT_800d229c->vt->off, 3);
 
 			ClearRegion(DAT_800d2bf0[DAT_800d2284], 1, 1);
-			FUN_8006edb8(DAT_800d2bf0[DAT_800d2284]);
+			Spool_RestorePSX(DAT_800d2bf0[DAT_800d2284]);
 			ProcessNewPSX(DAT_800d2bf0[DAT_800d2284]);
 			Spool_ClearPSX(Stats[DAT_800d2284].f8);
 			Spool_Sync();

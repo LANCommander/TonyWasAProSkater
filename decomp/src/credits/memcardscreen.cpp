@@ -1,4 +1,4 @@
-/* FUN_80060ba0 (0x80060ba0) */
+/* Front_MemCardScreen__Fv (0x80060ba0) */
 /* C++ (front end, THPS1-only; no demo twin). Runs the memory-card screen modally: sets up the
    card menus and a 640-byte block buffer, then loops the front-end frame (Front_MemCardHiResDisplay
    + Front_MemCardUpdate) until the update stops returning 18 (stay). Afterwards it clears the
@@ -7,10 +7,20 @@
    or 0. Called by FUN_800601fc and FUN_8005e8e0.
    Codegen: the exit code is inside the for(;;) as `if (r != 18) { ...; break; }`, which is why
    retail hoists &Pad and the 35 into s-registers before the loop. */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
+
 #include "game/career.h"
 #include "game/video.h"
 #include "game/pad.h"
 #include "game/shellutils.h"
+#include "game/mem.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/rfront.h"
 
 enum EMemCardState { MEMCARD_STATE_15 = 15 };
 enum EPausedStatus { PAUSED_STATUS_39 = 39 };
@@ -35,24 +45,7 @@ void Front_MemCardHiResDisplay();
 int Front_MemCardUpdate();
 void Front_RestoreBackground();
 
-extern "C" {
-	void *Mem_NewX__FUiii(uint, int, int);
-	void Mem_Delete__FPv(void *);
-	void FUN_80011628(int);
-	void FUN_8005c780(void);
-	void FUN_8005c934(void);
-	void FUN_80070ff4(void);
-	void FUN_8006b240(void);
-	void FUN_80061ea0(void);
-	void FUN_80064890(VerticalMenu *, int, int);
-	void FUN_8006b26c(void);
-	void FUN_80011570(void);
-	void FUN_80011150(void);
-	void FUN_800103a4(void);
-	int DrawSync(int);
-}
-
-int FUN_80060ba0() {
+int Front_MemCardScreen() {
 	int scale;
 	int r;
 	int ret;
@@ -62,23 +55,23 @@ int FUN_80060ba0() {
 	GCareer.Version = 0xdeadbeef;
 	Pack_DefragmentFully();
 	Front_InitMemCardMenus(640, MEMCARD_STATE_15, PAUSED_STATUS_39);
-	FUN_80011628(2);
+	Front_SetLoadAction(LOAD_GAME);
 
-	GVInfo1.pBlockStart = (ulong *)Mem_NewX__FUiii(640, 0, 1);
+	GVInfo1.pBlockStart = (ulong *)Mem_NewX(640, 0, 1);
 	GVideoRestart.NumSkaters = 0;
 
 	for (;;) {
-		FUN_8005c780();
-		FUN_8005c934();
-		FUN_80070ff4();
-		FUN_8006b240();
-		FUN_80061ea0();
+		Front_UpdateMusicLoop();
+		FrontLoader_Continue();
+		Pad_Update();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		if (pVertMenu)
-			FUN_80064890(pVertMenu, DAT_800d2358, DAT_800d235c);
+			pVertMenu->setTriangles((Sprite *)DAT_800d2358, (Sprite *)DAT_800d235c);
 
 		Front_MemCardHiResDisplay();
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 
 		r = Front_MemCardUpdate();
 
@@ -100,24 +93,24 @@ int FUN_80060ba0() {
 	}
 
 	for (i = 0; i < 2; i++) {
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 		Front_RestoreBackground();
 
 		if (pVertMenu)
 			pVertMenu->erase();
 
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	}
 
 	DrawSync(0);
-	FUN_80011570();
+	Front_FreeBackground();
 
 	if (pVertMenu)
-		FUN_80011150();
+		Front_FreeMemCardMenus();
 
-	Mem_Delete__FPv(GVInfo1.pBlockStart);
-	FUN_800103a4();
+	Mem_Delete(GVInfo1.pBlockStart);
+	Options_GetPreferences();
 
 	if (GPreferences.SFXVolume > 12)
 		GPreferences.SFXVolume = 12;

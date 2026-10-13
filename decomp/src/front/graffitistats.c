@@ -9,7 +9,7 @@ typedef struct {
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);
 void Mess_SetTextJustify(int);
 int Mess_DrawText(int, int, char *, int, int, int, int);
-int FUN_8008b900(char *, char *, int);
+int sprintf(char *, char *, int);
 
 void Graffiti_Stats(CBruce *b, int x, int y, int r, int g, int bl, int v1, int v2, int v3, int v4) {
 	char buf[16];
@@ -23,16 +23,16 @@ void Graffiti_Stats(CBruce *b, int x, int y, int r, int g, int bl, int v1, int v
 	Mess_DrawText(x + 20, y + 85, "LOSSES", 0, 0, 256, 0);
 	Mess_DrawText(x + 20, y + 102, "STREAK", 0, 0, 256, 0);
 	Mess_SetTextJustify(2);
-	FUN_8008b900(buf, "%d", b->f496);
+	sprintf(buf, "%d", b->f496);
 	Mess_DrawText(x + 136, y, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, "%d", b->f500);
+	sprintf(buf, "%d", b->f500);
 	Mess_DrawText(x + 136, y + 17, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, "%d", v4);
+	sprintf(buf, "%d", v4);
 	Mess_DrawText(x + 136, y + 51, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, "%d", v1);
+	sprintf(buf, "%d", v1);
 	Mess_DrawText(x + 136, y + 68, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, "%d", v2);
+	sprintf(buf, "%d", v2);
 	Mess_DrawText(x + 136, y + 85, buf, 0, 0, 256, 0);
-	FUN_8008b900(buf, "%d", v3);
+	sprintf(buf, "%d", v3);
 	Mess_DrawText(x + 136, y + 102, buf, 0, 0, 256, 0);
 }

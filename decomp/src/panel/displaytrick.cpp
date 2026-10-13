@@ -8,6 +8,8 @@
 #include "game/bruce.h"
 #include "game/video.h"
 #include "game/career.h"
+#include "game/mess.h"
+#include "game/panel.h"
 
 extern SVideoInfo GVInfo1;
 extern SCareer GCareer;
@@ -19,14 +21,6 @@ void Mess_SetScale(int);
 int Mess_GetScale(void);
 int Mess_DrawPanelText(int, int, const char *, int, uint, int);
 
-extern "C" {
-	void GraffitiColor__FP6CBruce(CBruce *);
-	void Mess_SetTextJustify__FUc(int);
-	void FUN_8001e0a4(FallingTextEffect *, int);
-	void FUN_8001e0f8(FallingTextEffect *, ushort);
-	ushort FUN_8001e108(FallingTextEffect *);
-}
-
 void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
 	int ok = GVInfo1.VideoMode != 2;
 
@@ -37,8 +31,8 @@ void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
 		return;
 
 	Mess_SetRGB(128, 128, 128, 0);
-	GraffitiColor__FP6CBruce(pBruce);
-	Mess_SetTextJustify__FUc(0);
+	GraffitiColor(pBruce);
+	Mess_SetTextJustify(0);
 	int NormalScale;
 	int BigScale;
 
@@ -111,9 +105,9 @@ void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
 	}
 
 	if (mTrickState == 5)
-		FUN_8001e0a4(&pBruce->mPanel.mFallingTextEffect, 1);
+		pBruce->mPanel.mFallingTextEffect.bind(1);
 	else
-		FUN_8001e0f8(&pBruce->mPanel.mFallingTextEffect, Mess_GetScale());
+		pBruce->mPanel.mFallingTextEffect.setScale(Mess_GetScale());
 
 	if (!GameFrozen)
 		mTrickTimer++;
@@ -133,10 +127,10 @@ void CPanelData::DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos) {
 	}
 
 	Mess_DrawPanelText(xpos, ypos, pBruce->mPanel.mTrickName, 0, 0, 256);
-	int Busy = FUN_8001e108(&pBruce->mPanel.mFallingTextEffect);
+	int Busy = pBruce->mPanel.mFallingTextEffect.handleComplete();
 
 	if (mTrickState == 5) {
-		FUN_8001e0a4(&pBruce->mPanel.mFallingTextEffect, 0);
+		pBruce->mPanel.mFallingTextEffect.bind(0);
 
 		if (!Busy)
 			pBruce->mPanel.mTrickState = 0;

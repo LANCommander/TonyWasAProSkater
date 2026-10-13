@@ -182,6 +182,13 @@ class CSuper : public CBody {
 	virtual ~CSuper();                /* slot 0: 0x80043d5c */
 	void RunAnim(int, int, int, int); /* 0x80043e0c */
 	void CycleAnim(int, signed char); /* 0x80043f24 */
+	void UpdateFrame();               /* 0x80043f70 */
 };
+
+/* functions */
+void Ob_ClearInputFlags(CBody *); /* 0x80044484 */
+void Ob_AI(CBody **);             /* 0x800444bc */
+void Ob_QuickAI(CBody **ppBody);  /* 0x80044620 */
+void Ob_MaybeUnSuspendOrCull();   /* 0x800446d4 */
 
 #endif

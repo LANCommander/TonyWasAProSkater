@@ -7,6 +7,9 @@
    (NumChecksums*4 + 4) as one term: written plainly, fold moves the +4 onto the left sum; the
    assignment inside the expression stops it. */
 #include "game/m3d.h"
+#include "game/mem.h"
+#include "game/pal.h"
+#include "game/spool.h"
 
 extern SPSXRegion PSXRegion[];
 
@@ -24,13 +27,6 @@ void M3dInit_ParsePSX(int);
 int Spool_GetEnvIndex(int);
 void M3dZone_SetZone(int, uint *);
 void PreProcessAnimPacket(uint *, uint *);
-
-extern "C" {
-	Texture *NewTextureEntry__FUi(uint);
-	void Pal_LoadPalette__FUiPUiUci(uint, uint *, int);
-	void Spool_LoadTexturesToVRAM__Fii(int, int);
-	void FUN_8004d6a0(uint *, int);
-}
 
 void ProcessNewPSX(int region) {
 	uint *pPSX;
@@ -71,7 +67,7 @@ void ProcessNewPSX(int region) {
 			Texture *pTextureEntry = Spool_FindTextureEntry(ChecksumTable[i]);
 
 			if (!pTextureEntry)
-				pTextureEntry = NewTextureEntry__FUi(ChecksumTable[i]);
+				pTextureEntry = NewTextureEntry(ChecksumTable[i]);
 
 			pTextureEntry->Usage++;
 			ChecksumTable[i] = (uint)pTextureEntry;
@@ -116,7 +112,7 @@ void ProcessNewPSX(int region) {
 
 		for (i = 0; i < Num16CPalettes; i++) {
 			if (!Pal_FindPaletteEntry(*pPaletteInfo))
-				Pal_LoadPalette__FUiPUiUci(*pPaletteInfo, pPaletteInfo + 1, 1);
+				Pal_LoadPalette(*pPaletteInfo, pPaletteInfo + 1, 1);
 
 			pPaletteInfo += 9;
 		}
@@ -129,7 +125,7 @@ void ProcessNewPSX(int region) {
 
 		for (i = 0; i < Num256CPalettes; i++) {
 			if (!Pal_FindPaletteEntry(*pPaletteInfo))
-				Pal_LoadPalette__FUiPUiUci(*pPaletteInfo, pPaletteInfo + 1, 2);
+				Pal_LoadPalette(*pPaletteInfo, pPaletteInfo + 1, 2);
 
 			pPaletteInfo += 129;
 		}
@@ -146,13 +142,13 @@ void ProcessNewPSX(int region) {
 	}
 
 	PSXRegion[region].TexturesInRAM = 1;
-	Spool_LoadTexturesToVRAM__Fii(region, 0);
+	Spool_LoadTexturesToVRAM(region, 0);
 
 	Pack_NoBottom = 0;
 	Pack_NoRight = 0;
 
 	if (!PSXRegion[region].KeepTexturesInRAM) {
-		FUN_8004d6a0(pPSX, GeometryAndTableSize);
+		Mem_Shrink(pPSX, GeometryAndTableSize);
 
 		PSXRegion[region].TexturesInRAM = 0;
 	}
@@ -206,7 +202,7 @@ void ProcessNewPSX(int region) {
 	pPacket++;
 
 	if (AnimPacketFound)
-		FUN_8004d6a0(pPSX, (char *)pPacket - (char *)pPSX);
+		Mem_Shrink(pPSX, (char *)pPacket - (char *)pPSX);
 
 	PSXRegion[region].Usable = 1;
 }

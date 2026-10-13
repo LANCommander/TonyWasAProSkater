@@ -13,6 +13,9 @@
    a pointer set in the loop guard before a do-while (it is spilled and rematerialised as
    `la s5` + 4(s5), and its high-part temp in the preheader pushes pFaceCache from v0 to v1). */
 #include "game/colij.h"
+#include "game/m3dasm.h"
+#include "game/trig.h"
+#include "game/vector.h"
 
 extern SPSXRegion PSXRegion[];
 extern SFaceCache FaceCache[];
@@ -28,16 +31,13 @@ int M3dColij_OneMask;
 int Spool_GetEnvIndex(int);
 
 extern "C" {
-	int FUN_8008b62c(int, int, int);
 	int Mips_DotProd2(int, int, int, int);
-	int Mips_FixMul__Fii(int, int);
-	void FUN_80044a20(int, int);
 }
 
 static inline void FireNode(int node, int env) {
 	OtherEnvIndex = env ^ 1;
 	TriggerCollisionCheck = 0;
-	FUN_80044a20(node, 1);
+	Trig_TriggerCommandPoint(node, 1);
 }
 
 void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pColCache) {
@@ -212,7 +212,7 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 							int Qx, Qy, Qz;
 							int t;
 
-							t = FUN_8008b62c(s0, 0x4000, s0 - s1);
+							t = M3dMaths_MulDiv64(s0, 0x4000, s0 - s1);
 
 							if (t < tNear) {
 								Qx = Mips_DotProd2(L0x << 12, 0x4000, (int)Dx << 12, t) >> 2;
@@ -229,7 +229,7 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 								pInfo->pItem = pItem;
 								pInfo->pFace = pFace;
 								pInfo->Model = pItem->Model;
-								pInfo->Distance = Mips_FixMul__Fii(LineLen, tNear) >> 2;
+								pInfo->Distance = Mips_FixMul(LineLen, tNear) >> 2;
 								NearestHit_8[0] =
 								    (SVECTOR *)((char *)Normals + (((ushort *)pFace)[6] & 0xfff8));
 								pColij->pFace = pFace;

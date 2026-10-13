@@ -238,7 +238,7 @@ src/mech/inititem_bruce.cpp	0x80042988	72	cxx	InitItem__6CBrucePc
 src/physics/alignheadingonrail.cpp	0x80033108	220	cxx	AlignHeadingOnRail__6CBruce
 src/physics/fruvectorsfromrotmatrix.cpp	0x8003a5a4	88	cxx	FRUVectorsFromRotMatrix__6CBruce
 src/physics/glowupdate.cpp	0x800424b4	260	cxx	GlowUpdate__6CBruce
-src/physics/holdtrick.cpp	0x8001d528	32	cxx	Trick_HoldTrick__6CBrucei
+src/mess/textheightabovebaseline2.cpp	0x8001d528	32	cxx	Mess_TextHeightAboveBaseline2__FPCc
 src/physics/playerinit.cpp	0x8002f178	40	cxx	Trick_PlayerInit__6CBruceUs
 src/physics/rotmatrixfromfru.cpp	0x8003a5fc	76	cxx	RotMatrixFromFRUVectors__6CBruce
 src/physics/setanglesfromheading.cpp	0x8003a648	140	cxx	SetAnglesFromHeading__6CBruce
@@ -253,7 +253,7 @@ src/unnamed/8002fd28.cpp	0x8002fd28	88	cxx	Debug_RunAnim1__6CBruceiii
 src/unnamed/8002fd80.cpp	0x8002fd80	100	cxx	Debug_RunAnim2__6CBruceiiii
 src/unnamed/8002fde4.cpp	0x8002fde4	108	cxx	Debug_RunAnim3__6CBruceiiiii
 src/unnamed/8002fe50.cpp	0x8002fe50	76	cxx	ResetTrickBuffers__6CBruce
-src/unnamed/8002fe9c.cpp	0x8002fe9c	344	cxx	Bail__6CBrucei13ELimitBailVel
+src/unnamed/8002fe9c.cpp	0x8002fe9c	344	cxx	Bail__6CBrucei
 src/unnamed/80031108.cpp	0x80031108	284	cxx	HandleBailOnLanding__6CBrucei
 src/unnamed/80037460.cpp	0x80037460	660	cxx	DoHandPlantPhysics__6CBruce
 src/unnamed/80041c30.cpp	0x80041c30	88	cxx	BoardOff__6CBruce

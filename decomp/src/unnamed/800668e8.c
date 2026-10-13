@@ -1,4 +1,4 @@
-/* FUN_800668e8 (0x800668e8) */
+/* LevelSelect_DecodePics__Fv (0x800668e8) */
 #include "names.h"
 
 int DAT_800d2364, DAT_800d2378, DAT_800d237c, DAT_800d2384, DAT_800d2388, DAT_800d238c,
@@ -11,9 +11,9 @@ void Load8BitBMP2(int, int *, int *, int *, unsigned short *);
 int __nw__6CClassUi(int);
 int SlicedImage_ctor(int, int, int, int, int, int, int, int);
 int Get256SlotNumber(unsigned short);
-void FUN_800665ec(int, int);
+void MakeGreyClut(int, int);
 
-void FUN_800668e8(void) {
+void LevelSelect_DecodePics(void) {
 	unsigned short a;
 	int pa;
 	int b, c, d;
@@ -40,7 +40,7 @@ void FUN_800668e8(void) {
 		*ps = v;
 
 		if (DAT_800bf2a0[DAT_800d2364] == 0)
-			FUN_800665ec(Pal256X, Pal256Y + Get256SlotNumber(a));
+			MakeGreyClut(Pal256X, Pal256Y + Get256SlotNumber(a));
 
 		h = DAT_800d237c / 2;
 

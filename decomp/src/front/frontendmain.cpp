@@ -1,4 +1,4 @@
-/* FUN_8005bb70 (0x8005bb70) */
+/* Front_Main__Fv (0x8005bb70) */
 /* C++ (front end). The front-end screen dispatcher, called once from FUN_8006b3f8 (after the boot
    init) and never returning. No demo twin (THPS2's FrontEnd2_Main is a different, table-driven
    design). Each pass:
@@ -6,14 +6,14 @@
        DemoName to "demoA.rec" and clear the video-restart data.
      - top: in autotest mode (GAutoTest) cycle level/skater/players and launch straight away.
        Otherwise, coming back from a game (StartScreen = 1..6) jump straight back into the screen
-       the player left from; else run the title screen (FUN_80060e98) and then the main menu
-       (FUN_8005de7c).
-     - main-menu choice: 3/4/17/18/19 = 1-player game modes -> skater select (FUN_80059794);
-       33/34/35/1234567 = 2-player modes -> 2P skater select (FUN_80056754); 1553/1554 = replay
+       the player left from; else run the title screen (Front_TitleScreen) and then the main menu
+       (Front_MainMenu).
+     - main-menu choice: 3/4/17/18/19 = 1-player game modes -> skater select (Front_SkaterSelect1P);
+       33/34/35/1234567 = 2-player modes -> 2P skater select (Front_SkaterSelect2P); 1553/1554 = replay
        the 1P/2P video restart; 99, 1569-1574, 25202-25207 = FMV movies; 100/101 = credits.
-     - 1P: skater select -> board select (FUN_80054510); 2P: skater select -> board select
-       (FUN_80051660); both then level select (FUN_8006658c). -1 from a screen backs up one.
-     - launch: record the choice, start the game (FUN_8006b434 -> LaunchGame), tear down, reload
+     - 1P: skater select -> board select (Front_BoardSelect1P); 2P: skater select -> board select
+       (Front_BoardSelect2P); both then level select (LevelSelect_Run). -1 from a screen backs up one.
+     - launch: record the choice, start the game (kickIt -> LaunchGame), tear down, reload
        the shell, and loop (rolling the credits first if the career was finished).
    Register levers: the duplicated case tails (2P modes, return screens 3/4/5) are cross-jumped in
    retail but their extra refs are what give `players`/`menu` their s1/s4 priority; the demo load
@@ -32,6 +32,18 @@ extern "C" {
 #include "game/video.h"
 #include "game/career.h"
 #include "game/m3d.h"
+#include "game/mess.h"
+#include "game/gamefmv.h"
+#include "game/mem.h"
+#include "game/card.h"
+#include "game/credits.h"
+#include "game/db.h"
+#include "game/front.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/levelselect.h"
+#include "game/sfx.h"
+#include "game/shellutils.h"
 
 enum EPackInitType { PACK_0, PACK_1 };
 
@@ -66,49 +78,14 @@ extern "C" {
 	extern int GNumberOfPlayers; /* GNumberOfPlayers */
 	extern int DAT_800d1d80;
 	extern int DAT_800d1dc0;
-	extern int GVideoReplay;  /* GVideoReplay */
-	extern int GLevel;        /* GLevel */
+	extern int GVideoReplay; /* GVideoReplay */
+	extern int GLevel;       /* GLevel */
 
 	int StartScreen; /* screen to return to */
 	short DAT_800d1ca0;
 	int DemoTimer; /* DemoTimer */
 	int DAT_800d1cb4;
-	int DAT_800d1cb8; /* soft reset */
-
-	void Career_Init__Fv(void);
-	void Options_SetPreferences__Fv(void);
-	short FUN_80014ba4(SName *);
-	void FUN_800161d8(void);
-	void FUN_800171f0(void);
-	void Mess_SetTextJustify__FUc(int);
-	void FUN_8001f0dc(void);
-	void FUN_8001f1b4(int);
-	void GameFMV_PlayMovie__Fi(int);
-	void FUN_800491e8(void);
-	void FUN_8004b09c(char *);
-	void Mem_Delete__FPv(void *);
-	void FUN_8004fe28(int, int);
-	int FUN_80051660(int);
-	int FUN_80054510(int);
-	int FUN_80056754(void);
-	int FUN_80059794(void);
-	void FUN_8005c678(void);
-	void FUN_8005c734(int);
-	void FUN_8005c85c(void);
-	void FUN_8005c8ac(void);
-	void FUN_8005c8dc(int);
-	void FUN_8005ca10(void);
-	void FUN_8005ca88(void);
-	void FUN_8005cae8(void);
-	void FUN_8005d35c(int, int, int);
-	int FUN_8005de7c(int);
-	void FUN_80060e98(void);
-	void FUN_800642d4(int);
-	int FUN_8006658c(int);
-	void FUN_8006af64(void);
-	void FUN_8006b01c(int);
-	void FUN_8006b434(int, int);
-	void FUN_8005bb70(void);
+	int DAT_800d1cb8;
 }
 
 static inline int GetReturnScreen() {
@@ -118,7 +95,7 @@ static inline int GetReturnScreen() {
 	return s;
 }
 
-void FUN_8005bb70(void) {
+void Front_Main(void) {
 	int choice;
 	int players;
 	int mode;
@@ -126,28 +103,28 @@ void FUN_8005bb70(void) {
 	int menu;
 	int r;
 
-	FUN_8005c678();
+	ClearSoftReset();
 restart:
 	if (DAT_800d1cb8) {
 	reset:
-		FUN_8001f0dc();
-		FUN_8005ca10();
-		FUN_8005cae8();
-		FUN_8005c678();
+		Mess_UnloadAllFonts();
+		FrontLoader_UnloadAll();
+		Front_FreeSpritesPRE();
+		ClearSoftReset();
 	}
 
 	DemoName = *(SName *)"demoA.rec";
 	DAT_800d1cb4 = 1;
 	Front_ClearGVideoRestartData();
-	Career_Init__Fv();
-	FUN_800161d8();
+	Career_Init();
+	Front_DisplayScreen();
 top:
-	FUN_8005c8ac();
+	FrontLoader_Reset();
 
 	DAT_800d1dc0 = 1;
 	GNumberOfPlayers = 1;
 	DemoTimer = 1600;
-	FUN_800642d4(2);
+	PadBuffer_SetNumPlayers(2);
 
 	DAT_800d1ca0 = 0;
 
@@ -181,15 +158,15 @@ top:
 		goto launch;
 	}
 
-	FUN_8005ca88();
+	Front_LoadSpritesPRE();
 
 	if (StartScreen) {
-		FUN_8005c734(157);
+		Front_SetMusicLoop(157);
 		Mess_LoadFont("mainf.fnt", -1, -1, -1);
 		Mess_SetRGB(128, 128, 128, 0);
 		Mess_SetFontScale(256);
-		Mess_SetTextJustify__FUc(1);
-		FUN_8001f1b4(4);
+		Mess_SetTextJustify(1);
+		Mess_SetFontShadowOffset(4);
 
 		mode = 0;
 		skater = DAT_800a7068[0];
@@ -228,44 +205,44 @@ top:
 				if (players != 1)
 					goto board2;
 
-				FUN_800642d4(1);
+				PadBuffer_SetNumPlayers(1);
 				goto board1;
 			case 1:
 				if (players == 1)
-					FUN_800642d4(1);
+					PadBuffer_SetNumPlayers(1);
 
 				goto level;
 			case 3:
 				GVideoRestart.NumSkaters = 0;
 				menu = 96;
-				FUN_8005c8dc(0);
+				FrontLoader_SetFiles(0);
 				goto mainmenu;
 			case 4:
 				GVideoRestart.NumSkaters = 0;
 				menu = 0;
-				FUN_8005c8dc(0);
+				FrontLoader_SetFiles(0);
 				goto mainmenu;
 			case 5:
 				GVideoRestart.NumSkaters = 0;
 				menu = 0;
-				FUN_8005c8dc(0);
+				FrontLoader_SetFiles(0);
 				goto mainmenu;
 			case 6:
 				if (players == 1)
-					FUN_800642d4(1);
+					PadBuffer_SetNumPlayers(1);
 
 				choice = GLevel;
 				Mess_SetCurrentFont("mainf.fnt");
 				Mess_UnloadFont();
-				FUN_8005cae8();
+				Front_FreeSpritesPRE();
 				goto launch;
 		}
 	}
 
 	StartScreen = 5;
 title:
-	FUN_8005ca10();
-	FUN_80060e98();
+	FrontLoader_UnloadAll();
+	Front_TitleScreen();
 
 	if (DAT_800d1cb8)
 		goto reset;
@@ -278,10 +255,10 @@ title:
 
 	menu = 0;
 mainmenu:
-	FUN_8005c734(157);
+	Front_SetMusicLoop(157);
 	Pack_DefragmentFully();
 
-	choice = FUN_8005de7c(menu);
+	choice = Front_MainMenu(menu);
 
 	if (DAT_800d1cb8)
 		goto reset;
@@ -289,7 +266,7 @@ mainmenu:
 	if (!DemoTimer)
 		goto demo;
 
-	Options_SetPreferences__Fv();
+	Options_SetPreferences();
 
 	mode = 0;
 	players = 1;
@@ -302,7 +279,7 @@ mainmenu:
 		case 18:
 			if (choice == 18) {
 				DAT_800d1d80 = 0;
-				Career_Init__Fv();
+				Career_Init();
 			}
 
 			GGame = players;
@@ -356,8 +333,8 @@ mainmenu:
 			GGame = GVideoRestart.GGame;
 			SelectedSkater2 = GVideoRestart.Skater;
 		replay:
-			FUN_8005ca10();
-			FUN_8005cae8();
+			FrontLoader_UnloadAll();
+			Front_FreeSpritesPRE();
 			goto launch;
 		case 19:
 			DAT_800d1d80 = players;
@@ -376,16 +353,16 @@ mainmenu:
 	goto title;
 
 skater1:
-	FUN_800642d4(1);
+	PadBuffer_SetNumPlayers(1);
 
 	GNumberOfPlayers = 1;
-	skater = FUN_80059794();
+	skater = Front_SkaterSelect1P();
 
 	if (DAT_800d1cb8)
 		goto reset;
 
 	if (skater == -1) {
-		FUN_800642d4(2);
+		PadBuffer_SetNumPlayers(2);
 		goto mainmenu;
 	}
 
@@ -393,7 +370,7 @@ skater1:
 skater2:
 	Pack_DefragmentFully();
 
-	skater = FUN_80056754();
+	skater = Front_SkaterSelect2P();
 
 	if (DAT_800d1cb8)
 		goto reset;
@@ -407,7 +384,7 @@ skater2:
 
 	goto board2;
 board1:
-	r = FUN_80054510(skater);
+	r = Front_BoardSelect1P(skater);
 
 	if (DAT_800d1cb8)
 		goto reset;
@@ -417,7 +394,7 @@ board1:
 
 	goto level;
 board2:
-	r = FUN_80051660(skater);
+	r = Front_BoardSelect2P(skater);
 
 	if (DAT_800d1cb8)
 		goto reset;
@@ -425,7 +402,7 @@ board2:
 	if (r == -1)
 		goto skater2;
 level:
-	choice = FUN_8006658c(skater);
+	choice = LevelSelect_Run(skater);
 
 	if (DAT_800d1cb8)
 		goto reset;
@@ -440,11 +417,11 @@ level:
 
 	Mess_SetCurrentFont("mainf.fnt");
 	Mess_UnloadFont();
-	FUN_8005cae8();
+	Front_FreeSpritesPRE();
 launch:
-	FUN_8001f0dc();
-	FUN_8005ca10();
-	FUN_8005d35c(choice, mode, skater);
+	Mess_UnloadAllFonts();
+	FrontLoader_UnloadAll();
+	LoadingScreen_SetCurrentLevel(choice, mode, skater);
 
 	GNumberOfPlayers = players;
 	DAT_800d1dc0 = 0;
@@ -452,17 +429,17 @@ launch:
 	if (!GVideoReplay && Levels[choice].isCompetition == 1)
 		Competition_Init();
 
-	FUN_8005c85c();
-	FUN_8006b434(choice, skater);
+	Front_StopMusicLoop();
+	kickIt(choice, skater);
 	Init_Restart(PACK_0, 16);
-	FUN_800491e8();
+	Db_Init();
 
 	GNumberOfPlayers = 1;
 	Init_Restart(PACK_1, 16);
-	FUN_8006b01c(0);
-	FUN_800161d8();
-	FUN_8004b09c("shell.vab");
-	FUN_800171f0();
+	HiRes_Init(0);
+	Front_DisplayScreen();
+	SFX_Init("shell.vab");
+	Front_Init();
 
 	if (DAT_800d1cb8) {
 		StartScreen = 0;
@@ -478,7 +455,7 @@ launch:
 
 demo:
 	do {
-		FUN_80014ba4(&DemoName);
+		Card_LoadDemoReplay((const char *)&DemoName);
 	} while (0);
 
 	mode = 2;
@@ -488,16 +465,16 @@ demo:
 	choice = GVideoRestart.Level;
 	SelectedSkater2 = GVideoRestart.Skater2;
 	GGame = GVideoRestart.GGame;
-	FUN_8005cae8();
+	Front_FreeSpritesPRE();
 
 	StartScreen = 4;
 	goto launch;
 
 movie:
-	FUN_8006af64();
+	HiRes_BlankScreen();
 
 	DAT_800d1dc0 = 0;
-	FUN_8005c85c();
+	Front_StopMusicLoop();
 
 	if ((unsigned)(choice - 99) < 2)
 		menu = 96;
@@ -508,68 +485,68 @@ movie:
 
 	switch (choice) {
 		case 99:
-			GameFMV_PlayMovie__Fi(-26);
+			GameFMV_PlayMovie(-26);
 			break;
 		case 1569:
-			GameFMV_PlayMovie__Fi(-25);
+			GameFMV_PlayMovie(-25);
 			break;
 		case 1570:
-			GameFMV_PlayMovie__Fi(-12);
+			GameFMV_PlayMovie(-12);
 			break;
 		case 1571:
-			GameFMV_PlayMovie__Fi(-13);
+			GameFMV_PlayMovie(-13);
 			break;
 		case 1572:
-			GameFMV_PlayMovie__Fi(-14);
+			GameFMV_PlayMovie(-14);
 			break;
 		case 1573:
-			GameFMV_PlayMovie__Fi(-15);
+			GameFMV_PlayMovie(-15);
 			break;
 		case 1574:
-			GameFMV_PlayMovie__Fi(-16);
+			GameFMV_PlayMovie(-16);
 			break;
 		case 25202:
-			GameFMV_PlayMovie__Fi(-17);
+			GameFMV_PlayMovie(-17);
 			break;
 		case 25203:
-			GameFMV_PlayMovie__Fi(-18);
+			GameFMV_PlayMovie(-18);
 			break;
 		case 25204:
-			GameFMV_PlayMovie__Fi(-19);
+			GameFMV_PlayMovie(-19);
 			break;
 		case 25205:
-			GameFMV_PlayMovie__Fi(-20);
+			GameFMV_PlayMovie(-20);
 			break;
 		case 25206:
-			GameFMV_PlayMovie__Fi(-21);
+			GameFMV_PlayMovie(-21);
 			break;
 		case 25207:
-			GameFMV_PlayMovie__Fi(-11);
+			GameFMV_PlayMovie(-11);
 			break;
 		case 100:
 			break;
 	}
 
 	if (DoubleBuffer[0].Polys)
-		Mem_Delete__FPv(DoubleBuffer[0].Polys);
+		Mem_Delete(DoubleBuffer[0].Polys);
 
 	DoubleBuffer[0].Polys = 0;
-	FUN_8006b01c(1);
-	FUN_8005c8dc(0);
-	FUN_800161d8();
+	HiRes_Init(1);
+	FrontLoader_SetFiles(0);
+	Front_DisplayScreen();
 	goto mainmenu;
 
 credits:
-	FUN_8005c734(choice == 101 ? 157 : -1);
-	FUN_8004fe28(choice != 100, 1);
+	Front_SetMusicLoop(choice == 101 ? 157 : -1);
+	Credits_Roll(choice != 100, 1);
 
 	if (DoubleBuffer[0].Polys)
-		Mem_Delete__FPv(DoubleBuffer[0].Polys);
+		Mem_Delete(DoubleBuffer[0].Polys);
 
 	DoubleBuffer[0].Polys = 0;
-	FUN_8006b01c(1);
-	FUN_8005c8dc(0);
-	FUN_800161d8();
+	HiRes_Init(1);
+	FrontLoader_SetFiles(0);
+	Front_DisplayScreen();
 
 	GGame = 3;
 	goto top;

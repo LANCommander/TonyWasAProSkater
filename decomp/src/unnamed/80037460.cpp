@@ -18,14 +18,12 @@ static inline void FlipAxis(short &Matrix, int &Axis) {
 
 int PingPong(int, int, int);
 
-extern "C" void FUN_8002f438(CBruce *, int);
-
 void CBruce::DoHandPlantPhysics() {
 	m70C = 5;
 
 	if (mAnim != 0x22 && mAnim != 0x3f) {
 		/* The retail call leaves the limit argument unset; Bail ignores it. */
-		Bail(0, DO_LIMIT);
+		Bail(0);
 		return;
 	}
 
@@ -35,12 +33,12 @@ void CBruce::DoHandPlantPhysics() {
 		if (Hold >= 0) {
 			if (mpPad->Grind.Pressed) {
 				mFrame = PingPong(20, 22, 15);
-				FUN_8002f438(this, 20);
+				Trick_HoldTrick(20);
 
 				m248++;
 
 				if (m248 >= 21) {
-					Bail(0, DO_LIMIT);
+					Bail(0);
 					Debug_RunAnim(0x38, 0x1602);
 
 					m24C = 9;

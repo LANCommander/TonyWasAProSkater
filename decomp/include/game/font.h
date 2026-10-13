@@ -54,4 +54,7 @@ struct SString {
 	               /* sizeof(SString) == 0x20 */
 };
 
+/* functions */
+void Font_Reset(); /* 0x8004c180 */
+
 #endif

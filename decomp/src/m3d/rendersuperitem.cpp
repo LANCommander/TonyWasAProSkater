@@ -13,6 +13,8 @@ extern "C" {
 #include "game/m3d.h"
 #include "game/ob.h"
 #include "game/camera.h"
+#include "game/decomp.h"
+#include "game/m3dasm.h"
 
 extern SPSXRegion PSXRegion[];
 extern SAnimFrame *QuickAnimLookup[];
@@ -31,19 +33,6 @@ int TestTheWater;
 void RenderModelInSuperFast(SModel *);
 void M3dElips_RenderEllipsoid(SModel *, MATRIX *, uint, int, int, Texture *);
 void M3dElips_RenderShadow(SModel *, MATRIX *, CSVector *, CVector *, SVECTOR *, CVECTOR);
-
-extern "C" {
-	void FUN_8008b254(MATRIX *, MATRIX *);
-	SMatrix *Decomp_GetAnimTransform__FP6CSuper(Item *);
-	MATRIX *FUN_8009738c(MATRIX *, MATRIX *, MATRIX *);
-	void FUN_80089fc8(MATRIX *, MATRIX *, SMatrix *);
-	void FUN_8008a1c8(MATRIX *, MATRIX *, SMatrix *);
-	void FUN_800866cc(MATRIX *, long *, SModel *);
-	void FUN_80086f20(char *);
-	void FUN_80086a4c(char *, int);
-	void FUN_80084ebc(SModel *);
-	void FUN_8008b71c(MATRIX *);
-}
 
 void RenderSuperItem(Item *pItem) {
 	uint NumParts;
@@ -80,7 +69,7 @@ void RenderSuperItem(Item *pItem) {
 	}
 
 	gte_SetRotMatrix(&pCurrentCamera->View);
-	FUN_8008b254(&((CSuper *)pItem)->mTransform, &SuperTransform);
+	M3dMaths_MulRotMatrix(&((CSuper *)pItem)->mTransform, &SuperTransform);
 
 	Position.vx = (pItem->Position.vx >> 12) - pCurrentCamera->Position.vx;
 	Position.vy = (pItem->Position.vy >> 12) - pCurrentCamera->Position.vy;
@@ -107,9 +96,9 @@ void RenderSuperItem(Item *pItem) {
 	if (ItemFlags & 4)
 		pAnimTransform = ((CSuper *)pItem)->mpPoseBuffer;
 	else
-		pAnimTransform = Decomp_GetAnimTransform__FP6CSuper(pItem);
+		pAnimTransform = Decomp_GetAnimTransform((CSuper *)pItem);
 
-	FUN_8009738c((MATRIX *)pItem->pLight, &((CSuper *)pItem)->mTransform, &SuperLightTransform);
+	MulMatrix0((MATRIX *)pItem->pLight, &((CSuper *)pItem)->mTransform, &SuperLightTransform);
 
 	Type = ((CSuper *)pItem)->mEllipsoidRGB >> 24;
 
@@ -135,26 +124,28 @@ void RenderSuperItem(Item *pItem) {
 	for (i = 0; i < NumParts; i++, pAnimTransform++) {
 		SubObjectMasked = (((CSuper *)pItem)->mSubObjectDisplayMask & (1 << i)) != 0;
 		pModel = ppModels[i];
-		FUN_8009738c(&((CSuper *)pItem)->mTransform, (MATRIX *)pAnimTransform, &WorldTransform);
+		MulMatrix0(&((CSuper *)pItem)->mTransform, (MATRIX *)pAnimTransform, &WorldTransform);
 
 		if (Dewibble)
-			FUN_80089fc8(&SuperTransform, &SuperLightTransform, pAnimTransform);
+			M3dAsm_SetSuperTransformsDewibbled(&SuperTransform, &SuperLightTransform,
+			                                   pAnimTransform);
 		else
-			FUN_8008a1c8(&SuperTransform, &SuperLightTransform, pAnimTransform);
+			M3dAsm_SetSuperTransforms(&SuperTransform, &SuperLightTransform, pAnimTransform);
 
 		if ((pModel->Flags & 1) || (pItem->Flags & 0x4000)) {
-			FUN_800866cc(&WorldTransform, SuperTransform.t, pModel);
+			M3dAsm_GetReflectionMapping(&WorldTransform, SuperTransform.t, (uint *)pModel);
 		} else if ((pModel->Flags & 4) || (ItemFlags & 128)) {
 			gte_SetColorMatrix((MATRIX *)((char *)pItem->pLight + 20));
-			FUN_80086f20((char *)pItem->pLight + 40);
-			FUN_80086a4c((char *)pModel + (pModel->NumVertices * 8 + 28), pModel->NumNormals);
+			M3dAsm_SetAmbient((int *)((char *)pItem->pLight + 40));
+			M3dAsm_GetDynamicLighting((SVECTOR *)((char *)pModel + (pModel->NumVertices * 8 + 28)),
+			                          pModel->NumNormals);
 		}
 
 		if (!(Type & 128)) {
 			if (Fast)
 				RenderModelInSuperFast(pModel);
 			else
-				FUN_80084ebc(pModel);
+				RenderModelInSuper(pModel);
 		}
 
 		if (!SubObjectMasked) {
@@ -163,7 +154,7 @@ void RenderSuperItem(Item *pItem) {
 
 			if (DoEllipsoids || DoShadows) {
 				gte_ldsv(&pAnimTransform->t[0]);
-				FUN_8008b71c(&((CSuper *)pItem)->mTransform);
+				M3dMaths_TransformLastVec((ushort *)&((CSuper *)pItem)->mTransform);
 				gte_stlvnl(&WorldTransform.t[0]);
 				WorldTransform.t[0] >>= 4;
 				WorldTransform.t[1] >>= 4;

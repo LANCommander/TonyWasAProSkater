@@ -1,17 +1,19 @@
-/* FUN_8006b374 (0x8006b374) */
+/* HiRes_DrawOTagAll__Fv (0x8006b374) */
+#include "names.h"
+
 extern char DoubleBuffer[];
 extern char *pDoubleBuffer;
 extern int pPoly;
 
 int FUN_8008c1a0(int a);
-void FUN_8008c8dc(char *a);
-void FUN_800242cc(void);
+void DrawOTag(char *a);
+void PollHost(void);
 
-void FUN_8006b374(void) {
+void HiRes_DrawOTagAll(void) {
 	char *a;
 
 	FUN_8008c1a0(1);
-	FUN_8008c8dc(pDoubleBuffer + 32904);
+	DrawOTag(pDoubleBuffer + 32904);
 
 	a = DoubleBuffer;
 
@@ -25,5 +27,5 @@ void FUN_8006b374(void) {
 #else
 	pPoly = *(int *)(a + 32768 + 168) & 0x7fffffff;
 #endif
-	FUN_800242cc();
+	PollHost();
 }

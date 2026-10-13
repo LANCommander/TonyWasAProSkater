@@ -1,4 +1,4 @@
-/* FUN_80025a88 (0x80025a88) flags=-fstructure-noalias */
+/* CreateSkatersAndCameras__Fv (0x80025a88) flags=-fstructure-noalias */
 #include "names.h"
 
 typedef struct L {
@@ -62,7 +62,7 @@ void CCamera_StartCompetitionIntro(CC *);
 void CBruce_InitItem(CB *, char *);
 void CBruce_GetStats(CB *, int);
 
-void FUN_80025a88(void) {
+void CreateSkatersAndCameras(void) {
 	CB *pBruce;
 	CC *pCam;
 	CB *p2;

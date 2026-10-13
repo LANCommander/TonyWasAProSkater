@@ -1,7 +1,7 @@
 /* FUN_8005dcc4 (0x8005dcc4) */
 /* Draws the countdown bar started by FUN_8005dc58: elapsed vblanks since the start, capped at the
    total, as a 400x8 bar (dark red, filling) at one of three screen positions; a full blue bar once
-   time is up or when no total is set. FUN_8008c5ec is ClearImage (it returns a value). */
+   time is up or when no total is set. ClearImage is ClearImage (it returns a value). */
 typedef struct {
 	short x, y, w, h;
 } R;
@@ -22,7 +22,7 @@ int DAT_800d1cf8;
 
 extern unsigned Vblanks;
 
-int FUN_8008c5ec(R *r, int red, int green, int blue);
+int ClearImage(R *r, int red, int green, int blue);
 
 void FUN_8005dcc4(void) {
 	R r;
@@ -54,9 +54,9 @@ void FUN_8005dcc4(void) {
 
 	if (DAT_800d1ce0 == 0 || DAT_800d1ce0 < DAT_800d1cdc) {
 		r.w = 400;
-		FUN_8008c5ec(&r, 0, 0, 255);
+		ClearImage(&r, 0, 0, 255);
 	} else {
 		r.w = (DAT_800d1cdc * 400) / DAT_800d1ce0;
-		FUN_8008c5ec(&r, 150, 0, 0);
+		ClearImage(&r, 150, 0, 0);
 	}
 }

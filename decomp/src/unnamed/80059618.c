@@ -1,4 +1,6 @@
-/* FUN_80059618 (0x80059618) */
+/* Front_SelectSkaterPack__Fi (0x80059618) */
+#include "names.h"
+
 int DAT_800d1c5c;
 
 extern int Pack_pFree;
@@ -9,7 +11,7 @@ int DAT_800d1c90;
 int DAT_800d1c84;
 int DAT_800d1c88;
 
-void FUN_80059618(int a) {
+void Front_SelectSkaterPack(int a) {
 	if (DAT_800d1c5c == -1) {
 		DAT_800d1c8c = Pack_pFree;
 		DAT_800d1c90 = Pack_pFull;

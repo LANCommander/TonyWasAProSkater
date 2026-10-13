@@ -20,7 +20,7 @@ void Mess_DeleteAll(void);
 void Mess_SetScale(int);
 void Mess_SetTextJustify(int);
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);
-int FUN_8008b900(char *, char *, ...);
+int sprintf(char *, char *, ...);
 int Mess_DrawText(int, int, char *, int, int, int, int);
 void SFX_PlayX(int, int, int);
 void Front_PrintCentredPrompt(char *);
@@ -35,7 +35,7 @@ void Competition_JudgeDisplay(void) {
 	Mess_SetScale(256);
 	Mess_SetTextJustify(0);
 	Mess_SetRGB(182, 132, 36, 0);
-	FUN_8008b900(buf, "HEAT %d OVER!", p->b192 + 1);
+	sprintf(buf, "HEAT %d OVER!", p->b192 + 1);
 	Mess_DrawText(256, 40, buf, 0, 0, 256, 0);
 	Mess_DrawText(256, 70, "JUDGES SCORES", 0, 0, 256, 0);
 	Mess_SetRGB(122, 122, 122, 0);
@@ -58,9 +58,9 @@ void Competition_JudgeDisplay(void) {
 			SFX_PlayX(52, 8192, 0);
 
 		if (s < p->i16) {
-			FUN_8008b900(buf, "JUDGE %d     %d.%d", i + 1, p->x[i] / 10, p->x[i] % 10);
+			sprintf(buf, "JUDGE %d     %d.%d", i + 1, p->x[i] / 10, p->x[i] % 10);
 		} else {
-			FUN_8008b900(buf, "JUDGE %d", i + 1);
+			sprintf(buf, "JUDGE %d", i + 1);
 		}
 
 		if (i == p->b91 || i == p->b90)
@@ -86,9 +86,9 @@ void Competition_JudgeDisplay(void) {
 
 		sum = sum / 3;
 		Mess_SetTextJustify(0);
-		FUN_8008b900(buf, "HEAT %d SCORE - ", p->b192 + 1);
+		sprintf(buf, "HEAT %d SCORE - ", p->b192 + 1);
 		Mess_DrawText(200, 195, buf, 0, 0, 256, 0);
-		FUN_8008b900(buf, "%d.%d", sum / 10, sum % 10);
+		sprintf(buf, "%d.%d", sum / 10, sum % 10);
 		Mess_SetScale(384);
 		Mess_DrawText(335, 195, buf, 0, 0, 256, 0);
 

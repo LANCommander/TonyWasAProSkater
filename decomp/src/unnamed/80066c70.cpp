@@ -1,6 +1,9 @@
-/* FUN_80066c70 (0x80066c70) */
+/* LevelSelect_FreePackSlots__Fv (0x80066c70) */
 /* C++. Frees everything in both pack slots: selects the default slot, then for each slot
    unpacks its pack and walks its two allocation lists, freeing every node. */
+#include "game/levelselect.h"
+#include "game/mem.h"
+
 struct SNode {
 	int a, b;
 	SNode *pNext;
@@ -11,14 +14,12 @@ SNode *DAT_800d23a0[2];
 int DAT_800d23b0[2];
 int DAT_800d23b8[2];
 
-extern "C" void FUN_80066bb4(int);
-extern "C" void Mem_Delete__FPv(void *);
 void Pack_Unpack(short, short);
 
-extern "C" void FUN_80066c70() {
+void LevelSelect_FreePackSlots() {
 	int i;
 
-	FUN_80066bb4(-1);
+	LevelSelect_SelectPackSlot(-1);
 
 	for (i = 0; i < 2; i++) {
 		Pack_Unpack(DAT_800d23b0[i], DAT_800d23b8[i]);
@@ -26,7 +27,7 @@ extern "C" void FUN_80066c70() {
 		while (DAT_800d2398[i]) {
 			SNode *n = DAT_800d2398[i]->pNext;
 
-			Mem_Delete__FPv(DAT_800d2398[i]);
+			Mem_Delete(DAT_800d2398[i]);
 
 			DAT_800d2398[i] = n;
 		}
@@ -34,7 +35,7 @@ extern "C" void FUN_80066c70() {
 		while (DAT_800d23a0[i]) {
 			SNode *n = DAT_800d23a0[i]->pNext;
 
-			Mem_Delete__FPv(DAT_800d23a0[i]);
+			Mem_Delete(DAT_800d23a0[i]);
 
 			DAT_800d23a0[i] = n;
 		}

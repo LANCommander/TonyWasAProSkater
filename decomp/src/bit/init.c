@@ -23,7 +23,7 @@ extern int ButtonsAnim __attribute__((section(".data")));
 extern char *AnimNames[];
 extern int QuickAnimLookup[];
 
-int FUN_8008f72c(int, int, int, int);
+int GetTPage(int, int, int, int);
 void FUN_80092f30(int *, int, int, int);
 int Spool_FindAnim(char *);
 int Spool_FindTextureEntry(unsigned);
@@ -45,7 +45,7 @@ void Bit_Init(void) {
 	GlassList = 0;
 	GLineList = 0;
 	SpecialDisplayList = 0;
-	FUN_80092f30(&StoredTPagePrim, 1, 1, FUN_8008f72c(0, 1, 0, 0));
+	FUN_80092f30(&StoredTPagePrim, 1, 1, GetTPage(0, 1, 0, 0));
 
 	for (i = 0; i < 6; i++)
 		QuickAnimLookup[i] = Spool_FindAnim(AnimNames[i]);

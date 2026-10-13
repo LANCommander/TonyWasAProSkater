@@ -1,4 +1,4 @@
-/* FUN_800171f0 (0x800171f0) */
+/* Front_Init__Fv (0x800171f0) */
 #include "names.h"
 
 typedef struct {
@@ -78,12 +78,12 @@ void CMenu_AddEntry(int, char *);
 void CMenu_CentreY(int);
 void CMenu_EntryOff(int, char *);
 int CMenu_ctor(int, int, int, int, int, int, int);
-void FUN_8008b900();
+void sprintf();
 int CMenu_FindEntry(int, char *);
 void CMenu_SetLine(int, int);
 int __nw__6CClassUi(int);
 
-void FUN_800171f0(void) {
+void Front_Init(void) {
 	int q, q2, a1, a2, a3, a4, a5, a6, a7;
 
 	DAT_800d1408 = FUN_80071fa4;
@@ -192,12 +192,12 @@ void FUN_800171f0(void) {
 	pSoundMenu = a7;
 	q = (GCareer.f830 + 1) * 10 / 12;
 	soundVol = q;
-	FUN_8008b900(soundBuf, GameText.f150, q);
+	sprintf(soundBuf, GameText.f150, q);
 	CMenu_AddEntry(pSoundMenu, soundBuf);
 
 	q2 = (GCareer.f834 + 1) * 10 / 12;
 	musicVol = q2;
-	FUN_8008b900(musicBuf, GameText.f154, q2);
+	sprintf(musicBuf, GameText.f154, q2);
 	CMenu_AddEntry(pSoundMenu, musicBuf);
 	CMenu_AddEntry(pSoundMenu, GameText.f158);
 	CMenu_AddEntry(pSoundMenu, GameText.f15c);

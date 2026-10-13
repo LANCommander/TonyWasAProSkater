@@ -10,6 +10,9 @@ extern "C" {
 
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/m3dasm.h"
+#include "game/sfx.h"
+#include "game/vector.h"
 
 extern SStats Stats[];
 extern SCareer GCareer;
@@ -27,12 +30,6 @@ extern int GHorsePlayer;
 		       mpStatBonus[n])
 
 void ProjectCVectorToPlane(CVector *, SVECTOR);
-
-extern "C" {
-	int SFX_PlayX__FUisi(int, int, int);
-	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
-	int FUN_8008b5dc(int);
-}
 
 void CBruce::HandleKick() {
 	int Speed;
@@ -64,11 +61,11 @@ void CBruce::HandleKick() {
 	if (m840 > 0)
 		m840--;
 
-	Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+	Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 	mVel2 = mVel;
 	ProjectCVectorToPlane(&mVel2, mPolyNormal);
 
-	x = Mips_CVecDotProd__FP7CVectorT0(&mFallLine, &mVel2);
+	x = Mips_CVecDotProd(&mFallLine, &mVel2);
 
 	if (mpPad->Flip.Pressed || AutoKickEnabled) {
 		if (!mDoingSharpTurn || !mTurning) {
@@ -91,14 +88,14 @@ void CBruce::HandleKick() {
 				}
 			}
 
-			Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+			Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 			if (mAnim == 3 || m918 == 2) {
 				int KickVal = 4;
 
 				if (mFrame >= 11 && m714) {
 					m718 = 34;
-					SFX_PlayX__FUisi(34, 0x2000, 0);
+					SFX_PlayX(34, 0x2000, 0);
 
 					m714 = 0;
 				}
@@ -142,7 +139,7 @@ void CBruce::HandleKick() {
 		}
 	}
 
-	Speed = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+	Speed = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 	if (mAnim == 3 || m918 == 2) {
 		int KickVal = 4;

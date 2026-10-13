@@ -1,4 +1,6 @@
-/* FUN_8002aa6c (0x8002aa6c) */
+/* Bit_Move__Fv (0x8002aa6c) */
+#include "names.h"
+
 void *PixelList;
 void *FlatBitList;
 void *GlassList;
@@ -15,7 +17,7 @@ void *SpecialDisplayList;
 
 void FUN_8002aa0c(void *p);
 
-void FUN_8002aa6c(void) {
+void Bit_Move(void) {
 	FUN_8002aa0c(PixelList);
 	FUN_8002aa0c(FlatBitList);
 	FUN_8002aa0c(GlassList);

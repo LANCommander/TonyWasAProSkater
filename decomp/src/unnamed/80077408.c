@@ -13,15 +13,15 @@ typedef struct {
 
 extern ST rcossin_tbl[];
 
-int FUN_8008b5dc(int a);
-void FUN_800934e4(V *a, V *b);
+int M3dMaths_SquareRoot0__Fi(int a);
+void VectorNormal(V *a, V *b);
 
 char *QFromV(char *out, V *v) {
 	int s;
 	V t;
 	int a, b, x, y, z;
 
-	s = FUN_8008b5dc(v->x * v->x + v->y * v->y + v->z * v->z);
+	s = M3dMaths_SquareRoot0__Fi(v->x * v->x + v->y * v->y + v->z * v->z);
 
 	if (!s) {
 		*(char **)out = DAT_800a3474;
@@ -30,7 +30,7 @@ char *QFromV(char *out, V *v) {
 		*(int *)(out + 12) = 0;
 		*(int *)(out + 16) = 4096;
 	} else {
-		FUN_800934e4(v, &t);
+		VectorNormal(v, &t);
 
 		{
 			ST *bb;

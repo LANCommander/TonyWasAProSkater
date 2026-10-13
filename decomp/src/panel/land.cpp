@@ -4,11 +4,11 @@
 #include "game/panel.h"
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/psyq.h"
 
 extern SCareer GCareer;
 extern int GGame;
 
-extern "C" char *FUN_8008e904(char *, char *); /* strcpy */
 void Video_HighlightEnd(CBruce *, int);
 
 void CPanelData::Land() {
@@ -39,9 +39,9 @@ void CPanelData::Land() {
 		if (mBestComboScore < score) {
 			mBestComboScore = score;
 			mNumTricksInCombo = mTQStack;
-			FUN_8008e904(mBestComboName, mTrickName);
-			FUN_8008e904(mBestComboName2, mTrickName2);
-			FUN_8008e904(mBestComboName3, mTrickName3);
+			strcpy(mBestComboName, mTrickName);
+			strcpy(mBestComboName2, mTrickName2);
+			strcpy(mBestComboName3, mTrickName3);
 		}
 
 		mTQStack = 0;

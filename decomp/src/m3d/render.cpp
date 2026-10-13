@@ -19,6 +19,7 @@ extern "C" {
 #include "game/m3d.h"
 #include "game/ob.h"
 #include "game/camera.h"
+#include "game/m3dasm.h"
 
 #ifdef PC_PORT
 #include <math.h>
@@ -63,19 +64,6 @@ extern "C" {
 	extern int CurrentWaterLevel;
 	extern int CurrentWaterLevel2;
 	extern int GLevel;
-
-	void FUN_8008b238(MATRIX *);
-	void FUN_8008b254(MATRIX *, MATRIX *);
-	void FUN_8008b3d4(SVector *, MATRIX *);
-	void FUN_8008b4e0(Item *, MATRIX *);
-	MATRIX *FUN_8009738c(MATRIX *, MATRIX *, MATRIX *);
-	void FUN_800866cc(MATRIX *, long *, SModel *);
-	void FUN_80086f20(char *);
-	void FUN_80086a4c(char *, int);
-	void FUN_80084d18(SModel *);
-	void FUN_80084dc0(SModel *, VECTOR *);
-	void FUN_80085018(SModel *, VECTOR *);
-	void FUN_800858ac(Item *, int);
 }
 
 ushort DpqMin, DpqShift, M3d_OTPushback, M3d_OTPushback2;
@@ -222,9 +210,9 @@ void M3d_Render(void *p) {
 	gte_ldbkdir(FrustumNormals.BackR >> 1, FrustumNormals.BackG >> 1, 0);
 
 	if (pItem != BaddyList)
-		FUN_800858ac(pItem, Camera_CurrentMikeCamera ? 64 : 1);
+		M3dAsm_BoundingSpherePreprocessing(pItem, Camera_CurrentMikeCamera ? 64 : 1);
 	else
-		FUN_800858ac(pItem, 1);
+		M3dAsm_BoundingSpherePreprocessing(pItem, 1);
 #ifdef PC_PORT
 	/* the entire level: also the level geometry its scripts hide (Downhill Jam shows each section
 	   of the course only as the skater nears it), and none of it dropped beyond its last level of
@@ -233,7 +221,7 @@ void M3d_Render(void *p) {
 
 	if (keepAll) {
 		farSkip = 0;
-		FUN_800858ac(pItem, 0);
+		M3dAsm_BoundingSpherePreprocessing(pItem, 0);
 	}
 #endif
 
@@ -487,19 +475,19 @@ void M3d_Render(void *p) {
 #endif
 
 		if (ANGLES_SET(pItem)) {
-			FUN_8008b3d4(&pItem->Angles, &WorldTransform);
+			M3dMaths_RotMatrixYXZ((SVECTOR *)&pItem->Angles, &WorldTransform);
 
 			if (pItem->Flags & 0x200)
-				FUN_8008b4e0(pItem, &WorldTransform);
+				M3dMaths_ScaleMatrix(pItem, &WorldTransform);
 
-			FUN_8008b254(&WorldTransform, &Transform);
+			M3dMaths_MulRotMatrix(&WorldTransform, &Transform);
 			gte_SetRotMatrix(&Transform);
 		} else {
-			FUN_8008b238(&WorldTransform);
+			M3dMaths_SetIdentityRotation(&WorldTransform);
 
 			if (pItem->Flags & 0x200) {
-				FUN_8008b4e0(pItem, &WorldTransform);
-				FUN_8008b254(&WorldTransform, &Transform);
+				M3dMaths_ScaleMatrix(pItem, &WorldTransform);
+				M3dMaths_MulRotMatrix(&WorldTransform, &Transform);
 				gte_SetRotMatrix(&Transform);
 			}
 		}
@@ -507,18 +495,19 @@ void M3d_Render(void *p) {
 		pColourTable = PSXRegion[pItem->Region].pColourTable;
 
 		if ((pModel->Flags & 1) || (pItem->Flags & 0x4000)) {
-			FUN_800866cc(&WorldTransform, (long *)&Position, pModel);
+			M3dAsm_GetReflectionMapping(&WorldTransform, (long *)&Position, (uint *)pModel);
 		} else if ((pModel->Flags & 4) || (pItem->Flags & 0x80)) {
 			if (ANGLES_SET(pItem)) {
-				FUN_8009738c((MATRIX *)pItem->pLight, &WorldTransform, &TempMatrix);
+				MulMatrix0((MATRIX *)pItem->pLight, &WorldTransform, &TempMatrix);
 				gte_SetLightMatrix(&TempMatrix);
 			} else {
 				gte_SetLightMatrix(pItem->pLight);
 			}
 
 			gte_SetColorMatrix((char *)pItem->pLight + 20);
-			FUN_80086f20((char *)pItem->pLight + 40);
-			FUN_80086a4c((char *)pModel + (pModel->NumVertices * 8 + 28), pModel->NumNormals);
+			M3dAsm_SetAmbient((int *)((char *)pItem->pLight + 40));
+			M3dAsm_GetDynamicLighting((SVECTOR *)((char *)pModel + (pModel->NumVertices * 8 + 28)),
+			                          pModel->NumNormals);
 		}
 
 		yon = pCurrentViewport->Yon;
@@ -537,12 +526,12 @@ void M3d_Render(void *p) {
 				if (pItem->Anim)
 					SCRATCH_S(0x2c4) = (signed char)pItem->Anim << 5;
 
-				FUN_80084dc0(pModel, &PosnRelCam);
+				RenderModelFast(pModel, &PosnRelCam);
 
 				SCRATCH_S(0x2b4) = M3d_OTPushback;
 				SCRATCH_S(0x2c4) = M3d_OTPushback2;
 			} else {
-				FUN_80084dc0(pModel, &PosnRelCam);
+				RenderModelFast(pModel, &PosnRelCam);
 			}
 		}
 #ifdef PC_PORT
@@ -557,12 +546,12 @@ void M3d_Render(void *p) {
 				if (pItem->Anim)
 					SCRATCH_S(0x2c4) = (signed char)pItem->Anim << 5;
 
-				FUN_80085018(pModel, &PosnRelCam);
+				RenderModelNonRotated(pModel, &PosnRelCam);
 
 				SCRATCH_S(0x2b4) = M3d_OTPushback;
 				SCRATCH_S(0x2c4) = M3d_OTPushback2;
 			} else {
-				FUN_80085018(pModel, &PosnRelCam);
+				RenderModelNonRotated(pModel, &PosnRelCam);
 			}
 		} else {
 			gte_SetTransVector(&Position);
@@ -593,12 +582,12 @@ void M3d_Render(void *p) {
 				if (pItem->Anim)
 					SCRATCH_S(0x2c4) = (signed char)pItem->Anim << 5;
 
-				FUN_80084d18(pModel);
+				RenderModel(pModel);
 
 				SCRATCH_S(0x2b4) = M3d_OTPushback;
 				SCRATCH_S(0x2c4) = M3d_OTPushback2;
 			} else {
-				FUN_80084d18(pModel);
+				RenderModel(pModel);
 			}
 
 #ifdef PC_PORT

@@ -23,7 +23,7 @@ extern Z GameText;
 void FUN_800648c0(int, int, int);
 int VerticalMenu_getSelected(int);
 void SFX_PlayX(int, int, int);
-void FUN_8008b900(char *, char *, int, int);
+void sprintf(char *, char *, int, int);
 void VerticalMenu_setString(int, int, char *);
 void Pad_ClearTriggers(unsigned char *);
 
@@ -52,7 +52,7 @@ int FUN_8005ffac(int a) {
 
 			s1 = s3 != 0;
 			GPreferences.f184 = s1;
-			FUN_8008b900(buf, "%s %s", GameText.f8, s1 ? GameText.f0 : GameText.f4);
+			sprintf(buf, "%s %s", GameText.f8, s1 ? GameText.f0 : GameText.f4);
 			VerticalMenu_setString(a, 3, buf);
 		}
 
@@ -63,7 +63,7 @@ int FUN_8005ffac(int a) {
 				SFX_PlayX(144, 0x2000, 0);
 
 			GPreferences.f188 = s1;
-			FUN_8008b900(buf, "%s %s", GameText.fc, s1 ? GameText.f0 : GameText.f4);
+			sprintf(buf, "%s %s", GameText.fc, s1 ? GameText.f0 : GameText.f4);
 			VerticalMenu_setString(a, 4, buf);
 		}
 	}

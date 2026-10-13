@@ -1,7 +1,9 @@
-/* FUN_80012600 (0x80012600) */
+/* NameWasBlank__Fv (0x80012600) */
+#include "names.h"
+
 extern unsigned char SaveGameName[];
 
-int FUN_80012600(void) {
+int NameWasBlank(void) {
 	int i;
 
 	for (i = 0; i < 10; i++) {

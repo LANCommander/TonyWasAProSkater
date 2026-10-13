@@ -7,8 +7,7 @@
 #include "game/powerup.h"
 #include "game/bruce.h"
 #include "game/career.h"
-
-enum EMedalType { MEDAL_0 };
+#include "game/mess.h"
 
 extern CBruce *GSkater;
 
@@ -26,26 +25,20 @@ void Mess_SetRGB(uchar, uchar, uchar, int);
 void Front_PrintCentredPrompt(const char *);
 CPowerUp *Medal_Create(EMedalType, int, int, int, int, int);
 
-extern "C" {
-	void Mess_SetTextJustify__FUc(int);
-	int Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	int FUN_8007401c(void);
-}
-
 void Competition_EndGameDisplay() {
 	CCompetition *pComp = &theCompetition;
 
 	Mess_DeleteAll();
 	Mess_SetScale(256);
 	Mess_SetRGB(122, 122, 122, 0);
-	Mess_SetTextJustify__FUc(0);
+	Mess_SetTextJustify(0);
 
-	if (FUN_8007401c()) {
-		Mess_DrawText__FiiPCciUiib(256, 40, "You scored all golds!", 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 60, "Your are the top pro skater.", 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 80, "Congratulations!", 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 180, "Watch this, then get off your", 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 200, "couch and go skate!", 0, 0, 256, 0);
+	if (Competition_WonGameAllGold()) {
+		Mess_DrawText(256, 40, "You scored all golds!", 0, 0, 256, 0);
+		Mess_DrawText(256, 60, "Your are the top pro skater.", 0, 0, 256, 0);
+		Mess_DrawText(256, 80, "Congratulations!", 0, 0, 256, 0);
+		Mess_DrawText(256, 180, "Watch this, then get off your", 0, 0, 256, 0);
+		Mess_DrawText(256, 200, "couch and go skate!", 0, 0, 256, 0);
 
 		if (!pComp->mMedal1)
 			pComp->mMedal1 = Medal_Create((EMedalType)5, -30, 5, 140, 1536, 3);
@@ -56,10 +49,10 @@ void Competition_EndGameDisplay() {
 		if (!pComp->mMedal3)
 			pComp->mMedal3 = Medal_Create((EMedalType)5, 30, 5, 140, 1536, 3);
 	} else {
-		Mess_DrawText__FiiPCciUiib(256, 40, "Your third medal.. Good going!", 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 60, "You just might become", 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 80, "an average skater.", 0, 0, 256, 0);
-		Mess_DrawText__FiiPCciUiib(256, 180, "pro skaters get all golds...", 0, 0, 256, 0);
+		Mess_DrawText(256, 40, "Your third medal.. Good going!", 0, 0, 256, 0);
+		Mess_DrawText(256, 60, "You just might become", 0, 0, 256, 0);
+		Mess_DrawText(256, 80, "an average skater.", 0, 0, 256, 0);
+		Mess_DrawText(256, 180, "pro skaters get all golds...", 0, 0, 256, 0);
 
 		{
 			EMedalType m[3];

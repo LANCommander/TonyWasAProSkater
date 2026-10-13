@@ -12,6 +12,7 @@ extern "C" {
 
 #include "game/front.h"
 #include "game/m3d.h"
+#include "game/mess.h"
 
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
@@ -20,16 +21,10 @@ extern SDoubleBuffer *pDoubleBuffer;
 void Mess_SetScale(int);
 void Mess_SetRGB(uchar, uchar, uchar, int);
 
-extern "C" {
-	void Mess_SetTextJustify__FUc(int);
-	void FUN_8001d2c4(int);
-	int Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-}
-
 void CMenu::Display() {
 	int y;
 
-	Mess_SetTextJustify__FUc(mJustification);
+	Mess_SetTextJustify(mJustification);
 
 	y = mY;
 
@@ -64,13 +59,12 @@ void CMenu::Display() {
 					}
 
 					if (mEntry[i].LowScale < mEntry[i].CurrentScale)
-						FUN_8001d2c4(0);
+						Mess_SetSort(0);
 					else
-						FUN_8001d2c4(1);
+						Mess_SetSort(1);
 
 					{
-						int length =
-						    Mess_DrawText__FiiPCciUiib(mX, y, mEntry[i].pString, 0, 0, 0, 0);
+						int length = Mess_DrawText(mX, y, mEntry[i].pString, 0, 0, 0, 0);
 
 						if (mHasCursor && i == mCursorLine && !mJustification) {
 							int off = length * mEntry[i].CurrentScale / 512 +

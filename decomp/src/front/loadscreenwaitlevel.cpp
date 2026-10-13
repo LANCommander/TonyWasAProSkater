@@ -1,12 +1,22 @@
-/* FUN_8005d73c (0x8005d73c) */
+/* LoadingScreen_WaitLevel__Fv (0x8005d73c) */
 /* C++ (front end, THPS1-only; no demo twin). Loading-screen frame for the level loading screen
    (DAT_800d1cf8 = 0, set up by FUN_8005d00c; dispatched by FUN_8005d370). The sibling of
-   FUN_8005d3dc (loadscreenwait.cpp): same loop, but there is no background clear, the picture
+   LoadingScreen_Wait (loadscreenwait.cpp): same loop, but there is no background clear, the picture
    always sits at the screen-0 position, the menu input DAT_800bf104 is updated each frame,
    continuing (START/X) also sets DAT_800d1d80, triangle only eats its own triggers, and the
    tape-marker sprite DAT_800d1d00 is deleted too. */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
+
 #include "game/shellutils.h"
 #include "game/pad.h"
+#include "game/psyq.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/main.h"
 
 extern SControl Pad[2];
 extern PadBuffer DAT_800bf104;
@@ -29,63 +39,62 @@ int DAT_800d1d14;     /* redraw picture */
 int SFX_PlayX(uint, short, int);
 void Pause(int);
 
-extern "C" {
-	void FUN_8008eebc(int);
-	int DrawSync(int);
-	void FUN_8006b2f4(void);
-	void FUN_8006b240(void);
-	void FUN_80061ea0(void);
-	void FUN_800242cc(void);
-	void DrawColoredBox__FiiiiUcUcUc(int, int, int, int, int, int, int);
-	void FUN_80070ff4(void);
-	void FUN_8005c68c(void);
-}
-
-extern "C" void FUN_8005d73c(void) {
+void LoadingScreen_WaitLevel(void) {
 	do {
 		if (DAT_800d1cec)
-			FUN_8008eebc(0);
+			VSync(0);
+
 		DrawSync(0);
-		FUN_8006b2f4();
-		FUN_8006b240();
-		FUN_80061ea0();
-		FUN_800242cc();
+		HiRes_DrawOTagNoSync();
+		HiRes_ClearOTag();
+		ResetOT();
+		PollHost();
+
 		if (BackOut) {
-			DrawColoredBox__FiiiiUcUcUc(0, 0, 512, 240, 0, 0, 0);
+			DrawColoredBox(0, 0, 512, 240, 0, 0, 0);
 			return;
 		}
+
 		if (DAT_800d1d14) {
 			DAT_800d1d14 = 0;
 			DAT_800d1d0c->draw(DAT_800bf0d4[0], DAT_800bf0e0[0], 0, -1, -1, -1);
 		}
+
 		if (DAT_800d1cec) {
 			if (--DAT_800d1d08 == 0)
 				DAT_800d1d08 = 92;
+
 			if (DAT_800d1d08 == 91)
 				DAT_800d1d04->draw(88, 196, 0, -1, -1, -1);
 			else if (DAT_800d1d08 == 15)
 				DAT_800d1d0c->draw(DAT_800bf0d4[0], DAT_800bf0e0[0], 0, -1, -1, -1);
 		}
+
 		DAT_800bf104.update();
-		FUN_80070ff4();
-		FUN_8005c68c();
+		Pad_Update();
+		Front_CheckSoftReset();
+
 		if (DAT_800d1cb8) {
 			DAT_800d1ce8 = 0;
 			BackOut = 1;
 			break;
 		}
+
 		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
 		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered) {
 			SFX_PlayX(6, 8192, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
+
 			GameFade = 64;
 			DAT_800d1d80 = 1;
 			break;
 		}
+
 		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
 			SFX_PlayX(2, 8192, 0);
 			Pause(20);
+
 			Pad[0].MenuBack.Triggered = 0;
 			Pad[1].MenuBack.Triggered = 0;
 			DAT_800d1ce8 = 0;

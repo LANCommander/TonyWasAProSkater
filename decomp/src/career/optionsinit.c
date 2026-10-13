@@ -4,7 +4,7 @@
 extern int GPreferences[];
 extern int SFXLEVEL, XALEVEL;
 
-int FUN_8008b900(char *, char *);
+int sprintf(char *, char *);
 
 void Options_Init(void) {
 	int i;
@@ -25,8 +25,8 @@ void Options_Init(void) {
 		GPreferences[75 + i * 4] = 3;
 	}
 
-	FUN_8008b900((char *)&GPreferences[100], "HORSE");
+	sprintf((char *)&GPreferences[100], "HORSE");
 
 	GPreferences[99] = 5;
-	FUN_8008b900((char *)&GPreferences[100] - 80, "AAA");
+	sprintf((char *)&GPreferences[100] - 80, "AAA");
 }

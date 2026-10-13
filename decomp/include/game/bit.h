@@ -646,4 +646,12 @@ class CLight : public CNonRenderedBit {
 	virtual void Move(); /* slot 1: 0x8001f794 */
 };
 
+/* functions */
+void Bit_RemoveDeadBits();                          /* 0x80027c54 */
+void Bit_SetSparkTrajectoryCone(const CSVector &p); /* 0x8002952c */
+void Bit_SetSparkSize(uint);                        /* 0x80029648 */
+void Bit_SetSparkRGB(uchar, uchar, uchar);          /* 0x8002965c */
+void Bit_SetSparkFadeRGB(uchar, uchar, uchar);      /* 0x80029670 */
+void Bit_Move();                                    /* 0x8002aa6c */
+
 #endif

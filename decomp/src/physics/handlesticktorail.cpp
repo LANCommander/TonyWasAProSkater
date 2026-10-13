@@ -10,7 +10,7 @@
    gives retail's score-first argument loads; the Limit test is two ifs on a State local (not an
    || that folds to & 0x6000); `case 0: break;` gives the m210 slti tree; Bailing as two `= 1`
    stores. StartGrind's Score is one function-scope local assigned in both Trick_Trick arms (set
-   twice, so no sched1 set-once boost; as in FUN_8003159c) and read after the mGrindTrick store.
+   twice, so no sched1 set-once boost; as in CBruce::ScoreCurrentTrick) and read after the mGrindTrick store.
    Residues: the trick walk and the GetBalanceVel copy/arm register roles (a1/a2/a3: retail's DAT
    arm uses the load, the stat arms the copy; ours the reverse = cse1 swapped `321=mem; 322=321`
    into `322=mem; 321=322` because 322 outlives the block).
@@ -28,6 +28,7 @@ extern "C" {
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/vector.h"
 
 extern SStats Stats[];
 extern STrick Group[];
@@ -48,19 +49,12 @@ extern int XFrames;
 int SFX_PlayX(unsigned int, short, int);
 int Redbook_Rnd(int);
 
-extern "C" {
-	void FUN_8002f1a0(CBruce *);
-	void Bail__6CBrucei13ELimitBailVel(CBruce *, int);
-	void FUN_8003159c(CBruce *);
-	int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
-}
-
 inline void CBruce::StartHandPlant(int RailTrick, int Flags) {
 	mAnimSpeed = 0x10000;
 	m248 = 0;
 
 	if (!m760) {
-		FUN_8002f1a0(this);
+		Trick_TakeOff();
 
 		if (!m760) {
 			mStickToRail = 0;
@@ -153,9 +147,9 @@ inline void CBruce::StartGrind(int RailTrick) {
 	m424++;
 	mRails++;
 	TrickObRail();
-	Mips_CVecDotProd__FP7CVectorT0(&mRailDir, &mFront);
+	Mips_CVecDotProd(&mRailDir, &mFront);
 
-	RightDot = Mips_CVecDotProd__FP7CVectorT0(&mRailDir, &mRight);
+	RightDot = Mips_CVecDotProd(&mRailDir, &mRight);
 	m320 = 0;
 
 	if (RailTrick) {
@@ -309,14 +303,14 @@ void CBruce::HandleStickToRail() {
 	}
 
 	if ((mDoingATrick && !m360 && mFrame < Limit) || Bailing) {
-		Bail__6CBrucei13ELimitBailVel(this, 0);
+		Bail(0);
 
 		mTrickBails++;
 		return;
 	}
 
 	if (mDoingATrick) {
-		FUN_8003159c(this);
+		ScoreCurrentTrick();
 
 		m364 = 1;
 	}

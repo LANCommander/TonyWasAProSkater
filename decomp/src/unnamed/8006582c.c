@@ -21,8 +21,8 @@ void FileIO_Sync(void);
 int Mem_NewX(int, int, int);
 void PREManager_spoolPRE(int, char *);
 int Spool_PSX(char *, int, int);
-void FUN_8008c190(char *, char *);
-int FUN_8008f6fc(char *, char *);
+void printf(char *, char *);
+int strcmp(char *, char *);
 void Spool_Sync(void);
 
 void FUN_8006582c(C *a) {
@@ -48,8 +48,7 @@ void FUN_8006582c(C *a) {
 		s++;
 		ok = 0;
 
-		if (!FUN_8008f6fc(s, "fe") || !FUN_8008f6fc(s, "FE") || !FUN_8008f6fc(s, "f") ||
-		    !FUN_8008f6fc(s, "F"))
+		if (!strcmp(s, "fe") || !strcmp(s, "FE") || !strcmp(s, "f") || !strcmp(s, "F"))
 			ok = 1;
 
 		if (ok)
@@ -65,7 +64,7 @@ void FUN_8006582c(C *a) {
 		s++;
 		ok = 0;
 
-		if (!FUN_8008f6fc(s, "pre") || !FUN_8008f6fc(s, "PRE"))
+		if (!strcmp(s, "pre") || !strcmp(s, "PRE"))
 			ok = 1;
 
 		if (ok)
@@ -93,14 +92,14 @@ void FUN_8006582c(C *a) {
 			n = FileIO_Open(a->e[a->cur].s);
 
 			if (n <= 0) {
-				FUN_8008c190("\nFile %s not found", a->e[a->cur].s);
+				printf("\nFile %s not found", a->e[a->cur].s);
 				return;
 			}
 
 			a->e[a->cur].p = Mem_NewX(n, 1, 1);
 
 			if (a->e[a->cur].p == 0) {
-				FUN_8008c190("\nNot enough memory to load %s", a->e[a->cur].s);
+				printf("\nNot enough memory to load %s", a->e[a->cur].s);
 				return;
 			}
 

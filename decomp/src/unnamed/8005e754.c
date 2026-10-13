@@ -1,4 +1,5 @@
 /* FUN_8005e754 (0x8005e754) */
+#include "names.h"
 #include "game/padbuttons.h"
 
 typedef struct {
@@ -10,8 +11,8 @@ extern S DAT_800a1c44;
 
 int DAT_800d1d2c;
 
-int FUN_80070ff4(void);
-int FUN_8005e0e0(S *, S *, int, int, int *, void *, int, int, int);
+int Pad_Update(void);
+int Front_RunMenu(S *, S *, int, int, int *, void *, int, int, int);
 int FUN_8005e8e0(int);
 int FUN_8005ea00(int);
 int FUN_80060274(int);
@@ -31,7 +32,7 @@ int FUN_8005e754(int a) {
 	int k[7];
 	int r, i, path;
 
-	FUN_80070ff4();
+	Pad_Update();
 
 	if (Pad[PAD_SPIN_LEFT + PAD_PRESSED] && Pad[PAD_SPIN_RIGHT + PAD_PRESSED])
 		DAT_800d1d2c = 1;
@@ -44,7 +45,7 @@ int FUN_8005e754(int a) {
 			k[i] = 0;
 
 		path = a != 0;
-		r = FUN_8005e0e0((S *)t, (S *)k, 7, 0, &a, FUN_8005e728, 0, 0, 0);
+		r = Front_RunMenu((S *)t, (S *)k, 7, 0, &a, FUN_8005e728, 0, 0, 0);
 
 		if (r != -1) {
 			switch (r) {
@@ -89,7 +90,7 @@ int FUN_8005e754(int a) {
 	S z;
 	int r;
 
-	FUN_80070ff4();
+	Pad_Update();
 
 	if (Pad[PAD_SPIN_LEFT + PAD_PRESSED] && Pad[PAD_SPIN_RIGHT + PAD_PRESSED])
 		DAT_800d1d2c = 1;
@@ -102,7 +103,7 @@ int FUN_8005e754(int a) {
 		z.d = 0;
 		z.e = 0;
 		z.f = 0;
-		r = FUN_8005e0e0(&s, &z, 6, 0, &a, FUN_8005e728, 0, 0, 0);
+		r = Front_RunMenu(&s, &z, 6, 0, &a, FUN_8005e728, 0, 0, 0);
 
 		if (r != -1) {
 			switch (r) {

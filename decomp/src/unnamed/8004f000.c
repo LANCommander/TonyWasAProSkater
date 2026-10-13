@@ -1,4 +1,4 @@
-/* FUN_8004f000 (0x8004f000) */
+/* TrickOb_TrickedOnItem__FP4ItemPvi (0x8004f000) */
 #include "names.h"
 
 /* EXP module. 146/147: the only residue is the zero return after FUN_8004eed8: cse follows the
@@ -51,7 +51,7 @@ void FUN_80068f40(int, int);
 unsigned short *Trig_GetLinksPointer(unsigned short);
 void Trig_SendPulse(unsigned short *);
 
-int FUN_8004f000(B *a, B *b, int c) {
+int TrickOb_TrickedOnItem(B *a, B *b, int c) {
 	unsigned char s5;
 	int s3, s1, v, ret;
 	N *s0;

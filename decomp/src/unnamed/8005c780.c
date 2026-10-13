@@ -1,4 +1,4 @@
-/* FUN_8005c780 (0x8005c780) */
+/* Front_UpdateMusicLoop__Fv (0x8005c780) */
 #include "names.h"
 
 extern int SFXLEVEL;
@@ -13,7 +13,7 @@ void SFX_ModifyVol(int a, int b, int c);
 void SFX_Stop(int a);
 int SFX_PlayX(int a, int b, int c);
 
-void FUN_8005c780(void) {
+void Front_UpdateMusicLoop(void) {
 	int s = SFXLEVEL;
 
 	SFXLEVEL = DAT_800d1cc0;

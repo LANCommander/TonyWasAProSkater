@@ -1,4 +1,4 @@
-/* FUN_8001ccf8 (0x8001ccf8) */
+/* Front_LoadGame__FP9SSaveGame (0x8001ccf8) */
 #include "names.h"
 
 extern char *TrigFileName;
@@ -45,14 +45,14 @@ extern int GHeadPart;
 extern int GHeadUp;
 
 void Bit_Init(void);
-void FUN_80025a88(void);
+void CreateSkatersAndCameras(void);
 void Trig_ExecuteRestart(void);
 void Trig_InitialParseTRGFile(char *);
-void FUN_8004b09c(char *);
+void SFX_Init(char *);
 void FUN_8004b0e4(int);
 void FUN_8004b180(void);
 void FUN_8004bb5c(void);
-void FUN_8004c740(int);
+void FileIO_SetSectorsPerFrame(int);
 void FUN_8005dc8c(void);
 int __6SpritePciii(int, char *, int, int, int);
 void FUN_8006c4c4(void);
@@ -67,7 +67,7 @@ void Spool_Sync(void);
 void Trig_SetRestart(char *);
 int __nw__6CClassUi(int);
 
-void FUN_8001ccf8(char *p) {
+void Front_LoadGame(char *p) {
 	int a, b, s2, t1, t2, u1, u2, i1;
 	char *bt, *bt2;
 	E *q;
@@ -76,8 +76,8 @@ void FUN_8001ccf8(char *p) {
 
 	TrigFileName = p + 4;
 	Redbook_InitialRand(0x12a6cc58);
-	FUN_8004c740(2000);
-	FUN_8004b09c("skate2.vab");
+	FileIO_SetSectorsPerFrame(2000);
+	SFX_Init("skate2.vab");
 	FUN_8004b0e4(Levels[GLevel].f8);
 	SFX_SetReverbType(0);
 
@@ -114,7 +114,7 @@ void FUN_8001ccf8(char *p) {
 	tb2->f = 1;
 	CurrentItemsFileRegion = s2;
 	Spool_Sync();
-	FUN_8004c740(4);
+	FileIO_SetSectorsPerFrame(4);
 	FUN_8006c4c4();
 	Font_Init();
 	Bit_Init();
@@ -168,13 +168,13 @@ void FUN_8001ccf8(char *p) {
 		FUN_8004b180();
 	}
 
-	FUN_8004c740(2000);
+	FileIO_SetSectorsPerFrame(2000);
 	Trig_InitialParseTRGFile(TrigFileName);
 	FUN_8005dc8c();
-	FUN_8004c740(4);
+	FileIO_SetSectorsPerFrame(4);
 
 	if (BackOut == 0) {
-		FUN_80025a88();
+		CreateSkatersAndCameras();
 
 		if (p[13])
 			Trig_SetRestart(p + 13);

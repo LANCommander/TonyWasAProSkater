@@ -1,4 +1,6 @@
-/* FUN_80082738 (0x80082738) */
+/* M3dZone_FreePSX__Fi (0x80082738) */
+#include "names.h"
+
 struct B {
 	int x;
 	int pad[7];
@@ -7,7 +9,7 @@ struct B {
 
 extern struct B Zones[];
 
-void FUN_80082738(int a) {
+void M3dZone_FreePSX(int a) {
 	int i, j;
 
 	if (a < 2) {

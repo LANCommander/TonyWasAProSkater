@@ -3,9 +3,6 @@ extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
-
-	int LoadImage(RECT *, u_long *);
-	int DrawSync(int);
 }
 
 #include "game/types.h"

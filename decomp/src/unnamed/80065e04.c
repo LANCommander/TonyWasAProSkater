@@ -1,4 +1,4 @@
-/* FUN_80065e04 (0x80065e04) */
+/* unload__10FileLoaderi (0x80065e04) */
 #include "names.h"
 
 extern int SpoolerBlocksFileIO;
@@ -9,7 +9,7 @@ void Spool_ClearPSX(char *);
 void Spool_Sync(void);
 void PREManager_unloadPRE(int, char *);
 
-void FUN_80065e04(char *a, int b) {
+void FileLoader_unload(char *a, int b) {
 	int o = b * 36;
 	int *p30 = (int *)(a + 0x30);
 	int *s, *q;

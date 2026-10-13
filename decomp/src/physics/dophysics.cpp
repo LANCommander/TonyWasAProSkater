@@ -19,6 +19,10 @@ extern "C" {
 #include "game/colij.h"
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/m3d.h"
+#include "game/main.h"
+#include "game/vector.h"
+#include "game/m3dasm.h"
 
 extern SStats Stats[];
 extern SCareer GCareer;
@@ -60,15 +64,6 @@ void M3dColij_InitLineInfo(SLineInfo *);
 void Trig_ResetCPCollisionFlags(int);
 void Trig_ResetCPExecutedFlags(int);
 int SFX_PlayX(unsigned int, short, int);
-
-extern "C" {
-	void FUN_80042700(CBruce *, int, int, int, int);
-	void Game_Over__Fv(void);
-	void FUN_8003b2f0(CBruce *);
-	int M3dZone_LineToItemNotSCached__FP9SLineInfoi(SLineInfo *, int);
-	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
-	int FUN_8008b5dc(int);
-}
 
 void CBruce::DoPhysics() {
 	SLineInfo line_info;
@@ -136,7 +131,7 @@ void CBruce::DoPhysics() {
 
 		if (mBalanceFlash <= 0) {
 			mBalanceFlash = 0;
-			FUN_80042700(this, 0, 0, 0, 5);
+			SetGlow(0, 0, 0, 5);
 		}
 	}
 
@@ -167,7 +162,7 @@ void CBruce::DoPhysics() {
 				if (GGame == 1 && Levels[GLevel].isCompetition)
 					SFX_PlayX(160, 0x2000, 0);
 
-				Game_Over__Fv();
+				Game_Over();
 			}
 		}
 	}
@@ -239,7 +234,7 @@ void CBruce::DoPhysics() {
 			if (BrakeVal < 0xa000)
 				BrakeVal = 0xa000;
 
-			if (BrakeVal < FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6) {
+			if (BrakeVal < M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6) {
 				if (mAnim != 49) {
 					mAnimSpeed = 0x20000;
 					SFX_PlayX(2, 0x2000, 0);
@@ -299,7 +294,7 @@ void CBruce::DoPhysics() {
 		mKickSpeed = MAXSPEED(22);
 
 	if (m33C) {
-		int NewMag = (FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6) >> 12;
+		int NewMag = (M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6) >> 12;
 
 		mAcc.vx += mVel.vx / NewMag;
 		mAcc.vy += mVel.vy / NewMag;
@@ -307,7 +302,7 @@ void CBruce::DoPhysics() {
 		m33C--;
 	}
 
-	if (mMaxSpeed < FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6)
+	if (mMaxSpeed < M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6)
 		m304 = 1;
 	else
 		m304 = 0;
@@ -574,7 +569,7 @@ void CBruce::DoPhysics() {
 		}
 	}
 
-	FUN_8003b2f0(this);
+	HandlePlayerCollisions();
 
 	/* CheckForTriggers */
 	if (!DAT_800d1950)
@@ -604,7 +599,7 @@ void CBruce::DoPhysics() {
 		Trig_ResetCPCollisionFlags(n);
 
 		pCurrentPlayer = this;
-		M3dZone_LineToItemNotSCached__FP9SLineInfoi(&LInfo, 1);
+		M3dZone_LineToItemNotSCached(&LInfo, 1);
 		Trig_ResetCPExecutedFlags(n);
 
 		pCurrentPlayer = 0;
@@ -626,13 +621,13 @@ void CBruce::DoPhysics() {
 	mVel += (mAcc * TimeScale) >> 8;
 
 	/* LimitFinalSpeed */
-	Spd = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+	Spd = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 
 	if (Spd > MAXSPEED(50)) {
 		mVel.vx = mVel.vx * (MAXSPEED(50) >> 12) / (Spd >> 12);
 		mVel.vy = mVel.vy * (MAXSPEED(50) >> 12) / (Spd >> 12);
 		mVel.vz = mVel.vz * (MAXSPEED(50) >> 12) / (Spd >> 12);
-		Spd = FUN_8008b5dc(Mips_CVecDotProd__FP7CVectorT0(&mVel, &mVel)) << 6;
+		Spd = M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6;
 	}
 
 	if (!AutoKickEnabled) {

@@ -1,11 +1,14 @@
-/* FUN_80050c5c (0x80050c5c) flags=-fstructure-noalias */
-/* C++ (front end, 2-player board select). The 2-player twin of FUN_80053dbc (boardload1p.cpp),
-   called once by FUN_80051660 (boardselect2p.cpp) before its loop: fills in each player's picture
+/* Front_InitBoardPictures2P__Fv (0x80050c5c) flags=-fstructure-noalias */
+/* C++ (front end, 2-player board select). The 2-player twin of Front_InitBoardPictures1P (boardload1p.cpp),
+   called once by Front_BoardSelect2P (boardselect2p.cpp) before its loop: fills in each player's picture
    file names for the three columns (the small "2" pictures: a deck file's second letter becomes
-   '2'; locked decks show "b2lock01.bmp"), resets the streaming state that FUN_8005115c
+   '2'; locked decks show "b2lock01.bmp"), resets the streaming state that Front_StreamBoardPictures2P
    (boardstream2p.cpp) works through, and loads the "locked" picture. */
 #include "game/shellutils.h"
 #include "game/career.h"
+#include "game/fileio.h"
+#include "game/mem.h"
+#include "game/psyq.h"
 
 extern SCareer GCareer;
 extern SStats Stats[];
@@ -24,17 +27,9 @@ uchar DAT_800d22c8;
 int DAT_800d22cc;    /* all pictures loaded */
 int DAT_800d22d0[2]; /* skater, per player */
 
-extern "C" {
-	char *strcpy(char *, const char *);
-	void FileIO_Sync__Fv(void);
-	int FileIO_Open__FPCc(char *);
-	char *Mem_NewX__FUiii(int, int, int);
-	void FileIO_Load__FPv(char *);
-}
-
 int Load8BitBMP2(char *, char **, int *, int *, ushort *);
 
-extern "C" void FUN_80050c5c(void) {
+void Front_InitBoardPictures2P(void) {
 	DAT_800d2c1c[0] = 8;
 	DAT_800d2c1c[1] = 3;
 	DAT_800d2c1c[2] = 15;
@@ -91,10 +86,10 @@ extern "C" void FUN_80050c5c(void) {
 
 	DAT_800d22cc = 0;
 	DAT_800d22ac = 0;
-	DAT_800d22c0[0] = Mem_NewX__FUiii(FileIO_Open__FPCc("b2lock01.bmp"), 1, 1);
+	DAT_800d22c0[0] = Mem_NewX(FileIO_Open("b2lock01.bmp"), 1, 1);
 
-	FileIO_Load__FPv(DAT_800d22c0[0]);
-	FileIO_Sync__Fv();
+	FileIO_Load(DAT_800d22c0[0]);
+	FileIO_Sync();
 
 	ushort clut;
 	char *data;

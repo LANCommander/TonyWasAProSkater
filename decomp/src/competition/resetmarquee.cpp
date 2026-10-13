@@ -1,6 +1,7 @@
 /* Competition_ResetMarquee__Fv (0x8007657c) */
 #include "game/competition.h"
 #include "game/career.h"
+#include "game/psyq.h"
 
 extern int Vblanks, SelectedSkater;
 extern const int GLevel;
@@ -10,7 +11,6 @@ short HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
 
 void Redbook_InitialRand(int);
 int Redbook_Rnd(int);
-extern "C" void FUN_8008b900(char *, char *, int, int, int);
 
 void Competition_ResetMarquee() {
 	CCompetition *c = &theCompetition;
@@ -120,8 +120,8 @@ void Competition_ResetMarquee() {
 
 	c->mMarqueeTimer = 0;
 	c->mMarqueeText = 0;
-	FUN_8008b900(c->mMarqueeTextBuf, "%s %s - HEAT %d", (int)Levels[GLevel].pLevelName,
-	             (int)Levels[GLevel].pCityName, c->mCurrentHeat + 1);
+	sprintf(c->mMarqueeTextBuf, "%s %s - HEAT %d", (int)Levels[GLevel].pLevelName,
+	        (int)Levels[GLevel].pCityName, c->mCurrentHeat + 1);
 
 	c->mMarqueeText = c->mMarqueeTextBuf;
 }

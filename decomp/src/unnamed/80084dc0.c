@@ -1,4 +1,6 @@
-/* FUN_80084dc0 (0x80084dc0) */
+/* RenderModelFast__FP6SModelP6VECTOR (0x80084dc0) */
+#include "names.h"
+
 typedef struct {
 	int a, b;
 } E;
@@ -25,7 +27,7 @@ void FUN_800898ac(E *, E *, int);
 #include <stdlib.h>
 #endif
 
-void FUN_80084dc0(P *p, int c) {
+void RenderModelFast(P *p, int c) {
 	E *v = p->v;
 	int n = p->n;
 	int r = FUN_80089790(v, n, c);

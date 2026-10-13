@@ -1,7 +1,9 @@
-/* FUN_8004f578 (0x8004f578) */
+/* Rail_NextNode__FPUs (0x8004f578) */
+#include "names.h"
+
 extern short **OffsetList;
 
-int FUN_8004f578(unsigned short *p) {
+int Rail_NextNode(unsigned short *p) {
 	unsigned a;
 
 	if (p[-1] == 11) {

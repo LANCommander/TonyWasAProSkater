@@ -1,6 +1,7 @@
 /* Card_Write__F9EFileTypei (0x80014558) */
 #include "game/card.h"
 #include "game/career.h"
+#include "game/front.h"
 #include "game/video.h"
 
 extern char CARD_FNAME[];
@@ -30,8 +31,6 @@ int Card_CheckStatus(int, int);
 void Pause(int);
 
 extern "C" {
-	void FUN_8001571c(void);
-	void Front_SetSJISName__FPc(char *);
 	int erase(char *);
 	int open(char *, int);
 	int write(int, void *, int);
@@ -64,7 +63,7 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 
 	switch (FileType) {
 		case 0:
-			FUN_8001571c();
+			Card_GetNextTimeStamp();
 
 			GCareer.TimeStamp = TimeStamp;
 
@@ -119,9 +118,9 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 	Card_SetHeader((SCardHead *)pHeaderBuf, NumBlocks, pClut, pIcon);
 
 	if (GSaveAction == 1)
-		Front_SetSJISName__FPc((char *)pHeaderBuf + 32);
+		Front_SetSJISName((char *)pHeaderBuf + 32);
 	else
-		Front_SetSJISName__FPc((char *)pHeaderBuf + 30);
+		Front_SetSJISName((char *)pHeaderBuf + 30);
 
 	SetSJISChecksum((char *)pHeaderBuf + 4, FName + 22);
 

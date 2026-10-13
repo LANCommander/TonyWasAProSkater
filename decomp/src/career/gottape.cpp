@@ -8,6 +8,6 @@ extern CBruce *GSkater;
 extern SCareer GCareer;
 extern int GLevel;
 
-extern "C" int Career_Got__Fi(int Goal) {
+int Career_Got(int Goal) {
 	return (GCareer.CharacterProgress[GSkater->mSkaterIndex].Tapes[GLevel] >> Goal) & 1;
 }

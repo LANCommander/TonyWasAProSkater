@@ -21,4 +21,17 @@ struct AnimPacket {
 	AnimPacket *pNext; /* 0x04 */
 };
 
+/* functions */
+struct Texture;
+
+void Spool_BackupPSX(int region);                                    /* 0x8006ed2c */
+void Spool_RestorePSX(int region);                                   /* 0x8006edb8 */
+int Spool_GetModel(uint id, int region);                             /* 0x8006ee38 */
+Texture *NewTextureEntry(uint checksum);                             /* 0x8006ef30 */
+void ProcessNewPSX(int region);                                      /* 0x8006f290 */
+void Spool_LoadTexturesToVRAM(int Region, int defrag);               /* 0x8006f854 */
+void ClearRegion(int Region, int cleanuptextures, int KeepInMemory); /* 0x8006fde4 */
+void Spool_Continue();                                               /* 0x8007046c */
+void Spool_Sync();                                                   /* 0x8007079c */
+
 #endif

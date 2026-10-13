@@ -1,10 +1,13 @@
-/* FUN_80053dbc (0x80053dbc) flags=-fstructure-noalias */
-/* C++ (front end, 1-player board select). Called once by FUN_80054510 (boardselect1p.cpp) before
+/* Front_InitBoardPictures1P__Fv (0x80053dbc) flags=-fstructure-noalias */
+/* C++ (front end, 1-player board select). Called once by Front_BoardSelect1P (boardselect1p.cpp) before
    its loop: fills in the picture file names of the three columns (decks the skater hasn't got the
    tapes for show "b1lock01.bmp"; trucks and wheels come from fixed tables), resets the streaming
-   state that FUN_80054134 (boardstream1p.cpp) works through, and loads the "locked" picture. */
+   state that Front_StreamBoardPictures1P (boardstream1p.cpp) works through, and loads the "locked" picture. */
 #include "game/shellutils.h"
 #include "game/career.h"
+#include "game/fileio.h"
+#include "game/mem.h"
+#include "game/psyq.h"
 
 extern SCareer GCareer;
 extern SStats Stats[];
@@ -22,17 +25,9 @@ uchar DAT_800d22e8;
 int DAT_800d22ec;
 int DAT_800d22f0; /* skater */
 
-extern "C" {
-	char *strcpy(char *, const char *);
-	void FileIO_Sync__Fv(void);
-	int FileIO_Open__FPCc(char *);
-	char *Mem_NewX__FUiii(int, int, int);
-	void FileIO_Load__FPv(char *);
-}
-
 int Load8BitBMP2(char *, char **, int *, int *, ushort *);
 
-extern "C" void FUN_80053dbc(void) {
+void Front_InitBoardPictures1P(void) {
 	DAT_800d3394[0] = -1;
 	DAT_800d33c4[0] = 8;
 	DAT_800d33b4[0] = 0;
@@ -79,10 +74,10 @@ extern "C" void FUN_80053dbc(void) {
 	DAT_800d22ec = 0;
 	DAT_800d22e4 = 0;
 	DAT_800d22e0 = 0;
-	DAT_800d22e4 = Mem_NewX__FUiii(FileIO_Open__FPCc("b1lock01.bmp"), 1, 1);
+	DAT_800d22e4 = Mem_NewX(FileIO_Open("b1lock01.bmp"), 1, 1);
 
-	FileIO_Load__FPv(DAT_800d22e4);
-	FileIO_Sync__Fv();
+	FileIO_Load(DAT_800d22e4);
+	FileIO_Sync();
 
 	ushort clut;
 	char *data;

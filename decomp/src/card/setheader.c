@@ -5,7 +5,7 @@ extern int GSaveAction;
 extern char CARD_GTITLE[];
 extern char CARD_VTITLE[];
 
-void FUN_8008e904(char *, char *);
+void strcpy(char *, char *);
 
 typedef struct {
 	char sig[4];
@@ -29,9 +29,9 @@ void Card_SetHeader(SCardHead *h, int icon, char *name, char *data) {
 		h->title[i] = 0;
 
 	if (GSaveAction == 1)
-		FUN_8008e904(h->title, CARD_GTITLE);
+		strcpy(h->title, CARD_GTITLE);
 	else
-		FUN_8008e904(h->title, CARD_VTITLE);
+		strcpy(h->title, CARD_VTITLE);
 
 	for (i = 0; i < 28; i++)
 		h->pad[i] = 0;

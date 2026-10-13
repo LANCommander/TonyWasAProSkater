@@ -1,14 +1,26 @@
-/* FUN_8005f6bc (0x8005f6bc) */
+/* Front_ControllerOptions__Fi (0x8005f6bc) */
 /* C++ (front end, THPS1-only; no demo twin). The CONTROLLER options screen (opt_ctr.bmp): for the
    player in DAT_800d1d28 it copies the pad mapping out of the options into the edit buffer
-   DAT_800bf260, labels the four button rows with their current function (FUN_8005ea74), builds
+   DAT_800bf260, labels the four button rows with their current function (Front_GetPadFunctionName), builds
    the "vibration on/off" and "Autokick on/off" rows, snapshots the mapping into DAT_800bf280 and
    runs the 8-entry menu (TRIANGLE, SQUARE, CIRCLE, X, VIBRATION, AUTOKICK, RESET TO DEFAULT,
-   BACK TO OPTIONS; ids 1296..) with FUN_8005eb78 as the per-frame handler. Backing out restores
+   BACK TO OPTIONS; ids 1296..) with Front_ControllerOptionsHandler as the per-frame handler. Backing out restores
    the options background and returns -1. Called from the options menu FUN_80060274. */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
+
 #include "game/career.h"
 #include "game/pad.h"
 #include "game/front.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/main.h"
+#include "game/mess.h"
+#include "game/psyq.h"
+#include "game/shellutils.h"
 
 extern SOptions GPreferences;
 extern SPadMap DAT_800bf260[2];
@@ -17,17 +29,6 @@ extern LocalText GameText;
 extern SLabels DAT_800a1d0c;
 
 int DAT_800d1d28;
-
-extern "C" {
-	void FUN_8005c97c(int);
-	void FUN_8005ca64(void);
-	int FUN_8005ca3c(char *);
-	void FUN_80061714(int);
-	int FUN_8008b900(char *, char *, ...);
-	char *FUN_8005ea74(int);
-	int FUN_8005eb78(void);
-	int FUN_8005e0e0(char **, int *, int, int, int *, int (*)(void), int *, int *, int);
-}
 
 #ifdef PC_PORT
 /* PC: the controls screen. The PS1's (a pad picture with what each face button does, plus
@@ -45,7 +46,7 @@ extern "C" {
 
 extern SControl Pad[2];
 extern int DemoTimer;
-extern int DAT_800d1cb8; /* soft reset requested (FUN_8005c68c) */
+extern int DAT_800d1cb8; /* soft reset requested (Front_CheckSoftReset) */
 
 int SFX_PlayX(unsigned, short, int);
 int Mess_GetFontScale();
@@ -53,16 +54,6 @@ void Mess_SetFontScale(uint);
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);
 
 extern "C" {
-	void Mess_SetTextJustify__FUc(int);
-	void Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	void FUN_8005c780(void);
-	void FUN_8005c934(void);
-	void FUN_80070ff4(void); /* Pad_Update */
-	void FUN_8005c68c(void);
-	void FUN_800242cc(void);
-	void FUN_8006b240(void);
-	void FUN_80061ea0(void);
-	void FUN_8006b26c(void);
 	extern void (*pc_hires_before_draw)(void);
 }
 
@@ -134,8 +125,8 @@ static void SetColour(int selected, int dim) {
 }
 
 static void Text(int x, int y, int justify, const char *s) {
-	Mess_SetTextJustify__FUc(justify);
-	Mess_DrawText__FiiPCciUiib(x, y, (char *)s, 0, 0, 256, 0);
+	Mess_SetTextJustify(justify);
+	Mess_DrawText(x, y, (char *)s, 0, 0, 256, 0);
 }
 
 /* Up/down with key repeat (a press, then every 4 frames after 18 held) */
@@ -157,18 +148,19 @@ static int AnyMenuButton(SControl *p) {
 	       p->MenuRight.Pressed || p->MenuAccept.Pressed || p->MenuBack.Pressed;
 }
 
-extern "C" int FUN_8005f6bc(int a) {
+int Front_ControllerOptions(int a) {
 	int pl = DAT_800d1d28;
 	int gamepad = pl != 0 || PC_InputGamepadConnected(0);
 	int sel = 0, top = 0, slot = 0;
 	int capturing = 0, settling = 0, dirty = 0, result = -1;
 	int base_scale = Mess_GetFontScale();
 	int small_scale = base_scale * 3 / 4;
+
 	(void)a;
 
-	FUN_8005c97c(11);
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("options.bmp"));
+	FrontLoader_LoadSet(11);
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("options.bmp"));
 	DrawSync(0);
 
 	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
@@ -188,19 +180,19 @@ extern "C" int FUN_8005f6bc(int a) {
 		char buf[64];
 		int i;
 
-		FUN_8005c780();
-		FUN_8005c934();
-		FUN_80070ff4();
-		FUN_8005c68c();
+		Front_UpdateMusicLoop();
+		FrontLoader_Continue();
+		Pad_Update();
+		Front_CheckSoftReset();
 
 		if (DAT_800d1cb8) {
 			result = 0x666;
 			break;
 		}
 
-		FUN_800242cc();
-		FUN_8006b240();
-		FUN_80061ea0();
+		PollHost();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		/* ---- input */
 		if (capturing) {
@@ -349,9 +341,9 @@ extern "C" int FUN_8005f6bc(int a) {
 					int value = r->kind == ROW_AUTOKICK ? GPreferences.AutoKickEnabled[pl]
 					                                    : GPreferences.VibrationEnabled[pl];
 
-					FUN_8008b900(buf, "%s %s",
-					             r->kind == ROW_AUTOKICK ? GameText.pAutoKick : GameText.pVibration,
-					             value ? GameText.pBooleanOn : GameText.pBooleanOff);
+					sprintf(buf, "%s %s",
+					        r->kind == ROW_AUTOKICK ? GameText.pAutoKick : GameText.pVibration,
+					        value ? GameText.pBooleanOn : GameText.pBooleanOff);
 					SetColour(on, 0);
 					Text(NAME_X, y, 1, buf);
 					break;
@@ -396,19 +388,19 @@ extern "C" int FUN_8005f6bc(int a) {
 			Text(600, ROW_TOP + (VISIBLE_ROWS - 1) * ROW_HEIGHT + 7 + 22, 2, "MORE");
 
 		if (capturing)
-			FUN_8008b900(buf, "%s %s", gamepad ? "PRESS A BUTTON FOR" : "PRESS A KEY FOR",
-			             PC_InputActionLabel((PcAction)s_rows[sel].action));
+			sprintf(buf, "%s %s", gamepad ? "PRESS A BUTTON FOR" : "PRESS A KEY FOR",
+			        PC_InputActionLabel((PcAction)s_rows[sel].action));
 		else if (s_rows[sel].kind == ROW_ACTION)
-			FUN_8008b900(buf, "%s %s", "ACCEPT TO CHANGE", "   DELETE OR X TO CLEAR");
+			sprintf(buf, "%s %s", "ACCEPT TO CHANGE", "   DELETE OR X TO CLEAR");
 		else if (s_rows[sel].kind == ROW_DEVICE && pl == 0)
-			FUN_8008b900(buf, "%s %s", "LEFT OR RIGHT", "TO SWITCH DEVICE");
+			sprintf(buf, "%s %s", "LEFT OR RIGHT", "TO SWITCH DEVICE");
 		else
 			buf[0] = 0;
 
 		Mess_SetRGB(122, 122, 122, 0);
 		Text(370, HINT_Y, 0, buf);
 		Mess_SetFontScale(base_scale);
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	}
 
 	if (dirty)
@@ -481,13 +473,13 @@ static int StepDistance(int cur, int d, int n) {
 /* the menu font has letters and digits only */
 static void DistanceLabel(char *buf, int pct) {
 	if (pct == PC_DISTANCE_FULL)
-		FUN_8008b900(buf, "%s %s", "ENTIRE", "LEVEL");
+		sprintf(buf, "%s %s", "ENTIRE", "LEVEL");
 	else if (pct == 100)
-		FUN_8008b900(buf, "%s %s", "NORMAL", "");
+		sprintf(buf, "%s %s", "NORMAL", "");
 	else if (pct % 100 == 0)
-		FUN_8008b900(buf, (char *)"%dX", pct / 100);
+		sprintf(buf, (char *)"%dX", pct / 100);
 	else
-		FUN_8008b900(buf, (char *)"%d PERCENT", pct);
+		sprintf(buf, (char *)"%d PERCENT", pct);
 }
 
 /* the resolution a mode uses */
@@ -544,9 +536,9 @@ extern "C" void PC_GraphicsOptions(int a) {
 	edit = cur;
 	old = cur;
 
-	FUN_8005c97c(11);
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("options.bmp"));
+	FrontLoader_LoadSet(11);
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("options.bmp"));
 	DrawSync(0);
 
 	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
@@ -565,17 +557,17 @@ extern "C" void PC_GraphicsOptions(int a) {
 		SControl *p = &Pad[0];
 		char buf[64];
 
-		FUN_8005c780();
-		FUN_8005c934();
-		FUN_80070ff4();
-		FUN_8005c68c();
+		Front_UpdateMusicLoop();
+		FrontLoader_Continue();
+		Pad_Update();
+		Front_CheckSoftReset();
 
 		if (DAT_800d1cb8)
 			break;
 
-		FUN_800242cc();
-		FUN_8006b240();
-		FUN_80061ea0();
+		PollHost();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		/* ---- input */
 		if (keep) {
@@ -687,7 +679,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 					SetColour(on, edit.mode == PC_VIDEO_BORDERLESS);
 					Text(NAME_X, y, 1, "RESOLUTION");
-					FUN_8008b900(buf, (char *)"%d X %d", w, h);
+					sprintf(buf, (char *)"%d X %d", w, h);
 					Text(SLOT_X1 - 60, y, 0, buf);
 					break;
 				}
@@ -727,21 +719,21 @@ extern "C" void PC_GraphicsOptions(int a) {
 		if (keep) {
 			Mess_SetRGB(182, 132, 36, 0);
 			Text(NAME_X, ROW_TOP + (GFX_ROWS + 2) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
-			FUN_8008b900(buf, (char *)"ACCEPT TO KEEP   BACK TO UNDO   %d", (keep + 59) / 60);
+			sprintf(buf, (char *)"ACCEPT TO KEEP   BACK TO UNDO   %d", (keep + 59) / 60);
 		} else if (sel == GFX_MODE || (sel == GFX_RESOLUTION && edit.mode != PC_VIDEO_BORDERLESS)) {
-			FUN_8008b900(buf, "%s %s", "LEFT OR RIGHT TO CHANGE", "");
+			sprintf(buf, "%s %s", "LEFT OR RIGHT TO CHANGE", "");
 		} else if (sel == GFX_RESOLUTION) {
-			FUN_8008b900(buf, "%s %s", "BORDERLESS USES THE", "DESKTOP RESOLUTION");
+			sprintf(buf, "%s %s", "BORDERLESS USES THE", "DESKTOP RESOLUTION");
 		} else if (sel == GFX_WIDESCREEN) {
-			FUN_8008b900(buf, "%s %s", "MORE OF THE WORLD AT THE", "SIDES OF WIDE SCREENS");
+			sprintf(buf, "%s %s", "MORE OF THE WORLD AT THE", "SIDES OF WIDE SCREENS");
 		} else if (sel == GFX_DRAW_DISTANCE) {
-			FUN_8008b900(buf, "%s %s", "HOW FAR AWAY THE LEVEL", "AND ITS FOG ARE DRAWN");
+			sprintf(buf, "%s %s", "HOW FAR AWAY THE LEVEL", "AND ITS FOG ARE DRAWN");
 		} else if (sel == GFX_OBJECT_DISTANCE) {
-			FUN_8008b900(buf, "%s %s", "HOW FAR OBJECTS STAY", "DETAILED AND VISIBLE");
+			sprintf(buf, "%s %s", "HOW FAR OBJECTS STAY", "DETAILED AND VISIBLE");
 		} else if (sel == GFX_FOG) {
-			FUN_8008b900(buf, "%s %s", "LIGHT FOGS ONLY THE", "FARTHEST PART");
+			sprintf(buf, "%s %s", "LIGHT FOGS ONLY THE", "FARTHEST PART");
 		} else if (sel == GFX_APPLY && !SameSettings(&edit, &cur)) {
-			FUN_8008b900(buf, "%s %s", "ACCEPT TO SWITCH", "");
+			sprintf(buf, "%s %s", "ACCEPT TO SWITCH", "");
 		} else {
 			buf[0] = 0;
 		}
@@ -749,7 +741,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 		Mess_SetRGB(122, 122, 122, 0);
 		Text(370, HINT_Y, 0, buf);
 		Mess_SetFontScale(base_scale);
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	}
 
 	/* a change not confirmed yet is undone */
@@ -765,7 +757,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 	Pad_ClearTriggers(&Pad[1]);
 }
 #else
-extern "C" int FUN_8005f6bc(int a) {
+int Front_ControllerOptions(int a) {
 	int pl = DAT_800d1d28;
 	SLabels labels;
 	int disabled[8];
@@ -775,9 +767,9 @@ extern "C" int FUN_8005f6bc(int a) {
 	char ak[32];
 	int r;
 
-	FUN_8005c97c(13);
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("opt_ctr.bmp"));
+	FrontLoader_LoadSet(13);
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("opt_ctr.bmp"));
 
 	labels = DAT_800a1d0c;
 	disabled[0] = 0;
@@ -808,30 +800,31 @@ extern "C" int FUN_8005f6bc(int a) {
 	DAT_800bf260[pl].Function[1] = GPreferences.ControllerFunction[pl][1];
 	DAT_800bf260[pl].Function[2] = GPreferences.ControllerFunction[pl][2];
 	DAT_800bf260[pl].Function[3] = GPreferences.ControllerFunction[pl][3];
-	labels.Name[0] = FUN_8005ea74(DAT_800bf260[pl].Function[0]);
-	labels.Name[1] = FUN_8005ea74(DAT_800bf260[pl].Function[1]);
-	labels.Name[2] = FUN_8005ea74(DAT_800bf260[pl].Function[2]);
-	labels.Name[3] = FUN_8005ea74(DAT_800bf260[pl].Function[3]);
+	labels.Name[0] = Front_GetPadFunctionName(DAT_800bf260[pl].Function[0]);
+	labels.Name[1] = Front_GetPadFunctionName(DAT_800bf260[pl].Function[1]);
+	labels.Name[2] = Front_GetPadFunctionName(DAT_800bf260[pl].Function[2]);
+	labels.Name[3] = Front_GetPadFunctionName(DAT_800bf260[pl].Function[3]);
 
-	FUN_8008b900(vib, "%s %s", GameText.pVibration,
-	             GPreferences.VibrationEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
+	sprintf(vib, "%s %s", GameText.pVibration,
+	        GPreferences.VibrationEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
 
 	labels.Name[4] = vib;
 
-	FUN_8008b900(ak, "%s %s", GameText.pAutoKick,
-	             GPreferences.AutoKickEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
+	sprintf(ak, "%s %s", GameText.pAutoKick,
+	        GPreferences.AutoKickEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
 
 	labels.Name[5] = ak;
 	DAT_800bf280[pl].Function[0] = DAT_800bf260[pl].Function[0];
 	DAT_800bf280[pl].Function[2] = DAT_800bf260[pl].Function[2];
 	DAT_800bf280[pl].Function[1] = DAT_800bf260[pl].Function[1];
 	DAT_800bf280[pl].Function[3] = DAT_800bf260[pl].Function[3];
-	r = FUN_8005e0e0(labels.Name, disabled, 8, 1296, &a, FUN_8005eb78, xs, ys, 0);
+	r = Front_RunMenu(labels.Name, disabled, 8, 1296, &a, Front_ControllerOptionsHandler, xs, ys,
+	                  0);
 
 	if (r == -1 || r == 1304) {
-		FUN_8005c97c(11);
-		FUN_8005ca64();
-		FUN_80061714(FUN_8005ca3c("options.bmp"));
+		FrontLoader_LoadSet(11);
+		FrontLoader_Defragment();
+		DownloadBMP16x2(FrontLoader_TakeFile("options.bmp"));
 
 		r = -1;
 	}

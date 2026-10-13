@@ -5,16 +5,14 @@
 #include <libgte.h>
 #include <inline_c.h>
 #include "game/bit.h"
-
-extern "C" void FUN_8008b3d4(CSVector *, MATRIX *); /* angles -> rotation matrix */
-extern "C" void FUN_80089f54(CVector *);            /* load translation */
+#include "game/m3dasm.h"
 
 void CChunkBit::CalculateWorldCoords() {
 	MATRIX m;
 
-	FUN_8008b3d4(&mAngles, &m);
+	M3dMaths_RotMatrixYXZ((SVECTOR *)&mAngles, &m);
 	SetRotMatrix(&m);
-	FUN_80089f54(&mPos);
+	M3dAsm_SetTransVector((Vector *)&mPos);
 	gte_ldv0(&mPosA);
 	gte_rtv0tr();
 	gte_stlvnl(&mWorldPosA);

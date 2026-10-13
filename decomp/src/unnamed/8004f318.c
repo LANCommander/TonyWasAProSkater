@@ -1,4 +1,6 @@
-/* FUN_8004f318 (0x8004f318) */
+/* TrickOb_GetItemType__FP4Item (0x8004f318) */
+#include "names.h"
+
 typedef struct T {
 	char *vt;
 	unsigned int mChecksum;
@@ -10,7 +12,7 @@ T *TrickObList;
 
 unsigned int FUN_8006ef00(char *);
 
-int FUN_8004f318(char *o) {
+int TrickOb_GetItemType(char *o) {
 	unsigned int c = FUN_8006ef00(o);
 	T *p;
 

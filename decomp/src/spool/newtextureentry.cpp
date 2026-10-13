@@ -2,13 +2,12 @@
 /* C++ (SPOOL.CPP). Demo twin; locals from its MAIN.SYM. Allocates a texture entry for a checksum
    and links it at the head of its hash bucket (low 9 bits of the checksum). */
 #include "game/m3d.h"
+#include "game/mem.h"
 
 extern Texture *TextureChecksumHashTable[];
 
-extern "C" Texture *Mem_NewX__FUiii(int, int, int);
-
 Texture *NewTextureEntry(uint checksum) {
-	Texture *pNew = Mem_NewX__FUiii(40, 0, 1);
+	Texture *pNew = Mem_NewX(40, 0, 1);
 	uint Lower = checksum & 511;
 
 	pNew->pNext = TextureChecksumHashTable[Lower];

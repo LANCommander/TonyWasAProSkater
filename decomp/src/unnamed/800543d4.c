@@ -1,4 +1,4 @@
-/* FUN_800543d4 (0x800543d4) */
+/* Front_FreeBoardPictures1P__Fv (0x800543d4) */
 #include "names.h"
 
 struct VT {
@@ -22,7 +22,7 @@ int DAT_800d22e4;
 void FileIO_Sync(void);
 void Mem_Delete(int);
 
-void FUN_800543d4(void) {
+void Front_FreeBoardPictures1P(void) {
 	int i, j;
 	O *o;
 

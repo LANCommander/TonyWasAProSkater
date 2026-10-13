@@ -1,4 +1,4 @@
-/* FUN_8006b434 (0x8006b434) flags=-fstrict-aliasing */
+/* kickIt__Fii (0x8006b434) flags=-fstrict-aliasing */
 #include "names.h"
 
 struct T {
@@ -17,7 +17,7 @@ extern int SelectedSkater;
 void Utils_CopyString(char *a, char *b);
 void LaunchGame(void);
 
-void FUN_8006b434(int a, int b) {
+void kickIt(int a, int b) {
 	char *n;
 
 	GLevel = a;

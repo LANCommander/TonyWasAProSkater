@@ -36,7 +36,7 @@ char *__nw__5CItemUi(int n);
 char *CBruce_ctor(char *p);
 void CBruce_InitItem(char *t, char *n);
 void CSuper_CycleAnim(char *t, int a, signed char c);
-void FUN_8008b238(char *m); /* identity-matrix init, one arg */
+void M3dMaths_SetIdentityRotation__FP6MATRIX(char *m); /* identity-matrix init, one arg */
 
 char *FUN_800506d0(int idx) {
 	char *p;
@@ -59,7 +59,7 @@ char *FUN_800506d0(int idx) {
 		Set(&b->pos, DAT_800d1ba8, SKATER_Y_POS, 0x30000);
 	}
 
-	FUN_8008b238(p + 1932);
+	M3dMaths_SetIdentityRotation__FP6MATRIX(p + 1932);
 
 	if (Stats[idx].name[0] == 82 || Stats[idx].name[0] == 114)
 		*(int *)(p + 308) |= 2;

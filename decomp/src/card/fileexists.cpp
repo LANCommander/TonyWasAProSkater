@@ -1,7 +1,8 @@
-/* FUN_800144a8 (0x800144a8) */
+/* Card_FileExists__F9EFileType (0x800144a8) */
 /* C++ (CARD.CPP). Fuzzy demo twin Card_FileExists (0.69). Builds a one-block header for the save
    or replay file name, then opens the file for writing (mode 1) to create it. */
 #include "game/card.h"
+#include "game/front.h"
 
 extern char CARD_FNAME[];
 extern char CARD_VNAME[];
@@ -12,7 +13,6 @@ void Card_SetHeader(SCardHead *, int, char *, char *);
 void SetSJISChecksum(char *, char *);
 
 extern "C" {
-	void Front_SetSJISName__FPc(char *);
 	int open(char *, int);
 	int close(int);
 }
@@ -23,7 +23,7 @@ extern "C" {
 extern "C" char SaveGameName[];
 #endif
 
-int FUN_800144a8(int FileType) {
+int Card_FileExists(int FileType) {
 	SCardHead Head;
 	char *FName;
 	int fd;
@@ -36,9 +36,9 @@ int FUN_800144a8(int FileType) {
 	Card_SetHeader(&Head, 1, (char *)&Head, (char *)&Head);
 
 	if (GSaveAction == 1)
-		Front_SetSJISName__FPc((char *)&Head + 32);
+		Front_SetSJISName((char *)&Head + 32);
 	else
-		Front_SetSJISName__FPc((char *)&Head + 30);
+		Front_SetSJISName((char *)&Head + 30);
 
 	SetSJISChecksum(Head.Title, FName + 22);
 

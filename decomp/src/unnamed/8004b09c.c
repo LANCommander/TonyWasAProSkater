@@ -1,4 +1,4 @@
-/* FUN_8004b09c (0x8004b09c) */
+/* SFX_Init__FPc (0x8004b09c) */
 #include "names.h"
 
 extern char DAT_800b9014[];
@@ -10,7 +10,7 @@ void FUN_80093854(int a, char *b);
 void SFX_SetReverbType(unsigned char a);
 int FUN_8004b188(int a, char *b);
 
-void FUN_8004b09c(int a) {
+void SFX_Init(int a) {
 	FUN_80093854(16, DAT_800b9014);
 	SFX_SetReverbType(0);
 

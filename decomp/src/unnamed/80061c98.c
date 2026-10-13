@@ -2,8 +2,8 @@
 #include "names.h"
 
 int Mem_NewX(int a, int b, int c);
-void FUN_8008c774(short *r, int b);
-void FUN_8008c714(short *r, int b);
+void StoreImage(short *r, int b);
+void LoadImage(short *r, int b);
 void Mem_Delete(int a);
 
 void FUN_80061c98(int a, int b) {
@@ -16,7 +16,7 @@ void FUN_80061c98(int a, int b) {
 	r[1] = b;
 	r[2] = 256;
 	r[3] = 1;
-	FUN_8008c774(r, buf);
+	StoreImage(r, buf);
 
 	q = (unsigned short *)buf;
 
@@ -27,6 +27,6 @@ void FUN_80061c98(int a, int b) {
 		q++;
 	}
 
-	FUN_8008c714(r, buf);
+	LoadImage(r, buf);
 	Mem_Delete(buf);
 }

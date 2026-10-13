@@ -6,7 +6,7 @@ char *Mem_NewX(char *, int, int);
 void FileIO_Load(char *);
 void FileIO_Sync(void);
 void Mem_Delete(char *);
-void FUN_8008c190(char *);
+void printf(char *);
 void Mem_Copy(void *, void *, int);
 int CalcChecksum(void *, int);
 
@@ -29,13 +29,13 @@ int Card_LoadReplayFromCD(char *a, char *b, char *name) {
 	c = *(short *)(a + 566);
 
 	if (c != CalcChecksum(a + 640, 23936))
-		FUN_8008c190("\nChecksum error for 1P in Card_LoadReplayFromCD()");
+		printf("\nChecksum error for 1P in Card_LoadReplayFromCD()");
 
 	if (b) {
 		c = *(short *)(b + 566);
 
 		if (c != CalcChecksum(b + 640, 23936))
-			FUN_8008c190("\nChecksum error for 2P in Card_LoadReplayFromCD()");
+			printf("\nChecksum error for 2P in Card_LoadReplayFromCD()");
 	}
 
 	return 0;

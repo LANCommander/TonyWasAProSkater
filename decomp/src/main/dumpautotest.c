@@ -6,10 +6,10 @@ int FUN_8008c3d0(int);
 int FUN_8008c314(int);
 int FUN_8009153c(int, int);
 int FUN_800915dc(int, int, int, int, int, int);
-int FUN_8008c468(int);
+int DrawSync(int);
 void *FUN_80092e70(void *, int, int, int, int);
 int FUN_8008c94c(void *);
-int FUN_8008b900(char *, char *, ...);
+int sprintf(char *, char *, ...);
 int FUN_80091bb0(char *);
 int FUN_80091894(int);
 
@@ -24,11 +24,10 @@ void DumpAutoTest(void) {
 	FUN_8009153c(0, 0);
 
 	id = FUN_800915dc(200, 175, 160, 16, 1, 1024);
-	FUN_8008c468(0);
+	DrawSync(0);
 	FUN_80092e70(env, 0, 0, 512, 240);
 	FUN_8008c94c(env);
-	FUN_8008b900(buf, "L-%d, P1-%d, P2-%d, G-%d", GAutoLevela, GAutoPlayer1a, GAutoPlayer2a,
-	             GAutoGamea);
+	sprintf(buf, "L-%d, P1-%d, P2-%d, G-%d", GAutoLevela, GAutoPlayer1a, GAutoPlayer2a, GAutoGamea);
 	FUN_80091bb0(buf);
 	FUN_80091894(id);
 

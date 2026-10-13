@@ -9,6 +9,9 @@ extern "C" {
 #include "game/video.h"
 #include "game/bruce.h"
 #include "game/bit.h"
+#include "game/camera.h"
+#include "game/front.h"
+#include "game/platform.h"
 
 extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList;
@@ -19,14 +22,8 @@ extern int GNumberOfPlayers;
 
 int GVideoReplay;
 
-extern "C" void CamPt_SetClosestCamera__FP6CBruce(CBruce *);
 void RestartCompFrig();
-extern "C" void Video_Start__FP6CBruce10EVideoModeii(CBruce *, int, int, int);
-extern "C" void GetDataChunk__FP6CBrucei(CBruce *, int);
 extern "C" int Mips_DotProd2(int, int, int, int);
-extern "C" void Bit_SetSparkTrajectoryCone__FRC8CSVector(const CSVector &);
-extern "C" void Platform_HandleBounce__Fv();
-extern "C" void Front_SwitchOnVideoScreen__Fv();
 void Bit_SetSparkTrajectory(const CSVector &);
 void Video_SyncObsIfNeeded();
 void Video_Stop(CBruce *);
@@ -36,7 +33,7 @@ void Video_Stop(CBruce *);
 void Video_Playback(CBruce *pSkater) {
 	SVideoInfo *VInfo;
 
-	CamPt_SetClosestCamera__FP6CBruce(pSkater);
+	CamPt_SetClosestCamera(pSkater);
 
 	if (pSkater == MechList)
 		VInfo = &GVInfo1[0];
@@ -46,14 +43,14 @@ void Video_Playback(CBruce *pSkater) {
 	if (Status == 20 || Status == 22 || Status == 21) {
 		if (!VInfo->FramesLeft) {
 			RestartCompFrig();
-			Video_Start__FP6CBruce10EVideoModeii(pSkater, 2, 1, 0x7fffffff);
+			Video_Start(pSkater, 2, 1, 0x7fffffff);
 		}
 	}
 
 	if (VInfo->FramesLeft) {
 		int IsAGrind;
 
-		GetDataChunk__FP6CBrucei(pSkater, 1);
+		GetDataChunk(pSkater, 1);
 
 		VInfo->FramesLeft--;
 		IsAGrind = ABS(Mips_DotProd2(-pSkater->mFront.vz, pSkater->mVel.vx, pSkater->mFront.vx,
@@ -77,7 +74,7 @@ void Video_Playback(CBruce *pSkater) {
 			cone.vx = 450;
 			cone.vy = 900;
 			cone.vz = 0;
-			Bit_SetSparkTrajectoryCone__FRC8CSVector(cone);
+			Bit_SetSparkTrajectoryCone(cone);
 
 			UseCacheForBits = 0;
 			CVector SparkPos;
@@ -103,7 +100,7 @@ void Video_Playback(CBruce *pSkater) {
 		}
 
 		pSkater->GlowUpdate();
-		Platform_HandleBounce__Fv();
+		Platform_HandleBounce();
 		pSkater->HandleWater();
 	} else {
 		if ((uint)(VInfo->ReplayHighlight - 1) < 4 &&
@@ -126,7 +123,7 @@ void Video_Playback(CBruce *pSkater) {
 			Video_Stop(pSkater);
 
 			if (GNumberOfPlayers == 1 || pSkater == MechList)
-				Front_SwitchOnVideoScreen__Fv();
+				Front_SwitchOnVideoScreen();
 		}
 	}
 }

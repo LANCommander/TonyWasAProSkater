@@ -20,7 +20,7 @@ extern P *MechList;
 int TAPES_Display, SKATE_Display;
 
 void DisplayTapesSkate(void);
-void FUN_8001e07c(char *);
+void FallingTextEffect_update(char *);
 void FUN_8001e100(char *, int);
 void Panel_DrawFlatShadedPoly(int, int, int, int, int, int, int, int);
 void DisplayScore(P *, int, int);
@@ -43,7 +43,7 @@ void FUN_8006dc78(void) {
 			s3 = (char *)s2 + 0xa88;
 
 			do {
-				FUN_8001e07c(s3);
+				FallingTextEffect_update(s3);
 				DisplayOutOfBounds(s2, 256, 90);
 				DisplayTapesSkate();
 

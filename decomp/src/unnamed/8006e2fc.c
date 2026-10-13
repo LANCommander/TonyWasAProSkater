@@ -18,7 +18,7 @@ int TAPES_Display;
 
 void Career_GiveTape(int, int);
 int SFX_PlayX(int, int, int);
-void FUN_8008b900(char *, int, int);
+void sprintf(char *, int, int);
 void Mess_Message(char *, char *, int, int, int);
 
 void Panel_Tape(int a) {
@@ -39,7 +39,7 @@ void Panel_Tape(int a) {
 			break;
 		case 1:
 			SFX_PlayX(19, 0x2000, 0);
-			FUN_8008b900(DAT_800d3868, DAT_800a5d88[0], Levels[GLevel].f38);
+			sprintf(DAT_800d3868, DAT_800a5d88[0], Levels[GLevel].f38);
 			Mess_Message(DAT_800d3868, Messprog_Goal, 1, 0, 0);
 			break;
 		case 3:

@@ -1,16 +1,30 @@
-/* FUN_80066d7c (0x80066d7c) flags=-fstructure-noalias */
-/* C++ (front end, level select; called from FUN_8006658c, which returns the chosen level or -1).
+/* LevelSelect_Screen__Fv (0x80066d7c) flags=-fstructure-noalias */
+/* C++ (front end, level select; called from LevelSelect_Run, which returns the chosen level or -1).
    Counts the levels in the level table, works out which are unlocked (career: tapes and
    competition medals of the current skater; other modes: the saved unlock flags, or the first
    five in the free-skate modes 5-8), then shows a map with an arrow over the selected level and a
-   scrolling strip of level pictures (streamed in by FUN_80066768/FUN_800668e8). Career shows the
+   scrolling strip of level pictures (streamed in by LevelSelect_ContinueLoading/LevelSelect_DecodePics). Career shows the
    tape count, the three competition medals, the level's goal tapes / medal and "N tapes, N medals
    needed to unlock"; mode 3 shows the level's top three high scores. Left/right scroll (the level
    names slide out and back in), X/Start picks an unlocked level, triangle backs out. */
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
+
 #include "game/shellutils.h"
 #include "game/pre.h"
 #include "game/career.h"
 #include "game/pad.h"
+#include "game/mess.h"
+#include "game/fileio.h"
+#include "game/mem.h"
+#include "game/sfx.h"
+#include "game/frontend.h"
+#include "game/hires.h"
+#include "game/levelselect.h"
+#include "game/psyq.h"
 
 extern SControl Pad[];
 extern SCareer GCareer;
@@ -41,55 +55,24 @@ int Mess_TextHeight(const char *);
 void Mess_LoadFont(char *, int, int, int);
 void Mess_UnloadFont();
 
-extern "C" {
-	char *strcpy(char *, const char *);
-	int strcmp(const char *, const char *);
-	int sprintf(char *, const char *, ...);
-	void FUN_8005c97c(int);
-	void FUN_8005ca64(void);
-	void *FUN_8005ca3c(char *);
-	void FUN_80061714(void *);
-	void FUN_80066aa8(void);
-	void FUN_800666f4(int);
-	void FUN_80066768(void);
-	void FUN_800668e8(void);
-	void FUN_80066bb4(int);
-	void FUN_80066c70(void);
-	int Mess_TextWidth__FPCc(char *);
-	int Mess_TextHeightBelowBaseline__FPCc(const char *);
-	void Mess_SetTextJustify__FUc(int);
-	int Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
-	int SFX_PlayX__FUisi(int, int, int);
-	void FUN_8005c780(void);
-	void FUN_80070ff4(void);
-	void FUN_8005c68c(void);
-	void FUN_8006b240(void);
-	void FUN_80061ea0(void);
-	void FUN_8006b26c(void);
-	void SetClippingBox__Fiiii(int, int, int, int);
-	void DrawColoredBox__FiiiiUcUcUc(int, int, int, int, int, int, int);
-	void FUN_8008c468(int);
-	void FUN_8006af64(void);
-	void FileIO_Sync__Fv(void);
-	void Mem_Delete__FPv(int);
-}
-
-extern "C" void FUN_80066d7c() {
+void LevelSelect_Screen() {
 	int medal[3];
 
-	FUN_8005c97c(3);
-	FUN_8005ca64();
-	FUN_80061714(FUN_8005ca3c("select_c.bmp"));
+	FrontLoader_LoadSet(3);
+	FrontLoader_Defragment();
+	DownloadBMP16x2(FrontLoader_TakeFile("select_c.bmp"));
 	Pack_DefragmentFully();
-	FUN_80066aa8();
+	LevelSelect_InitPackSlots();
 
 	for (DAT_800d237c = 0; DAT_800d237c < 10; DAT_800d237c++)
 		if (!*Levels[DAT_800d237c].pLevelName)
 			break;
+
 	if (GGame == 5 || GGame == 6 || GGame == 8 || GGame == 7)
 		DAT_800d2370 = 1;
 	else
 		DAT_800d2370 = 0;
+
 	char *comps[3] = { "Skate Park", "Burnside", "Roswell" };
 	int cur = GCareer.LastLevel;
 
@@ -160,6 +143,7 @@ extern "C" void FUN_80066d7c() {
 	char name[16];
 	Sprite *arrow = new Sprite("levarrow.bmp", 1, 32, 128);
 	EraseSprite *save = new EraseSprite(ax, ay, 32, 32);
+
 	arrowTimer[0] = 0;
 	arrowTimer[1] = 0;
 	arrowX[0] = 91;
@@ -193,8 +177,8 @@ extern "C" void FUN_80066d7c() {
 		strcpy(line2, "to unlock");
 	}
 
-	lineX[1] = 357 - (Mess_TextWidth__FPCc(line2) >> 1);
-	lineY[1] = Mess_TextHeight(line2) + 198 - Mess_TextHeightBelowBaseline__FPCc(line2);
+	lineX[1] = 357 - (Mess_TextWidth(line2) >> 1);
+	lineY[1] = Mess_TextHeight(line2) + 198 - Mess_TextHeightBelowBaseline(line2);
 	Sprite *medalSpr[3];
 	Sprite *goalSpr[3];
 
@@ -214,19 +198,20 @@ extern "C" void FUN_80066d7c() {
 
 	char tapes[3];
 	uchar n = GCareer.CharacterProgress[DAT_800d2368].NumTapes;
+
 	tapes[2] = 0;
 	tapes[0] = n / 10 + '0';
 	tapes[1] = n % 10 + '0';
-	int tapesY = (Mess_TextHeight(tapes) >> 1) + 359 - Mess_TextHeightBelowBaseline__FPCc(tapes);
+	int tapesY = (Mess_TextHeight(tapes) >> 1) + 359 - Mess_TextHeightBelowBaseline(tapes);
 
 	if (GGame == 1) {
 		for (int i = 0; i < 2; i++) {
 			int y = 307;
 
-			FUN_8006b240();
-			FUN_80061ea0();
+			HiRes_ClearOTag();
+			ResetOT();
 			itemBox->draw(375, 287, 0, -1, -1, -1);
-			Mess_DrawText__FiiPCciUiib(472, tapesY, tapes, 0, 0, 256, 0);
+			Mess_DrawText(472, tapesY, tapes, 0, 0, 256, 0);
 
 			for (int k = 0; k < 3; k++) {
 				if (medal[k] != -1)
@@ -235,7 +220,7 @@ extern "C" void FUN_80066d7c() {
 				y += 24;
 			}
 
-			FUN_8006b26c();
+			HiRes_DrawOTag();
 		}
 	}
 
@@ -243,13 +228,13 @@ extern "C" void FUN_80066d7c() {
 	Sprite *scoreBox = new Sprite("scorebox.bmp", 1, 32, 128);
 
 	for (int i = 0; i < 2; i++) {
-		FUN_8006b240();
-		FUN_80061ea0();
+		HiRes_ClearOTag();
+		ResetOT();
 
 		if (GGame == 3)
 			scoreBox->draw(375, 287, 0, -1, -1, -1);
 
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 	}
 
 	delete scoreBox;
@@ -271,72 +256,82 @@ extern "C" void FUN_80066d7c() {
 	strcpy(text[1], Levels[cur].pCityName);
 	Mess_SetCurrentFont("mainf.fnt");
 
-	tw[0] = Mess_TextWidth__FPCc(text[0]);
-	tw[1] = Mess_TextWidth__FPCc(text[1]);
+	tw[0] = Mess_TextWidth(text[0]);
+	tw[1] = Mess_TextWidth(text[1]);
 	int mid = (tw[0] + tw[1]) / 2 + 320 - tw[1];
+
 	th[0] = Mess_TextHeight(text[0]);
 	int w20 = tw[0] + 20;
+
 	tx[0] = mid - w20;
-	ty[0] = th[0] / 2 + 71 - Mess_TextHeightBelowBaseline__FPCc(text[0]);
+	ty[0] = th[0] / 2 + 71 - Mess_TextHeightBelowBaseline(text[0]);
 	ttarget[0] = -tw[0];
 	tstep[0] = (ttarget[0] - tx[0]) / 7;
 	th[1] = Mess_TextHeight(text[1]);
 	tx[1] = mid + 20;
-	ty[1] = th[1] / 2 + 71 - Mess_TextHeightBelowBaseline__FPCc(text[1]);
+	ty[1] = th[1] / 2 + 71 - Mess_TextHeightBelowBaseline(text[1]);
 	ttarget[1] = 640;
 	tstep[1] = (ttarget[1] - tx[1]) / 7;
 
-	FUN_80066bb4(0);
+	LevelSelect_SelectPackSlot(0);
 
 	int picX[2];
 	SlicedImage *pic[2];
 	int picIdx[2];
+
 	picX[0] = 135;
 	picX[1] = 583;
 	pic[0] = 0;
 	pic[1] = 0;
 	picIdx[0] = cur;
 	picIdx[1] = cur + 1;
+
 	if (picIdx[1] >= DAT_800d237c)
 		picIdx[1] = 0;
+
 	int speed = 0;
 	int anim = 0;
 
-	FUN_800666f4(picIdx[0]);
+	LevelSelect_StartPicLoad(picIdx[0]);
 
 	int sel = picIdx[0];
 	int next = sel + 2;
+
 	if (next >= DAT_800d237c)
 		next -= DAT_800d237c;
+
 	int prev = sel - 1;
+
 	if (sel == 0)
 		prev = DAT_800d237c - 1;
+
 	char unused188[64]; /* unused; keeps the frame layout */
 
 	PadBuffer input(-1);
+
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
 
 	while (1) {
-		FUN_8005c780();
+		Front_UpdateMusicLoop();
 
 		if (!DAT_800d2380)
-			FUN_80066768();
+			LevelSelect_ContinueLoading();
 
-		FUN_800668e8();
-		FUN_8006b240();
-		FUN_80061ea0();
+		LevelSelect_DecodePics();
+		HiRes_ClearOTag();
+		ResetOT();
 		frame->draw(266, 93, 0, -1, -1, -1);
-		SetClippingBox__Fiiii(137, 115, 442, 154);
+		SetClippingBox(137, 115, 442, 154);
 
 		for (int i = 0; i < 2; i++) {
 			if (pic[i])
 				pic[i]->draw(picX[i], 112, 0, -1, -1, -1, 0, 0);
 			else
-				DrawColoredBox__FiiiiUcUcUc(picX[i], 112, 448, 161, 0, 0, 0);
+				DrawColoredBox(picX[i], 112, 448, 161, 0, 0, 0);
 		}
 
-		SetClippingBox__Fiiii(0, 0, 640, 480);
+		SetClippingBox(0, 0, 640, 480);
 		arrow->draw(ax, ay, 0, -1, -1, -1);
 		topBar->draw(0, 55, 0, -1, -1, -1);
 
@@ -370,19 +365,19 @@ extern "C" void FUN_80066d7c() {
 
 			scoreBack->draw(409, 320, 0, -1, -1, -1);
 			Mess_SetCurrentFont("stats1.fnt");
-			int y = (Mess_TextHeight("0") >> 1) + 333 - Mess_TextHeightBelowBaseline__FPCc("0");
+			int y = (Mess_TextHeight("0") >> 1) + 333 - Mess_TextHeightBelowBaseline("0");
 
 			for (int k = 0; k < 3; k++) {
-				Mess_SetTextJustify__FUc(1);
-				Mess_DrawText__FiiPCciUiib(409, y, GCareer.HighScore[sel][k].Name, 0, 0, 256, 0);
+				Mess_SetTextJustify(1);
+				Mess_DrawText(409, y, GCareer.HighScore[sel][k].Name, 0, 0, 256, 0);
 				sprintf(score, "%d", GCareer.HighScore[sel][k].Score);
-				Mess_SetTextJustify__FUc(2);
-				Mess_DrawText__FiiPCciUiib(578, y, score, 0, 0, 256, 0);
+				Mess_SetTextJustify(2);
+				Mess_DrawText(578, y, score, 0, 0, 256, 0);
 
 				y += 20;
 			}
 
-			Mess_SetTextJustify__FUc(1);
+			Mess_SetTextJustify(1);
 		}
 
 		if (state == 0) {
@@ -420,17 +415,17 @@ extern "C" void FUN_80066d7c() {
 			}
 
 			if (!DAT_800bf2a0[sel]) {
-				lineX[0] = 357 - (Mess_TextWidth__FPCc(line1) >> 1);
-				lineY[0] = 190 - Mess_TextHeightBelowBaseline__FPCc(line1);
-				Mess_DrawText__FiiPCciUiib(lineX[0], lineY[0], line1, 1, 0, 256, 0);
-				Mess_DrawText__FiiPCciUiib(lineX[1], lineY[1], line2, 1, 0, 256, 0);
+				lineX[0] = 357 - (Mess_TextWidth(line1) >> 1);
+				lineY[0] = 190 - Mess_TextHeightBelowBaseline(line1);
+				Mess_DrawText(lineX[0], lineY[0], line1, 1, 0, 256, 0);
+				Mess_DrawText(lineX[1], lineY[1], line2, 1, 0, 256, 0);
 			}
 		}
 
 		Mess_SetCurrentFont("mainf.fnt");
 
 		for (int i = 0; i < 2; i++)
-			Mess_DrawText__FiiPCciUiib(tx[i], ty[i], text[i], 0, 0, 256, 0);
+			Mess_DrawText(tx[i], ty[i], text[i], 0, 0, 256, 0);
 
 		for (int i = 0; i < 2; i++) {
 			int f = 0;
@@ -443,14 +438,14 @@ extern "C" void FUN_80066d7c() {
 			arrowSpr[i + f]->draw(arrowX[i], arrowY[i], 0, -1, -1, -1);
 		}
 
-		FUN_8006b26c();
+		HiRes_DrawOTag();
 
 		for (int i = 0; i < 2; i++) {
 			SlicedImage *im = DAT_800bf2f0[picIdx[i]];
 
 			if (im && !pic[i]) {
 				pic[i] = im;
-				FUN_80066bb4(i);
+				LevelSelect_SelectPackSlot(i);
 				pic[i]->pack();
 			}
 
@@ -458,7 +453,7 @@ extern "C" void FUN_80066d7c() {
 
 			if (picX[i] < -313 && speed < 0) {
 				picX[i] += 896;
-				FUN_80066bb4(i);
+				LevelSelect_SelectPackSlot(i);
 
 				if (pic[i])
 					pic[i]->unpack();
@@ -476,7 +471,7 @@ extern "C" void FUN_80066d7c() {
 					next = 0;
 			} else if (picX[i] >= 583 && speed > 0) {
 				picX[i] -= 896;
-				FUN_80066bb4(i);
+				LevelSelect_SelectPackSlot(i);
 
 				if (pic[i])
 					pic[i]->unpack();
@@ -515,20 +510,20 @@ extern "C" void FUN_80066d7c() {
 
 				Mess_SetCurrentFont("mainf.fnt");
 
-				tw[0] = Mess_TextWidth__FPCc(text[0]);
-				tw[1] = Mess_TextWidth__FPCc(text[1]);
+				tw[0] = Mess_TextWidth(text[0]);
+				tw[1] = Mess_TextWidth(text[1]);
 				mid = (tw[0] + tw[1]) / 2 + 320 - tw[1];
 				th[0] = Mess_TextHeight(text[0]);
 				tx[0] = -tw[0];
-				ty[0] = th[0] / 2 + 71 - Mess_TextHeightBelowBaseline__FPCc(text[0]);
+				ty[0] = th[0] / 2 + 71 - Mess_TextHeightBelowBaseline(text[0]);
 				int w20b = tw[0] + 20;
 
 				ttarget[0] = mid - w20b;
 				tstep[0] = (ttarget[0] - tx[0]) / 7;
-				tw[1] = Mess_TextWidth__FPCc(text[1]);
+				tw[1] = Mess_TextWidth(text[1]);
 				th[1] = Mess_TextHeight(text[1]);
 				tx[1] = 640;
-				ty[1] = th[1] / 2 + 71 - Mess_TextHeightBelowBaseline__FPCc(text[1]);
+				ty[1] = th[1] / 2 + 71 - Mess_TextHeightBelowBaseline(text[1]);
 				ttarget[1] = mid + 20;
 				tstep[1] = (ttarget[1] - tx[1]) / 7;
 			}
@@ -576,13 +571,13 @@ extern "C" void FUN_80066d7c() {
 			}
 
 			if (press == 1 || press == 2) {
-				SFX_PlayX__FUisi(144, 0x2000, 0);
+				SFX_PlayX(144, 0x2000, 0);
 				save->restore(ax, ay);
 
 				ax = Levels[sel].map_loc[0] - 16;
 				ay = Levels[sel].map_loc[1] - 16;
-				FUN_8008c468(0);
-				FUN_80066bb4(-1);
+				DrawSync(0);
+				LevelSelect_SelectPackSlot(-1);
 				delete save;
 				save = new EraseSprite(ax, ay, 32, 32);
 				state = 2;
@@ -592,8 +587,8 @@ extern "C" void FUN_80066d7c() {
 		if (DAT_800d238c >= 2)
 			DAT_800d238c--;
 
-		FUN_80070ff4();
-		FUN_8005c68c();
+		Pad_Update();
+		Front_CheckSoftReset();
 
 		if (DAT_800d1cb8)
 			break;
@@ -606,13 +601,13 @@ extern "C" void FUN_80066d7c() {
 			DAT_800d1dc4 = sel;
 
 			if (DAT_800bf2a0[sel]) {
-				SFX_PlayX__FUisi(145, 0x2000, 0);
+				SFX_PlayX(145, 0x2000, 0);
 
 				GCareer.LastLevel = sel;
 				break;
 			}
 
-			SFX_PlayX__FUisi(146, 0x2000, 0);
+			SFX_PlayX(146, 0x2000, 0);
 
 			if (Cheat_LevelSelect) {
 				GCareer.LastLevel = sel;
@@ -621,7 +616,7 @@ extern "C" void FUN_80066d7c() {
 		}
 
 		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
-			SFX_PlayX__FUisi(147, 0x2000, 0);
+			SFX_PlayX(147, 0x2000, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
@@ -633,17 +628,18 @@ extern "C" void FUN_80066d7c() {
 	}
 
 	if (Loading)
-		FileIO_Sync__Fv();
-	FUN_8006af64();
+		FileIO_Sync();
+
+	HiRes_BlankScreen();
 
 	for (int i = 0; i < DAT_800d237c; i++) {
 		delete DAT_800bf2f0[i];
 
 		if (DAT_800d3810[i])
-			Mem_Delete__FPv(DAT_800d3810[i]);
+			Mem_Delete(DAT_800d3810[i]);
 	}
 
-	FUN_80066c70();
+	LevelSelect_FreePackSlots();
 	Mess_SetCurrentFont("goalf.fnt");
 	Mess_UnloadFont();
 	Mess_SetCurrentFont("tapes1.fnt");
@@ -662,8 +658,10 @@ extern "C" void FUN_80066d7c() {
 	}
 
 	delete frame;
+
 	for (int i = 0; i < 4; i++)
 		delete arrowSpr[i];
+
 	delete save;
 	delete arrow;
 	delete topBar;

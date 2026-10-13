@@ -11,6 +11,7 @@ extern "C" {
 
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
 #include "game/bruce.h"
+#include "game/vector.h"
 
 static inline void SetVector(VECTOR *v, int _x, int _y, int _z) {
 	v->vx = _x;
@@ -20,12 +21,6 @@ static inline void SetVector(VECTOR *v, int _x, int _y, int _z) {
 
 void ProjectCVectorToPlane(CVector *, SVECTOR);
 
-extern "C" {
-	int Mips_CVecDotProd__FP7CVectorT0(void *, void *);
-	void Bail__6CBrucei13ELimitBailVel(CBruce *, int);
-	int FUN_800934e4(VECTOR *, VECTOR *);
-}
-
 void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
 	CVector InplaneVel;
 	int Speed;
@@ -34,12 +29,12 @@ void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
 	InplaneVel = mVel;
 	ProjectCVectorToPlane(&InplaneVel, Normal);
 
-	Speed = SquareRoot0(Mips_CVecDotProd__FP7CVectorT0(&InplaneVel, &InplaneVel)) << 6;
+	Speed = SquareRoot0(Mips_CVecDotProd(&InplaneVel, &InplaneVel)) << 6;
 
 	if (Speed <= 0x1e000)
 		return;
 
-	Dot = (Mips_CVecDotProd__FP7CVectorT0(&InplaneVel, &mFront) << 6) / (Speed >> 6);
+	Dot = (Mips_CVecDotProd(&InplaneVel, &mFront) << 6) / (Speed >> 6);
 
 	if (ABS(Dot) >= 1638)
 		return;
@@ -47,9 +42,9 @@ void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
 	FlipToVelocity();
 
 	{
-		int RightDot = Mips_CVecDotProd__FP7CVectorT0(&InplaneVel, &mRight);
+		int RightDot = Mips_CVecDotProd(&InplaneVel, &mRight);
 
-		Bail__6CBrucei13ELimitBailVel(this, 0);
+		Bail(0);
 
 		mPerpendicularBails++;
 
@@ -63,7 +58,7 @@ void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
 			if (ABS(v.vx) + ABS(v.vy) + ABS(v.vz) > 0x8000)
 				SetVector(&v, v.vx >> 4, v.vy >> 4, v.vz >> 4);
 
-			FUN_800934e4(&v, &v);
+			VectorNormal(&v, &v);
 
 			mFront.vx = -v.vx;
 			mFront.vy = -v.vy;

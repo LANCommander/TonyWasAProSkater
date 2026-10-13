@@ -1,4 +1,4 @@
-/* FUN_8001a1c8 (0x8001a1c8) */
+/* Front_SwitchOnEndHeat__Fv (0x8001a1c8) */
 #include "names.h"
 
 extern int GVInfo1[];
@@ -24,7 +24,7 @@ void Pad_ActuatorOff(unsigned char a, unsigned char b);
 void SFX_Pause(void);
 void SFX_PlayX(int a, int b, int c);
 
-void FUN_8001a1c8(void) {
+void Front_SwitchOnEndHeat(void) {
 	char *s;
 
 	DAT_800d1524 = 0;

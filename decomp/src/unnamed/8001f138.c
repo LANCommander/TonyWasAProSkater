@@ -1,6 +1,6 @@
-/* FUN_8001f138 (0x8001f138) */
+/* Mess_SetCurrentFont__Fi (0x8001f138) */
 int Current_font;
 
-void FUN_8001f138(int v) {
+void Mess_SetCurrentFont__Fi(int v) {
 	Current_font = v;
 }

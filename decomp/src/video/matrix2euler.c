@@ -3,7 +3,6 @@
 #include <sys/types.h>
 #include <libgte.h>
 
-int FUN_800936d4(int, int);
 void FUN_80095cb0(int, MATRIX *);
 
 void Matrix2Euler(MATRIX *mat, SVECTOR *out) {
@@ -13,13 +12,13 @@ void Matrix2Euler(MATRIX *mat, SVECTOR *out) {
 	m.m[0][1] = -m.m[0][1];
 	m.m[1][1] = -m.m[1][1];
 	m.m[2][1] = -m.m[2][1];
-	y = FUN_800936d4(m.m[0][2], m.m[2][2]) & 4095;
+	y = ratan2(m.m[0][2], m.m[2][2]) & 4095;
 	FUN_80095cb0(-y, &m);
 
-	x = FUN_800936d4(-m.m[1][2], m.m[2][2]) & 4095;
+	x = ratan2(-m.m[1][2], m.m[2][2]) & 4095;
 	FUN_80095cb0(-x, &m);
 
-	z = FUN_800936d4(m.m[1][0], m.m[1][1]) & 4095;
+	z = ratan2(m.m[1][0], m.m[1][1]) & 4095;
 	out->vy = y;
 	out->vx = x;
 	out->vz = z;

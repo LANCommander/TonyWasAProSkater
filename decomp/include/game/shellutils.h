@@ -139,15 +139,16 @@ class VerticalMenu : public CClass {
 	/* sizeof(VerticalMenu) == 0x334 */
 
 	VerticalMenu(int top, int bottom, int spacing, char **items, int num, int *xlist, int *ylist,
-	             int selection);          /* 0x800642e8 */
-	void setString(int i, char *pString); /* 0x800646b0 */
-	virtual ~VerticalMenu();              /* slot 0: 0x80064720 */
-	virtual void draw();                  /* slot 1: 0x80064990 */
-	void erase();                         /* 0x80064f9c */
-	void select(int i);                   /* 0x80065120 */
-	int getSelected();                    /* 0x8006516c */
-	void up();                            /* 0x80065178 */
-	void down();                          /* 0x80065230 */
+	             int selection);                   /* 0x800642e8 */
+	void setString(int i, char *pString);          /* 0x800646b0 */
+	virtual ~VerticalMenu();                       /* slot 0: 0x80064720 */
+	void setTriangles(Sprite *tri1, Sprite *tri2); /* 0x80064890 */
+	virtual void draw();                           /* slot 1: 0x80064990 */
+	void erase();                                  /* 0x80064f9c */
+	void select(int i);                            /* 0x80065120 */
+	int getSelected();                             /* 0x8006516c */
+	void up();                                     /* 0x80065178 */
+	void down();                                   /* 0x80065230 */
 };
 
 class VerticalDialog : public VerticalMenu {
@@ -159,7 +160,7 @@ class VerticalDialog : public VerticalMenu {
 	virtual void draw();           /* slot 1: 0x80065394 */
 };
 
-/* a front-end screen's files (DAT_800be478[15]; FUN_8005c8dc hands one to FileLoader::setFiles)
+/* a front-end screen's files (DAT_800be478[15]; FrontLoader_SetFiles hands one to FileLoader::setFiles)
    (THPS1-only, no demo twin) */
 struct SScreenFiles {
 	char *pName[32]; /* 0x00 */
@@ -189,5 +190,13 @@ class FileLoader : public CClass {
 	void setFiles(char **names, int num); /* 0x80065594 */
 	void unload(int i);                   /* 0x80065e04 (FUN_; C source) */
 };
+
+/* functions */
+void DownloadBMP16x2(char *pData);                                          /* 0x80061714 */
+void DrawColoredBox(int x, int y, int w, int h, uchar r, uchar g, uchar b); /* 0x80061d44 */
+void SetClippingBox(int x, int y, int w, int h);                            /* 0x80061e00 */
+void ResetOT();                                                             /* 0x80061ea0 */
+void SetOTPlayer(int player);                                               /* 0x80061eb4 */
+void PadBuffer_SetNumPlayers(int numPlayers);                               /* 0x800642d4 */
 
 #endif

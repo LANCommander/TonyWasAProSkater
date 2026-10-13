@@ -3,12 +3,12 @@
    career save's options (volumes, per-pad auto-kick/vibration/button mapping, display toggles,
    the HORSE word and the last high-score initials), sets the volume scalers, then remaps pads. */
 #include "game/career.h"
+#include "game/psyq.h"
 
 extern SOptions GPreferences;
 extern SCareer GCareer;
 extern int SFXLEVEL, XALEVEL;
 
-extern "C" int FUN_8008b900(char *, const char *, ...); /* sprintf (demo twin) */
 void Options_RemapControllers();
 
 void Options_SetPreferences() {
@@ -39,14 +39,14 @@ void Options_SetPreferences() {
 
 		SFXLEVEL = GCareer.Options.SFXVolume * 1365;
 		XALEVEL = GCareer.Options.MusicVolume * 1365;
-		FUN_8008b900(GCareer.Options.HorseWord, GPreferences.HorseWord);
+		sprintf(GCareer.Options.HorseWord, GPreferences.HorseWord);
 
 		GCareer.Options.HorseLen = GPreferences.HorseLen;
 
 		for (i = GPreferences.HorseLen; i < 11; i++)
 			GCareer.Options.HorseWord[i] = 0;
 
-		FUN_8008b900(GCareer.Options.LastHighScoreInitials, GPreferences.LastHighScoreInitials);
+		sprintf(GCareer.Options.LastHighScoreInitials, GPreferences.LastHighScoreInitials);
 	}
 
 	Options_RemapControllers();

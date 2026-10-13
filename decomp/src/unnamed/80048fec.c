@@ -1,4 +1,4 @@
-/* FUN_80048fec (0x80048fec) flags=-fstrict-aliasing */
+/* Db_WaitRender__Fv (0x80048fec) flags=-fstrict-aliasing */
 #include "names.h"
 
 typedef struct {
@@ -15,23 +15,23 @@ SBuffer *pVB;
 unsigned long pPoly;
 
 void Pause__Fi(int);
-void FUN_8008c468(int);
+void DrawSync(int);
 void Db_CallBack(void);
-int FUN_80048c74(void);
+int Db_OTSize(void);
 void FUN_8008c7d4(unsigned long *, int);
 
-void FUN_80048fec(void) {
+void Db_WaitRender(void) {
 	pVB = pDoubleBuffer;
 
 	while (pVB->Busy)
 		Pause__Fi(1);
 
 	if (pDoubleBuffer->Flag78) {
-		FUN_8008c468(0);
+		DrawSync(0);
 		Db_CallBack();
 	}
 
-	FUN_8008c7d4(pDoubleBuffer->OT, FUN_80048c74());
+	FUN_8008c7d4(pDoubleBuffer->OT, Db_OTSize());
 
 #ifdef PC_PORT
 	/* the PS1 drew through KUSEG (bit 31 clear); on PC main RAM is only at 0x80000000 */

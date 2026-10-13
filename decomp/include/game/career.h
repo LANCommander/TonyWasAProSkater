@@ -145,4 +145,16 @@ struct SPreferences {
 	uchar AnalogueSmartBomb;    /* 0x17 */
 }; /* size 0x18 */
 
+/* functions */
+/* medal kinds: callers pass 5/6/7 for gold/silver/bronze (competition/winlosedisplay); only the
+   type is known, for the mangled names */
+enum EMedalType { MEDAL_NONE };
+
+void Career_Init();                                   /* 0x80010000 */
+void Options_SetPreferences();                        /* 0x800101e4 */
+void Options_GetPreferences();                        /* 0x800103a4 */
+int Career_Got(int Goal);                             /* 0x800106e0 */
+void Career_GiveMedal(int Level, EMedalType medal);   /* 0x8001081c */
+void Front_SetPreferences(const SPreferences &Prefs); /* 0x800171e8 */
+
 #endif

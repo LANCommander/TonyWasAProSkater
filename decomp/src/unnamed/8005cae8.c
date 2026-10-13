@@ -1,4 +1,6 @@
-/* FUN_8005cae8 (0x8005cae8) */
+/* Front_FreeSpritesPRE__Fv (0x8005cae8) */
+#include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;
@@ -12,11 +14,11 @@ struct O {
 
 extern struct O *SpoolerBlocksFileIO;
 
-void FUN_8008c190(char *a);
+void printf(char *a);
 
-void FUN_8005cae8(void) {
+void Front_FreeSpritesPRE(void) {
 	if (SpoolerBlocksFileIO)
-		FUN_8008c190("\nNo PREMgr to delete");
+		printf("\nNo PREMgr to delete");
 
 	if (SpoolerBlocksFileIO)
 		SpoolerBlocksFileIO->vt->fn((char *)SpoolerBlocksFileIO + SpoolerBlocksFileIO->vt->off, 3);

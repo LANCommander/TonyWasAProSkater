@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","MikeCamera":"0x800c119c","DAT_800bf614":"0x800bf614","FUN_8008b238":"0x8008b238","FUN_80093100":"0x80093100","M3dInit_SetFoggingParams__FiiUi":"0x80082158"}
+{"gp":"0x800d1080","MikeCamera":"0x800c119c","DAT_800bf614":"0x800bf614","M3dMaths_SetIdentityRotation__FP6MATRIX":"0x8008b238","TransMatrix":"0x80093100","M3dInit_SetFoggingParams__FiiUi":"0x80082158"}

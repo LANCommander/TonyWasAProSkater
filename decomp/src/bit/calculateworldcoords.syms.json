@@ -1,1 +1,1 @@
-{"gp":"0x800d1080","FUN_8008b3d4":"0x8008b3d4","SetRotMatrix":"0x8008f76c","FUN_80089f54":"0x80089f54"}
+{"gp":"0x800d1080","M3dMaths_RotMatrixYXZ__FP7SVECTORP6MATRIX":"0x8008b3d4","SetRotMatrix":"0x8008f76c","M3dAsm_SetTransVector__FP6Vector":"0x80089f54"}

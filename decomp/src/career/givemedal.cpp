@@ -5,8 +5,6 @@
 #include "game/career.h"
 #include "game/bruce.h"
 
-enum EMedalType { MEDAL_NONE };
-
 extern CBruce *GSkater;
 extern SLevel Levels[];
 extern SCareer GCareer;

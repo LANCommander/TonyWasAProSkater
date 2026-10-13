@@ -22,6 +22,9 @@
 #include "game/pad.h"
 #include "game/tapes.h"
 #include "game/mess.h"
+#include "game/psyq.h"
+#include "game/competition.h"
+#include "game/gamefmv.h"
 
 enum EPausedStatus {
 	STATUS_NORMAL,
@@ -187,16 +190,6 @@ int Competition_NewHeat();
 void Competition_JudgeLogic();
 int Competition_JudgeFullyDisplayed();
 void RestartCompFrig();
-
-extern "C" {
-	int FUN_8008b900(char *, const char *, ...);
-	void FUN_8008f19c(int, int, int);
-	void FUN_8008f0ec(int);
-	void FUN_8008f4d4(int, int, int);
-	void FUN_80023528(void);
-	void FUN_80076484(void);
-	void FUN_80076494(void);
-}
 
 void Front_Update() {
 	int SoundEffect = -1;
@@ -387,8 +380,8 @@ void Front_Update() {
 				if (pPausedMenu->ChoiceIs(GameText.pChangeSoundLevels)) {
 					SoundEffect = 5;
 					Status = STATUS_SETSOUNDLEVELS;
-					FUN_8008f19c(0, 0, -1);
-					FUN_8008f0ec(480);
+					StSetMask(0, 0, -1);
+					CdRead2(480);
 				}
 
 				if (pPausedMenu->ChoiceIs(GameText.pEndGame)) {
@@ -843,7 +836,7 @@ void Front_Update() {
 					}
 				}
 
-				FUN_8008b900(GPreferences.HorseWord, GCareer.Options.HorseWord);
+				sprintf(GPreferences.HorseWord, GCareer.Options.HorseWord);
 
 				GHorseWordChosen = 1;
 				GHorseDoneStart = 0;
@@ -960,8 +953,8 @@ void Front_Update() {
 
 				if (Activated) {
 					SFX_PlayX(18, 8192, 0);
-					FUN_8008b900(GCareer.Options.LastHighScoreInitials,
-					             GCareer.HighScore[GLevel][GHighScoreLineIndex].Name);
+					sprintf(GCareer.Options.LastHighScoreInitials,
+					        GCareer.HighScore[GLevel][GHighScoreLineIndex].Name);
 
 					GHighScoreLineIndex = -1;
 					Status = STATUS_ENDINGSCREEN;
@@ -1087,7 +1080,7 @@ void Front_Update() {
 						Status = STATUS_ENDHEATWINLOSE;
 					}
 				} else {
-					FUN_80076494();
+					Competition_FullyDisplayLadder();
 					SFX_PlayX(52, 8192, 0);
 				}
 			}
@@ -1135,7 +1128,7 @@ void Front_Update() {
 								((CBruce *)MechList->mNextItem)->mTime = Xblanks + 216030;
 						}
 					} else {
-						FUN_80076484();
+						Competition_FullyDisplayJudge();
 						SFX_PlayX(52, 8192, 0);
 					}
 				}
@@ -1217,7 +1210,7 @@ void Front_Update() {
 						soundVol--;
 
 					GPreferences.SFXVolume = GCareer.Options.SFXVolume = soundVol * 6 / 5;
-					FUN_8008b900(soundBuf, GameText.pSFXLevel, soundVol);
+					sprintf(soundBuf, GameText.pSFXLevel, soundVol);
 
 					SFXLEVEL = GCareer.Options.SFXVolume * 0x555;
 					SFX_PlayX(5, 8192, 0);
@@ -1226,7 +1219,7 @@ void Front_Update() {
 						musicVol--;
 
 					GPreferences.MusicVolume = GCareer.Options.MusicVolume = musicVol * 6 / 5;
-					FUN_8008b900(musicBuf, GameText.pMusicLevel, musicVol);
+					sprintf(musicBuf, GameText.pMusicLevel, musicVol);
 				}
 			}
 
@@ -1239,7 +1232,7 @@ void Front_Update() {
 						soundVol++;
 
 					GPreferences.SFXVolume = GCareer.Options.SFXVolume = soundVol * 6 / 5;
-					FUN_8008b900(soundBuf, GameText.pSFXLevel, soundVol);
+					sprintf(soundBuf, GameText.pSFXLevel, soundVol);
 
 					SFXLEVEL = GCareer.Options.SFXVolume * 0x555;
 					SFX_PlayX(5, 8192, 0);
@@ -1248,13 +1241,13 @@ void Front_Update() {
 						musicVol++;
 
 					GPreferences.MusicVolume = GCareer.Options.MusicVolume = musicVol * 6 / 5;
-					FUN_8008b900(musicBuf, GameText.pMusicLevel, musicVol);
+					sprintf(musicBuf, GameText.pMusicLevel, musicVol);
 				}
 			}
 
 			if (Activated) {
 				if (pSoundMenu->ChoiceIs(GameText.pSkipTrack))
-					FUN_80023528();
+					GameFMV_SkipTrack();
 				else if (pSoundMenu->ChoiceIs(GameText.pBackToMainMenu))
 					GoBack = 1;
 			}
@@ -1264,8 +1257,8 @@ void Front_Update() {
 
 				Status = STATUS_PAUSEDMENU;
 				XALEVEL = GCareer.Options.MusicVolume * 0x555;
-				FUN_8008f19c(1, 0, -1);
-				FUN_8008f4d4(9, 0, 0);
+				StSetMask(1, 0, -1);
+				CdControlB(9, 0, 0);
 			}
 
 			break;

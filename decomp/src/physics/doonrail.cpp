@@ -17,8 +17,12 @@ extern "C" {
 }
 
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
+#include "game/bit.h"
 #include "game/bruce.h"
 #include "game/career.h"
+#include "game/sfx.h"
+#include "game/trickob.h"
+#include "game/vector.h"
 
 extern SStats Stats[];
 
@@ -44,21 +48,6 @@ void Bit_SetSparkTrajectory(const CSVector &);
 ushort *Trig_GetLinksPointer(int);
 void Trig_GetPosition(CVector &, int);
 void M3dUtils_NormaliseVector(CVector *);
-
-extern "C" {
-	void Bit_SetSparkTrajectoryCone__FRC8CSVector(CSVector *);
-	void *__nw__4CBitUi(int);
-	void __11CGrindSparkP5CBodyR7CVectoriii(void *, CBruce *, CVector *, int, int, int);
-	int FUN_8002f290(CBruce *, int, int);
-	void FUN_8002f438(CBruce *, int);
-	void Bail__6CBrucei13ELimitBailVel(CBruce *, int);
-	int FUN_8004f578(ushort *);
-	int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
-	int Mips_FixMul__Fii(int, int);
-	void SFX_PlayX__FUisi(int, int, int);
-	MATRIX *FUN_80093240(SVECTOR *, MATRIX *);
-	MATRIX *FUN_80093130(MATRIX *, MATRIX *);
-}
 
 void CBruce::DoOnRailPhysics() {
 	CVector SegStart;
@@ -163,17 +152,14 @@ void CBruce::DoOnRailPhysics() {
 				int i;
 
 				Cone.Set(450, 900, 0);
-				Bit_SetSparkTrajectoryCone__FRC8CSVector(&Cone);
+				Bit_SetSparkTrajectoryCone(Cone);
 
 				UseCacheForBits = 0;
 				Pos.vx = Pos.vz = 0;
 				Pos.vy = 0x19000;
 
 				for (i = 0; i < 9; i++) {
-					void *p = __nw__4CBitUi(120);
-
-					if (p)
-						__11CGrindSparkP5CBodyR7CVectoriii(p, this, &Pos, -40, 4096, 5);
+					new CGrindSpark(this, Pos, -40, 4096, 5);
 				}
 
 				UseCacheForBits = 1;
@@ -185,7 +171,7 @@ NoSparks:
 	CVector Diff = mPos - mLastScorePos;
 
 	if (Diff.Length() > 30) {
-		FUN_8002f438(this, FUN_8002f290(this, mGrindTrick + 66, DAT_800a7edc[mGrindTrick]) / 5);
+		Trick_HoldTrick(Trick_RepeatScore(mGrindTrick + 66, DAT_800a7edc[mGrindTrick]) / 5);
 
 		mLastScorePos = mPos;
 	}
@@ -197,14 +183,14 @@ NoSparks:
 	do {
 		int AccMagnitude;
 
-		NextSegment = FUN_8004f578(Trig_GetLinksPointer(mRailNode));
+		NextSegment = Rail_NextNode(Trig_GetLinksPointer(mRailNode));
 		Trig_GetPosition(SegStart, mRailNode);
 		Trig_GetPosition(SegEnd, NextSegment);
 
 		SegDir = SegEnd - SegStart;
 		M3dUtils_NormaliseVector(&SegDir);
 
-		Speed = Mips_CVecDotProd__FP7CVectorT0(&SegDir, &mVel);
+		Speed = Mips_CVecDotProd(&SegDir, &mVel);
 
 		if (FirstTimeThroughLoop) {
 			FirstTimeThroughLoop = 0;
@@ -223,13 +209,13 @@ NoSparks:
 			}
 		}
 
-		AccMagnitude = Mips_CVecDotProd__FP7CVectorT0(&SegDir, &mAcc);
-		mAcc.vx = Mips_FixMul__Fii(SegDir.vx, AccMagnitude);
-		mAcc.vy = Mips_FixMul__Fii(SegDir.vy, AccMagnitude);
-		mAcc.vz = Mips_FixMul__Fii(SegDir.vz, AccMagnitude);
-		mVel.vx = Mips_FixMul__Fii(SegDir.vx, Speed);
-		mVel.vy = Mips_FixMul__Fii(SegDir.vy, Speed);
-		mVel.vz = Mips_FixMul__Fii(SegDir.vz, Speed);
+		AccMagnitude = Mips_CVecDotProd(&SegDir, &mAcc);
+		mAcc.vx = Mips_FixMul(SegDir.vx, AccMagnitude);
+		mAcc.vy = Mips_FixMul(SegDir.vy, AccMagnitude);
+		mAcc.vz = Mips_FixMul(SegDir.vz, AccMagnitude);
+		mVel.vx = Mips_FixMul(SegDir.vx, Speed);
+		mVel.vy = Mips_FixMul(SegDir.vy, Speed);
+		mVel.vz = Mips_FixMul(SegDir.vz, Speed);
 		MajorAxis = 0;
 
 		if (ABS(SegDir.vy) > ABS(SegDir.vx)) {
@@ -265,7 +251,7 @@ NoSparks:
 			int PreviousSegment = -1;
 			int n;
 
-			for (n = mRailStart; n != mRailNode; n = FUN_8004f578(Trig_GetLinksPointer(n)))
+			for (n = mRailStart; n != mRailNode; n = Rail_NextNode(Trig_GetLinksPointer(n)))
 				PreviousSegment = n;
 
 			if (PreviousSegment == -1) {
@@ -282,9 +268,9 @@ NoSparks:
 				mDoingATrick = 0;
 
 				if (m210 == 1 && !m2EC)
-					SFX_PlayX__FUisi(16, 0x2000, 0);
+					SFX_PlayX(16, 0x2000, 0);
 			} else {
-				int NextSegment2 = FUN_8004f578(Trig_GetLinksPointer(PreviousSegment));
+				int NextSegment2 = Rail_NextNode(Trig_GetLinksPointer(PreviousSegment));
 				CVector SegStart2;
 				CVector SegEnd2;
 				CVector SegDir2;
@@ -295,7 +281,7 @@ NoSparks:
 				SegDir2 = SegEnd2 - SegStart2;
 				M3dUtils_NormaliseVector(&SegDir2);
 
-				if (Mips_CVecDotProd__FP7CVectorT0(&SegDir, &SegDir2) < 2633) {
+				if (Mips_CVecDotProd(&SegDir, &SegDir2) < 2633) {
 					StateTransition(PHYSICS_IN_AIR, 3440);
 
 					m70C = 5;
@@ -309,7 +295,7 @@ NoSparks:
 					mDoingATrick = 0;
 
 					if (m210 == 1 && !m2EC)
-						SFX_PlayX__FUisi(16, 0x2000, 0);
+						SFX_PlayX(16, 0x2000, 0);
 				} else {
 					RemainingSpeed = t;
 					mRailNode = PreviousSegment;
@@ -334,9 +320,9 @@ NoSparks:
 				mDoingATrick = 0;
 
 				if (m210 == 1 && !m2EC)
-					SFX_PlayX__FUisi(16, 0x2000, 0);
+					SFX_PlayX(16, 0x2000, 0);
 			} else {
-				int NextSegment2 = FUN_8004f578(Trig_GetLinksPointer(NextSegment));
+				int NextSegment2 = Rail_NextNode(Trig_GetLinksPointer(NextSegment));
 				CVector SegStart2;
 				CVector SegEnd2;
 				CVector SegDir2;
@@ -347,7 +333,7 @@ NoSparks:
 				SegDir2 = SegEnd2 - SegStart2;
 				M3dUtils_NormaliseVector(&SegDir2);
 
-				if (Mips_CVecDotProd__FP7CVectorT0(&SegDir, &SegDir2) < 2633) {
+				if (Mips_CVecDotProd(&SegDir, &SegDir2) < 2633) {
 					StateTransition(PHYSICS_IN_AIR, 3517);
 
 					m70C = 5;
@@ -361,7 +347,7 @@ NoSparks:
 					mDoingATrick = 0;
 
 					if (m210 == 1 && !m2EC)
-						SFX_PlayX__FUisi(16, 0x2000, 0);
+						SFX_PlayX(16, 0x2000, 0);
 				} else {
 					mRailNode = NextSegment;
 					RemainingSpeed = t - Length;
@@ -431,7 +417,7 @@ NoSparks:
 		mBalanceVel = Redbook_Rnd(80 - GetStat(3) * 3) - (80 - GetStat(3) * 3) / 2;
 
 	if (ABS(mBalance) > 4000) {
-		Bail__6CBrucei13ELimitBailVel(this, 0);
+		Bail(0);
 
 		mRailBails++;
 	}
@@ -450,8 +436,8 @@ NoSparks:
 			RotAngle.vz = 0;
 		}
 
-		FUN_80093240(&RotAngle, &Rail_RotMatrix);
-		FUN_80093130(&mRotMatrix, &Rail_RotMatrix);
+		RotMatrixYXZ(&RotAngle, &Rail_RotMatrix);
+		MulMatrix(&mRotMatrix, &Rail_RotMatrix);
 		FRUVectorsFromRotMatrix();
 	}
 }

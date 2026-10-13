@@ -6,9 +6,8 @@ extern "C" {
 	#include <inline_c.h>
 }
 
+#include "game/m3dasm.h"
 #include "game/vector.h"
-
-extern "C" int FUN_8008b5dc(int);
 
 /* MAC1-3 <- r0 (no INLINE_C.H macro for this) */
 #define gte_ldlvnl(r0)                                                                             \
@@ -134,5 +133,5 @@ int M3dUtils_LineLineClosestPoints(CVector *L1Start, CVector *L1End, CVector *L2
 	gte_ldlvl(&ApproachVec);
 	gte_sqr0();
 	gte_stlvnl(&SquaredVec);
-	return FUN_8008b5dc(SquaredVec.vx + SquaredVec.vy + SquaredVec.vz);
+	return M3dMaths_SquareRoot0(SquaredVec.vx + SquaredVec.vy + SquaredVec.vz);
 }

@@ -2,6 +2,8 @@
 /* C++ (COMPETITION.CPP). Fuzzy demo twin; CCompetition and the locals from its MAIN.SYM (pComp isn't listed
    there, but retail keeps the global's address in s2 from entry). */
 #include "game/competition.h"
+#include "game/mess.h"
+#include "game/psyq.h"
 
 struct SSkaterInfo {
 	char *pName;
@@ -14,9 +16,6 @@ extern char *GameText_180[];
 void Mess_DeleteAll();
 void Mess_SetScale(int);
 void Mess_SetRGB(uchar, uchar, uchar, int);
-extern "C" void Mess_SetTextJustify__FUc(int);
-extern "C" int FUN_8008b900(char *, char *, ...);
-extern "C" int Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int);
 int SFX_PlayX(unsigned int, short, int);
 void Front_PrintCentredPrompt(const char *);
 
@@ -29,27 +28,27 @@ void Competition_LadderDisplay() {
 
 	Mess_DeleteAll();
 	Mess_SetScale(256);
-	Mess_SetTextJustify__FUc(0);
+	Mess_SetTextJustify(0);
 	Mess_SetRGB(182, 132, 36, 0);
-	FUN_8008b900(text_buf, "COMPETITION STANDINGS");
-	Mess_DrawText__FiiPCciUiib(256, 40, text_buf, 0, 0, 256, 0);
-	Mess_SetTextJustify__FUc(1);
+	sprintf(text_buf, "COMPETITION STANDINGS");
+	Mess_DrawText(256, 40, text_buf, 0, 0, 256, 0);
+	Mess_SetTextJustify(1);
 	Mess_SetScale(120);
-	FUN_8008b900(text_buf, "        Heat");
-	Mess_DrawText__FiiPCciUiib(260, 50, text_buf, 0, 0, 256, 0);
-	FUN_8008b900(text_buf, "1         2         3           Total");
-	Mess_DrawText__FiiPCciUiib(260, 60, text_buf, 0, 0, 256, 0);
+	sprintf(text_buf, "        Heat");
+	Mess_DrawText(260, 50, text_buf, 0, 0, 256, 0);
+	sprintf(text_buf, "1         2         3           Total");
+	Mess_DrawText(260, 60, text_buf, 0, 0, 256, 0);
 	Mess_SetScale(160);
 
 	for (i = 0; i < 10; i++) {
-		FUN_8008b900(text_buf, "%s", Stats_2c[pComp->mCompetitorList[pComp->mOrdering[i]]].pName);
+		sprintf(text_buf, "%s", Stats_2c[pComp->mCompetitorList[pComp->mOrdering[i]]].pName);
 
 		if (pComp->mOrdering[i] == pComp->our_skater_num)
 			Mess_SetRGB(182, 132, 36, 0);
 		else
 			Mess_SetRGB(122, 122, 122, 0);
 
-		Mess_DrawText__FiiPCciUiib(90, i * 14 + 70, text_buf, 0, 0, 256, 0);
+		Mess_DrawText(90, i * 14 + 70, text_buf, 0, 0, 256, 0);
 	}
 
 	for (a = 0; a < 3; a++) {
@@ -133,25 +132,25 @@ void Competition_LadderDisplay() {
 			if (a < pComp->mCurrentHeat) {
 				ushort s = pComp->mScore[pComp->mOrdering[b]][a];
 
-				FUN_8008b900(text_buf, "%d.%d", s / 10, s % 10);
-				Mess_DrawText__FiiPCciUiib(a * 60 + 250, b * 14 + 70, text_buf, 0, 0, 256, 0);
+				sprintf(text_buf, "%d.%d", s / 10, s % 10);
+				Mess_DrawText(a * 60 + 250, b * 14 + 70, text_buf, 0, 0, 256, 0);
 			}
 
 			if (a == pComp->mCurrentHeat) {
 				if (b * 20 < pComp->mLadderTimer) {
 					ushort s = pComp->mScore[pComp->mOrdering[b]][a];
 
-					FUN_8008b900(text_buf, "%d.%d", s / 10, s % 10);
+					sprintf(text_buf, "%d.%d", s / 10, s % 10);
 				} else {
 					if (pComp->mOrdering[b] == pComp->our_skater_num)
 						Mess_SetRGB(182, 132, 36, 0);
 					else
 						Mess_SetRGB(122, 122, 122, 0);
 
-					FUN_8008b900(text_buf, "-");
+					sprintf(text_buf, "-");
 				}
 
-				Mess_DrawText__FiiPCciUiib(a * 60 + 250, b * 14 + 70, text_buf, 0, 0, 256, 0);
+				Mess_DrawText(a * 60 + 250, b * 14 + 70, text_buf, 0, 0, 256, 0);
 
 				if (pComp->mOrdering[b] == pComp->our_skater_num)
 					Mess_SetRGB(182, 132, 36, 0);
@@ -161,16 +160,16 @@ void Competition_LadderDisplay() {
 				if (b * 20 < pComp->mLadderTimer || pComp->mCurrentHeat) {
 					ushort s = pComp->mTotalScore[pComp->mOrdering[b]];
 
-					FUN_8008b900(text_buf, "%d.%d", s / 10, s % 10);
+					sprintf(text_buf, "%d.%d", s / 10, s % 10);
 				} else
-					FUN_8008b900(text_buf, "-");
+					sprintf(text_buf, "-");
 
-				Mess_DrawText__FiiPCciUiib(450, b * 14 + 70, text_buf, 0, 0, 256, 0);
+				Mess_DrawText(450, b * 14 + 70, text_buf, 0, 0, 256, 0);
 			}
 
 			if (a > pComp->mCurrentHeat) {
-				FUN_8008b900(text_buf, "-");
-				Mess_DrawText__FiiPCciUiib(a * 60 + 250, b * 14 + 70, text_buf, 0, 0, 256, 0);
+				sprintf(text_buf, "-");
+				Mess_DrawText(a * 60 + 250, b * 14 + 70, text_buf, 0, 0, 256, 0);
 			}
 		}
 	}

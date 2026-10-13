@@ -1,4 +1,4 @@
-/* FUN_8006b01c (0x8006b01c) flags=-fstrict-aliasing */
+/* HiRes_Init__Fi (0x8006b01c) flags=-fstrict-aliasing */
 #include "names.h"
 
 typedef struct {
@@ -27,14 +27,14 @@ extern short M3d_OTPushback, M3d_OTPushback2;
 void FUN_8008c3d0(int);
 int Mem_NewX(int, int, int);
 void FUN_80092e70(void *, int, int, int, int);
-void FUN_800914fc(void *, int, int, int, int);
+void SetDefDispEnv(void *, int, int, int, int);
 void FUN_80048d00(void);
 int FUN_8008c94c(void *);
-void FUN_8008ca0c(void *);
-void FUN_8006af64(void);
+void PutDispEnv(void *);
+void HiRes_BlankScreen(void);
 void M3dInit_SetResolution(int, int);
 
-void FUN_8006b01c(int a) {
+void HiRes_Init(int a) {
 	int v;
 	char *s2;
 
@@ -46,9 +46,9 @@ void FUN_8006b01c(int a) {
 	FUN_80092e70(&DoubleBuffer, 0, 0, 640, 480);
 
 	s2 = (char *)&DoubleBuffer + 92;
-	FUN_800914fc(s2, 0, 0, 640, 480);
+	SetDefDispEnv(s2, 0, 0, 640, 480);
 	FUN_80092e70(&DAT_800b09c8, 0, 0, 640, 480);
-	FUN_800914fc(DAT_800b0a24, 0, 0, 640, 480);
+	SetDefDispEnv(DAT_800b0a24, 0, 0, 640, 480);
 	FUN_80048d00();
 
 	DoubleBuffer.b17 = 0;
@@ -62,10 +62,10 @@ void FUN_8006b01c(int a) {
 	DAT_800b09c8.b1a = 0;
 	DAT_800b09c8.b1b = 255;
 	FUN_8008c94c(&DoubleBuffer);
-	FUN_8008ca0c(s2);
+	PutDispEnv(s2);
 
 	if (a)
-		FUN_8006af64();
+		HiRes_BlankScreen();
 
 	DoubleBuffer.b17 = 0;
 	DoubleBuffer.b18 = 0;

@@ -46,19 +46,19 @@ enum ELimitBailVel { DO_LIMIT, DONT_LIMIT };
 
 class CBruce : public CSuper {
   public:
-	uchar *mpStatBonus; /* 0x198: per-stat board bonus */
-	int mBailNumber;    /* 0x19c */
-	CCar *mLastCar;     /* 0x1a0: car last collided with */
-	CVector m1A4;       /* 0x1a4 */
-	CVector m1B0;       /* 0x1b0 */
-	CVector mSafePos;   /* 0x1bc */
-	CVector mGravity;   /* 0x1c8 (ctor: 0,1000,0) */
-	char pad1d4[0x1d8 - 0x1d4];
-	CCamera *mpCamera;  /* 0x1d8 */
-	CVector m1DC;       /* 0x1dc */
-	int m1E8;           /* 0x1e8 */
-	int m1EC;           /* 0x1ec */
-	int mGraffitiCount; /* 0x1f0 */
+	uchar *mpStatBonus;    /* 0x198: per-stat board bonus */
+	int mBailNumber;       /* 0x19c */
+	CCar *mLastCar;        /* 0x1a0: car last collided with */
+	CVector m1A4;          /* 0x1a4 */
+	CVector m1B0;          /* 0x1b0 */
+	CVector mSafePos;      /* 0x1bc */
+	CVector mGravity;      /* 0x1c8 (ctor: 0,1000,0) */
+	CBruce *mpOtherSkater; /* 0x1d4 the other player's skater (HandlePlayerCollisions) */
+	CCamera *mpCamera;     /* 0x1d8 */
+	CVector m1DC;          /* 0x1dc */
+	int m1E8;              /* 0x1e8 */
+	int m1EC;              /* 0x1ec */
+	int mGraffitiCount;    /* 0x1f0 */
 	char pad1f4[0x1f8 - 0x1f4];
 	int m1F8;    /* 0x1f8 */
 	int m1FC;    /* 0x1fc */
@@ -244,16 +244,28 @@ class CBruce : public CSuper {
 	CPanelData mPanel; /* 0x924 */
 	/* sizeof(CBruce) == 0xe1c */
 
-	CBruce();           /* 0x80041e5c */
-	virtual ~CBruce();  /* slot 0: 0x80042380 */
-	virtual void Die(); /* slot 1: 0x80042778 */
-	virtual void AI();  /* slot 2: 0x80042d04 */
+	void Trick_TakeOff();             /* 0x8002f1a0 */
+	int Trick_RepeatScore(int, int);  /* 0x8002f290 */
+	void Trick_HoldTrick(int);        /* 0x8002f438 */
+	void Trick_Bonus(int);            /* 0x8002f458 */
+	void FrigDarkenObject();          /* 0x8003036c */
+	void HandleHoldTrick();           /* 0x80031500 */
+	void ScoreCurrentTrick();         /* 0x8003159c */
+	void SkateOffGround();            /* 0x8003434c */
+	int CheckSide(int);               /* 0x800343f0 */
+	void HandleLeaningBail(SVECTOR);  /* 0x80035f30 */
+	void HandlePlayerCollisions();    /* 0x8003b2f0 */
+	CBruce();                         /* 0x80041e5c */
+	virtual ~CBruce();                /* slot 0: 0x80042380 */
+	void SetGlow(int, int, int, int); /* 0x80042700 */
+	int CanCollect(short);            /* 0x80042744 */
+	virtual void Die();               /* slot 1: 0x80042778 */
+	virtual void AI();                /* slot 2: 0x80042d04 */
 	/* slot 3 (EveryFrame) is CBody's */
 	virtual void DoLightingSetup();             /* slot 4: 0x800425b8 (empty) */
 	virtual int Hit(int, const CVector &, int); /* slot 5: 0x800427c4 (returns 1) */
 	virtual void DeleteStuff();                 /* slot 6: 0x800427bc (empty) */
 
-	void Trick_HoldTrick(int);                        /* 0x8001d528 */
 	void TempRestore();                               /* 0x8002f118 */
 	void Trick_PlayerInit(ushort);                    /* 0x8002f178 */
 	void Trick_Trick(int, char *, int, int);          /* 0x8002f340 */
@@ -267,7 +279,7 @@ class CBruce : public CSuper {
 	void Debug_RunAnim2(int, int, int, int);          /* 0x8002fd80 */
 	void Debug_RunAnim3(int, int, int, int, int);     /* 0x8002fde4 */
 	void ResetTrickBuffers();                         /* 0x8002fe50 */
-	void Bail(int, ELimitBailVel);                    /* 0x8002fe9c */
+	void Bail(int BailNumber);                        /* 0x8002fe9c */
 	void TrickObRail();                               /* 0x80030434 */
 	void HandleStickToRail();                         /* 0x8003058c */
 	void HandleBailOnLanding(int);                    /* 0x80031108 */

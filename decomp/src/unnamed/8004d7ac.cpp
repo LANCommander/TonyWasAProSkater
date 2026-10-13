@@ -1,11 +1,11 @@
-/* FUN_8004d7ac (0x8004d7ac) */
+/* Mem_GetHandle__FPv (0x8004d7ac) */
 /* MEM: makes a handle {p, serial} for a heap block, or {0} if p isn't a live block (a non-negative
-   serial in the header's first word, parent heap -2/0/1, a sane size). FUN_8004d83c checks one.
+   serial in the header's first word, parent heap -2/0/1, a sane size). Mem_CheckHandle checks one.
    The `default: return h;` in the switch is what stops cse skip-blocks from reusing the first
    pNext load. */
 #include "game/mem.h"
 
-SMemHandle FUN_8004d7ac(void *p) {
+SMemHandle Mem_GetHandle(void *p) {
 	SMemHandle h;
 
 	h.p = 0;

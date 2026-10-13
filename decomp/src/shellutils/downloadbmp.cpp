@@ -3,12 +3,9 @@ extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
-
-	int LoadImage(RECT *, u_long *);
-	int DrawSync(int);
-	void printf(char *, ...);
 }
 
+#include "game/psyq.h"
 #include "game/types.h"
 
 void *Mem_New(unsigned int, int, int);

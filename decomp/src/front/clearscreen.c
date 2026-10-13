@@ -6,19 +6,19 @@ typedef struct {
 extern int GameFade;
 extern RECT DAT_800d1444[];
 
-int FUN_8008c5ec(RECT *, int, int, int);
-int FUN_8008c468(int);
+int ClearImage(RECT *, int, int, int);
+int DrawSync(int);
 
 void Front_ClearScreen(void) {
 	RECT r;
 
 	GameFade = 0;
 	r = DAT_800d1444[0];
-	FUN_8008c5ec(&r, 0, 0, 0);
-	FUN_8008c468(0);
+	ClearImage(&r, 0, 0, 0);
+	DrawSync(0);
 
 	r.y = 511;
 	r.h = 1;
-	FUN_8008c5ec(&r, 0, 0, 0);
-	FUN_8008c468(0);
+	ClearImage(&r, 0, 0, 0);
+	DrawSync(0);
 }

@@ -10,13 +10,13 @@ int Current_font;
 
 extern Font Font_table[];
 
-extern int FUN_8008f6fc(char *, char *);
+extern int strcmp(char *, char *);
 
 void Mess_SetCurrentFont(char *name) {
 	int i;
 
 	for (i = 0; i < Num_fonts; i++) {
-		if (!FUN_8008f6fc(name, Font_table[i].name))
+		if (!strcmp(name, Font_table[i].name))
 			break;
 	}
 

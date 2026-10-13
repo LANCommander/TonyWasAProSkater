@@ -1,4 +1,6 @@
-/* FUN_80085018 (0x80085018) */
+/* RenderModelNonRotated__FP6SModelP6VECTOR (0x80085018) */
+#include "names.h"
+
 typedef struct {
 	int a, b;
 } E;
@@ -28,7 +30,7 @@ void FUN_80086f40(E *, E *, int);
 #include <stdlib.h>
 #endif
 
-void FUN_80085018(P *p, int c) {
+void RenderModelNonRotated(P *p, int c) {
 	E *v = p->v;
 	int n = p->n;
 	int r = FUN_80086d2c(v, n, c);

@@ -4,6 +4,8 @@
    Lever: the second link test uses its own pointer local (reusing pLink changes the branch layout). */
 #include "game/m3d.h"
 #include "game/bruce.h"
+#include "game/mem.h"
+#include "game/trickob.h"
 
 extern SPSXRegion PSXRegion[];
 extern short **OffsetList;
@@ -11,12 +13,6 @@ extern int GGame;
 
 ushort *Trig_GetLinksPointer(int);
 Item *Spool_FindEnviroItem(uint);
-
-extern "C" {
-	void FUN_8003036c(CBruce *);
-	SMemHandle FUN_8004d7ac(void *);
-	void FUN_8004f000(Item *, CBruce *, int);
-}
 
 void CBruce::TrickObRail() {
 	short *pNode;
@@ -41,12 +37,12 @@ void CBruce::TrickObRail() {
 
 		uint Checksum = *(uint *)pNode;
 
-		FUN_8003036c(this);
+		FrigDarkenObject();
 
 		mpWallItem = Spool_FindEnviroItem(Checksum);
-		mWallHandle = FUN_8004d7ac(PSXRegion[mpWallItem->Region].pPSX);
+		mWallHandle = Mem_GetHandle(PSXRegion[mpWallItem->Region].pPSX);
 
 		if (GGame == 1)
-			FUN_8004f000(mpWallItem, this, -1);
+			TrickOb_TrickedOnItem(mpWallItem, this, -1);
 	}
 }

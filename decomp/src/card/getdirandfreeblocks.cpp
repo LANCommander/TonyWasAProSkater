@@ -8,6 +8,8 @@
    - An empty asm forcing the copy hides i's start value from loop.c, which then adds a
      loop guard (+4 words).
    So the copy must come from an RTL shape that we haven't found. */
+#include "game/psyq.h"
+
 struct DIRENTRY {
 	char name[20];
 	long attr;
@@ -20,7 +22,6 @@ struct DIRENTRY {
 extern "C" {
 	extern struct DIRENTRY *firstfile(char *, struct DIRENTRY *);
 	extern struct DIRENTRY *nextfile(struct DIRENTRY *);
-	int sprintf(char *, const char *, ...);
 }
 
 int Utils_CompareStrings(const char *, const char *, unsigned int);

@@ -1,4 +1,6 @@
-/* FUN_80084d18 (0x80084d18) */
+/* RenderModel__FP6SModel (0x80084d18) */
+#include "names.h"
+
 typedef struct {
 	int a, b;
 } E;
@@ -28,7 +30,7 @@ void FUN_80086f40(E *, E *, int);
 #include <stdlib.h>
 #endif
 
-void FUN_80084d18(P *p) {
+void RenderModel(P *p) {
 	E *v = p->v;
 	int n = p->n;
 	int r = FUN_80085d28(v, n);

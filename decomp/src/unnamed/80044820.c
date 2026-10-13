@@ -1,7 +1,7 @@
 /* CreateCommandPoint__FUiUsPUs (0x80044820) */
 #include "names.h"
 
-/* Allocates a trigger node (see FUN_80044a20): linked into the id's hash chain (on the id's low
+/* Allocates a trigger node (see Trig_TriggerCommandPoint): linked into the id's hash chain (on the id's low
    byte) and onto the list of all triggers. */
 typedef struct STrig {
 	char *pScript;

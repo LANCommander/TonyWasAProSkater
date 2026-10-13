@@ -19,7 +19,7 @@ extern int M3dColij_OneMask, M3dColij_ZeroMask, LineOfSightCheck, BulletCollisio
     BaddyCollisionCheck, CameraCollisionCheck, TriggerCollisionCheck;
 extern int EnvironmentalObjectList;
 
-int FUN_8008b62c(int, int, int);
+int M3dMaths_MulDiv64__Fiii(int, int, int);
 void M3dColij_LineToItemZoned(int, SLine *);
 void M3dColij_LineToItem(int, SLine *);
 void M3dColij_GetLineInfo(SLine *);
@@ -93,50 +93,50 @@ void M3dZone_LineToItemNotSCached(SLine *line, int items) {
 		}
 
 		if (x0 < minx) {
-			z0 = (z0 < z1) ? z0 + FUN_8008b62c(minx - x0, z1 - z0, x1 - x0)
-			               : z1 + FUN_8008b62c(x1 - minx, z0 - z1, x1 - x0);
+			z0 = (z0 < z1) ? z0 + M3dMaths_MulDiv64__Fiii(minx - x0, z1 - z0, x1 - x0)
+			               : z1 + M3dMaths_MulDiv64__Fiii(x1 - minx, z0 - z1, x1 - x0);
 			x0 = minx;
 		}
 
 		if (x1 < minx) {
-			z1 = (z1 < z0) ? z1 + FUN_8008b62c(minx - x1, z0 - z1, x0 - x1)
-			               : z0 + FUN_8008b62c(x0 - minx, z1 - z0, x0 - x1);
+			z1 = (z1 < z0) ? z1 + M3dMaths_MulDiv64__Fiii(minx - x1, z0 - z1, x0 - x1)
+			               : z0 + M3dMaths_MulDiv64__Fiii(x0 - minx, z1 - z0, x0 - x1);
 			x1 = minx;
 		}
 
 		if (maxx < x0) {
-			z0 = (z1 < z0) ? z1 + FUN_8008b62c(maxx - x1, z0 - z1, x0 - x1)
-			               : z0 + FUN_8008b62c(x0 - maxx, z1 - z0, x0 - x1);
+			z0 = (z1 < z0) ? z1 + M3dMaths_MulDiv64__Fiii(maxx - x1, z0 - z1, x0 - x1)
+			               : z0 + M3dMaths_MulDiv64__Fiii(x0 - maxx, z1 - z0, x0 - x1);
 			x0 = maxx;
 		}
 
 		if (maxx < x1) {
-			z1 = (z0 < z1) ? z0 + FUN_8008b62c(maxx - x0, z1 - z0, x1 - x0)
-			               : z1 + FUN_8008b62c(x1 - maxx, z0 - z1, x1 - x0);
+			z1 = (z0 < z1) ? z0 + M3dMaths_MulDiv64__Fiii(maxx - x0, z1 - z0, x1 - x0)
+			               : z1 + M3dMaths_MulDiv64__Fiii(x1 - maxx, z0 - z1, x1 - x0);
 			x1 = maxx;
 		}
 
 		if (z0 < minz) {
-			x0 = (x0 < x1) ? x0 + FUN_8008b62c(minz - z0, x1 - x0, z1 - z0)
-			               : x1 + FUN_8008b62c(z1 - minz, x0 - x1, z1 - z0);
+			x0 = (x0 < x1) ? x0 + M3dMaths_MulDiv64__Fiii(minz - z0, x1 - x0, z1 - z0)
+			               : x1 + M3dMaths_MulDiv64__Fiii(z1 - minz, x0 - x1, z1 - z0);
 			z0 = minz;
 		}
 
 		if (z1 < minz) {
-			x1 = (x1 < x0) ? x1 + FUN_8008b62c(minz - z1, x0 - x1, z0 - z1)
-			               : x0 + FUN_8008b62c(z0 - minz, x1 - x0, z0 - z1);
+			x1 = (x1 < x0) ? x1 + M3dMaths_MulDiv64__Fiii(minz - z1, x0 - x1, z0 - z1)
+			               : x0 + M3dMaths_MulDiv64__Fiii(z0 - minz, x1 - x0, z0 - z1);
 			z1 = minz;
 		}
 
 		if (maxz < z0) {
-			x0 = (x1 < x0) ? x1 + FUN_8008b62c(maxz - z1, x0 - x1, z0 - z1)
-			               : x0 + FUN_8008b62c(z0 - maxz, x1 - x0, z0 - z1);
+			x0 = (x1 < x0) ? x1 + M3dMaths_MulDiv64__Fiii(maxz - z1, x0 - x1, z0 - z1)
+			               : x0 + M3dMaths_MulDiv64__Fiii(z0 - maxz, x1 - x0, z0 - z1);
 			z0 = maxz;
 		}
 
 		if (maxz < z1) {
-			x1 = (x0 < x1) ? x0 + FUN_8008b62c(maxz - z0, x1 - x0, z1 - z0)
-			               : x1 + FUN_8008b62c(z1 - maxz, x0 - x1, z1 - z0);
+			x1 = (x0 < x1) ? x0 + M3dMaths_MulDiv64__Fiii(maxz - z0, x1 - x0, z1 - z0)
+			               : x1 + M3dMaths_MulDiv64__Fiii(z1 - maxz, x0 - x1, z1 - z0);
 			z1 = maxz;
 		}
 
@@ -181,8 +181,8 @@ void M3dZone_LineToItemNotSCached(SLine *line, int items) {
 		if (ez == Zones[i].nz)
 			ez--;
 
-		a = FUN_8008b62c(dx, rz, cell);
-		b = FUN_8008b62c(dz, rx, cell);
+		a = M3dMaths_MulDiv64__Fiii(dx, rz, cell);
+		b = M3dMaths_MulDiv64__Fiii(dz, rx, cell);
 
 		if (x0 < x1)
 			e = b - dz;

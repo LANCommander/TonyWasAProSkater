@@ -7,6 +7,7 @@
 #include "game/car.h"
 #include "game/bruce.h"
 #include "game/video.h"
+#include "game/sfx.h"
 
 extern SVideoInfo GVInfo1;
 extern SVideoInfo GVInfo2;
@@ -17,7 +18,6 @@ int Redbook_Rnd(int);
 
 extern "C" {
 	int Mips_DotProd2Sign(int, int, int, int);
-	int SFX_PlayX__FUisi(int, short, int);
 }
 
 void HonkAtSkaters(CCar *pCar, CVector Front) {
@@ -64,16 +64,16 @@ void HonkAtSkaters(CCar *pCar, CVector Front) {
 		if (!pCar->mHonkLock) {
 			switch (pCar->mType) {
 				case 213:
-					SFX_PlayX__FUisi(Redbook_Rnd(3) + 110, 0x2000, 0);
+					SFX_PlayX(Redbook_Rnd(3) + 110, 0x2000, 0);
 					break;
 				case 214:
-					SFX_PlayX__FUisi(122, 0x2000, 0);
+					SFX_PlayX(122, 0x2000, 0);
 					break;
 				case 215:
-					SFX_PlayX__FUisi(130, 0x2000, 0);
+					SFX_PlayX(130, 0x2000, 0);
 					break;
 				case 216:
-					SFX_PlayX__FUisi(120, 0x2000, 0);
+					SFX_PlayX(120, 0x2000, 0);
 					break;
 			}
 

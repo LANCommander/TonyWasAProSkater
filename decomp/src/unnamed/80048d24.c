@@ -1,4 +1,6 @@
-/* FUN_80048d24 (0x80048d24) */
+/* Db_DrawPending__Fv (0x80048d24) */
+#include "names.h"
+
 typedef struct {
 	char p0[0x70];
 	int f70;
@@ -11,16 +13,16 @@ typedef struct {
 
 extern E DoubleBuffer[];
 
-extern int FUN_80048c74(void);
+extern int Db_OTSize(void);
 extern int FUN_8008c94c(void *a);
-extern int FUN_8008c8dc(void *a);
+extern int DrawOTag(void *a);
 
 #ifdef PC_PORT
 #include <stdio.h>
 #include <stdlib.h>
 #endif
 
-void FUN_80048d24(void) {
+void Db_DrawPending(void) {
 	int i;
 	int *q;
 
@@ -31,8 +33,8 @@ void FUN_80048d24(void) {
 				DoubleBuffer[i].f78 = 1;
 				FUN_8008c94c(&DoubleBuffer[i]);
 
-				q = &DoubleBuffer[i].arr[FUN_80048c74()];
-				FUN_8008c8dc(q - 1);
+				q = &DoubleBuffer[i].arr[Db_OTSize()];
+				DrawOTag(q - 1);
 #ifdef PC_PORT
 				if (getenv("THPS_TRACE_CULL")) {
 					extern volatile unsigned pc_heartbeat;

@@ -3,7 +3,7 @@
 
 void Spool_Sync(void);
 void FileIO_Sync(void);
-void FUN_80065e04(int *p, int i);
+void FileLoader_unload(int *p, int i);
 
 void FUN_80065d80(int *p) {
 	int i;
@@ -14,7 +14,7 @@ void FUN_80065d80(int *p) {
 		FileIO_Sync();
 
 	for (i = 0; i < p[2]; i++)
-		FUN_80065e04(p, i);
+		FileLoader_unload(p, i);
 
 	p[3] = 0;
 }

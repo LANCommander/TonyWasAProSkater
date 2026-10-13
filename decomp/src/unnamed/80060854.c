@@ -1,4 +1,6 @@
 /* FUN_80060854 (0x80060854) */
+#include "names.h"
+
 typedef struct {
 	unsigned char a, b, c, d, e[10];
 } R;
@@ -8,8 +10,8 @@ extern int Cheat_LevelSelect;
 
 int DAT_800d1d7c, DAT_800d1d80;
 
-int FUN_8005e0e0(char **, int *, int, int, int *, int, int, int, int);
-void FUN_8008c190(char *);
+int Front_RunMenu(char **, int *, int, int, int *, int, int, int, int);
+void printf(char *);
 
 int FUN_80060854(int a) {
 	char *l[2] = { "GET ALL TAPES", "UNLOCK OR LOCK LEVELS" };
@@ -18,7 +20,7 @@ int FUN_80060854(int a) {
 
 	k[0] = 0;
 	k[1] = 0;
-	v = FUN_8005e0e0(l, k, 2, 112, &a, 0, 0, 0, 0);
+	v = Front_RunMenu(l, k, 2, 112, &a, 0, 0, 0, 0);
 
 	if (v == 113) {
 		DAT_800d1d7c = 1;
@@ -42,9 +44,9 @@ int FUN_80060854(int a) {
 		Cheat_LevelSelect = Cheat_LevelSelect ^ 1;
 
 		if (Cheat_LevelSelect == 0)
-			FUN_8008c190("\nLevels locked");
+			printf("\nLevels locked");
 		else
-			FUN_8008c190("\nLevels unlocked");
+			printf("\nLevels unlocked");
 	}
 
 	return -1;
