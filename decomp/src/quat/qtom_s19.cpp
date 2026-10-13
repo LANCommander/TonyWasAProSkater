@@ -1,7 +1,7 @@
 /* QToM__FRC5CQuatR6MATRIX (0x800775e8) */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
+	#include <sys/types.h>
+	#include <libgte.h>
 }
 
 #include "game/vector.h"

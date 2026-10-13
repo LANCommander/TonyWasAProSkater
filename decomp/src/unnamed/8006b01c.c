@@ -1,5 +1,6 @@
 /* FUN_8006b01c (0x8006b01c) flags=-fstrict-aliasing */
 #include "names.h"
+
 typedef struct {
 	char p0[0x17];
 	char b17, b18, b19, b1a, b1b;

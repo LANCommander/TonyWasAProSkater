@@ -1,5 +1,6 @@
 /* Front_PrintSelect__Fv (0x80017978) */
 #include "names.h"
+
 typedef struct {
 	int pad[2];
 } SAnimFrame;

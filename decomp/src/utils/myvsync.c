@@ -1,5 +1,6 @@
 /* MyVSync__Fv (0x80047870) */
 #include "names.h"
+
 int Vblanks;
 int Xblanks, DoVblankProcessing;
 

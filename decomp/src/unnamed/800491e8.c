@@ -1,5 +1,6 @@
 /* FUN_800491e8 (0x800491e8) flags=-fstructure-noalias */
 #include "names.h"
+
 typedef struct {
 	short x, y, w, h;
 } R;

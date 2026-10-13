@@ -1,5 +1,6 @@
 /* Spool_Init__Fv (0x8006ec14) */
 #include "names.h"
+
 typedef struct {
 	char a0;
 	char pad0[9];

@@ -1,5 +1,6 @@
 /* ReplaceTexture__FUiPc (0x800247a8) */
 #include "names.h"
+
 typedef struct {
 	char pad[24];
 	unsigned char *info;

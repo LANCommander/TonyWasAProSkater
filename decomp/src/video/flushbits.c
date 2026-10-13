@@ -1,5 +1,6 @@
 /* FlushBits__FP10SVideoInfo (0x80068bf8) */
 #include "names.h"
+
 typedef struct {
 	int state, f4, f8, fc;
 	unsigned *p;

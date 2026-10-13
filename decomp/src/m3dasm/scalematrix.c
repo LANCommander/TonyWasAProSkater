@@ -11,15 +11,17 @@ struct Item {
 
 /* Scales the columns of m's rotation by the item's per-axis scale: column c is multiplied by
  * Scale[c] (4.12) on the GTE (GPF, sf=1: IR0 = scale, IR1..3 = the column). */
-void M3dMaths_ScaleMatrix__FP4ItemP6MATRIX(struct Item *item, MATRIX *m)
-{
+void M3dMaths_ScaleMatrix__FP4ItemP6MATRIX(struct Item *item, MATRIX *m) {
 	int c, r;
 
 	for (c = 0; c < 3; c++) {
 		PC_GteSetData(8, (uint32_t)(int)item->Scale[c]);
+
 		for (r = 0; r < 3; r++)
 			PC_GteSetData(9 + r, (uint32_t)(int)m->m[r][c]);
+
 		gte_gpf12();
+
 		for (r = 0; r < 3; r++)
 			m->m[r][c] = (short)PC_GteGetData(9 + r);
 	}

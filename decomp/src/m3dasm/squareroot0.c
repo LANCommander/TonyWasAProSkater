@@ -12,15 +12,17 @@ extern unsigned short SquareRootTable[3072];
  * with n) gives the shift that normalises n by an even amount; the top 12 bits of the
  * normalised value index the table and the result is shifted back by half that amount.
  * Negative n (no normalisation) looks up its top 12 bits directly. */
-int M3dMaths_SquareRoot0__Fi(int n)
-{
+int M3dMaths_SquareRoot0__Fi(int n) {
 	unsigned shift, top12;
 
 	gte_ldlzc(n);
+
 	if (n < 0)
 		return SquareRootTable[((unsigned)n >> 20) - 1024];
+
 	if (n == 0)
 		return 0; /* retail reads index 0 and shifts it right by 16: always 0 */
+
 	shift = PC_GteGetData(31) & ~1u;
 	top12 = ((unsigned)n << shift) >> 20;
 	return SquareRootTable[top12 - 1024] >> (shift / 2);

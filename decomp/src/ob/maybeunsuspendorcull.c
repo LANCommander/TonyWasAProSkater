@@ -1,5 +1,6 @@
 /* Ob_MaybeUnSuspendOrCull__Fv (0x800446d4) */
 #include "names.h"
+
 typedef struct CBody {
 	char _0[4];
 	int pos[3];

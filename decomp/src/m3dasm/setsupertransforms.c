@@ -6,7 +6,6 @@
 /* Loads the GTE with the transforms for one part of a super item (see supertransforms.h):
  * rotation = A * Rc, translation = A * (Tc >> 4) + At, light matrix = B * Rc. The frame's
  * translation is stored in 16ths of a unit, hence the >> 4. */
-void M3dAsm_SetSuperTransforms__FP6MATRIXT0P7SMatrix(MATRIX *a, MATRIX *b, struct SMatrix *c)
-{
+void M3dAsm_SetSuperTransforms__FP6MATRIXT0P7SMatrix(MATRIX *a, MATRIX *b, struct SMatrix *c) {
 	m3d_set_super_transforms(a, b, c, 4);
 }

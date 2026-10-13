@@ -10,17 +10,15 @@ int FUN_800718d0(void) {
 	int i;
 
 	for (i = 0; i < 2; i++) {
-		if (TRIG(i, PAD_GRIND) || TRIG(i, PAD_FLIP) ||
-		    TRIG(i, PAD_SPIN_LEFT) || TRIG(i, PAD_TAP_SPIN_LEFT) ||
-		    TRIG(i, PAD_SPIN_RIGHT) || TRIG(i, PAD_TAP_SPIN_RIGHT) ||
-		    TRIG(i, PAD_LEFT) || TRIG(i, PAD_RIGHT) ||
-		    TRIG(i, PAD_UP) || TRIG(i, PAD_DOWN) ||
+		if (TRIG(i, PAD_GRIND) || TRIG(i, PAD_FLIP) || TRIG(i, PAD_SPIN_LEFT) ||
+		    TRIG(i, PAD_TAP_SPIN_LEFT) || TRIG(i, PAD_SPIN_RIGHT) || TRIG(i, PAD_TAP_SPIN_RIGHT) ||
+		    TRIG(i, PAD_LEFT) || TRIG(i, PAD_RIGHT) || TRIG(i, PAD_UP) || TRIG(i, PAD_DOWN) ||
 		    TRIG(i, PAD_GRAB) || TRIG(i, PAD_CAMERA)
 #ifdef PC_PORT
 		    || TRIG(i, PAD_MENU_BACK) || TRIG(i, PAD_MENU_UP) || TRIG(i, PAD_MENU_DOWN) ||
 		    TRIG(i, PAD_MENU_LEFT) || TRIG(i, PAD_MENU_RIGHT)
 #endif
-		    )
+		)
 			return 1;
 	}
 

@@ -1,5 +1,6 @@
 /* Mess_LoadFont__FPciii (0x8001eed4) */
 #include "names.h"
+
 extern int FileIO_Open(char *);
 extern void *Mem_NewX(int, int, int);
 extern void FileIO_Load(void *);

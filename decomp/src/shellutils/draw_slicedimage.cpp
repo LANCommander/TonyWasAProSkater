@@ -72,6 +72,7 @@ void SlicedImage::drawScaled(int x, int y, int w, int h, int otFront, int r, int
 
 			pPoly += sizeof(POLY_FT4);
 			setlen(p, 9);
+
 			p->code = 0x2c;
 
 			if (r == -1) {

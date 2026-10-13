@@ -27,5 +27,6 @@ extern "C" int SFX_PlayLR__FUissi(int id, short l, short r, int pan) {
 	SFX_v = p;
 	p = SFXLEVEL * p / 100;
 
-	return playSFX__FUiUcssiUs(DAT_800b8a9c[id * 2], note, (l * p * 4) >> 16, (r * p * 4) >> 16, pan);
+	return playSFX__FUiUcssiUs(DAT_800b8a9c[id * 2], note, (l * p * 4) >> 16, (r * p * 4) >> 16,
+	                           pan);
 }

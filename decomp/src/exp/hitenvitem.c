@@ -1,5 +1,6 @@
 /* Exp_HitEnvItem__FP4ItemPUii (0x8004e968) */
 #include "names.h"
+
 typedef struct Item {
 	unsigned short flags;
 	char _2[0x14];

@@ -1,5 +1,6 @@
 /* Load8BitBMP2__FPcPPcPiT2PUs (0x800613cc) */
 #include "names.h"
+
 typedef struct {
 	short x, y, w, h;
 } RECT;

@@ -6,7 +6,6 @@
 /* The fast version of TransformAndOutcodeSuperVertices: screen words with folded-in clip flags
  * and depths go to the scratchpad cache (no rotated positions, no outcodes), stitched as usual.
  * Returns the AND of the screen words' flag bits 0x60006000 (0x60000000 for no vertices). */
-int M3dAsm_TransformAndOutcodeSuperVerticesFast__FP7SVECTORi(SVECTOR *v, int n)
-{
+int M3dAsm_TransformAndOutcodeSuperVerticesFast__FP7SVECTORi(SVECTOR *v, int n) {
 	return vtx_transform_super_fast((const uint32_t *)v, n, 0);
 }

@@ -1,5 +1,6 @@
 /* FUN_80061c98 (0x80061c98) */
 #include "names.h"
+
 int Mem_NewX(int a, int b, int c);
 void FUN_8008c774(short *r, int b);
 void FUN_8008c714(short *r, int b);

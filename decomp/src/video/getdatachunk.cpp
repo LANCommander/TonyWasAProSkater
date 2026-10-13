@@ -1,8 +1,8 @@
 /* GetDataChunk__FP6CBrucei (0x8006a158) flags=-fstructure-noalias */
 /* C++ (VIDEO.CPP). Locals, their order and types come from the demo's MAIN.SYM. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
+	#include <sys/types.h>
+	#include <libgte.h>
 }
 
 #include "game/video.h"
@@ -57,12 +57,9 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 		if (!GetBit(VInfo))
 			break;
 
-	pSkater->mPos.vx =
-	    VInfo->OldPos.vx * 2 - VInfo->OldPos2.vx + GetNBitsSigned(VInfo, PosBits[i]);
-	pSkater->mPos.vy =
-	    VInfo->OldPos.vy * 2 - VInfo->OldPos2.vy + GetNBitsSigned(VInfo, PosBits[i]);
-	pSkater->mPos.vz =
-	    VInfo->OldPos.vz * 2 - VInfo->OldPos2.vz + GetNBitsSigned(VInfo, PosBits[i]);
+	pSkater->mPos.vx = VInfo->OldPos.vx * 2 - VInfo->OldPos2.vx + GetNBitsSigned(VInfo, PosBits[i]);
+	pSkater->mPos.vy = VInfo->OldPos.vy * 2 - VInfo->OldPos2.vy + GetNBitsSigned(VInfo, PosBits[i]);
+	pSkater->mPos.vz = VInfo->OldPos.vz * 2 - VInfo->OldPos2.vz + GetNBitsSigned(VInfo, PosBits[i]);
 	VInfo->OldPos2 = VInfo->OldPos;
 	VInfo->OldPos = pSkater->mPos;
 	pSkater->mPos <<= 12;

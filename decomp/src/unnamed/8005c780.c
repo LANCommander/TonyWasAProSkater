@@ -1,5 +1,6 @@
 /* FUN_8005c780 (0x8005c780) */
 #include "names.h"
+
 extern int SFXLEVEL;
 
 int DAT_800d1cc0;

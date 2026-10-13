@@ -404,8 +404,8 @@ extern "C" void FUN_80066d7c() {
 						if (Levels[sel].MedalsToUnlock >= 2)
 							plural[2] = 's';
 
-						sprintf(line1, "%d tape%s, %d medal%s", Levels[sel].TapesToUnlock, &plural[0],
-						        Levels[sel].MedalsToUnlock, &plural[2]);
+						sprintf(line1, "%d tape%s, %d medal%s", Levels[sel].TapesToUnlock,
+						        &plural[0], Levels[sel].MedalsToUnlock, &plural[2]);
 					} else {
 						if (Levels[sel].TapesToUnlock >= 2)
 							plural[0] = 's';

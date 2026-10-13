@@ -15,6 +15,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+
 #include "game/m3d.h"
 #include "game/ob.h"
 #include "game/camera.h"
@@ -146,7 +147,8 @@ static int FarItem(Item *pItem, int skip, int *rel) {
 	for (i = 0; i < 3; i++)
 		l[i] = ((double)pCurrentCamera->Inverse.m[i][0] * rel[0] +
 		        (double)pCurrentCamera->Inverse.m[i][1] * rel[1] +
-		        (double)pCurrentCamera->Inverse.m[i][2] * rel[2]) / 4096;
+		        (double)pCurrentCamera->Inverse.m[i][2] * rel[2]) /
+		       4096;
 
 	if (l[2] + r < pCurrentViewport->Hither)
 		return -1;
@@ -406,7 +408,8 @@ void M3d_Render(void *p) {
 			for (i = 0; i < 3; i++)
 				farPos[i] = ((double)pCurrentCamera->View.m[i][0] * farRel[0] +
 				             (double)pCurrentCamera->View.m[i][1] * farRel[1] +
-				             (double)pCurrentCamera->View.m[i][2] * farRel[2]) / 4096;
+				             (double)pCurrentCamera->View.m[i][2] * farRel[2]) /
+				            4096;
 
 			Position.vx = (long)floor(farPos[0]);
 			Position.vy = (long)floor(farPos[1]);
@@ -415,24 +418,23 @@ void M3d_Render(void *p) {
 #endif
 
 		if (pModel->zMax < 0) {
-			while (LOD_DIST(-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10)) <
-			           Position.vz &&
+			while (LOD_DIST(-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >>
+			                  10)) < Position.vz &&
 			       pModel->NextLOD != 0xffff)
 				pModel = PSXRegion[pItem->Region].ppModels[pModel->NextLOD];
 
 			if (pModel->zMax < 0) {
-				if (LOD_DIST(-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10)) <
-				        Position.vz &&
+				if (LOD_DIST(-((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >>
+				               10)) < Position.vz &&
 				    LOD_LAST(pModel)) {
 #ifdef PC_PORT
 					if (getenv("THPS_TRACE_CULL")) {
 						extern volatile unsigned pc_heartbeat;
-						fprintf(stderr,
-						        "lodskip(neg) f%u item=%p model=%p LODDist=%d vz=%d thresh=%d\n",
-						        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->zMax,
-						        Position.vz,
-						        -((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >>
-						          10));
+						fprintf(
+						    stderr,
+						    "lodskip(neg) f%u item=%p model=%p LODDist=%d vz=%d thresh=%d\n",
+						    pc_heartbeat, (void *)pItem, (void *)pModel, pModel->zMax, Position.vz,
+						    -((short)(pModel->zMax * pCurrentViewport->Zoom / 191) * DpqMax >> 10));
 					}
 #endif
 					goto next;
@@ -443,7 +445,8 @@ void M3d_Render(void *p) {
 #ifdef PC_PORT
 					if (getenv("THPS_TRACE_CULL")) {
 						extern volatile unsigned pc_heartbeat;
-						fprintf(stderr, "lodskip(pos) f%u item=%p model=%p LODDist=%d vz=%d thresh=%d\n",
+						fprintf(stderr,
+						        "lodskip(pos) f%u item=%p model=%p LODDist=%d vz=%d thresh=%d\n",
 						        pc_heartbeat, (void *)pItem, (void *)pModel, pModel->zMax,
 						        Position.vz, pModel->zMax * pCurrentViewport->Zoom / 191);
 					}

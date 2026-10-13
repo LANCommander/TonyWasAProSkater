@@ -1,5 +1,6 @@
 /* SendSignalToLinks__FPUs (0x80045d70) */
 #include "names.h"
+
 extern void *BaddyList, *EnvironmentalObjectList;
 
 short **OffsetList;

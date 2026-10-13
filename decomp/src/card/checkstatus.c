@@ -1,5 +1,6 @@
 /* Card_CheckStatus__Fii (0x80015278) */
 #include "names.h"
+
 int CardStatusMode, CardLoadFlag, CardStatusTemp, CardStatus, EVENT_TIME_OUT;
 
 extern int GHasCareerLoaded;

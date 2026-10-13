@@ -1,5 +1,6 @@
 /* FUN_80066aa8 (0x80066aa8) */
 #include "names.h"
+
 typedef struct {
 	int a, b, c, d, e;
 } S;
@@ -22,8 +23,7 @@ void FUN_80066aa8(void) {
 	S *s;
 
 	for (i = 0; i < 2; i++) {
-		s = Pack_Pack(-1, 160, 256, (char *)&DAT_800d23b0[i], (char *)&DAT_800d23b8[i], 16, 0,
-		                 0);
+		s = Pack_Pack(-1, 160, 256, (char *)&DAT_800d23b0[i], (char *)&DAT_800d23b8[i], 16, 0, 0);
 		DAT_800d2398[i] = Mem_NewX(20, 1, 1);
 		*DAT_800d2398[i] = *s;
 		DAT_800d2398[i]->c = 0;

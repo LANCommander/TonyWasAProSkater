@@ -1,5 +1,6 @@
 /* Spool_FindTextureEntry__FUi (0x8006f048) */
 #include "names.h"
+
 typedef struct STexture {
 	char pad[0x14];
 	unsigned id;

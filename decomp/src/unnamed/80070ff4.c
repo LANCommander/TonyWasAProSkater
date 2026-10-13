@@ -1,5 +1,6 @@
 /* FUN_80070ff4 (0x80070ff4) */
 #include "names.h"
+
 typedef struct {
 	char b[16];
 } SButton;
@@ -40,11 +41,11 @@ int FUN_80070f18(int, int, int, int);
 
 /* SControl's 20 button slots in order (game/padbuttons.h), and the action filling each */
 static const signed char s_slotAction[20] = {
-	PC_ACT_GRIND,     PC_ACT_FLIP,       PC_ACT_GRAB,        PC_ACT_OLLIE,
-	PC_ACT_SPIN_LEFT, PC_ACT_TAP_SPIN_LEFT, PC_ACT_SPIN_RIGHT, PC_ACT_TAP_SPIN_RIGHT,
-	PC_ACT_LEFT,      PC_ACT_RIGHT,      PC_ACT_UP,          PC_ACT_DOWN,
-	PC_ACT_MENU_UP,   PC_ACT_MENU_DOWN,  PC_ACT_PAUSE,       PC_ACT_CAMERA,
-	PC_ACT_MENU_LEFT, PC_ACT_MENU_RIGHT, PC_ACT_MENU_ACCEPT, PC_ACT_MENU_BACK,
+	PC_ACT_GRIND,     PC_ACT_FLIP,          PC_ACT_GRAB,        PC_ACT_OLLIE,
+	PC_ACT_SPIN_LEFT, PC_ACT_TAP_SPIN_LEFT, PC_ACT_SPIN_RIGHT,  PC_ACT_TAP_SPIN_RIGHT,
+	PC_ACT_LEFT,      PC_ACT_RIGHT,         PC_ACT_UP,          PC_ACT_DOWN,
+	PC_ACT_MENU_UP,   PC_ACT_MENU_DOWN,     PC_ACT_PAUSE,       PC_ACT_CAMERA,
+	PC_ACT_MENU_LEFT, PC_ACT_MENU_RIGHT,    PC_ACT_MENU_ACCEPT, PC_ACT_MENU_BACK,
 };
 
 int FUN_80070ff4(void) {

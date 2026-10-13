@@ -1,5 +1,6 @@
 /* Font_Init__Fv (0x8004c14c) */
 #include "names.h"
+
 extern char s_Fontsmll[];
 extern char s_Font[];
 

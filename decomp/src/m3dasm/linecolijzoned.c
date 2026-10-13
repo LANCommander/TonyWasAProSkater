@@ -27,20 +27,25 @@ void M3dAsm_LineColijPreprocessItemsZoned__FPP4ItemiP9SLineInfoUs(Item **items, 
 		return;
 
 	GetLineSegment(info, &l, &flip);
+
 	models = PSXRegion[item->Region].ppModels;
 
 	do {
 		if (ItemNotCollidable(item->Flags))
 			goto reject;
+
 		if (item->Inquiry == inquiry)
 			goto next;
+
 		{
 			int pos[3], i;
 			LineBox box;
 
 			for (i = 0; i < 3; i++)
 				pos[i] = item->Position[i] >> 12;
+
 			GetBoundingBox(models[item->Model], pos, flip, &l, &box);
+
 			if (LineToBoxTest(&l, &box))
 				goto next;
 		}

@@ -1,5 +1,6 @@
 /* FUN_80065ca4 (0x80065ca4) */
 #include "names.h"
+
 extern int Loading;
 
 void FileIO_Continue(int *p);

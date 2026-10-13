@@ -1,5 +1,6 @@
 /* Trig_ParseTRGFile__Fv (0x80047214) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;
@@ -22,7 +23,7 @@ void Trig_CreateObject(int);
 void CreateCommandPoint(int, unsigned short, char *);
 void *__nw__4CBitUi(int);
 int CLight_ctor(void *, V *, int, unsigned, unsigned, unsigned, unsigned, unsigned, unsigned,
-                 unsigned, unsigned, unsigned, unsigned);
+                unsigned, unsigned, unsigned, unsigned);
 void *__nw__6CClassUi(unsigned);
 void CTrickOb_ctor(void *, unsigned short, int);
 void CamPt_New(int);
@@ -86,7 +87,7 @@ void Trig_ParseTRGFile(void) {
 
 				if (w)
 					CLight_ctor(w, &v, i, q->us0, q->us2, q->us4, q->us6, q->b8, q->b10, q->b12,
-					             q->b14, q->b16, q->b18);
+					            q->b14, q->b16, q->b18);
 
 				UseCacheForBits = 1;
 				break;

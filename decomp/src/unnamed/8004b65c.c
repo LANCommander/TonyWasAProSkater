@@ -1,5 +1,6 @@
 /* SFX_ModifyPos__FUiRC7CVectori (0x8004b65c) */
 #include "names.h"
+
 typedef struct {
 	int id;
 	int cmd;

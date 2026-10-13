@@ -8,6 +8,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+
 #include "game/m3d.h"
 
 #define gte_ldRGBC_r(r0) __asm__ volatile("mtc2 %0, $6" : : "r"(r0))

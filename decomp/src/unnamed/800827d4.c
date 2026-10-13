@@ -1,5 +1,6 @@
 /* M3dZone_LineToItemNotSCached__FP9SLineInfoi (0x800827d4) */
 #include "names.h"
+
 typedef struct {
 	int x0, y0, z0, x1, y1, z1;
 } SLine;
@@ -14,8 +15,8 @@ typedef struct {
 } SGrid;
 
 extern SGrid Zones[2];
-extern int M3dColij_OneMask, M3dColij_ZeroMask, LineOfSightCheck, BulletCollisionCheck, BaddyCollisionCheck, CameraCollisionCheck,
-    TriggerCollisionCheck;
+extern int M3dColij_OneMask, M3dColij_ZeroMask, LineOfSightCheck, BulletCollisionCheck,
+    BaddyCollisionCheck, CameraCollisionCheck, TriggerCollisionCheck;
 extern int EnvironmentalObjectList;
 
 int FUN_8008b62c(int, int, int);
@@ -192,8 +193,7 @@ void M3dZone_LineToItemNotSCached(SLine *line, int items) {
 		x = cx;
 		z = cz;
 
-		while ((x != ex || z != ez) && x >= 0 && x < Zones[i].nx && z >= 0 &&
-		       z < Zones[i].nz) {
+		while ((x != ex || z != ez) && x >= 0 && x < Zones[i].nx && z >= 0 && z < Zones[i].nz) {
 			M3dColij_LineToItemZoned(Zones[i].cells[x][z], line);
 
 			if (err >= 0) {

@@ -1,5 +1,6 @@
 /* Db_Reset__Fv (0x800491c4) */
 #include "names.h"
+
 extern char DoubleBuffer[];
 
 void Db_Reset(void) {

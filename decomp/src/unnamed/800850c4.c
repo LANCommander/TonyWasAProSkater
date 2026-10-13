@@ -1,5 +1,6 @@
 /* RenderBackgroundModelNonRotated__FP6SModel (0x800850c4) */
 #include "names.h"
+
 typedef struct {
 	int a, b;
 } E;

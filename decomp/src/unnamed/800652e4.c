@@ -1,5 +1,6 @@
 /* FUN_800652e4 (0x800652e4) */
 #include "names.h"
+
 extern char __vt_14VerticalDialog[];
 
 int VerticalMenu_ctor(char **p, int a, int b, int c, int d, int e, int f, int g, int h);

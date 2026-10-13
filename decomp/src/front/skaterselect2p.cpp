@@ -10,9 +10,9 @@
    counters land in s1 under the pointers/offsets; the best-board scan is a top-tested
    `while (best < 7) { if (tapes < Req) break; best++; }`. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
-#include <libgpu.h>
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
 }
 
 #include "game/shellutils.h"
@@ -649,7 +649,8 @@ extern "C" int FUN_80056754(void) {
 
 					bruce[0]->mShadowLights = 0;
 					bruce[1]->mShadowLights = 0;
-					M3d_RenderSetup__FP7SCameraP9SViewportPUi(MikeCamera, vp, pDoubleBuffer + ((p << 14) + 140));
+					M3d_RenderSetup__FP7SCameraP9SViewportPUi(MikeCamera, vp,
+					                                          pDoubleBuffer + ((p << 14) + 140));
 					M3d_Render__FPv(MechList);
 					FUN_80083774();
 
@@ -684,40 +685,46 @@ extern "C" int FUN_80056754(void) {
 				Mess_SetTextJustify__FUc(1);
 				int ty = 330;
 
-				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[0]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[0]) >> 1),
-				             Stats[DAT_800d2304[p]].pBio[0], 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(
+				    infoX[p],
+				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[0]) + ty -
+				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[0]) >> 1),
+				    Stats[DAT_800d2304[p]].pBio[0], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[1]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[1]) >> 1),
-				             Stats[DAT_800d2304[p]].pBio[1], 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(
+				    infoX[p],
+				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[1]) + ty -
+				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[1]) >> 1),
+				    Stats[DAT_800d2304[p]].pBio[1], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[2]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[2]) >> 1),
-				             Stats[DAT_800d2304[p]].pBio[2], 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(
+				    infoX[p],
+				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[2]) + ty -
+				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[2]) >> 1),
+				    Stats[DAT_800d2304[p]].pBio[2], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[3]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[3]) >> 1),
-				             Stats[DAT_800d2304[p]].pBio[3], 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(
+				    infoX[p],
+				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[3]) + ty -
+				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[3]) >> 1),
+				    Stats[DAT_800d2304[p]].pBio[3], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[4]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[4]) >> 1),
-				             Stats[DAT_800d2304[p]].pBio[4], 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(
+				    infoX[p],
+				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[4]) + ty -
+				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[4]) >> 1),
+				    Stats[DAT_800d2304[p]].pBio[4], 0, 0, 256, 0);
 
 				ty += 15;
-				Mess_DrawText__FiiPCciUiib(infoX[p],
-				             Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[5]) + ty -
-				                 (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[5]) >> 1),
-				             Stats[DAT_800d2304[p]].pBio[5], 0, 0, 256, 0);
+				Mess_DrawText__FiiPCciUiib(
+				    infoX[p],
+				    Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].pBio[5]) + ty -
+				        (Mess_TextHeight(Stats[DAT_800d2304[p]].pBio[5]) >> 1),
+				    Stats[DAT_800d2304[p]].pBio[5], 0, 0, 256, 0);
 			}
 
 			if (panelState[p] == -1 && panelState[1 - p] <= 0 && infoTimer[1 - p] <= 0 &&
@@ -791,8 +798,8 @@ extern "C" int FUN_80056754(void) {
 					{
 						int ty = 74;
 
-						textY[p] = Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Name) + ty -
-						           (Mess_TextHeight(Stats[DAT_800d2304[p]].Name) >> 1);
+						textY[p] = Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d2304[p]].Name) +
+						           ty - (Mess_TextHeight(Stats[DAT_800d2304[p]].Name) >> 1);
 					}
 
 					textState[p] = 2;
@@ -810,8 +817,8 @@ extern "C" int FUN_80056754(void) {
 					Mess_SetCurrentFont("mainf.fnt");
 					Mess_SetRGB(128, 128, 128, 0);
 					Mess_SetTextJustify__FUc(1);
-					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0, 0, 256,
-					             0);
+					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0,
+					                           0, 256, 0);
 					break;
 				case 3:
 					textX[p] -= textSpeed[p];
@@ -824,8 +831,8 @@ extern "C" int FUN_80056754(void) {
 					Mess_SetCurrentFont("mainf.fnt");
 					Mess_SetRGB(128, 128, 128, 0);
 					Mess_SetTextJustify__FUc(1);
-					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0, 0, 256,
-					             0);
+					Mess_DrawText__FiiPCciUiib(textX[p], textY[p], Stats[DAT_800d2304[p]].Name, 0,
+					                           0, 256, 0);
 					break;
 			}
 

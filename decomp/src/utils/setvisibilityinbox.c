@@ -1,5 +1,6 @@
 /* Utils_SetVisibilityInBox__FRC7CVectorT0bT2 (0x80048484) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

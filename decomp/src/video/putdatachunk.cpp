@@ -1,8 +1,8 @@
 /* PutDataChunk__FP6CBruce (0x80069974) */
 /* C++ (VIDEO.CPP). Locals, their order and types come from the demo's MAIN.SYM. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
+	#include <sys/types.h>
+	#include <libgte.h>
 }
 
 #include "game/video.h"
@@ -190,8 +190,7 @@ void PutDataChunk(CBruce *pSkater) {
 	} else
 		PutNBits(VInfo, 0, 1);
 
-	if (Splat1 == -1 && Splat2 == Splat1 && TrickOb1 == Splat2 &&
-	    TrickOb2 == TrickOb1) {
+	if (Splat1 == -1 && Splat2 == Splat1 && TrickOb1 == Splat2 && TrickOb2 == TrickOb1) {
 		PutNBits(VInfo, 0, 1);
 		return;
 	}

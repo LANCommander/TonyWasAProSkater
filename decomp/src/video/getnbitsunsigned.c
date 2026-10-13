@@ -1,5 +1,6 @@
 /* GetNBitsUnsigned__FP10SVideoInfoi (0x80068c30) */
 #include "names.h"
+
 typedef struct {
 	int state, f4, f8, fc;
 	unsigned *p;

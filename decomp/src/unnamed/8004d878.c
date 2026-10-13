@@ -1,5 +1,6 @@
 /* Mem_GetFree__Fc (0x8004d878) */
 #include "names.h"
+
 struct P {
 	int a, b;
 };

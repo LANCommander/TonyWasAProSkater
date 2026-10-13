@@ -1,5 +1,6 @@
 /* FUN_80042d04 (0x80042d04) */
 #include "names.h"
+
 extern int GamePaused;
 extern int CameraList;
 extern int XFrames;

@@ -1,5 +1,6 @@
 /* Init_ResetMemory__Fi (0x80071e40) */
 #include "names.h"
+
 extern int DAT_800be09c[];
 extern int DAT_800dc94c;
 

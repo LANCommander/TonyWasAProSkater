@@ -1,5 +1,6 @@
 /* Mess_Display__Fv (0x8001d764) */
 #include "names.h"
+
 typedef struct {
 	unsigned short us0;
 	unsigned char b2, b3;

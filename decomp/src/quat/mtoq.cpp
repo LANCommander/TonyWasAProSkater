@@ -1,7 +1,7 @@
 /* MToQ__FRC6MATRIXR5CQuat (0x800776f8) */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
+	#include <sys/types.h>
+	#include <libgte.h>
 }
 
 #include "game/vector.h"

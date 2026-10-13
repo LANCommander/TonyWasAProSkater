@@ -25,9 +25,10 @@ extern int DAT_800a8118[];
 extern SControl Pad[];
 
 #define GetStat(n)                                                                                 \
-	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
-	                    mpStatBonus[n])
+	(Cheat_StatsOverride                                                                           \
+	     ? Cheat_StatsOverride                                                                     \
+		 : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +              \
+		       mpStatBonus[n])
 
 void *Mem_New(uint, int, int);
 

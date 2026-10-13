@@ -1,5 +1,6 @@
 /* SendSuspend__FPP5CBodyi (0x80045e30) */
 #include "names.h"
+
 void CBody_Suspend(char *b, char **pp);
 
 void SendSuspend(char **pp, int node) {

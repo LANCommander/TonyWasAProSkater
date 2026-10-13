@@ -1,5 +1,6 @@
 /* PutNBits__FP10SVideoInfoli (0x80068b34) */
 #include "names.h"
+
 typedef struct {
 	int state, f4, f8, fc;
 	unsigned *p;

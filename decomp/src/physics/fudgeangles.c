@@ -1,5 +1,6 @@
 /* FudgeAngles__FP6CBruce (0x80044b90) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

@@ -1,5 +1,6 @@
 /* FUN_8001f794 (0x8001f794) */
 #include "names.h"
+
 struct VT {
 	char p[8];
 	short off;
@@ -57,10 +58,10 @@ void FUN_8001f794(char *t) {
 
 				if (o)
 					o = CWobblyGlow_ctor(o, t + 0x18, *(int *)(t + 0x48), *(int *)(t + 0x4c),
-					                 *(int *)(t + 0x58), *(unsigned char *)(t + 0x50),
-					                 *(unsigned char *)(t + 0x51), *(unsigned char *)(t + 0x52),
-					                 *(unsigned char *)(t + 0x53), *(unsigned char *)(t + 0x54),
-					                 *(unsigned char *)(t + 0x55));
+					                     *(int *)(t + 0x58), *(unsigned char *)(t + 0x50),
+					                     *(unsigned char *)(t + 0x51), *(unsigned char *)(t + 0x52),
+					                     *(unsigned char *)(t + 0x53), *(unsigned char *)(t + 0x54),
+					                     *(unsigned char *)(t + 0x55));
 
 				*(char **)(t + 0x60) = o;
 				UseCacheForBits = 1;

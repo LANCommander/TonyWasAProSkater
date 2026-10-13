@@ -1,5 +1,6 @@
 /* Bit_SetSparkRGB__FUcUcUc (0x8002965c) */
 #include "names.h"
+
 char SparkRGB;
 char SparkRGB_1;
 char SparkRGB_2;

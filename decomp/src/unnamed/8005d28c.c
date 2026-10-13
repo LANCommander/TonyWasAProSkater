@@ -1,6 +1,7 @@
 /* FUN_8005d28c (0x8005d28c) */
 #include "names.h"
 #include "game/padbuttons.h"
+
 extern char s_loadingv_bmp[];
 extern char s_Bckgrnd2_bmp[];
 extern char Pad[];

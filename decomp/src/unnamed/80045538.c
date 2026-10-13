@@ -1,5 +1,6 @@
 /* Trig_SendPulseToNode__Fi (0x80045538) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z, pad;
 } V;
@@ -53,7 +54,7 @@ void Trig_SendPulseToNode(int idx) {
 
 			if (o)
 				CLight_ctor(o, &v, idx, p->w0, p->w2, p->w4, p->w6, p->b8, p->b10, p->b12, p->b14,
-				             p->b16, p->b18);
+				            p->b16, p->b18);
 
 			UseCacheForBits = 1;
 			break;

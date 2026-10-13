@@ -1,5 +1,6 @@
 /* Pal_RemoveUnusedPalettes__Fv (0x8004ac2c) */
 #include "names.h"
+
 typedef struct SPalette {
 	char pad[2];
 	unsigned char slot, flags;

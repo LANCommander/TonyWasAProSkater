@@ -4,6 +4,7 @@
 #include "game/bit.h"
 
 CSVector *pNormal;
+
 extern CVector DAT_800d2574; /* centre of the face being shattered */
 
 int Redbook_Rnd(int);

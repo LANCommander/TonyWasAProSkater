@@ -41,9 +41,10 @@ extern int Cheat_Fire;
 extern int XFrames;
 
 #define GetStat(n)                                                                                 \
-	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
-	                    mpStatBonus[n])
+	(Cheat_StatsOverride                                                                           \
+	     ? Cheat_StatsOverride                                                                     \
+		 : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +              \
+		       mpStatBonus[n])
 
 int SFX_PlayX(unsigned int, short, int);
 int Redbook_Rnd(int);
@@ -172,8 +173,7 @@ inline void CBruce::StartGrind(int RailTrick) {
 		if (!Group[RailTrick].Frames)
 			Debug_RunAnim(Group[RailTrick].Anim, 1701);
 		else
-			Debug_RunAnim2(Group[RailTrick].Anim, 0, Group[RailTrick].Frames,
-			             1705);
+			Debug_RunAnim2(Group[RailTrick].Anim, 0, Group[RailTrick].Frames, 1705);
 
 		return;
 	}

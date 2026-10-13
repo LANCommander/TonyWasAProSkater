@@ -10,6 +10,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
+
 #include "game/m3d.h"
 #include "game/camera.h"
 
@@ -162,7 +163,8 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot) {
 
 		for (i = 0; i < 3; i++) {
 			ApplyMatrixSV(&pCamera->Transform, &FrustumNormals[i], (SVECTOR *)&FrustumMatrix1[i]);
-			ApplyMatrixSV(&pCamera->Transform, &FrustumNormals[i + 3], (SVECTOR *)&FrustumMatrix2[i]);
+			ApplyMatrixSV(&pCamera->Transform, &FrustumNormals[i + 3],
+			              (SVECTOR *)&FrustumMatrix2[i]);
 		}
 	}
 

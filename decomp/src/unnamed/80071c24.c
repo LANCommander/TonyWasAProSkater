@@ -1,5 +1,6 @@
 /* Init_Cleanup__Fi (0x80071c24) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

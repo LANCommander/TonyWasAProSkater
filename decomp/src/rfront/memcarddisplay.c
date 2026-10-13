@@ -1,5 +1,6 @@
 /* Front_MemCardDisplay__Fv (0x80011820) */
 #include "names.h"
+
 /* Memory-card front-end screen (RFRONT.CPP), as C. The save-slot list loop follows the demo twin:
    x is XMid - 150 + i * 30 (no separate column variable), and the slot letter goes into a copy of a
    3-byte template in buf. */

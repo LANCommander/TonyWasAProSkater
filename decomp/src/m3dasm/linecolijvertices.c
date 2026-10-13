@@ -26,21 +26,28 @@ int M3dAsm_LineColijProcessVertices__FP6SModelP16SProjectedVertexiP6VECTOR(SMode
 		PC_GteSetData(10, (unsigned)(v->vy + ofs->vy));
 		PC_GteSetData(11, (unsigned)(v->vz + ofs->vz));
 		gte_mvmva(1, 2, 3, 0, 0); /* colour matrix * IR + translation */
+
 		x = GTE_S(25);
 		y = GTE_S(26);
 		z = GTE_S(27);
 
 		code = 0;
+
 		if (x < 0)
 			code |= PV_XNEG;
+
 		if (y < 0)
 			code |= PV_YNEG;
+
 		if (z < 0)
 			code |= PV_ZNEG;
+
 		if (length < z)
 			code |= PV_ZFAR;
+
 		if (x > 0)
 			code |= PV_XPOS;
+
 		if (y > 0)
 			code |= PV_YPOS;
 

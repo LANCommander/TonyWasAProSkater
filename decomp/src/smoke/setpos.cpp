@@ -9,6 +9,7 @@ void CSmokeJet::SetPos(const CVector &pos) {
 	CVector step, p;
 
 	Utils_GetVecFromMagDir(step, mLength, mAngles);
+
 	step /= 9;
 
 	p = pos;

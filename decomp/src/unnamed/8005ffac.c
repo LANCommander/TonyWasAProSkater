@@ -1,6 +1,7 @@
 /* FUN_8005ffac (0x8005ffac) */
 #include "names.h"
 #include "game/padbuttons.h"
+
 typedef struct {
 	char p[0x184];
 	int f184;
@@ -36,7 +37,8 @@ int FUN_8005ffac(int a) {
 	s0 = Pad;
 	FUN_800648c0(a, 1, *(int *)(s0 + 0x2b8) == 0);
 
-	if (s0[PAD_MENU_LEFT + PAD_TRIGGERED] || s0[PAD_SIZE + PAD_MENU_LEFT + PAD_TRIGGERED] || s0[PAD_MENU_RIGHT + PAD_TRIGGERED] || s0[PAD_SIZE + PAD_MENU_RIGHT + PAD_TRIGGERED]) {
+	if (s0[PAD_MENU_LEFT + PAD_TRIGGERED] || s0[PAD_SIZE + PAD_MENU_LEFT + PAD_TRIGGERED] ||
+	    s0[PAD_MENU_RIGHT + PAD_TRIGGERED] || s0[PAD_SIZE + PAD_MENU_RIGHT + PAD_TRIGGERED]) {
 		s3 = 0;
 
 		if (Pad[PAD_MENU_LEFT + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_LEFT + PAD_TRIGGERED])
@@ -51,8 +53,7 @@ int FUN_8005ffac(int a) {
 
 			s1 = s3 != 0;
 			GPreferences.f184 = s1;
-			FUN_8008b900(buf, s_s_s, GameText.f8,
-			             s1 ? GameText.f0 : GameText.f4);
+			FUN_8008b900(buf, s_s_s, GameText.f8, s1 ? GameText.f0 : GameText.f4);
 			VerticalMenu_setString(a, 3, buf);
 		}
 
@@ -63,13 +64,13 @@ int FUN_8005ffac(int a) {
 				SFX_PlayX(144, 0x2000, 0);
 
 			GPreferences.f188 = s1;
-			FUN_8008b900(buf, s_s_s, GameText.fc,
-			             s1 ? GameText.f0 : GameText.f4);
+			FUN_8008b900(buf, s_s_s, GameText.fc, s1 ? GameText.f0 : GameText.f4);
 			VerticalMenu_setString(a, 4, buf);
 		}
 	}
 
-	if (Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED]) {
+	if (Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] ||
+	    Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED]) {
 		t = VerticalMenu_getSelected(a);
 
 		if (t < 5) {

@@ -40,6 +40,7 @@ extern "C" {
 
 #ifdef PC_PORT
 #include "pc_saves.h"
+
 extern "C" char SaveGameName[];
 #endif
 
@@ -64,6 +65,7 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 	switch (FileType) {
 		case 0:
 			FUN_8001571c();
+
 			GCareer.TimeStamp = TimeStamp;
 
 			FName = CARD_FNAME;

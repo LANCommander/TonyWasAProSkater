@@ -1,5 +1,6 @@
 /* frug__FUi (0x800782b4) */
 #include "names.h"
+
 unsigned CheatCheck;
 
 int arccos(void);

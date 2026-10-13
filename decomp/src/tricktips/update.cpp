@@ -60,10 +60,10 @@ inline void CTrickTipMonitor::ShowTip(int tip) {
 		int tip_bank = TipBank(tip);
 
 		if (GCareer.Options.TrickTipsEnabled) {
-			if (((Levels[GLevel].TrickTipMask[tip_bank] >> (tip - tip_bank * 32)) &
-			     1) == 0) {
+			if (((Levels[GLevel].TrickTipMask[tip_bank] >> (tip - tip_bank * 32)) & 1) == 0) {
 				int &seen = GCareer.Options.TrickTipUsed[tip_bank];
-				int tip_mask = GCareer.Options.TrickTipMask[tip_bank] & (1 << (tip - tip_bank * 32));
+				int tip_mask =
+				    GCareer.Options.TrickTipMask[tip_bank] & (1 << (tip - tip_bank * 32));
 				int tip_used = seen & (1 << (tip - tip_bank * 32));
 
 				seen |= (1 << (tip - tip_bank * 32));
@@ -96,8 +96,7 @@ inline void CTrickTipMonitor::ShowFoundTip(int tip) {
 		tip_bank = TipBank(tip);
 
 		if (GCareer.Options.TrickTipsEnabled) {
-			if (((Levels[GLevel].TrickTipMask[tip_bank] >> (tip - tip_bank * 32)) &
-			     1) == 0) {
+			if (((Levels[GLevel].TrickTipMask[tip_bank] >> (tip - tip_bank * 32)) & 1) == 0) {
 				tip_mask = GCareer.Options.TrickTipMask[tip_bank];
 				tip_used = GCareer.Options.TrickTipUsed[tip_bank];
 				tip_mask &= (1 << (tip - tip_bank * 32));

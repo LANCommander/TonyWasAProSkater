@@ -5,7 +5,7 @@
 #include "game/career.h"
 
 extern SDoubleBuffer *pDoubleBuffer; /* pDoubleBuffer */
-extern int GLevel;            /* GLevel */
+extern int GLevel;                   /* GLevel */
 
 int GNumberOfPlayers; /* number of players */
 

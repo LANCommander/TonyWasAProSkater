@@ -1,5 +1,6 @@
 /* FUN_80065d80 (0x80065d80) */
 #include "names.h"
+
 void Spool_Sync(void);
 void FileIO_Sync(void);
 void FUN_80065e04(int *p, int i);

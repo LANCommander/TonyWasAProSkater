@@ -1,5 +1,6 @@
 /* SFX_InitAtStart__Fv (0x8004b038) */
 #include "names.h"
+
 struct S {
 	int a;
 	short b, c;

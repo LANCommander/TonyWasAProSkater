@@ -1,5 +1,6 @@
 /* NewPaletteEntry__FUi (0x8004ab2c) */
 #include "names.h"
+
 struct N {
 	int a[1];
 	short s;

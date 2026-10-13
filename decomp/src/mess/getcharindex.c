@@ -1,5 +1,6 @@
 /* GetCharIndex__Fc (0x8001ddfc) */
 #include "names.h"
+
 /* MESS.CPP. Demo twin (THPS1 drops the bracket remaps). Maps a character to its font glyph index:
    digits and ':' only for the small numeric fonts, else letters, digits and punctuation. */
 typedef struct {

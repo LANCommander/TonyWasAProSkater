@@ -1,5 +1,6 @@
 /* Bit_SetSparkFadeRGB__FUcUcUc (0x80029670) */
 #include "names.h"
+
 char SparkFadeRGB;
 char SparkFadeRGB_1;
 char SparkFadeRGB_2;

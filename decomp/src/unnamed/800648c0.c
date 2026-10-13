@@ -1,5 +1,6 @@
 /* FUN_800648c0 (0x800648c0) */
 #include "names.h"
+
 typedef struct {
 	int pad0;
 	char str[0x34];

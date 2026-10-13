@@ -32,5 +32,6 @@ void CCamera::LoadIntoMikeCamera() {
 	MikeCamera[Camera_CurrentMikeCamera].Focus.vy = (mFocusPos.vy + Camera_CamOffset.vy) >> 12;
 	MikeCamera[Camera_CurrentMikeCamera].Focus.vz = (mFocusPos.vz + Camera_CamOffset.vz) >> 12;
 	QToM(mO, MikeCamera[Camera_CurrentMikeCamera].Transform);
-	FUN_80093100(&MikeCamera[Camera_CurrentMikeCamera].Transform, &MikeCamera[Camera_CurrentMikeCamera].Position);
+	FUN_80093100(&MikeCamera[Camera_CurrentMikeCamera].Transform,
+	             &MikeCamera[Camera_CurrentMikeCamera].Position);
 }

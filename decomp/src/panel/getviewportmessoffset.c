@@ -1,5 +1,6 @@
 /* Panel_GetViewportMessOffset__FiPsT1 (0x8006d67c) */
 #include "names.h"
+
 void Panel_GetViewportMessOffset(int m, short *x, short *y) {
 	switch (m) {
 		case 0:

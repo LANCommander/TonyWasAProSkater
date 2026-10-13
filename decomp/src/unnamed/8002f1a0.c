@@ -1,5 +1,6 @@
 /* FUN_8002f1a0 (0x8002f1a0) */
 #include "names.h"
+
 extern int GGame;
 
 void CBruce_ResetTrickBuffers(char *p);

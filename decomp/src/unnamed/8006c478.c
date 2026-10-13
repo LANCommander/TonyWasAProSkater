@@ -1,5 +1,6 @@
 /* Panel_addPrim__FPv (0x8006c478) */
 #include "names.h"
+
 typedef struct {
 	char pad[0x84];
 	unsigned long ot;

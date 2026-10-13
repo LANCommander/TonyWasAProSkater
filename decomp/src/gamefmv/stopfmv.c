@@ -1,12 +1,14 @@
 /* GameFMV_StopFMV__Fv (0x800233d0) */
 #include "names.h"
+
 typedef struct {
 	unsigned short x, y, w, h;
 } RECT;
 
 extern int decodeSliceBuffer[];
 
-int GameFMV_Active, GameFMV_FrameBufferCopyActive, GameFMV_NumSoundSources, GameFMV_StartSector, pRingBuffer;
+int GameFMV_Active, GameFMV_FrameBufferCopyActive, GameFMV_NumSoundSources, GameFMV_StartSector,
+    pRingBuffer;
 int vlcBuffer[2];
 unsigned char GameFMV_SliceBuffers;
 short GameFMV_StartX;

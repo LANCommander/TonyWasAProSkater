@@ -1,5 +1,6 @@
 /* Mess_TextHeight2__FPCc (0x8001d440) */
 #include "names.h"
+
 extern unsigned char BigFont_Mapping[];
 extern unsigned char *BigFontAnim;
 

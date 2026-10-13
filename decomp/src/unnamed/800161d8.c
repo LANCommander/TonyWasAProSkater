@@ -1,5 +1,6 @@
 /* FUN_800161d8 (0x800161d8) */
 #include "names.h"
+
 extern char s_ingame1_fnt[];
 extern char s_loading[];
 extern volatile int GameFade;

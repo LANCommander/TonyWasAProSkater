@@ -1,6 +1,7 @@
 /* FUN_8007b108 (0x8007b108) */
 #include "names.h"
 #include "game/padbuttons.h"
+
 typedef struct Q {
 	int *vp;
 	int x, y, z, w;

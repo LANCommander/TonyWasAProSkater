@@ -1,5 +1,6 @@
 /* Free256Slot__FUs (0x8004adec) */
 #include "names.h"
+
 extern unsigned char Free256Slots[];
 
 int Pal256X, Pal256Y;

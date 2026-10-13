@@ -1,5 +1,6 @@
 /* FUN_80063a5c (0x80063a5c) */
 #include "names.h"
+
 extern char __vt_6Sprite[];
 
 int Load8BitBMP2(char *name, char **a, int *b, int *c, unsigned short *d);

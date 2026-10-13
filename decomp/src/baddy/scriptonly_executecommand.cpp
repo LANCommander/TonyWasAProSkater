@@ -62,14 +62,16 @@ int CScriptOnlyBaddy::ExecuteCommand(ushort command) {
 		case 17668:
 			mpScript += 4;
 		case 17051:
-			mpSmokeJet = new CSmokeJet(mPos, mAngles, mpScript[0], 0xffff, mpScript[1], mpScript[2],
-			                           mpScript[3], mpScript[4], ((uchar *)mpScript)[10], 0xcce0187c);
+			mpSmokeJet =
+			    new CSmokeJet(mPos, mAngles, mpScript[0], 0xffff, mpScript[1], mpScript[2],
+				              mpScript[3], mpScript[4], ((uchar *)mpScript)[10], 0xcce0187c);
 			mpSmokeJet->mProtected = 1;
 			mpScript += 6;
 			break;
 		case 17057:
-			mpSmokeJet = new CSmokeJet(mPos, mAngles, mpScript[0], 0xffff, mpScript[1], mpScript[2],
-			                           mpScript[3], mpScript[4], ((uchar *)mpScript)[10], 0x68b7b136);
+			mpSmokeJet =
+			    new CSmokeJet(mPos, mAngles, mpScript[0], 0xffff, mpScript[1], mpScript[2],
+				              mpScript[3], mpScript[4], ((uchar *)mpScript)[10], 0x68b7b136);
 			mpScript += 6;
 			break;
 		case 17055:

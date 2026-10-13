@@ -1,5 +1,6 @@
 /* strCallback__Fv (0x80023d3c) */
 #include "names.h"
+
 typedef struct {
 	short x, y, w, h;
 } RECT;
@@ -37,7 +38,8 @@ void strCallback(void) {
 	decodeSlice.x += decodeSlice_4;
 
 	if (decodeSlice.x < GameFMV_EndX) {
-		FUN_8009033c(decodeSliceBuffer[currentDecodeBuffer], (short)decodeSlice_4 * decodeSlice_6 / 2);
+		FUN_8009033c(decodeSliceBuffer[currentDecodeBuffer],
+		             (short)decodeSlice_4 * decodeSlice_6 / 2);
 	} else {
 		decodeSlice.x = GameFMV_StartX;
 

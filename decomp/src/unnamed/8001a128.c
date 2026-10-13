@@ -1,5 +1,6 @@
 /* CommonSwitchOnMenuCode__Fv (0x8001a128) */
 #include "names.h"
+
 extern char Pad[];
 
 int pYesNoMenu;

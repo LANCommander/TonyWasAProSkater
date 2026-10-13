@@ -1,5 +1,6 @@
 /* TrickTips_Display__Fv (0x80072164) */
 #include "names.h"
+
 typedef struct {
 	char pad[0x90];
 	const char *s0;
@@ -36,16 +37,13 @@ void TrickTips_Display(void) {
 		Mess_DrawPanelText(y, 100, TrickTipMonitor.s0, 0, 0, 256);
 
 		if (TrickTipMonitor.s1)
-			Mess_DrawPanelText(y, Mess_GetScale() / 11 + 100, TrickTipMonitor.s1, 0, 0,
-			                               256);
+			Mess_DrawPanelText(y, Mess_GetScale() / 11 + 100, TrickTipMonitor.s1, 0, 0, 256);
 
 		if (TrickTipMonitor.s2)
-			Mess_DrawPanelText(y, Mess_GetScale() / 11 * 2 + 100, TrickTipMonitor.s2,
-			                               0, 0, 256);
+			Mess_DrawPanelText(y, Mess_GetScale() / 11 * 2 + 100, TrickTipMonitor.s2, 0, 0, 256);
 
 		if (TrickTipMonitor.s3)
-			Mess_DrawPanelText(y, Mess_GetScale() / 11 * 3 + 100, TrickTipMonitor.s3,
-			                               0, 0, 256);
+			Mess_DrawPanelText(y, Mess_GetScale() / 11 * 3 + 100, TrickTipMonitor.s3, 0, 0, 256);
 
 		if (--TrickTipMonitor.cnt == 0) {
 			TrickTipMonitor.s3 = 0;

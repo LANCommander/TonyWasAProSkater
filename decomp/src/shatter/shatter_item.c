@@ -1,5 +1,6 @@
 /* Shatter_Item__FP4Itemii (0x80021ecc) */
 #include "names.h"
+
 typedef struct {
 	unsigned char b[64];
 } Ent;

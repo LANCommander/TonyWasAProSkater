@@ -1,5 +1,6 @@
 /* FUN_80063290 (0x80063290) */
 #include "names.h"
+
 extern int Pal256Y;
 extern int Pal256X;
 

@@ -7,18 +7,18 @@
 
 /* one queued PSX load (SpoolQ[20]) */
 struct SQueue {
-	char Name[13];                 /* 0x00 */
-	uchar Occupied;                /* 0x0d */
-	uchar FileType;                /* 0x0e */
-	uchar Region;                  /* 0x0f */
-	uchar KeepTextures;            /* 0x10: Spool_PSX stores its heap argument here */
-	/* sizeof == 0x11 */
+	char Name[13];      /* 0x00 */
+	uchar Occupied;     /* 0x0d */
+	uchar FileType;     /* 0x0e */
+	uchar Region;       /* 0x0f */
+	uchar KeepTextures; /* 0x10: Spool_PSX stores its heap argument here */
+	                    /* sizeof == 0x11 */
 };
 
 /* an animation packet in the loaded-animation list (Spool_FindAnim) */
 struct AnimPacket {
-	uint *pPacket;                 /* 0x00 */
-	AnimPacket *pNext;             /* 0x04 */
+	uint *pPacket;     /* 0x00 */
+	AnimPacket *pNext; /* 0x04 */
 };
 
 #endif

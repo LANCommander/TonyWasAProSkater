@@ -1,5 +1,6 @@
 /* FUN_800596a0 (0x800596a0) */
 #include "names.h"
+
 struct Q {
 	int a, b, c, d, e;
 };

@@ -1,5 +1,6 @@
 /* Horse_DisplayWords__FPi (0x8001631c) */
 #include "names.h"
+
 void Mess_SetScale(int);
 void Mess_SetTextJustify(int);
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);

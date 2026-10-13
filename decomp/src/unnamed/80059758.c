@@ -1,5 +1,6 @@
 /* FUN_80059758 (0x80059758) */
 #include "names.h"
+
 int DAT_800d1c80;
 short DAT_800d1c94;
 short DAT_800d1c98;

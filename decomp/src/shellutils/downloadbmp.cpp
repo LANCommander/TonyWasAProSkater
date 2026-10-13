@@ -148,7 +148,8 @@ void DownloadBMP16(char *pData) {
 		PC_GpuLoadImageHiRes(0, 0, lw, lh, (ushort *)data, w, h);
 	else
 #endif
-	LoadImage(&r, (u_long *)data);
+		LoadImage(&r, (u_long *)data);
+
 	DrawSync(0);
 	Mem_Delete(data);
 }

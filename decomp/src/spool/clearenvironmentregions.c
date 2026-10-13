@@ -1,5 +1,6 @@
 /* Spool_ClearEnvironmentRegions__Fv (0x8006fefc) */
 #include "names.h"
+
 int EnvRegions, EnvRegions_4, OtherEnvIndex;
 
 void ClearRegion(int, int, int);

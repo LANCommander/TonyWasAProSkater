@@ -1,5 +1,6 @@
 /* GetNBitsSigned__FP10SVideoInfoi (0x80068cec) */
 #include "names.h"
+
 typedef struct SVideoInfo SVideoInfo;
 
 unsigned GetNBitsUnsigned(SVideoInfo *, int);

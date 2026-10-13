@@ -42,7 +42,7 @@ CGlow::CGlow(const CVector &Pos, int InnerRadius, int FringeRadius, uchar r0, uc
 
 		for (i = 0; i < mNumSections; i++) {
 			mpFringes[i].Width = FringeRadius;
-			mpFringes[i].CodeBGR= 0x3a000000;
+			mpFringes[i].CodeBGR = 0x3a000000;
 		}
 	}
 

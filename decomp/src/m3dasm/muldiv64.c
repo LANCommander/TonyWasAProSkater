@@ -7,8 +7,7 @@
  * exact quotient when the product's high word is below c and c < 2^31; outside that range the
  * quotient bits come out as the loop below produces them (remainder bits shifted out are lost;
  * c == 0 gives 0xffffffff). */
-int M3dMaths_MulDiv64__Fiii(int a, int b, int c)
-{
+int M3dMaths_MulDiv64__Fiii(int a, int b, int c) {
 	unsigned long long p = (unsigned long long)(unsigned)a * (unsigned)b;
 	unsigned rem = (unsigned)(p >> 32), lo = (unsigned)p, q = 0;
 	int i;
@@ -17,10 +16,12 @@ int M3dMaths_MulDiv64__Fiii(int a, int b, int c)
 		rem = (rem << 1) | (lo >> 31);
 		lo <<= 1;
 		q <<= 1;
+
 		if (rem >= (unsigned)c) {
 			rem -= (unsigned)c;
 			q |= 1;
 		}
 	}
+
 	return (int)q;
 }

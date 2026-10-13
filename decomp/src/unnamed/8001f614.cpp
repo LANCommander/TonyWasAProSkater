@@ -3,8 +3,8 @@
    and an amplitude; it starts switched on. */
 #include "game/bit.h"
 
-CLight::CLight(const CVector &Pos, int Node, int ClipDist, int InnerRadius, int FringeRadius, int Amp,
-               uchar r0, uchar g0, uchar b0, uchar r1, uchar g1, uchar b1) {
+CLight::CLight(const CVector &Pos, int Node, int ClipDist, int InnerRadius, int FringeRadius,
+               int Amp, uchar r0, uchar g0, uchar b0, uchar r1, uchar g1, uchar b1) {
 	mPos = Pos;
 	mClipDist = ClipDist;
 	mType = 2;

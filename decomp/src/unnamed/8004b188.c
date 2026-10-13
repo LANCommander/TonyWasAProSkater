@@ -1,5 +1,6 @@
 /* FUN_8004b188 (0x8004b188) */
 #include "names.h"
+
 /* Loads a VAB sound bank: reads the file, sends the sample body (after the header and the
    512-byte-per-program tables) to SPU memory, then shrinks the buffer to the header. The SPU
    address goes into the header's size word. Called by FUN_8004b0e4 with "name.VAB". */

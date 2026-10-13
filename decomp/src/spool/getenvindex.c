@@ -1,5 +1,6 @@
 /* Spool_GetEnvIndex__Fi (0x8007043c) */
 #include "names.h"
+
 int EnvRegions, EnvRegions_4;
 
 int Spool_GetEnvIndex(int i) {

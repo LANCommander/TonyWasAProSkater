@@ -39,11 +39,14 @@ void FUN_80048d24(void) {
 					fprintf(stderr, "d24_fired f%u buf=%d\n", pc_heartbeat, i);
 				}
 #endif
-			} else if (getenv("THPS_TRACE_CULL")) {
+			}
+#ifdef PC_PORT
+			else if (getenv("THPS_TRACE_CULL")) {
 				extern volatile unsigned pc_heartbeat;
 				fprintf(stderr, "d24_blocked f%u buf=%d Rendering=%d,%d Visible=%d\n", pc_heartbeat,
 				        i, DoubleBuffer[i].f78, DoubleBuffer[1 - i].f78, DoubleBuffer[i].f70);
 			}
+#endif
 		}
 	}
 }

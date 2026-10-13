@@ -1,5 +1,6 @@
 /* Video_SetHeader__FP10SVideoHeadi (0x80069394) */
 #include "names.h"
+
 typedef struct {
 	int a, b;
 } SVideoMark;

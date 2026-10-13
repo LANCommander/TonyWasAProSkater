@@ -1,5 +1,6 @@
 /* Panel_Tape__Fi (0x8006e2fc) */
 #include "names.h"
+
 typedef struct {
 	char p[0x38];
 	int f38;

@@ -1,5 +1,6 @@
 /* FUN_80044a20 (0x80044a20) */
 #include "names.h"
+
 /* Fires the trigger with the given id: marks it hit for this side (1 or 2) and, the first time
    for that side, runs its script. Nodes are hashed on the id's low byte (see FUN_80044820). */
 typedef struct STrig {

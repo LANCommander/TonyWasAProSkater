@@ -1,5 +1,6 @@
 /* SFX_Grunt__FP6CBruce (0x80043408) */
 #include "names.h"
+
 struct E {
 	char pad[12];
 	int f;

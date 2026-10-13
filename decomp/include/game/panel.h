@@ -22,11 +22,11 @@ struct Message;
 /* one queued trick on the panel (demo: 0x24 bytes with spins/locked/count/switched) */
 class CTrick {
   public:
-	char *name;                    /* 0x00 */
-	int point_value;               /* 0x04 */
-	int depreciate;                /* 0x08 */
-	int countdown;                 /* 0x0c */
-	Message *message;              /* 0x10 */
+	char *name;       /* 0x00 */
+	int point_value;  /* 0x04 */
+	int depreciate;   /* 0x08 */
+	int countdown;    /* 0x0c */
+	Message *message; /* 0x10 */
 	/* sizeof(CTrick) == 0x14 */
 
 	void Set(Message *, char *, int, int); /* 0x8006e514 */
@@ -35,77 +35,77 @@ class CTrick {
 /* the trick table entry (`STrick Group[]`, 44 bytes; entries from 32 on are rail tricks keyed by
    style + two button codes) */
 struct STrick {
-	int Flags;                     /* 0x00 */
-	int Anim;                      /* 0x04 */
-	int w2;                        /* 0x08 */
-	char *pName;                   /* 0x0c */
-	int Frames;                    /* 0x10 */
-	int w5;                        /* 0x14 */
-	int MinFrame;                  /* 0x18 */
-	int Score;                     /* 0x1c */
-	int w8;                        /* 0x20 */
-	int w9;                        /* 0x24 */
-	int w10;                       /* 0x28 */
-	/* sizeof(STrick) == 0x2c */
+	int Flags;    /* 0x00 */
+	int Anim;     /* 0x04 */
+	int w2;       /* 0x08 */
+	char *pName;  /* 0x0c */
+	int Frames;   /* 0x10 */
+	int w5;       /* 0x14 */
+	int MinFrame; /* 0x18 */
+	int Score;    /* 0x1c */
+	int w8;       /* 0x20 */
+	int w9;       /* 0x24 */
+	int w10;      /* 0x28 */
+	              /* sizeof(STrick) == 0x2c */
 };
 
 /* a gap bonus (TRIG; CBruce::mpGrindGapTrick points at one) */
 struct SGapTrick {
-	short Type;                    /* 0x0 */
-	short Score;                   /* 0x2 */
-	char *Name;                    /* 0x4 */
+	short Type;  /* 0x0 */
+	short Score; /* 0x2 */
+	char *Name;  /* 0x4 */
 };
 
 /* one trick tip (`STip TRICKTIP[]`) */
 struct STip {
-	int Flag;                      /* 0x00 */
-	int m4;                        /* 0x04 */
-	char *Line1;                   /* 0x08 */
-	char *Line2;                   /* 0x0c */
-	char *Line3;                   /* 0x10 */
+	int Flag;    /* 0x00 */
+	int m4;      /* 0x04 */
+	char *Line1; /* 0x08 */
+	char *Line2; /* 0x0c */
+	char *Line3; /* 0x10 */
 };
 
 class CPanelData {
   public:
-	CBruce *mpBruce;               /* 0x000 */
-	uint mTotalScore;              /* 0x004 */
-	ushort mPlayerNum;             /* 0x008 */
-	ushort mNumTricksLanded;       /* 0x00a */
-	ushort mNumBails;              /* 0x00c */
-	ushort mNumTricksInCombo;      /* 0x00e */
-	uint mBestComboScore;          /* 0x010 */
-	char mBestComboName[100];      /* 0x014 */
-	char mBestComboName2[100];     /* 0x078 */
-	char mBestComboName3[100];     /* 0x0dc */
-	uint mLandedTotal;             /* 0x140 */
-	uint mLandedScore;             /* 0x144 */
-	uint mLandedMultiplier;        /* 0x148 */
-	int mTrickState;               /* 0x14c (demo: mFallingEnabled) */
-	int mTrickTimer;               /* 0x150 (demo: mWantToFall) */
-	int mLastHoldingScore;         /* 0x154 */
-	int mLastMult;                 /* 0x158 */
-	int mBailFlag;                 /* 0x15c (demo name; unproven) */
-	int mOutOfBounds;              /* 0x160 (demo name; unproven) */
+	CBruce *mpBruce;                      /* 0x000 */
+	uint mTotalScore;                     /* 0x004 */
+	ushort mPlayerNum;                    /* 0x008 */
+	ushort mNumTricksLanded;              /* 0x00a */
+	ushort mNumBails;                     /* 0x00c */
+	ushort mNumTricksInCombo;             /* 0x00e */
+	uint mBestComboScore;                 /* 0x010 */
+	char mBestComboName[100];             /* 0x014 */
+	char mBestComboName2[100];            /* 0x078 */
+	char mBestComboName3[100];            /* 0x0dc */
+	uint mLandedTotal;                    /* 0x140 */
+	uint mLandedScore;                    /* 0x144 */
+	uint mLandedMultiplier;               /* 0x148 */
+	int mTrickState;                      /* 0x14c (demo: mFallingEnabled) */
+	int mTrickTimer;                      /* 0x150 (demo: mWantToFall) */
+	int mLastHoldingScore;                /* 0x154 */
+	int mLastMult;                        /* 0x158 */
+	int mBailFlag;                        /* 0x15c (demo name; unproven) */
+	int mOutOfBounds;                     /* 0x160 (demo name; unproven) */
 	FallingTextEffect mFallingTextEffect; /* 0x164 */
-	int mOutOfBoundsMessage;       /* 0x1ac: 1..4, which out-of-bounds message */
+	int mOutOfBoundsMessage;              /* 0x1ac: 1..4, which out-of-bounds message */
 	FallingTextEffect mOutOfBoundsText;   /* 0x1b0 */
-	CTrick mTQ[20];                /* 0x1f8: the trick queue */
-	int mTQStack;                  /* 0x388: tricks in the queue */
-	char mTrickName[100];          /* 0x38c */
-	char mTrickName2[100];         /* 0x3f0 */
-	char mTrickName3[100];         /* 0x454 */
-	int old_180spins;              /* 0x4b8 (demo name; unproven) */
-	int m4BC;                      /* 0x4bc */
-	int mTrickStatus;              /* 0x4c0 */
-	int m4C4;                      /* 0x4c4 */
-	int SKATE[5];                  /* 0x4c8: the S-K-A-T-E letters collected */
-	int Goals;                     /* 0x4dc */
-	int m4E0;                      /* 0x4e0 */
-	int m4E4;                      /* 0x4e4 */
-	int m4E8;                      /* 0x4e8 */
-	int m4EC;                      /* 0x4ec */
-	int m4F0;                      /* 0x4f0 */
-	int m4F4;                      /* 0x4f4: bail timer (Land sets 40; displayscore: `Bailing`) */
+	CTrick mTQ[20];                       /* 0x1f8: the trick queue */
+	int mTQStack;                         /* 0x388: tricks in the queue */
+	char mTrickName[100];                 /* 0x38c */
+	char mTrickName2[100];                /* 0x3f0 */
+	char mTrickName3[100];                /* 0x454 */
+	int old_180spins;                     /* 0x4b8 (demo name; unproven) */
+	int m4BC;                             /* 0x4bc */
+	int mTrickStatus;                     /* 0x4c0 */
+	int m4C4;                             /* 0x4c4 */
+	int SKATE[5];                         /* 0x4c8: the S-K-A-T-E letters collected */
+	int Goals;                            /* 0x4dc */
+	int m4E0;                             /* 0x4e0 */
+	int m4E4;                             /* 0x4e4 */
+	int m4E8;                             /* 0x4e8 */
+	int m4EC;                             /* 0x4ec */
+	int m4F0;                             /* 0x4f0 */
+	int m4F4; /* 0x4f4: bail timer (Land sets 40; displayscore: `Bailing`) */
 	/* sizeof(CPanelData) == 0x4f8 */
 
 	/* inline in retail (CBruce::CBruce has it inlined; the demo's is out of line) */
@@ -124,11 +124,11 @@ class CPanelData {
 		Goals = 0;
 	}
 	void DisplayTrick(CBruce *, ushort, ushort); /* 0x8006d938 */
-	void TrickMessageRefresh();    /* 0x8006e5ac */
-	void TrickMessage();           /* 0x8006e7c0 */
-	void Trick(char *, int, int);  /* 0x8006e804 */
-	void Land();                   /* 0x8006e8ec */
-	void OutOfBounds();            /* 0x8006eba4 */
+	void TrickMessageRefresh();                  /* 0x8006e5ac */
+	void TrickMessage();                         /* 0x8006e7c0 */
+	void Trick(char *, int, int);                /* 0x8006e804 */
+	void Land();                                 /* 0x8006e8ec */
+	void OutOfBounds();                          /* 0x8006eba4 */
 };
 
 /* the trick-tip monitor (one global, TrickTipMonitor; layout = demo, vtable 0x800a2498) */

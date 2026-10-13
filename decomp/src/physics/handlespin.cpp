@@ -91,8 +91,8 @@ void CBruce::HandleSpin() {
 
 	if (mPhysicsState == 0) {
 		DeltaAngle = (TimeScale * (mpStatBonus[4] == 1   ? 10240
-		                              : mpStatBonus[4] == 3 ? 15872
-		                                                    : 30720)) >>
+		                           : mpStatBonus[4] == 3 ? 15872
+		                                                 : 30720)) >>
 		             8;
 		MaxLeanAngle = 0x2d000;
 		LeftPressed = mpPad->Left.Pressed;

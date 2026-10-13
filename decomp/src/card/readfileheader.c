@@ -1,5 +1,6 @@
 /* Card_ReadFileHeader__FPcP9SCardHead (0x8001508c) */
 #include "names.h"
+
 extern char s_bu00_s[];
 
 void FUN_8008b900(char *, char *, char *);

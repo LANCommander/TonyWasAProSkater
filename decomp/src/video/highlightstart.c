@@ -1,5 +1,6 @@
 /* Video_HighlightStart__FP6CBruce (0x80068f84) */
 #include "names.h"
+
 typedef struct {
 	int f0, f4, f8;
 } CBruce;

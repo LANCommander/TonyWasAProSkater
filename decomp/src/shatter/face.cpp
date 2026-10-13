@@ -8,6 +8,7 @@ extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 }
+
 #include "game/m3d.h"
 
 static inline void SetV(CVector *v, int _x, int _y, int _z) {

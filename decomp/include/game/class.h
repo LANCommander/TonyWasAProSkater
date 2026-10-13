@@ -16,9 +16,9 @@
 
 class CClass {
   public:
-	virtual ~CClass() {}                         /* slot 0 */
+	virtual ~CClass() {}                          /* slot 0 */
 	static void *operator new(uint size) throw(); /* 0x800241dc */
-	void operator delete(void *);                /* 0x80024238 */
+	void operator delete(void *);                 /* 0x80024238 */
 };
 
 #endif

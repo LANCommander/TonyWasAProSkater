@@ -1,5 +1,6 @@
 /* Display_Viewport__FP9SViewporti (0x80024ce4) */
 #include "names.h"
+
 /* MAIN.CPP, as C (demo twin). Renders one viewport: points the OT at its layer block, sets up the
    camera, then renders the item lists, skaters (with their shadow tint), bits and background. */
 typedef struct {
@@ -44,7 +45,7 @@ void Display_Viewport(int a, int b) {
 
 	Camera_CurrentMikeCamera = b;
 	M3d_RenderSetup(MikeCamera + b * 164, a,
-	             (char *)(pDoubleBuffer->pCurrent = &pDoubleBuffer->Layer[b * 4096]));
+	                (char *)(pDoubleBuffer->pCurrent = &pDoubleBuffer->Layer[b * 4096]));
 
 	Mick_MapDoit = Mick_MapMode;
 	M3d_Render(EnviroList);

@@ -1,5 +1,6 @@
 /* FUN_8006edb8 (0x8006edb8) */
 #include "names.h"
+
 typedef struct {
 	char pad[20];
 	int *p14;

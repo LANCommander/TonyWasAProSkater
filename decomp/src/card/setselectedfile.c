@@ -1,5 +1,6 @@
 /* Card_SetSelectedFile__FPc (0x80014218) */
 #include "names.h"
+
 extern char CARD_FNAME[];
 extern char CARD_VNAME[];
 

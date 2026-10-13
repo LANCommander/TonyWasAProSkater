@@ -8,11 +8,11 @@
 #include "game/bruce.h"
 
 extern int ViewportMode;
-extern char s_d_800d1ea8[4]; /* "%d " */
+extern char s_d_800d1ea8[4];   /* "%d " */
 extern char s_s_s_800d1eac[8]; /* "%s%s" */
 extern char s_s_s_800d1eb4[];  /* "%s + %s" */
-extern char s_s_800d1ebc[];  /* "+ %s" */
-extern char s_s[8]; /* "%s + ^...^" */
+extern char s_s_800d1ebc[];    /* "+ %s" */
+extern char s_s[8];            /* "%s + ^...^" */
 
 extern "C" {
 	int FUN_8008b900(char *, const char *, ...);

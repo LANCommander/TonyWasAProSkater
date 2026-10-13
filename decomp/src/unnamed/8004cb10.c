@@ -1,5 +1,6 @@
 /* FileIO_Load__FPv (0x8004cb10) */
 #include "names.h"
+
 typedef struct {
 	int a, b;
 } R;

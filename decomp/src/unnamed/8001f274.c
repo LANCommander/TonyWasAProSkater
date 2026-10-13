@@ -1,5 +1,6 @@
 /* FUN_8001f274 (0x8001f274) */
 #include "names.h"
+
 extern char DAT_8009ef94[];
 extern char DAT_8009efa4[];
 

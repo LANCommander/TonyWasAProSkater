@@ -1,5 +1,6 @@
 /* Spool_ClearPSX__FPc (0x8006fd18) */
 #include "names.h"
+
 typedef struct {
 	char name[10];
 	unsigned char f0a, f0b;

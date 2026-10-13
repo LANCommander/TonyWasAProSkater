@@ -1,5 +1,6 @@
 /* SendSuspendOrActivate__FPUsi (0x80045ef4) */
 #include "names.h"
+
 extern void *BaddyList, *EnvironmentalObjectList;
 
 short **OffsetList;

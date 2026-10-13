@@ -61,12 +61,10 @@ int FUN_80060274(int a) {
 		for (i = 0; i < 8; i++)
 			k[i] = 0;
 
-		FUN_8008b900(A, s_s_s, GameText.f8,
-		             GPreferences.f184 ? GameText.f0 : GameText.f4);
+		FUN_8008b900(A, s_s_s, GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
 
 		t[3] = (int)A;
-		FUN_8008b900(B, s_s_s, GameText.fc,
-		             GPreferences.f188 ? GameText.f0 : GameText.f4);
+		FUN_8008b900(B, s_s_s, GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
 
 		t[4] = (int)B;
 		v = FUN_8005e0e0((T *)t, k, 8, 80, &a, FUN_8005ffac, 0, 0, 0);
@@ -123,12 +121,10 @@ int FUN_80060274(int a) {
 		k[4] = 0;
 		k[5] = 0;
 		k[6] = 0;
-		FUN_8008b900(A, s_s_s, GameText.f8,
-		             GPreferences.f184 ? GameText.f0 : GameText.f4);
+		FUN_8008b900(A, s_s_s, GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
 
 		t.w[3] = (int)A;
-		FUN_8008b900(B, s_s_s, GameText.fc,
-		             GPreferences.f188 ? GameText.f0 : GameText.f4);
+		FUN_8008b900(B, s_s_s, GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
 
 		t.w[4] = (int)B;
 		v = FUN_8005e0e0(&t, k, 7, 80, &a, FUN_8005ffac, 0, 0, 0);

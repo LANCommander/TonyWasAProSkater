@@ -1,5 +1,6 @@
 /* Competition_EndGameLogic__FR13EPausedStatusRi (0x80076880) flags=-fstructure-noalias */
 #include "names.h"
+
 /* Competition end-of-game logic (COMPETITION.CPP, demo Competition_EndGameLogic), as C: after the
    results flash, kills the medal objects, records the medal, and reloads/plays the ending; else
    waits for the prompt and offers the continue menu. */
@@ -92,13 +93,16 @@ void Competition_EndGameLogic(int *a, int *b) {
 			theCompetition.f = 0;
 
 			if (theCompetition.o1)
-				theCompetition.o1->vt->fn((char *)theCompetition.o1 + theCompetition.o1->vt->off, 3);
+				theCompetition.o1->vt->fn((char *)theCompetition.o1 + theCompetition.o1->vt->off,
+				                          3);
 
 			if (theCompetition.o2)
-				theCompetition.o2->vt->fn((char *)theCompetition.o2 + theCompetition.o2->vt->off, 3);
+				theCompetition.o2->vt->fn((char *)theCompetition.o2 + theCompetition.o2->vt->off,
+				                          3);
 
 			if (theCompetition.o3)
-				theCompetition.o3->vt->fn((char *)theCompetition.o3 + theCompetition.o3->vt->off, 3);
+				theCompetition.o3->vt->fn((char *)theCompetition.o3 + theCompetition.o3->vt->off,
+				                          3);
 
 			e = GLevel;
 			g = GSkater;
@@ -119,10 +123,8 @@ void Competition_EndGameLogic(int *a, int *b) {
 			GameFMV_PlayMovie(-(*(int *)(GSkater + 744) + 12));
 			Flash_Reset();
 
-			DoubleBuffer.a =
-			    Mem_NewX((Levels[GLevel].x[GNumberOfPlayers - 1] + 0x17c00) * 2, 1, 1);
-			DoubleBuffer.b =
-			    DoubleBuffer.a + 0x17c00 + Levels[GLevel].x[GNumberOfPlayers - 1];
+			DoubleBuffer.a = Mem_NewX((Levels[GLevel].x[GNumberOfPlayers - 1] + 0x17c00) * 2, 1, 1);
+			DoubleBuffer.b = DoubleBuffer.a + 0x17c00 + Levels[GLevel].x[GNumberOfPlayers - 1];
 			*a = 7;
 		}
 	} else if (*b) {
@@ -147,13 +149,16 @@ void Competition_EndGameLogic(int *a, int *b) {
 			*a = 7;
 
 			if (theCompetition.o1)
-				theCompetition.o1->vt->fn((char *)theCompetition.o1 + theCompetition.o1->vt->off, 3);
+				theCompetition.o1->vt->fn((char *)theCompetition.o1 + theCompetition.o1->vt->off,
+				                          3);
 
 			if (theCompetition.o2)
-				theCompetition.o2->vt->fn((char *)theCompetition.o2 + theCompetition.o2->vt->off, 3);
+				theCompetition.o2->vt->fn((char *)theCompetition.o2 + theCompetition.o2->vt->off,
+				                          3);
 
 			if (theCompetition.o3)
-				theCompetition.o3->vt->fn((char *)theCompetition.o3 + theCompetition.o3->vt->off, 3);
+				theCompetition.o3->vt->fn((char *)theCompetition.o3 + theCompetition.o3->vt->off,
+				                          3);
 
 			theCompetition.o1 = 0;
 			theCompetition.o2 = 0;

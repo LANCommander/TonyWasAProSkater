@@ -370,7 +370,8 @@ extern "C" int FUN_80051660(int player) {
 					int j;
 
 					title[c]->draw(boxX[p][c], boxY[p][c], 0, -1, -1, -1);
-					SetClippingBox__Fiiii(boxX[p][c] + 3, boxY[p][c] + 5, boxW[p][c] - 6, boxH[p][c] - 10);
+					SetClippingBox__Fiiii(boxX[p][c] + 3, boxY[p][c] + 5, boxW[p][c] - 6,
+					                      boxH[p][c] - 10);
 
 					for (j = 0; j < 2; j++) {
 						if (img[p][c][j] == 0) {
@@ -647,8 +648,7 @@ extern "C" int FUN_80051660(int player) {
 					if (textTimer[p] == 0) {
 						if (GCareer.CharacterProgress[DAT_800d22d0[p]].NumTapes >=
 						    Stats[DAT_800d22d0[p]].Boards[deck[p]].Req)
-							FUN_8008e904(text[p],
-							             Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
+							FUN_8008e904(text[p], Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
 						else
 							FUN_8008b900(text[p], s_Get_d_tapes,
 							             Stats[DAT_800d22d0[p]].Boards[deck[p]].Req);

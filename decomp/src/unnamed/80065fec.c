@@ -1,5 +1,6 @@
 /* FUN_80065fec (0x80065fec) */
 #include "names.h"
+
 typedef struct {
 	void *a;
 	int p4[5];

@@ -18,8 +18,10 @@ struct SCareerRecord {
 };
 
 extern SCareerRecord GCareer_c[];
-extern char s_You_scored_all_golds[], s_Your_are_the_top_pro_skater[], s_Congratulations[], s_Watch_this_then_get_off_your[], s_couch_and_go_skate[];
-extern char s_Your_third_medal_Good_going[], s_You_just_might_become[], s_an_average_skater[], s_pro_skaters_get_all_golds[];
+extern char s_You_scored_all_golds[], s_Your_are_the_top_pro_skater[], s_Congratulations[],
+    s_Watch_this_then_get_off_your[], s_couch_and_go_skate[];
+extern char s_Your_third_medal_Good_going[], s_You_just_might_become[], s_an_average_skater[],
+    s_pro_skaters_get_all_golds[];
 extern char *GameText_180[];
 
 void Mess_DeleteAll();

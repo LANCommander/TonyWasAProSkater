@@ -30,8 +30,8 @@ extern "C" void FUN_8005f9ec(VerticalMenu *a) {
 
 	FUN_8002357c(0);
 
-	if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered ||
-	    Pad[0].MenuRight.Triggered || Pad[1].MenuRight.Triggered) {
+	if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered || Pad[0].MenuRight.Triggered ||
+	    Pad[1].MenuRight.Triggered) {
 		dir = 0;
 
 		if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered)
@@ -78,8 +78,8 @@ extern "C" void FUN_8005f9ec(VerticalMenu *a) {
 		}
 	}
 
-	if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
-	    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered) {
+	if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered || Pad[0].MenuAccept.Triggered ||
+	    Pad[1].MenuAccept.Triggered) {
 		if (a->getSelected() == 0) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);

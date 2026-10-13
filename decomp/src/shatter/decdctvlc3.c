@@ -9,20 +9,20 @@
 /* DecDCTvlcBuild3 expands this into the scratchpad table DecDCTvlc3 reads: one (run, level) pair
  * per AC code, grouped by code shape (see AcCode). Comments give the codes, s being the sign. */
 unsigned char DecDCTvlcCodes3[216] = {
-	7, 1,   6, 1,   1, 2,   5, 1,   2, 2,   9, 1,   0, 4,   8, 1,   /* 0001xxs, 00001xxs */
-	16, 1,  5, 2,   0, 7,   2, 3,   1, 4,   15, 1,  14, 1,  4, 2,   /* 0000001xxxs */
-	0, 11,  8, 2,   4, 3,   0, 10,  2, 4,   7, 2,   21, 1,  20, 1,  /* 00000001xxxxs */
-	0, 9,   19, 1,  18, 1,  1, 5,   3, 3,   0, 8,   6, 2,   17, 1,
-	10, 2,  9, 2,   5, 3,   3, 4,   2, 5,   1, 7,   1, 6,   0, 15,  /* 000000001xxxxs */
-	0, 14,  0, 13,  0, 12,  26, 1,  25, 1,  24, 1,  23, 1,  22, 1,
-	0, 31,  0, 30,  0, 29,  0, 28,  0, 27,  0, 26,  0, 25,  0, 24,  /* 0000000001xxxxs */
-	0, 23,  0, 22,  0, 21,  0, 20,  0, 19,  0, 18,  0, 17,  0, 16,
-	0, 40,  0, 39,  0, 38,  0, 37,  0, 36,  0, 35,  0, 34,  0, 33,  /* 00000000001xxxxs */
-	0, 32,  1, 14,  1, 13,  1, 12,  1, 11,  1, 10,  1, 9,   1, 8,
-	1, 18,  1, 17,  1, 16,  1, 15,  6, 3,   16, 2,  15, 2,  14, 2,  /* 000000000001xxxxs */
-	13, 2,  12, 2,  11, 2,  31, 1,  30, 1,  29, 1,  28, 1,  27, 1,
-	13, 1,  0, 6,   12, 1,  11, 1,  3, 2,   1, 3,   0, 5,   10, 1,  /* 00100xxxs (the last pair is never indexed) */
-	0, 3,   4, 1,   3, 1,   0, 0,                                   /* 001xxs, then padding */
+	7,  1,  6,  1,  1,  2,  5,  1,  2,  2,  9,  1,  0,  4,  8,  1, /* 0001xxs, 00001xxs */
+	16, 1,  5,  2,  0,  7,  2,  3,  1,  4,  15, 1,  14, 1,  4,  2, /* 0000001xxxs */
+	0,  11, 8,  2,  4,  3,  0,  10, 2,  4,  7,  2,  21, 1,  20, 1, /* 00000001xxxxs */
+	0,  9,  19, 1,  18, 1,  1,  5,  3,  3,  0,  8,  6,  2,  17, 1,  10,
+	2,  9,  2,  5,  3,  3,  4,  2,  5,  1,  7,  1,  6,  0,  15, /* 000000001xxxxs */
+	0,  14, 0,  13, 0,  12, 26, 1,  25, 1,  24, 1,  23, 1,  22, 1,  0,
+	31, 0,  30, 0,  29, 0,  28, 0,  27, 0,  26, 0,  25, 0,  24, /* 0000000001xxxxs */
+	0,  23, 0,  22, 0,  21, 0,  20, 0,  19, 0,  18, 0,  17, 0,  16, 0,
+	40, 0,  39, 0,  38, 0,  37, 0,  36, 0,  35, 0,  34, 0,  33, /* 00000000001xxxxs */
+	0,  32, 1,  14, 1,  13, 1,  12, 1,  11, 1,  10, 1,  9,  1,  8,  1,
+	18, 1,  17, 1,  16, 1,  15, 6,  3,  16, 2,  15, 2,  14, 2, /* 000000000001xxxxs */
+	13, 2,  12, 2,  11, 2,  31, 1,  30, 1,  29, 1,  28, 1,  27, 1,  13,
+	1,  0,  6,  12, 1,  11, 1,  3,  2,  1,  3,  0,  5,  10, 1, /* 00100xxxs (the last pair is never indexed) */
+	0,  3,  4,  1,  3,  1,  0,  0,                             /* 001xxs, then padding */
 };
 
 /* Output budget of one call, in halfwords: DecDCTvlc3 suspends at the first macroblock (block, for
@@ -31,22 +31,23 @@ unsigned long DecDCTvlcMaxSize3 = 0xffffff;
 
 /* A suspended decode: the retail code saves its registers here, in this order. */
 struct VlcState {
-	unsigned long bits;       /* the next 32 bits of the stream, MSB first */
-	unsigned long next;       /* the 32 after them, of which 32 - used are valid */
-	unsigned long peek;       /* v3: the 10 bits after the last EOB; v2: the next block's DC */
-	unsigned long *in;        /* the stream word after `word` */
+	unsigned long bits; /* the next 32 bits of the stream, MSB first */
+	unsigned long next; /* the 32 after them, of which 32 - used are valid */
+	unsigned long peek; /* v3: the 10 bits after the last EOB; v2: the next block's DC */
+	unsigned long *in;  /* the stream word after `word` */
 	unsigned short *out;
-	unsigned long word;       /* the stream word after `next`, as stored */
-	long used;                /* bits of `next` already shifted into `bits` */
-	unsigned long quant;      /* quantiser scale << 10, ORed into every DC */
-	unsigned short *out_end;  /* where the MDEC header says the output ends */
-	long dc_cr, dc_cb, dc_y;  /* v3 DC predictors */
-	unsigned long v2;         /* 0 for a v3 frame (retail: the return address of its v2 loop) */
+	unsigned long word;      /* the stream word after `next`, as stored */
+	long used;               /* bits of `next` already shifted into `bits` */
+	unsigned long quant;     /* quantiser scale << 10, ORed into every DC */
+	unsigned short *out_end; /* where the MDEC header says the output ends */
+	long dc_cr, dc_cb, dc_y; /* v3 DC predictors */
+	unsigned long v2;        /* 0 for a v3 frame (retail: the return address of its v2 loop) */
 };
+
 struct VlcState DecDCTvlcState3;
 
 #define VLC_TABLE ((unsigned short *)0x1f800000) /* scratchpad */
-#define EOB 0xfe00
+#define EOB       0xfe00
 
 void DecDCTvlcBuild3(void) {
 	unsigned short *t = VLC_TABLE;
@@ -69,10 +70,12 @@ static int Lzc(unsigned long x) {
 
 	if ((long)x < 0)
 		x = ~x;
+
 	while (n < 32 && !(x & 0x80000000u)) {
 		x <<= 1;
 		n++;
 	}
+
 	return n;
 }
 
@@ -89,12 +92,16 @@ static void Skip(struct VlcState *v, int n) {
 	v->bits = v->bits << (n & 31) | v->next >> (-n & 31);
 	v->next <<= n & 31;
 	v->used += n;
+
 	if (v->used < 32)
 		return;
+
 	v->used -= 32;
 	w = Swap(v->word);
+
 	if (v->used)
 		v->bits |= w >> (-v->used & 31);
+
 	v->next = w << (v->used & 31);
 	v->word = *v->in++;
 }
@@ -108,37 +115,48 @@ static unsigned short AcCode(unsigned long b, int *len) {
 		*len = 3;
 		return (long)(b << 2) < 0 ? 1023 : 1;
 	}
+
 	if ((long)(b << 1) < 0) {
 		if ((long)(b << 2) < 0) { /* 011s: run 1, level 1 */
 			*len = 4;
 			return (long)(b << 3) < 0 ? 2047 : 1025;
 		}
+
 		*len = 5;
+
 		if ((long)(b << 3) < 0) /* 0101s: run 2, level 1 */
 			return (long)(b << 4) < 0 ? 3071 : 2049;
+
 		return (long)(b << 4) < 0 ? 1022 : 2; /* 0100s: run 0, level 2 */
 	}
+
 	if ((long)(b << 2) < 0) {
 		if ((b << 3) >> 30) { /* 001xxs, xx != 00 */
 			*len = 6;
 			return t[206 + ((b >> 26) & 7)];
 		}
+
 		*len = 9; /* 00100xxxs (the last pair is never indexed) */
 		return t[192 + ((b >> 23) & 15)];
 	}
+
 	lz = Lzc(b);
+
 	if (b >> 26 == 1) { /* 000001: escape, then 6 bits of run and 10 of level */
 		*len = 22;
 		return (b >> 10) & 0xffff;
 	}
+
 	if (b >> 26) { /* 0001xxs, 00001xxs */
 		*len = lz + 4;
 		return t[(lz - 3) * 8 + ((b << (lz & 31)) >> 28 & 7)];
 	}
+
 	if (lz <= 6) { /* 0000001xxxs */
 		*len = 11;
 		return t[16 + ((b << (lz & 31)) >> 27 & 15)];
 	}
+
 	/* 7 to 11 zeros, then 1 and 5 bits; more zeros can only come from a corrupt stream, which
 	 * indexes past the table (on the PS1, past the scratchpad from 22 zeros) */
 	*len = lz + 6;
@@ -153,15 +171,19 @@ static int DcChroma(unsigned long b, long *dc) {
 	if ((long)b >= 0) {
 		if ((long)(b << 1) >= 0) /* 00: size 0 */
 			return 2;
+
 		*dc += (long)(b << 2) < 0 ? 1 : -1; /* 01s: size 1 */
 		return 3;
 	}
+
 	k = Lzc(b); /* k ones, a zero, then k + 1 bits */
 	x = (b << 1) << (k & 31);
 	s = (unsigned long)(-1 - k) & 31;
 	*dc += (long)(x >> s);
+
 	if ((long)x >= 0) /* a leading 0 bit: negative */
 		*dc -= (long)(0xffffffffu >> s);
+
 	return 2 * (k + 1);
 }
 
@@ -175,23 +197,29 @@ static int DcLuma(unsigned long b, long *dc) {
 			*dc += (long)(b << 2) < 0 ? 1 : -1;
 			return 3;
 		}
+
 		x = b << 2; /* 01xx: size 2 */
 		*dc += (long)(x >> 30) - ((long)x < 0 ? 0 : 3);
 		return 4;
 	}
+
 	if ((long)(b << 1) >= 0) {
 		if ((long)(b << 2) >= 0) /* 100: size 0 */
 			return 3;
+
 		x = b << 3; /* 101xxx: size 3 */
 		*dc += (long)(x >> 29) - ((long)x < 0 ? 0 : 7);
 		return 6;
 	}
+
 	k = Lzc(b); /* k ones, a zero, then k + 2 bits */
 	x = (b << 1) << (k & 31);
 	s = (unsigned long)(-2 - k) & 31;
 	*dc += (long)(x >> s);
+
 	if ((long)x >= 0)
 		*dc -= (long)(0xfffffffeu >> s);
+
 	return 2 * k + 3;
 }
 
@@ -203,10 +231,12 @@ static void Block(struct VlcState *v, unsigned short dc, int len) {
 
 	*v->out++ = dc;
 	Skip(v, len);
+
 	while ((v->bits >> 30) != 2) {
 		*v->out++ = AcCode(v->bits, &n);
 		Skip(v, n);
 	}
+
 	*v->out++ = EOB;
 }
 
@@ -229,10 +259,13 @@ int DecDCTvlc3(unsigned long *bs, unsigned long *buf) {
 	if (!bs) {
 		v = DecDCTvlcState3;
 		limit = (unsigned short *)((char *)v.out + (DecDCTvlcMaxSize3 << 1));
+
 		if (v.v2)
 			goto v2_block;
+
 		goto v3_next;
 	}
+
 	limit = (unsigned short *)((char *)buf + (DecDCTvlcMaxSize3 << 1));
 	*buf = bs[0];
 	v.out = (unsigned short *)(buf + 1);
@@ -247,23 +280,30 @@ int DecDCTvlc3(unsigned long *bs, unsigned long *buf) {
 
 	if ((bs[1] >> 16) == 3) {
 		v.v2 = 0;
+
 		for (;;) {
 			/* a macroblock: Cr, Cb, then four Y blocks; DCs are differences from the last one
 			 * of the same kind */
 			i = DcChroma(v.bits, &v.dc_cr);
 			Block(&v, Dc(&v, v.dc_cr), i);
+
 			i = DcChroma(v.bits << 2, &v.dc_cb);
 			Block(&v, Dc(&v, v.dc_cb), i + 2);
+
 			for (i = 0; i < 4; i++) {
 				int n = DcLuma(v.bits << 2, &v.dc_y);
+
 				Block(&v, Dc(&v, v.dc_y), n + 2);
 			}
+
 			v.peek = (v.bits << 2) >> 22;
+
 			if (Full(&v, limit))
 				goto suspend;
 		v3_next:
 			if (v.peek == 0x3ff) /* end of frame */
 				break;
+
 			/* the EOB. The retail code drops its 2 bits without refilling, leaving the window's
 			 * last bit stale until the next refill; the Cr DC code read before that can't reach
 			 * it (fewer than 10 leading ones, or it would be the end code), so refilling now is
@@ -274,19 +314,25 @@ int DecDCTvlc3(unsigned long *bs, unsigned long *buf) {
 		/* version 2: every DC is 10 bits as is */
 		v.v2 = 1;
 		Block(&v, (v.bits >> 22) | v.quant, 10);
+
 		for (;;) {
 			v.peek = (v.bits << 2) >> 22;
+
 			if (v.peek == 0x1ff) /* end of frame */
 				break;
+
 			v.peek |= v.quant;
+
 			if (Full(&v, limit))
 				goto suspend;
 		v2_block:
 			Block(&v, v.peek, 12);
 		}
 	}
+
 	while ((long)((unsigned long)v.out - (unsigned long)v.out_end) < 0)
 		*v.out++ = EOB;
+
 	return 0;
 
 suspend:

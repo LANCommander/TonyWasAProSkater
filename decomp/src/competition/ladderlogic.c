@@ -1,5 +1,6 @@
 /* Competition_LadderLogic__Fv (0x80074b94) */
 #include "names.h"
+
 typedef struct {
 	unsigned char a, av, b, bv;
 	int pad;

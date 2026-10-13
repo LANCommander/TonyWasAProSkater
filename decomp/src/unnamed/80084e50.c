@@ -1,5 +1,6 @@
 /* RenderBackgroundModel__FP6SModel (0x80084e50) */
 #include "names.h"
+
 typedef struct {
 	int a, b;
 } E;

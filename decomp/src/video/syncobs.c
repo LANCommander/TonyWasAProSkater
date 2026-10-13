@@ -1,5 +1,6 @@
 /* Video_SyncObs__Fi (0x80069534) */
 #include "names.h"
+
 typedef struct CBody CBody;
 
 typedef struct {

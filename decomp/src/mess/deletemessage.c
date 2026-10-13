@@ -1,5 +1,6 @@
 /* Mess_DeleteMessage__FP7Message (0x8001d590) */
 #include "names.h"
+
 typedef struct Message {
 	char pad[0x14];
 	struct Message *next;

@@ -56,8 +56,8 @@ void Video_Playback(CBruce *pSkater) {
 		GetDataChunk__FP6CBrucei(pSkater, 1);
 
 		VInfo->FramesLeft--;
-		IsAGrind =
-		    ABS(Mips_DotProd2(-pSkater->mFront.vz, pSkater->mVel.vx, pSkater->mFront.vx, pSkater->mVel.vz)) < 40000;
+		IsAGrind = ABS(Mips_DotProd2(-pSkater->mFront.vz, pSkater->mVel.vx, pSkater->mFront.vx,
+		                             pSkater->mVel.vz)) < 40000;
 		int st = pSkater->mPhysicsState;
 
 		if (st == 4 && (IsAGrind || pSkater->mAnim == 58) && BitCount < 200) {

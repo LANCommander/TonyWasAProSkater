@@ -22,6 +22,7 @@ CCar::CCar(short *p_info, int node, int type) {
 	switch (type) {
 		case 0xd5:
 			InitItem(s_c_taxi);
+
 			mLoopingSound = SFX_PlayX(0x71, 0, 0);
 			break;
 		case 0xd6:
@@ -30,10 +31,12 @@ CCar::CCar(short *p_info, int node, int type) {
 			break;
 		case 0xd7:
 			InitItem(s_c_van);
+
 			mLoopingSound = SFX_PlayX(0x81, 0, 0);
 			break;
 		case 0xd8:
 			InitItem(s_c_cable);
+
 			mLoopingSound = SFX_PlayX(0x86, 0, 0);
 			break;
 	}

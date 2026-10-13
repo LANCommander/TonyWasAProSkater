@@ -1,5 +1,6 @@
 /* FUN_80059520 (0x80059520) flags=-fstructure-noalias */
 #include "names.h"
+
 typedef struct {
 	int a, b, c, d, e;
 } S;

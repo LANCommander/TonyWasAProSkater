@@ -20,14 +20,16 @@
 extern unsigned int M3dColij_ZeroMask; /* face flag word bits allowed to be clear */
 extern unsigned int M3dColij_OneMask;  /* face flag word bits that must be clear */
 extern int CollidedTriggerModel;
-extern int NearestHit[];               /* SHit: pItem, pFace, Normal ... */
+extern int NearestHit[]; /* SHit: pItem, pFace, Normal ... */
 
 /* MIPS div: never traps (x / 0 gives -1 for x >= 0, else 1; INT_MIN / -1 gives INT_MIN) */
 static int MipsDiv(int n, int d) {
 	if (d == 0)
 		return n >= 0 ? -1 : 1;
+
 	if (d == -1)
 		return (int)(0u - (unsigned)n);
+
 	return n / d;
 }
 
@@ -44,22 +46,27 @@ static int LineInsideFace(const SFace *f, const SProjectedVertex *pv) {
 	PC_GteSetCtrl(2, *(const unsigned *)b);
 	PC_GteSetCtrl(4, *(const unsigned *)c);
 	LineCross(a->y, b->y, c->y);
+
 	s2 = GTE_S(26);
 	s3 = GTE_S(27);
+
 	if (GTE_S(25) < 0) {
 		/* outside edge b-c: a quad can still contain it in its other triangle (d, b, c) */
 		const SProjectedVertex *d = &pv[f->VertexNums[3]];
 
 		if (f->Flags & FACE_TRIANGLE)
 			return 0;
+
 		PC_GteSetData(10, (unsigned)b->y);
 		PC_GteSetData(11, (unsigned)c->y);
 		PC_GteSetCtrl(0, *(const unsigned *)d);
 		PC_GteSetData(9, (unsigned)d->y);
 		gte_op0();
+
 		s2 = -GTE_S(26);
 		s3 = -GTE_S(27);
 	}
+
 	return (s2 | s3) >= 0;
 }
 
@@ -72,10 +79,13 @@ static void TestFace(SFace *f, const SProjectedVertex *pv, SVECTOR *normals, SLi
 
 	if (w & M3dColij_OneMask)
 		return;
+
 	if (~(w | M3dColij_ZeroMask))
 		return;
+
 	if (((w >> 16) & 3) == 1)
 		return;
+
 	{
 		const SFace *cf = f;
 		unsigned out = pv[cf->VertexNums[0]].Outcode & pv[cf->VertexNums[1]].Outcode &
@@ -84,6 +94,7 @@ static void TestFace(SFace *f, const SProjectedVertex *pv, SVECTOR *normals, SLi
 		if (out & PV_ALL)
 			return; /* all four (or three, the fourth repeats one) on one side */
 	}
+
 	if (!LineInsideFace(f, pv))
 		return;
 
@@ -91,27 +102,35 @@ static void TestFace(SFace *f, const SProjectedVertex *pv, SVECTOR *normals, SLi
 	n = (SVECTOR *)((char *)normals + (w & 0xffff));
 	PC_GteSetData(0, *(unsigned *)&n->vx);
 	PC_GteSetData(1, *(unsigned *)&n->vz);
+
 	a = &pv[f->VertexNums[0]];
 	gte_mvmva(1, 2, 0, 3, 0);
 	/* light matrix row 1 = the first vertex: MAC1 = a . n; row 3 = (0, 0, Length+2):
 	 * MAC3 = (Length+2) * nz */
 	PC_GteSetCtrl(8, *(const unsigned *)a);
 	PC_GteSetCtrl(9, (unsigned short)a->z);
+
 	nz = GTE_S(11);
 	gte_mvmva(0, 1, 3, 3, 0);
+
 	d = GTE_S(25);
 	dmin = GTE_S(27);
+
 	if (d > 0 || d < dmin)
 		return; /* the plane doesn't cross the line between start and end */
 
 	if ((w >> 16) & FACE2_TRIGGER) {
 		if (info->RecordTriggerZoneHits)
 			CollidedTriggerModel = item->Model;
+
 		return;
 	}
+
 	t = MipsDiv(d, nz);
+
 	if ((int)((unsigned)info->Distance - (unsigned)t) <= 0)
 		return;
+
 	info->pItem = item;
 	info->Distance = t;
 	info->pFace = f;
@@ -121,28 +140,34 @@ static void TestFace(SFace *f, const SProjectedVertex *pv, SVECTOR *normals, SLi
 }
 
 void M3dAsm_LineColijProcessFaces__FP6SModelP16SProjectedVertexP9SLineInfoP4Item(
-	SModel *model, SProjectedVertex *pv, SLineInfo *info, Item *item) {
+    SModel *model, SProjectedVertex *pv, SLineInfo *info, Item *item) {
 	SVECTOR *normals = model->Vertices + model->NumVertices;
 	SFace *f = (SFace *)(normals + model->NumNormals);
 	int n = model->NumFaces, t, i;
 
-	PC_GteSetCtrl(11, 0);                /* L31 = L32 = 0 */
+	PC_GteSetCtrl(11, 0);                            /* L31 = L32 = 0 */
 	PC_GteSetCtrl(12, (unsigned)(info->Length + 2)); /* L33 */
 
 	do {
 		TestFace(f, pv, normals, info, item);
+
 		f = (SFace *)((char *)f + f->Size);
 	} while (--n);
 
 	/* Position = Start + (End - Start) * Distance / Length (GTE GPL: MAC += IR * IR0) */
 	t = MipsDiv((int)((unsigned)info->Distance << 12), info->Length);
+
 	for (i = 0; i < 3; i++)
 		PC_GteSetData(25 + i, (unsigned)info->StartCoords[i]);
+
 	for (i = 0; i < 3; i++)
-		PC_GteSetData(9 + i, (unsigned)((int)((unsigned)info->EndCoords[i] -
-		                                       (unsigned)info->StartCoords[i]) >> 12));
+		PC_GteSetData(
+		    9 + i,
+		    (unsigned)((int)((unsigned)info->EndCoords[i] - (unsigned)info->StartCoords[i]) >> 12));
+
 	PC_GteSetData(8, (unsigned)t);
 	gte_gpl0();
+
 	for (i = 0; i < 3; i++)
 		info->Position[i] = GTE_S(25 + i);
 }

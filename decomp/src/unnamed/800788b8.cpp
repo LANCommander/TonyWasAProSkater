@@ -8,5 +8,6 @@ int NumCameras;
 
 CCamera::~CCamera() {
 	DeleteFrom(&CameraList);
+
 	NumCameras--;
 }

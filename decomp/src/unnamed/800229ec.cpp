@@ -8,6 +8,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
+
 #include "game/m3d.h"
 
 int GameFMV_Active;
@@ -44,7 +45,8 @@ void FUN_800229ec(uint Checksum) {
 			r.y = y;
 			ClearImage(&r, 8, 8, 8);
 
-			GameFMV_EndX = GameFMV_StartX + (GameFMV_Is24Bit ? (GameFMV_Width * 3) >> 1 : GameFMV_Width);
+			GameFMV_EndX =
+			    GameFMV_StartX + (GameFMV_Is24Bit ? (GameFMV_Width * 3) >> 1 : GameFMV_Width);
 			FUN_800237b4(getTPage(2, 0, GameFMV_StartX, GameFMV_StartY), pTex);
 		}
 	}

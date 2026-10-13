@@ -1,5 +1,6 @@
 /* Pack_Zap__Fiiii (0x8004a69c) */
 #include "names.h"
+
 typedef struct TSPack {
 	unsigned short x, y, w, h;
 	struct TSPack *next;

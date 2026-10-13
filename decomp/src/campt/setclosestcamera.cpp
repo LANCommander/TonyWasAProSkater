@@ -97,8 +97,7 @@ void CamPt_SetClosestCamera(CBruce *pSkater) {
 		Index = -1;
 
 	if (Index != -1 && Index != VInfo->CurCameraIndex) {
-		if (Index != VInfo->OldCameraIndex ||
-		    Xblanks >= (unsigned int)(VInfo->CamXblanks + 60)) {
+		if (Index != VInfo->OldCameraIndex || Xblanks >= (unsigned int)(VInfo->CamXblanks + 60)) {
 			CVector Dummy;
 			short *pCam;
 			int Type;

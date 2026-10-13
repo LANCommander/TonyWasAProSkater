@@ -48,6 +48,7 @@ static void M3d_PreprocessWibblyTexturesDc(int Region, uint *pData, uint *pPSX) 
 
 	if (b->pData != pData || b->pPSX != pPSX || b->NumFaces != total) {
 		free(b->pUV);
+
 		b->pData = pData;
 		b->pPSX = pPSX;
 		b->NumFaces = total;
@@ -62,6 +63,7 @@ static void M3d_PreprocessWibblyTexturesDc(int Region, uint *pData, uint *pPSX) 
 
 			for (i = 0; i < (int)p[3]; i++, n++) {
 				memcpy(b->pUV + n * 8, (char *)pFace + 20, 16);
+
 				pFace = (uint *)((char *)pFace + (((ushort *)pFace)[1] & 0xfffc));
 			}
 		}

@@ -24,9 +24,9 @@
    form `!GVideoReplay && Levels[choice].isCompetition == 1`, which expands as (base+12)+idx and
    gives retail's base-first `addu base,base,idx`. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
-#include <libgpu.h>
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
 }
 
 #include "game/video.h"
@@ -50,29 +50,29 @@ void Init_Restart(EPackInitType, int);
 void Competition_Init();
 
 extern "C" {
-	extern SVideoRestart GVideoRestart;    /* GVideoRestart */
-	extern SLevel Levels[];         /* Levels */
+	extern SVideoRestart GVideoRestart;   /* GVideoRestart */
+	extern SLevel Levels[];               /* Levels */
 	extern unsigned char DAT_800a7068[];  /* last 1P skater */
 	extern SDoubleBuffer DoubleBuffer[2]; /* DB */
-	extern SName DemoName;            /* DemoName */
+	extern SName DemoName;                /* DemoName */
 	extern int GRollCredits;              /* GRollCredits */
-	extern int GGame;              /* GGame */
-	extern int GAutoTest;              /* autotest */
+	extern int GGame;                     /* GGame */
+	extern int GAutoTest;                 /* autotest */
 	extern int GAutoPlayer1;
 	extern int GAutoPlayer2;
 	extern int GAutoLevel;
 	extern int GAutoGame;
-	extern int SelectedSkater2; /* 2nd player's skater */
+	extern int SelectedSkater2;  /* 2nd player's skater */
 	extern int GNumberOfPlayers; /* GNumberOfPlayers */
 	extern int DAT_800d1d80;
 	extern int DAT_800d1dc0;
-	extern int GVideoReplay;    /* GVideoReplay */
-	extern int GLevel;    /* GLevel */
-	extern SName s_demoA_rec;  /* "demoA.rec" */
-	extern char s_mainf_fnt_800a1938[]; /* s_mainf_fnt_800a1938 */
-	extern char s_Start_1_fnt[]; /* s_Start_1_fnt */
+	extern int GVideoReplay;             /* GVideoReplay */
+	extern int GLevel;                   /* GLevel */
+	extern SName s_demoA_rec;            /* "demoA.rec" */
+	extern char s_mainf_fnt_800a1938[];  /* s_mainf_fnt_800a1938 */
+	extern char s_Start_1_fnt[];         /* s_Start_1_fnt */
 	extern char s_stats2_fnt_800a1950[]; /* s_stats2_fnt_800a1950 */
-	extern char s_shell_vab[]; /* s_shell_vab */
+	extern char s_shell_vab[];           /* s_shell_vab */
 
 	int StartScreen; /* screen to return to */
 	short DAT_800d1ca0;

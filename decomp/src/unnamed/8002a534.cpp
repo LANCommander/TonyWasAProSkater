@@ -8,8 +8,8 @@ CGlassBit *GlassList;
 
 int Redbook_Rnd(int);
 
-CGlassBit::CGlassBit(const CVector &Pos, const CVector &Vel, int GroundY, uchar r, uchar g, uchar b, int RangeX,
-                     int RangeY, int RangeZ) {
+CGlassBit::CGlassBit(const CVector &Pos, const CVector &Vel, int GroundY, uchar r, uchar g, uchar b,
+                     int RangeX, int RangeY, int RangeZ) {
 	AttachTo(&GlassList);
 
 	int SpanX = RangeX * 2 + 1;

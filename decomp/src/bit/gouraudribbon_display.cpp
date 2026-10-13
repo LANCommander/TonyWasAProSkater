@@ -9,6 +9,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
+
 #include "game/bit.h"
 #include "game/m3d.h"
 #include "game/trig.h"
@@ -118,7 +119,8 @@ void CGouraudRibbon::Display() {
 				uint a;
 				uint b;
 
-				pOTPos = (uint *)((char *)pDoubleBuffer->pOT + ((pBuf->Zed - mFrigDeltaZ) & 0x3ffc));
+				pOTPos =
+				    (uint *)((char *)pDoubleBuffer->pOT + ((pBuf->Zed - mFrigDeltaZ) & 0x3ffc));
 				dx = pBuf->NormalX * pBuf->ScrWidth >> 6;
 				dy = pBuf->NormalY * pBuf->ScrWidth >> 6;
 				x = (short)pBuf->Pos;

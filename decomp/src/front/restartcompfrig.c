@@ -1,5 +1,6 @@
 /* RestartCompFrig__Fv (0x8001a6a8) */
 #include "names.h"
+
 extern int GLevel;
 extern int RestartNode;
 extern char s_RE_START_FRIG[];

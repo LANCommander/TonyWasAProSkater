@@ -1,5 +1,6 @@
 /* FUN_800507e4 (0x800507e4) flags=-fstructure-noalias */
 #include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;

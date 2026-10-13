@@ -1,5 +1,6 @@
 /* WriteNumber__Fi (0x8004c070) */
 #include "names.h"
+
 char *pNumberStrings;
 
 void WriteNumber(int n) {

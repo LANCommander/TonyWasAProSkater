@@ -1,5 +1,6 @@
 /* FUN_8004f684 (0x8004f684) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

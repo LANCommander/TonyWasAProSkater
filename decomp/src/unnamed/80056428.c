@@ -1,5 +1,6 @@
 /* FUN_80056428 (0x80056428) */
 #include "names.h"
+
 typedef struct N {
 	int a;
 	int b;

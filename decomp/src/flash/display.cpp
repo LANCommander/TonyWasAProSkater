@@ -7,6 +7,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
+
 #include "game/m3d.h"
 
 int FlashCountdown;

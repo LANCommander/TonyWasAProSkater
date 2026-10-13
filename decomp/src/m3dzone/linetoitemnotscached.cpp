@@ -196,8 +196,7 @@ int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs) {
 				}
 			}
 
-			if (X >= 0 && X < Zones[EnvIndex].Width && Z >= 0 &&
-			    Z < Zones[EnvIndex].Height)
+			if (X >= 0 && X < Zones[EnvIndex].Width && Z >= 0 && Z < Zones[EnvIndex].Height)
 				M3dColij_LineToItemZoned__FPP4ItemP9SLineInfo(Zones[EnvIndex].Ptr[X][Z], pInfo);
 		}
 	}

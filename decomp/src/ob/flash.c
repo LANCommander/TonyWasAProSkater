@@ -1,5 +1,6 @@
 /* Flash__5CItemiUcUcUc (0x800435e8) */
 #include "names.h"
+
 typedef struct {
 	unsigned short flags;
 	char _2[0x1e];

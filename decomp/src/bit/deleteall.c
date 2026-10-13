@@ -1,5 +1,6 @@
 /* Bit_DeleteAll__Fv (0x80027b28) */
 #include "names.h"
+
 void *NonRenderedBitList;
 void *FlatBitList;
 void *Linked2EndedBitList;

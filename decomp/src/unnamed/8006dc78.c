@@ -1,5 +1,6 @@
 /* FUN_8006dc78 (0x8006dc78) */
 #include "names.h"
+
 typedef struct P {
 	char pad[0x1c];
 	struct P *next;

@@ -61,8 +61,7 @@ void CSmokeJet::Move() {
 		for (i = 0; i < 10; i++)
 			mpPoints[i].Pos.vx =
 			    mOrgX[i] +
-			    (mAmp[i] * rcossin_tbl[(mFreq[i] * TTime + mPhase[i]) & 4095].s / 4096
-			     << 12);
+			    (mAmp[i] * rcossin_tbl[(mFreq[i] * TTime + mPhase[i]) & 4095].s / 4096 << 12);
 	}
 
 	mpPoints[0].Width = 20;

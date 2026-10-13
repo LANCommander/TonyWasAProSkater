@@ -1,5 +1,6 @@
 /* FUN_8001571c (0x8001571c) */
 #include "names.h"
+
 struct B {
 	int w[628];
 };

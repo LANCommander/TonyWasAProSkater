@@ -1,5 +1,6 @@
 /* SyncToGoodState__Fv (0x80014424) */
 #include "names.h"
+
 int CardStatusMode, CardLoadFlag, CardStatusTemp, CardStatus;
 
 void FUN_8008eebc(int);

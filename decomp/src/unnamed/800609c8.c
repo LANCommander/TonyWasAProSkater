@@ -1,5 +1,6 @@
 /* FUN_800609c8 (0x800609c8) */
 #include "names.h"
+
 extern int GVInfo1[];
 extern int GVideoRestart[];
 extern char Pad[];

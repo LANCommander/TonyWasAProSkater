@@ -1,5 +1,6 @@
 /* Mess_GetScale__Fv (0x8001d290) */
 #include "names.h"
+
 unsigned char NewFont;
 unsigned short Scale;
 

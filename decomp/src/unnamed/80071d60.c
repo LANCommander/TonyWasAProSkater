@@ -1,5 +1,6 @@
 /* FUN_80071d60 (0x80071d60) */
 #include "names.h"
+
 typedef struct {
 	short x, y, w, h;
 } R;

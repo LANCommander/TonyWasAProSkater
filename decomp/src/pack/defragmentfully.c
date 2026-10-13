@@ -1,5 +1,6 @@
 /* Pack_DefragmentFully__Fv (0x8004a8cc) */
 #include "names.h"
+
 typedef struct TSPack {
 	unsigned short x, y, w, h;
 	struct TSPack *next;

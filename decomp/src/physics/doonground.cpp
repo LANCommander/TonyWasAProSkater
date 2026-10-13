@@ -253,9 +253,10 @@ void CBruce::DoOnGroundPhysics() {
 				if (mAnim != 12 && !mInAir && !m368) {
 					CVector WallFloorNormal;
 
-					SetVector(&WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
-					          line_info.Normal.vz) if (Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal, &mFront) >
-					                                   2896) {
+					SetVector(
+					    &WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
+					    line_info.Normal.vz) if (Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal,
+						                                                        &mFront) > 2896) {
 						mAnimSpeed = 0x10000;
 						Debug_RunAnim(12, 4120);
 
@@ -271,7 +272,8 @@ void CBruce::DoOnGroundPhysics() {
 					int UpDot;
 
 					SetVector(&WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
-					          line_info.Normal.vz) UpDot = Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal, &mUp);
+					          line_info.Normal.vz) UpDot =
+					    Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal, &mUp);
 
 					if (UpDot > -2048 && UpDot < 2048) {
 						int TurnAway = 0;
@@ -310,10 +312,11 @@ void CBruce::DoOnGroundPhysics() {
 							if (mAnim != 12 && OldVel.Length() >= 7 && !mInAir && !m368) {
 								CVector WallFloorNormal;
 
-								SetVector(&WallFloorNormal, line_info.Normal.vx,
-								          line_info.Normal.vy,
-								          line_info.Normal.vz) if (Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal,
-								                                                &mFront) > 2896) {
+								SetVector(
+								    &WallFloorNormal, line_info.Normal.vx, line_info.Normal.vy,
+								    line_info.Normal
+								        .vz) if (Mips_CVecDotProd__FP7CVectorT0(&WallFloorNormal,
+										                                        &mFront) > 2896) {
 									mAnimSpeed = 0x10000;
 									Debug_RunAnim(12, 4219);
 									SFX_Grunt__FP6CBruce(this);
@@ -404,7 +407,8 @@ void CBruce::DoOnGroundPhysics() {
 					mPos = Orig;
 
 				if (Face_Air) {
-					if (!Face_Visible && m1F8 && XFrames - m1F8 >= 5 && !mInAir && mPhysicsState != 2) {
+					if (!Face_Visible && m1F8 && XFrames - m1F8 >= 5 && !mInAir &&
+					    mPhysicsState != 2) {
 						SVECTOR N;
 
 						N = line_info.Normal;
@@ -453,11 +457,11 @@ void CBruce::DoOnGroundPhysics() {
 
 						SetVector(&NewNormal, line_info.Normal.vx, line_info.Normal.vy,
 						          line_info.Normal.vz)
-						    SetVector(&LastNormal, mNormal.vx, mNormal.vy, mNormal.vz)
-						        Dot = Mips_CVecDotProd__FP7CVectorT0(&LastNormal, &NewNormal);
+						    SetVector(&LastNormal, mNormal.vx, mNormal.vy, mNormal.vz) Dot =
+						        Mips_CVecDotProd__FP7CVectorT0(&LastNormal, &NewNormal);
 
-						if (Mips_CVecDotProd__FP7CVectorT0(&mFront, &NewNormal) < 0 && mVel.vy <= 0 && Dot > 0 &&
-						    Dot < 3000)
+						if (Mips_CVecDotProd__FP7CVectorT0(&mFront, &NewNormal) < 0 &&
+						    mVel.vy <= 0 && Dot > 0 && Dot < 3000)
 							FUN_8003434c(this);
 					} else {
 						StateTransition(PHYSICS_ON_GROUND, 4551);

@@ -193,7 +193,8 @@ L90:
 		extern volatile unsigned pc_heartbeat;
 		extern unsigned long PolyBufferEnd;
 		fprintf(stderr, "polybuf f%u used=%d cap=%ld remaining=%ld\n", pc_heartbeat,
-		        PolyBufferBytesUsed, (long)(PolyBufferEnd & 0x7fffffff) - (long)(pDoubleBuffer->f80a8 & 0x7fffffff),
+		        PolyBufferBytesUsed,
+		        (long)(PolyBufferEnd & 0x7fffffff) - (long)(pDoubleBuffer->f80a8 & 0x7fffffff),
 		        (long)(PolyBufferEnd & 0x7fffffff) - (long)(pPoly & 0x7fffffff));
 	}
 #endif

@@ -4,6 +4,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+
 #include "game/m3d.h"
 #include "game/ob.h"
 

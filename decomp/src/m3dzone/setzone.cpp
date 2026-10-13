@@ -9,6 +9,7 @@
 
 extern SZone Zones[2];
 extern int EnvRegions[1];
+
 /* PSXRegion[] seen from +0x14 (SPSXRegion::pPSX): indexing this view, rather than PSXRegion[i].pPSX,
    gives retail's address arithmetic */
 struct SEnvPSX {

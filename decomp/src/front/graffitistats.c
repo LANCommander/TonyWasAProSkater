@@ -1,20 +1,19 @@
 /* Graffiti_Stats__FP6CBruceiiiiiiiii (0x80017abc) */
 #include "names.h"
+
 typedef struct {
 	char _0[496];
 	int f496, f500;
 } CBruce;
 
-extern char s_TAGS[], s_STEALS[], s_HIGH[], s_WINS[], s_LOSSES[],
-    s_STREAK[], s_d[];
+extern char s_TAGS[], s_STEALS[], s_HIGH[], s_WINS[], s_LOSSES[], s_STREAK[], s_d[];
 
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);
 void Mess_SetTextJustify(int);
 int Mess_DrawText(int, int, char *, int, int, int, int);
 int FUN_8008b900(char *, char *, int);
 
-void Graffiti_Stats(CBruce *b, int x, int y, int r, int g, int bl, int v1,
-                                        int v2, int v3, int v4) {
+void Graffiti_Stats(CBruce *b, int x, int y, int r, int g, int bl, int v1, int v2, int v3, int v4) {
 	char buf[16];
 
 	Mess_SetRGB(r, g, bl, 0);

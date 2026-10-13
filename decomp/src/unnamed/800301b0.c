@@ -1,5 +1,6 @@
 /* UberFrig__FP6CBruceG7CVectorPc (0x800301b0) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

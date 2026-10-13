@@ -24,6 +24,7 @@ void FUN_80077130(char *t, int f) {
 			vt[1].fn(e + vt[1].delta, 2);
 		}
 	}
+
 	*(char **)t = __vt_6CClass;
 
 	if (f & 1)

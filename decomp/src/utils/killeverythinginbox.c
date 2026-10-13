@@ -1,5 +1,6 @@
 /* Utils_KillEverythingInBox__FRC7CVectorT0 (0x800483e8) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

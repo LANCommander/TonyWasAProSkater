@@ -1,5 +1,6 @@
 /* Video_Cleanup__Fv (0x80069670) */
 #include "names.h"
+
 extern int GVInfo1[];
 extern int GVInfo2[];
 

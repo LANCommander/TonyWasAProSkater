@@ -1,5 +1,6 @@
 /* Rail_DeleteAll__Fv (0x8004f624) */
 #include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;

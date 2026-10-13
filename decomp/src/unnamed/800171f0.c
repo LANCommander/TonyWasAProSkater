@@ -1,5 +1,6 @@
 /* FUN_800171f0 (0x800171f0) */
 #include "names.h"
+
 typedef struct {
 	int c[34];
 } B136;
@@ -69,8 +70,7 @@ extern char soundBuf[];
 extern char musicBuf[];
 extern int GGame, GLevel;
 
-int pYesNoMenu, pESMenu, pVSMenu, pVS2Menu, pVS3Menu, pEHMenu,
-    pSoundMenu, soundVol, musicVol;
+int pYesNoMenu, pESMenu, pVSMenu, pVS2Menu, pVS3Menu, pEHMenu, pSoundMenu, soundVol, musicVol;
 
 void (*DAT_800d1408)(void);
 void FUN_80071fa4(void);
@@ -105,9 +105,7 @@ void FUN_800171f0(void) {
 
 	pESMenu = a2;
 	CMenu_AddEntry(a2, GameText.f164);
-	CMenu_AddEntry(pESMenu, (Levels[GLevel].fc && GGame == 1)
-	                                      ? GameText.f78
-										  : GameText.f74);
+	CMenu_AddEntry(pESMenu, (Levels[GLevel].fc && GGame == 1) ? GameText.f78 : GameText.f74);
 	CMenu_AddEntry(pESMenu, GameText.f00);
 	CMenu_AddEntry(pESMenu, GameText.f7c);
 	CMenu_AddEntry(pESMenu, GameText.f80);
@@ -136,9 +134,7 @@ void FUN_800171f0(void) {
 	CMenu_CentreY(pESMenu);
 	CMenu_SetLine(
 	    pESMenu,
-	    CMenu_FindEntry(pESMenu, (Levels[GLevel].fc && GGame == 1)
-	                                           ? GameText.f78
-											   : GameText.f74) &
+	    CMenu_FindEntry(pESMenu, (Levels[GLevel].fc && GGame == 1) ? GameText.f78 : GameText.f74) &
 	        255);
 
 	a3 = __nw__6CClassUi(384);

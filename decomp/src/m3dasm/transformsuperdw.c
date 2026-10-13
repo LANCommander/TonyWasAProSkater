@@ -6,7 +6,6 @@
 /* TransformAndOutcodeSuperVertices for "dewibbled" rendering: the 12.4 vertices go to the GTE
  * unscaled (the transform is set up 16 times larger, so the projection keeps the fraction bits
  * and the vertices don't jitter), and the rotated position and depth are scaled back (>> 4). */
-int M3dAsm_TransformAndOutcodeSuperVerticesDewibbled__FP7SVECTORi(SVECTOR *v, int n)
-{
+int M3dAsm_TransformAndOutcodeSuperVerticesDewibbled__FP7SVECTORi(SVECTOR *v, int n) {
 	return vtx_transform_super((const uint32_t *)v, n, 1);
 }

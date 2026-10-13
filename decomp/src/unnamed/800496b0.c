@@ -1,5 +1,6 @@
 /* FUN_800496b0 (0x800496b0) */
 #include "names.h"
+
 typedef struct {
 	short a, b, c, d;
 } TSPack;

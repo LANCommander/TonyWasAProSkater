@@ -7,8 +7,7 @@
  * the screen position, depth and outcode go to ProjectedVertices and the view-space x, y to
  * RotatedVertices. Returns the AND of all the outcodes (0xff for no vertices), so the caller can
  * skip a model that is wholly off one side of the view. */
-int M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi(SVECTOR *v, int n)
-{
+int M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi(SVECTOR *v, int n) {
 	struct ClipBounds b;
 	struct SProjectedVertex *pv;
 	struct SRotatedVertex *rv;
@@ -16,15 +15,19 @@ int M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi(SVECTOR *v, int n)
 
 	if (n == 0)
 		return 0xff;
+
 	vtx_clip_bounds(&b);
+
 	pv = ProjectedVertices;
 	rv = RotatedVertices;
+
 	for (; n != 0; n--, v++, pv++, rv++) {
 		int z;
 		uint32_t oc;
 
 		gte_ldv0(v);
 		gte_rtps();
+
 		rv->xy = vtx_pack(gte_get(GTE_IR1), gte_get(GTE_IR2));
 		z = gte_get(GTE_IR3);
 		pv->XY = PC_GteGetData(GTE_SXY2);
@@ -33,6 +36,7 @@ int M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi(SVECTOR *v, int n)
 		pv->Outcode = (ushort)oc;
 		all &= oc;
 	}
+
 	SCR_PROJECTED_END = pv;
 	return (int)all;
 }

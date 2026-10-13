@@ -11,23 +11,23 @@
 
 /* one glyph of a font */
 struct Character {
-	int w;          /* 0x00 */
-	int h;          /* 0x04 */
-	int x;          /* 0x08 */
-	int y;          /* 0x0c */
-	int baseline;   /* 0x10 */
-	uchar u0;       /* 0x14 */
-	uchar v0;       /* 0x15 */
-	ushort clut;    /* 0x16 */
-	uchar u1;       /* 0x18 */
-	uchar v1;       /* 0x19 */
-	ushort tp;      /* 0x1a */
-	uchar u2;       /* 0x1c */
-	uchar v2;       /* 0x1d */
-	uchar u3;       /* 0x1e */
-	uchar v3;       /* 0x1f */
-	int real_w;     /* 0x20 */
-	/* sizeof(Character) == 0x24 */
+	int w;        /* 0x00 */
+	int h;        /* 0x04 */
+	int x;        /* 0x08 */
+	int y;        /* 0x0c */
+	int baseline; /* 0x10 */
+	uchar u0;     /* 0x14 */
+	uchar v0;     /* 0x15 */
+	ushort clut;  /* 0x16 */
+	uchar u1;     /* 0x18 */
+	uchar v1;     /* 0x19 */
+	ushort tp;    /* 0x1a */
+	uchar u2;     /* 0x1c */
+	uchar v2;     /* 0x1d */
+	uchar u3;     /* 0x1e */
+	uchar v3;     /* 0x1f */
+	int real_w;   /* 0x20 */
+	              /* sizeof(Character) == 0x24 */
 };
 
 struct FontInfo {
@@ -38,20 +38,20 @@ struct FontInfo {
 	ushort mFont_scale;        /* 0x1a */
 	int mChar_sep;             /* 0x1c */
 	int mSpace_width;          /* 0x20 */
-	/* sizeof(FontInfo) == 0x24 */
+	                           /* sizeof(FontInfo) == 0x24 */
 };
 
 /* one string queued by Font_String / Font_Number, drawn by Font_Display */
 struct SString {
-	int End;          /* 0x00 */
-	ushort X;         /* 0x04 */
-	ushort Y;         /* 0x06 */
-	char *pString;    /* 0x08 */
-	uint CodeBGR;     /* 0x0c */
-	uchar Is3d;       /* 0x10 */
-	uchar BigText;    /* 0x11 */
-	CVector Pos;      /* 0x14 */
-	/* sizeof(SString) == 0x20 */
+	int End;       /* 0x00 */
+	ushort X;      /* 0x04 */
+	ushort Y;      /* 0x06 */
+	char *pString; /* 0x08 */
+	uint CodeBGR;  /* 0x0c */
+	uchar Is3d;    /* 0x10 */
+	uchar BigText; /* 0x11 */
+	CVector Pos;   /* 0x14 */
+	               /* sizeof(SString) == 0x20 */
 };
 
 #endif

@@ -1,5 +1,6 @@
 /* Pack_Unpack__Fss (0x8004a2d4) */
 #include "names.h"
+
 typedef struct TSPack {
 	unsigned short x, y, w, h;
 	struct TSPack *next;

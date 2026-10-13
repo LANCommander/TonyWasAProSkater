@@ -1,5 +1,6 @@
 /* FUN_8004cf7c (0x8004cf7c) */
 #include "names.h"
+
 typedef struct B {
 	struct B *next;
 	unsigned flags : 4;

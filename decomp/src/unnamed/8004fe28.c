@@ -1,6 +1,7 @@
 /* FUN_8004fe28 (0x8004fe28) */
 #include "names.h"
 #include "game/padbuttons.h"
+
 extern char s_music_txt[];
 extern char s_credits_txt[];
 extern char s_credits_fnt[];
@@ -174,7 +175,9 @@ void FUN_8004fe28(int a0, int a1) {
 		FUN_80070ff4();
 		FUN_800242cc();
 
-		if (Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED] || Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] ||
+		if (Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] ||
+		    Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED] ||
+		    Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] ||
 		    Pad[PAD_CAMERA + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_CAMERA + PAD_TRIGGERED]) {
 			Pad_ClearTriggers(Pad);
 			Pad_ClearTriggers(Pad + 364);

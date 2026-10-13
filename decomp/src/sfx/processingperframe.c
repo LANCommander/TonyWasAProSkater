@@ -1,5 +1,6 @@
 /* SFX_ProcessingPerFrame__Fv (0x8004bf30) */
 #include "names.h"
+
 int keyon_queue, keyoff_queue, reverb_queue;
 unsigned char reverb_changed;
 unsigned voicefree_flag, nko_flag, loop_flag, voiceon_flag, exp_flag;

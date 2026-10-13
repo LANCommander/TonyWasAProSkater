@@ -1,5 +1,6 @@
 /* strNextVlc__Fi (0x80023edc) */
 #include "names.h"
+
 int currentVlcBuffer;
 int vlcBuffer[2];
 

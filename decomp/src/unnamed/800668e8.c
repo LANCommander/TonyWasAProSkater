@@ -1,5 +1,6 @@
 /* FUN_800668e8 (0x800668e8) */
 #include "names.h"
+
 int DAT_800d2364, DAT_800d2378, DAT_800d237c, DAT_800d2384, DAT_800d2388, DAT_800d238c,
     DAT_800d2390;
 

@@ -1,5 +1,6 @@
 /* FUN_800270e0 (0x800270e0) */
 #include "names.h"
+
 extern char __vt_9CPolyLine[];
 extern int PolyLineList;
 

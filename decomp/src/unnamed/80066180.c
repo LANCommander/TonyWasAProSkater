@@ -1,5 +1,6 @@
 /* FUN_80066180 (0x80066180) */
 #include "names.h"
+
 extern char DAT_800a2120[];
 extern char DAT_800a21b0[];
 

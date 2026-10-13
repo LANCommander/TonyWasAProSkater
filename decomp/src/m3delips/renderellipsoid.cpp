@@ -1,11 +1,12 @@
 /* M3dElips_RenderEllipsoid__FP6SModelP6MATRIXUiiiP7Texture (0x8007e300) */
 /* C++ (M3DELIPS.CPP). Locals, their order and types come from the demo's MAIN.SYM. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
-#include <libgpu.h>
-#include <inline_c.h>
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+	#include <inline_c.h>
 }
+
 #include "game/m3d.h"
 #include "game/camera.h"
 

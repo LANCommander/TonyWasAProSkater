@@ -4,9 +4,9 @@
    numx/remy are declared mid-block, at their first assignment: their pseudos are then created
    after the division's quotient temp, which gives retail's spill-slot order (numx 48, remy 52). */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
-#include <libgpu.h>
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
 }
 
 #include "game/shellutils.h"

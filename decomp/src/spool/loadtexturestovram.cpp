@@ -81,6 +81,7 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 			ushort h = PC_HdTexFind(pTextureEntry->Checksum);
 
 			PC_HdTexRef(h, 1);
+
 			pTextureEntry->pPalette = 0;
 			pTextureEntry->clut = h;
 			pTextureEntry->tpage = PC_HD_TPAGE;
@@ -103,6 +104,7 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				f |= 0x10000;
 				*(uint *)&pTextureEntry->Usage = f;
 			}
+
 			continue;
 		}
 #endif
@@ -120,7 +122,7 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				RECT rec;
 
 				Pack_Pack__FiiiPiT3iiUi(0, AlignedWidth, Height, &x, &y, 8, (Flags & 1) ? 2 : 0,
-				             pTextureEntry->Checksum);
+				                        pTextureEntry->Checksum);
 				ushort sx = x;
 				ushort sy = y;
 
@@ -138,7 +140,7 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				RECT rec;
 
 				Pack_Pack__FiiiPiT3iiUi(0, AlignedWidth, Height, &x, &y, 4, (Flags & 1) ? 2 : 0,
-				             pTextureEntry->Checksum);
+				                        pTextureEntry->Checksum);
 				ushort sx = x;
 				ushort sy = y;
 

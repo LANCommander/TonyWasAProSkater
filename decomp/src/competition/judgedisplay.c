@@ -1,5 +1,6 @@
 /* Competition_JudgeDisplay__Fv (0x800747b0) */
 #include "names.h"
+
 typedef struct {
 	char _0[16];
 	unsigned i16;

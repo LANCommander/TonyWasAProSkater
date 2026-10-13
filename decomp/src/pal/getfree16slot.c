@@ -1,5 +1,6 @@
 /* GetFree16Slot__Fv (0x8004ace8) */
 #include "names.h"
+
 extern unsigned char Free16Slots[];
 
 int GetFree16Slot(void) {

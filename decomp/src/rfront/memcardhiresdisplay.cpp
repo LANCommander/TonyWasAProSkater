@@ -152,7 +152,7 @@ void Front_MemCardHiResDisplay() {
 		case 20:
 			if (!pVertMenu) {
 				pVertMenu = new VerticalMenu(100, 398, 15, VertMenuItem,
-				                                NumVertMenuItems < 6 ? NumVertMenuItems : 5, 0, 0, 0);
+				                             NumVertMenuItems < 6 ? NumVertMenuItems : 5, 0, 0, 0);
 				FUN_8008b900(msg, GameText.pHiResScroll, GameText.pHiResUpOrDown);
 				Front_DirtyRectText(XMid, 380, msg);
 			}

@@ -1,5 +1,6 @@
 /* FUN_800502bc (0x800502bc) flags=-fstructure-noalias */
 #include "names.h"
+
 typedef struct P {
 	unsigned tag;
 	unsigned char r, g, b, code;

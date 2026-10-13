@@ -15,22 +15,22 @@
 
 /* one line of a CMenu */
 struct SEntry {
-	char *pString;      /* 0x00 */
-	short CurrentScale; /* 0x04 */
-	short TargetScale;  /* 0x06 */
-	short HiScale;      /* 0x08 */
-	short LowScale;     /* 0x0a */
-	uchar Clearance;    /* 0x0c */
-	uchar Visible;      /* 0x0d */
-	uchar Enabled;      /* 0x0e */
-	uchar HiR;          /* 0x0f */
-	uchar HiG;          /* 0x10 */
-	uchar HiB;          /* 0x11 */
-	uchar LowR;         /* 0x12 */
-	uchar LowG;         /* 0x13 */
-	uchar LowB;         /* 0x14 */
+	char *pString;       /* 0x00 */
+	short CurrentScale;  /* 0x04 */
+	short TargetScale;   /* 0x06 */
+	short HiScale;       /* 0x08 */
+	short LowScale;      /* 0x0a */
+	uchar Clearance;     /* 0x0c */
+	uchar Visible;       /* 0x0d */
+	uchar Enabled;       /* 0x0e */
+	uchar HiR;           /* 0x0f */
+	uchar HiG;           /* 0x10 */
+	uchar HiB;           /* 0x11 */
+	uchar LowR;          /* 0x12 */
+	uchar LowG;          /* 0x13 */
+	uchar LowB;          /* 0x14 */
 	uchar FadeUpCounter; /* 0x15 */
-	/* sizeof(SEntry) == 0x18 */
+	                     /* sizeof(SEntry) == 0x18 */
 };
 
 /* vtable 0x8009e538 */
@@ -43,24 +43,25 @@ class CMenu : public CClass {
 	uchar mCursorLine;    /* 0x008 */
 	uchar mNumLines;      /* 0x009 */
 	char pad0a[0x0c - 0x0a];
-	int mX;               /* 0x00c */
-	int mY;               /* 0x010 */
-	int mLineSep;         /* 0x014 */
-	SEntry mEntry[15];    /* 0x018 */
+	int mX;            /* 0x00c */
+	int mY;            /* 0x010 */
+	int mLineSep;      /* 0x014 */
+	SEntry mEntry[15]; /* 0x018 */
 	/* sizeof(CMenu) == 0x180 */
 
-	CMenu(int x, int y, uchar justification, int hiScale, int lowScale, int lineSep); /* 0x80016534 */
-	virtual ~CMenu();                         /* slot 0: 0x8001664c (FUN_; demo _._5CMenu) */
-	void CentreY();                           /* 0x80016680 */
-	void SetLine(uchar Line);                 /* 0x80016708 */
-	int FindEntry(const char *pString);       /* 0x80016770 */
-	void AddEntry(const char *pString);       /* 0x800167f0 */
-	void EntryOn(const char *pString);        /* 0x80016878 */
-	void EntryOff(const char *pString);       /* 0x800168b4 */
-	int IsEntryOn(const char *pString);       /* 0x800168ec */
-	int ChoiceIs(const char *pString);        /* 0x8001692c */
-	void Display();                           /* 0x8001696c */
-	void Update();                            /* 0x80016dc0 */
+	CMenu(int x, int y, uchar justification, int hiScale, int lowScale,
+	      int lineSep);                 /* 0x80016534 */
+	virtual ~CMenu();                   /* slot 0: 0x8001664c (FUN_; demo _._5CMenu) */
+	void CentreY();                     /* 0x80016680 */
+	void SetLine(uchar Line);           /* 0x80016708 */
+	int FindEntry(const char *pString); /* 0x80016770 */
+	void AddEntry(const char *pString); /* 0x800167f0 */
+	void EntryOn(const char *pString);  /* 0x80016878 */
+	void EntryOff(const char *pString); /* 0x800168b4 */
+	int IsEntryOn(const char *pString); /* 0x800168ec */
+	int ChoiceIs(const char *pString);  /* 0x8001692c */
+	void Display();                     /* 0x8001696c */
+	void Update();                      /* 0x80016dc0 */
 };
 
 /* The localised front-end strings (global `GameText`, 0x800a5d5c). Demo struct LocalText (0x28c),
@@ -225,7 +226,7 @@ struct LocalText {
 	char *pSPickup;                  /* 0x268 */
 	char *pKPickup;                  /* 0x26c */
 	char *pAPickup;                  /* 0x270 */
-	/* sizeof(LocalText) == 0x274 */
+	                                 /* sizeof(LocalText) == 0x274 */
 };
 
 /* the skater-select stat rows (front/skaterselect1p: SStatRow; front/skaterselect2p: SStatBar).

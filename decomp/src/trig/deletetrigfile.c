@@ -1,5 +1,6 @@
 /* Trig_DeleteTrigFile__Fv (0x80044ea8) */
 #include "names.h"
+
 void *TrigFile;
 int NumCheatRestarts, NumHorseRestarts;
 

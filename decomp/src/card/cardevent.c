@@ -1,5 +1,6 @@
 /* _card_event__Fv (0x80014ee8) */
 #include "names.h"
+
 int ev0, ev1, ev2, ev3, EVENT_TIME_OUT;
 
 int FUN_8008eb08(int);

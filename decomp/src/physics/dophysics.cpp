@@ -23,8 +23,7 @@ extern "C" {
 extern SStats Stats[];
 extern SCareer GCareer;
 extern SLevel Levels[];
-extern STrick DAT_800a7250, DAT_800a727c, DAT_800a72a8, DAT_800a72d4, DAT_800a7300,
-    DAT_800a732c;
+extern STrick DAT_800a7250, DAT_800a727c, DAT_800a72a8, DAT_800a72d4, DAT_800a7300, DAT_800a732c;
 extern STrick DAT_800a7460, DAT_800a74e4, DAT_800a7510;
 extern short HeadBloodAtFrame[];
 extern CVector WorldUp;
@@ -50,9 +49,10 @@ extern CBruce *GSkater;
 extern CBruce *pCurrentPlayer;
 
 #define GetStat(n)                                                                                 \
-	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
-	                    mpStatBonus[n])
+	(Cheat_StatsOverride                                                                           \
+	     ? Cheat_StatsOverride                                                                     \
+		 : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +              \
+		       mpStatBonus[n])
 #define MAXSPEED(k) (((GetStat(1) + (k)) << 12) * 3 * 15 / 28)
 
 void UberFrig(CBruce *, CVector, char *);

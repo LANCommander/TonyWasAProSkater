@@ -1,5 +1,6 @@
 /* Front_PrintCentredPrompt__FPCc (0x80017a30) */
 #include "names.h"
+
 typedef struct {
 	int pad[2];
 } SAnimFrame;

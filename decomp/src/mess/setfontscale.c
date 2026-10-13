@@ -1,5 +1,6 @@
 /* Mess_SetFontScale__FUi (0x8001f1d8) */
 #include "names.h"
+
 typedef struct {
 	char pad[0x1a];
 	unsigned short scale;

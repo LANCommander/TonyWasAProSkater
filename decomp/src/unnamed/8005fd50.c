@@ -1,5 +1,6 @@
 /* FUN_8005fd50 (0x8005fd50) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z, pad;
 } V;

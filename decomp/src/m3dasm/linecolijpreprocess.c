@@ -25,11 +25,11 @@ void M3dMaths_RotMatrixYXZ__FP7SVECTORP6MATRIX(SVECTOR *angles, MATRIX *m);
 void M3dMaths_TransposeMatrix__FP6MATRIX(MATRIX *m);
 
 /* scratchpad words the retail code leaves behind */
-#define SCR_MODEL (*(SModel **)0x1f800018)   /* last rotated item's model, item, &PSXRegion */
-#define SCR_ITEM (*(Item **)0x1f80001c)
+#define SCR_MODEL   (*(SModel **)0x1f800018) /* last rotated item's model, item, &PSXRegion */
+#define SCR_ITEM    (*(Item **)0x1f80001c)
 #define SCR_REGIONS (*(SPSXRegion **)0x1f800020)
-#define SCR_MATRIX ((MATRIX *)0x1f800028)    /* the item rotation, transposed */
-#define SCR_LINE ((LineSeg *)0x1f80003c)     /* the sorted query line, world model units */
+#define SCR_MATRIX  ((MATRIX *)0x1f800028)  /* the item rotation, transposed */
+#define SCR_LINE    ((LineSeg *)0x1f80003c) /* the sorted query line, world model units */
 
 /* rotate one point by the GTE rotation matrix (IR = RT * IR >> 12, saturated) */
 static void Rotate(int *x, int *y, int *z) {
@@ -37,13 +37,13 @@ static void Rotate(int *x, int *y, int *z) {
 	PC_GteSetData(10, (unsigned)*y);
 	PC_GteSetData(11, (unsigned)*z);
 	gte_mvmva(1, 0, 3, 3, 0);
+
 	*x = GTE_S(9);
 	*y = GTE_S(10);
 	*z = GTE_S(11);
 }
 
-void M3dAsm_LineColijPreprocessItems__FP4ItemiP9SLineInfoUs(Item *item, int unused,
-                                                            SLineInfo *info,
+void M3dAsm_LineColijPreprocessItems__FP4ItemiP9SLineInfoUs(Item *item, int unused, SLineInfo *info,
                                                             unsigned short inquiry) {
 	unsigned flip;
 
@@ -61,6 +61,7 @@ void M3dAsm_LineColijPreprocessItems__FP4ItemiP9SLineInfoUs(Item *item, int unus
 
 		if (ItemNotCollidable(item->Flags))
 			goto reject;
+
 		if (item->Inquiry == inquiry)
 			goto next;
 
@@ -68,6 +69,7 @@ void M3dAsm_LineColijPreprocessItems__FP4ItemiP9SLineInfoUs(Item *item, int unus
 
 		/* the line relative to the item */
 		l = *SCR_LINE;
+
 		for (i = 0; i < 3; i++) {
 			l.lo[i] -= item->Position[i] >> 12;
 			l.hi[i] -= item->Position[i] >> 12;
@@ -86,7 +88,9 @@ void M3dAsm_LineColijPreprocessItems__FP4ItemiP9SLineInfoUs(Item *item, int unus
 			SCR_REGIONS = PSXRegion;
 			M3dMaths_RotMatrixYXZ__FP7SVECTORP6MATRIX((SVECTOR *)item->Angles, SCR_MATRIX);
 			M3dMaths_TransposeMatrix__FP6MATRIX(SCR_MATRIX);
+
 			m = (unsigned *)SCR_MATRIX;
+
 			for (i = 0; i < 5; i++)
 				PC_GteSetCtrl(i, m[i]);
 
@@ -98,13 +102,16 @@ void M3dAsm_LineColijPreprocessItems__FP4ItemiP9SLineInfoUs(Item *item, int unus
 
 		for (i = 0; i < 3; i++)
 			PC_GteSetCtrl(2 * i, (unsigned)(l.hi[i] - l.lo[i]));
+
 		GetBoundingBox(model, zero, flip, &l, &box);
+
 		if (item->Flags & ITEM_SCALED)
 			for (i = 0; i < 3; i++) {
 				/* low 32 bits of the product, as the retail mult/mflo */
 				box.min[i] = (int)((unsigned)item->Scale[i] * (unsigned)box.min[i]) >> 12;
 				box.max[i] = (int)((unsigned)item->Scale[i] * (unsigned)box.max[i]) >> 12;
 			}
+
 		if (LineToBoxTest(&l, &box))
 			goto next;
 	reject:

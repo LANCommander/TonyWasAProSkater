@@ -1,5 +1,6 @@
 /* FUN_8003434c (0x8003434c) */
 #include "names.h"
+
 void CBruce_StateTransition(char *p, int a, int b);
 void FUN_8002f1a0(char *p);
 void CBruce_Debug_RunAnim(char *p, int a, int b);

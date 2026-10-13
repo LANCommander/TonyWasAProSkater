@@ -10,7 +10,9 @@ int Mips_DotProd2Sign(int a, int b, int c, int d) {
 
 	sum = (unsigned long long)((long long)a * b);
 	sum += (unsigned long long)((long long)c * d);
+
 	if (sum == 0)
 		return 0;
+
 	return (long long)sum < 0 ? -1 : 1;
 }

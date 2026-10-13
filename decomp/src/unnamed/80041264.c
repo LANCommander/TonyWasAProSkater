@@ -1,5 +1,6 @@
 /* FUN_80041264 (0x80041264) */
 #include "names.h"
+
 typedef struct {
 	char pad[8];
 	short adj;

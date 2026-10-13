@@ -1,5 +1,6 @@
 /* FUN_800565ac (0x800565ac) */
 #include "names.h"
+
 typedef struct {
 	char p[0x13];
 	unsigned char b13;

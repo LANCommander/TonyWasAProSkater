@@ -20,7 +20,6 @@ extern "C" {
 #include "game/colij.h"
 #include "game/bruce.h"
 
-
 #define SetVector(v, x, y, z)                                                                      \
 	{                                                                                              \
 		int _x = (x);                                                                              \
@@ -344,10 +343,9 @@ void CBruce::DoInAirPhysics() {
 			if (mPhysicsState != 1) {
 				ProjectCVectorToPlane(&mVel, line_info.Normal);
 
-				SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
-				          line_info.Normal.vz)
-				    SetVector(&mOldNormal, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
-				        mSameNormal = 0;
+				SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
+				    SetVector(&mOldNormal, line_info.Normal.vx, line_info.Normal.vy,
+					          line_info.Normal.vz) mSameNormal = 0;
 				OrientToNormal();
 			}
 		}

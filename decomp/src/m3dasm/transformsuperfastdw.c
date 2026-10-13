@@ -5,7 +5,6 @@
 
 /* TransformAndOutcodeSuperVerticesFast for dewibbled rendering: the 12.4 vertices go to the GTE
  * unscaled and the depth is scaled back (>> 4); the screen position needs no scaling. */
-int M3dAsm_TransformAndOutcodeSuperVerticesFastDewibbled__FP7SVECTORi(SVECTOR *v, int n)
-{
+int M3dAsm_TransformAndOutcodeSuperVerticesFastDewibbled__FP7SVECTORi(SVECTOR *v, int n) {
 	return vtx_transform_super_fast((const uint32_t *)v, n, 1);
 }

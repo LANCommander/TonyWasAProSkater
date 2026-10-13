@@ -8,10 +8,10 @@ int M3dMaths_SquareRoot0__Fi(int n);
 #define VF_ALWAYS_FACING 0x10 /* in the vertex's pad: this and all later vertices are billboards */
 
 /* MIPS div: no trap on a zero divisor (the quotient is then -1, or 1 for a negative dividend) */
-static int mips_div(int n, int d)
-{
+static int mips_div(int n, int d) {
 	if (d == 0)
 		return n >= 0 ? -1 : 1;
+
 	return n / d;
 }
 
@@ -27,22 +27,24 @@ static int mips_div(int n, int d)
  * screen position. Outcodes as for the others, with the centre's depth. Returns the AND of all
  * the outcodes so far, `all`. */
 static int always_facing(const SVECTOR *v, int n, struct SProjectedVertex *pv,
-                         const struct ClipBounds *b, uint32_t all)
-{
+                         const struct ClipBounds *b, uint32_t all) {
 	char *base = (char *)ProjectedVertices;
 	int len = 0;
 
 	gte_setc(GTE_RT + 0, 10485); /* RT11 = 2.56, RT12 = 0 */
 	gte_setc(GTE_RT + 1, 0);
-	gte_setc(GTE_RT + 2, 4096);  /* RT22 = 1 */
+	gte_setc(GTE_RT + 2, 4096); /* RT22 = 1 */
 	gte_setc(GTE_RT + 3, 0);
-	gte_setc(GTE_RT + 4, 4096);  /* RT33 = 1 */
+	gte_setc(GTE_RT + 4, 4096); /* RT33 = 1 */
 	gte_setc(GTE_OFX, 0);
 	gte_setc(GTE_OFY, 0);
+
 	for (; n != 0; n--, v++, pv++) {
 		const uint32_t *w = (const uint32_t *)v;
-		const struct SProjectedVertex *centre = (const struct SProjectedVertex *)(base + (w[0] & 0xffff));
-		const struct SProjectedVertex *toward = (const struct SProjectedVertex *)(base + (w[0] >> 16));
+		const struct SProjectedVertex *centre =
+		    (const struct SProjectedVertex *)(base + (w[0] & 0xffff));
+		const struct SProjectedVertex *toward =
+		    (const struct SProjectedVertex *)(base + (w[0] >> 16));
 		int cx = (short)centre->XY, cy = (int32_t)centre->XY >> 16, z = centre->z;
 		int dx = (short)toward->XY - cx, dy = cy - ((int32_t)toward->XY >> 16);
 		int sx, sy;
@@ -52,6 +54,7 @@ static int always_facing(const SVECTOR *v, int n, struct SProjectedVertex *pv,
 		gte_set(GTE_IR1, dx);
 		gte_set(GTE_IR2, dy);
 		gte_sqr0();
+
 		len = M3dMaths_SquareRoot0__Fi(gte_get(GTE_MAC1) + gte_get(GTE_MAC2));
 
 		/* (dy, dx) normalised (4.12) times the size: the offset, perpendicular to the direction */
@@ -72,8 +75,10 @@ static int always_facing(const SVECTOR *v, int n, struct SProjectedVertex *pv,
 		pv->z = (short)z;
 		pv->Outcode = (ushort)oc;
 	}
+
 	gte_setc(GTE_OFX, (uint32_t)pCurrentViewport->xC << 16);
 	gte_setc(GTE_OFY, (uint32_t)pCurrentViewport->yC << 16);
+
 	/* Retail stores v0 here as the end of ProjectedVertices, as the other transforms do, but v0
 	 * then holds the last square root (the call clobbered it). Reproduced as it is. */
 	*(uint32_t *)&SCR_PROJECTED_END = (uint32_t)len;
@@ -86,8 +91,7 @@ static int always_facing(const SVECTOR *v, int n, struct SProjectedVertex *pv,
  * (FLAG bit 31) gets outcode bit 0x40 and loses its four screen bits. The vertices from the first
  * one flagged always-facing on are billboards (always_facing). Returns the AND of the outcodes
  * (0xff for no vertices). */
-int M3dAsm_TransformAndOutcodeBlockVertices__FP7SVECTORiP6VECTOR(SVECTOR *v, int n, VECTOR *o)
-{
+int M3dAsm_TransformAndOutcodeBlockVertices__FP7SVECTORiP6VECTOR(SVECTOR *v, int n, VECTOR *o) {
 	struct ClipBounds b;
 	struct SProjectedVertex *pv;
 	struct SRotatedVertex *rv;
@@ -95,10 +99,13 @@ int M3dAsm_TransformAndOutcodeBlockVertices__FP7SVECTORiP6VECTOR(SVECTOR *v, int
 
 	if (n == 0)
 		return 0xff;
+
 	vtx_clip_bounds(&b);
 	gte_ldtr(0, 0, 0);
+
 	pv = ProjectedVertices;
 	rv = RotatedVertices;
+
 	for (; n != 0; n--, v++, pv++, rv++) {
 		int z;
 		uint32_t oc;
@@ -106,6 +113,7 @@ int M3dAsm_TransformAndOutcodeBlockVertices__FP7SVECTORiP6VECTOR(SVECTOR *v, int
 		gte_set(GTE_VXY0, vtx_pack(v->vx + o->vx, v->vy + o->vy));
 		gte_set(GTE_VZ0, ((const uint32_t *)v)[1] + (uint32_t)o->vz);
 		gte_rtps();
+
 		if (v->pad & VF_ALWAYS_FACING)
 			return always_facing(v, n, pv, &b, all);
 
@@ -114,12 +122,15 @@ int M3dAsm_TransformAndOutcodeBlockVertices__FP7SVECTORiP6VECTOR(SVECTOR *v, int
 		pv->XY = PC_GteGetData(GTE_SXY2);
 		pv->z = (short)z;
 		oc = vtx_outcode_bits(&b, pv->XY, z);
+
 		if ((int32_t)gte_getc(GTE_FLAG) < 0)
 			oc = (oc | 0x40) & ~0xfu;
+
 		oc = vtx_outcode(oc);
 		pv->Outcode = (ushort)oc;
 		all &= oc;
 	}
+
 	SCR_PROJECTED_END = pv;
 	return (int)all;
 }

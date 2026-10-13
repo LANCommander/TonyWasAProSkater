@@ -1,5 +1,6 @@
 /* FUN_8006b434 (0x8006b434) flags=-fstrict-aliasing */
 #include "names.h"
+
 struct T {
 	char pad[20];
 	char *n;

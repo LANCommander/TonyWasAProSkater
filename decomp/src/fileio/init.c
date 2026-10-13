@@ -1,5 +1,6 @@
 /* FileIO_Init__Fv (0x8004c74c) */
 #include "names.h"
+
 extern char s_Retry_CdInit[], s_CD_HED_1[], s_CD_WAD_1[], Directory[];
 
 int Loading, WadStart, ReadSyncFailures;

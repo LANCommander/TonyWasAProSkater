@@ -1,5 +1,6 @@
 /* RemovePaletteEntry__FP9tag_S_Pal (0x8004ab88) */
 #include "names.h"
+
 int *DAT_800d1a80;
 
 void Mem_Delete(int *p);

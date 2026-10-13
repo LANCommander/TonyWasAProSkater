@@ -25,7 +25,6 @@ extern "C" VECTOR *FUN_80092f60(MATRIX *, VECTOR *, VECTOR *);
 extern "C" int Mips_CVecDotProd__FP7CVectorT0(CVector *, CVector *);
 void Utils_CalcUnit(CVector &, const CVector &);
 
-
 CQuat Quat_FromXRot(short);
 CQuat Quat_FromYRot(short);
 CQuat QFromV(const CVector &);

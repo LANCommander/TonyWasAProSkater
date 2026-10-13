@@ -1,5 +1,6 @@
 /* FUN_8001e0a4 (0x8001e0a4) */
 #include "names.h"
+
 int DAT_800d15e8;
 
 void Mess_SetScale(int a);

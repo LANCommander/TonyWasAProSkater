@@ -1,5 +1,6 @@
 /* Front_DirtyRectText__FiiPCc (0x80011324) */
 #include "names.h"
+
 typedef struct {
 	char *ptr;
 	const char *str;

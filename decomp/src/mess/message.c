@@ -1,5 +1,6 @@
 /* Mess_Message__FPCcP12SMessageProgbss (0x8001d644) */
 #include "names.h"
+
 typedef struct {
 	const char *text;
 	short a, b;

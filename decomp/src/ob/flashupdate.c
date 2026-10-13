@@ -1,5 +1,6 @@
 /* FlashUpdate__5CItem (0x80043728) */
 #include "names.h"
+
 typedef struct {
 	unsigned short flags;
 	char p0[0x1e];

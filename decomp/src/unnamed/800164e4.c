@@ -1,5 +1,6 @@
 /* InCompetition__Fv (0x800164e4) */
 #include "names.h"
+
 struct T {
 	char pad[12];
 	int f;

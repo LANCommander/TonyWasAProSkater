@@ -254,8 +254,7 @@ void CCamera::AI() {
 		Utils_CalcAim(mAngles, mPos, mFocusPos);
 
 		if (mShakeAmplitude.vx || *(int *)&mShakeAmplitude.vy) {
-			mO = Quat_FromYRot(mShakeAmplitude.vy * SIN(mShakeSpeed.vy * TTime) / 4096) *
-			     mO *
+			mO = Quat_FromYRot(mShakeAmplitude.vy * SIN(mShakeSpeed.vy * TTime) / 4096) * mO *
 			     Quat_FromXRot(mShakeAmplitude.vx * SIN(mShakeSpeed.vx * TTime) / 4096) *
 			     Quat_FromZRot(mShakeAmplitude.vz * SIN(mShakeSpeed.vz * TTime) / 4096);
 

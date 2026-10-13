@@ -6,8 +6,8 @@
    powerup visibility, settling the cameras), runs the frame loop until EndCode is set, then shuts
    the game down and unloads the fonts. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
+	#include <sys/types.h>
+	#include <libgte.h>
 }
 
 #include "game/video.h"
@@ -19,44 +19,44 @@ extern "C" {
 extern "C" {
 	extern volatile unsigned Xblanks; /* Xblanks */
 	extern volatile unsigned Vblanks; /* Vblanks */
-	extern int DemoTimer;               /* DemoTimer */
-	extern int VblankUpdateBar;               /* VblankUpdateBar */
-	extern int GVideoReplay;               /* GVideoReplay */
-	extern CBody *MechList;            /* MechList */
-	extern int GLevel;               /* GLevel */
-	extern CBody *CameraList;            /* CameraList */
-	extern unsigned GameFade;          /* GameFade */
+	extern int DemoTimer;             /* DemoTimer */
+	extern int VblankUpdateBar;       /* VblankUpdateBar */
+	extern int GVideoReplay;          /* GVideoReplay */
+	extern CBody *MechList;           /* MechList */
+	extern int GLevel;                /* GLevel */
+	extern CBody *CameraList;         /* CameraList */
+	extern unsigned GameFade;         /* GameFade */
 	extern int GamePaused;
 	extern int M3d_WireframeMode;
-	extern short M3d_OTPushback;         /* M3d_OTPushback */
-	extern SVideoRestart GVideoRestart; /* GVideoRestart */
-	extern SVideoInfo GVInfo1;    /* GVInfo1 */
-	extern SVideoInfo GVInfo2;    /* GVInfo2 */
-	extern uchar DemoName[];       /* DemoName */
-	extern SLevel Levels[];      /* Levels */
-	extern SControl Pad[2];   /* Pad */
-	extern char s_ingame1_fnt_8009f584[];        /* "ingame1.fnt" */
-	extern char s_memory_card_error[];        /* "memory card error" */
-	extern char s_press_x_to_continue[];        /* "press x to continue" */
+	extern short M3d_OTPushback;          /* M3d_OTPushback */
+	extern SVideoRestart GVideoRestart;   /* GVideoRestart */
+	extern SVideoInfo GVInfo1;            /* GVInfo1 */
+	extern SVideoInfo GVInfo2;            /* GVInfo2 */
+	extern uchar DemoName[];              /* DemoName */
+	extern SLevel Levels[];               /* Levels */
+	extern SControl Pad[2];               /* Pad */
+	extern char s_ingame1_fnt_8009f584[]; /* "ingame1.fnt" */
+	extern char s_memory_card_error[];    /* "memory card error" */
+	extern char s_press_x_to_continue[];  /* "press x to continue" */
 
-	int EndCode;       /* EndCode */
-	int GGame;       /* GGame */
-	int GNumberOfPlayers;       /* GNumberOfPlayers */
-	char GVideoFlags;      /* GVideoFlags */
-	CPowerUp *GPowS; /* GPowS */
-	CPowerUp *GPowK; /* GPowK */
-	CPowerUp *GPowA; /* GPowA */
-	CPowerUp *GPowT; /* GPowT */
-	CPowerUp *GPowE; /* GPowE */
-	CPowerUp *GPowTape; /* GPowTape */
-	int GState;       /* GState */
+	int EndCode;          /* EndCode */
+	int GGame;            /* GGame */
+	int GNumberOfPlayers; /* GNumberOfPlayers */
+	char GVideoFlags;     /* GVideoFlags */
+	CPowerUp *GPowS;      /* GPowS */
+	CPowerUp *GPowK;      /* GPowK */
+	CPowerUp *GPowA;      /* GPowA */
+	CPowerUp *GPowT;      /* GPowT */
+	CPowerUp *GPowE;      /* GPowE */
+	CPowerUp *GPowTape;   /* GPowTape */
+	int GState;           /* GState */
 	int GSpin;
 	int GSpinSpeed;
-	CBruce *GSkater; /* GSkater[0] */
+	CBruce *GSkater;      /* GSkater[0] */
 	CBruce *DAT_800d17cc; /* GSkater[1] */
-	int GHorsePlayer;      /* GHorsePlayer */
-	int GClear1;      /* GClear1 */
-	int GClear2;      /* GClear2 */
+	int GHorsePlayer;     /* GHorsePlayer */
+	int GClear1;          /* GClear1 */
+	int GClear2;          /* GClear2 */
 	int GHorseClearInput2;
 	int Cheat_ScreenShots;
 	int GameFrozen;
@@ -69,30 +69,30 @@ extern "C" {
 
 	void FUN_8002566c(void); /* PlayAway_Init */
 	void Pause__Fi(int);
-	void FUN_80025400(void); /* FPS_Init */
-	void FUN_800109b0(void); /* Crowd_Init */
-	void FUN_800109b8(void); /* Crowd_Start */
+	void FUN_80025400(void);           /* FPS_Init */
+	void FUN_800109b0(void);           /* Crowd_Init */
+	void FUN_800109b8(void);           /* Crowd_Start */
 	void ResetMainDemoTimer__Fv(void); /* ResetMainDemoTimer */
-	void FUN_80011628(int);  /* Front_SetLoadAction */
+	void FUN_80011628(int);            /* Front_SetLoadAction */
 	int Card_Load__F9EFileTypePUlT1(int, ulong *, ulong *);
 	void Mess_SetCurrentFont__FPc(char *);
-	void FUN_8006b240(void);                              /* HiRes_ClearOTag */
-	void FUN_80061ea0(void);                              /* ResetOT */
-	void SetClippingBox__Fiiii(int, int, int, int);                /* SetClippingBox */
+	void FUN_8006b240(void);                                             /* HiRes_ClearOTag */
+	void FUN_80061ea0(void);                                             /* ResetOT */
+	void SetClippingBox__Fiiii(int, int, int, int);                      /* SetClippingBox */
 	void DrawColoredBox__FiiiiUcUcUc(int, int, int, int, int, int, int); /* DrawColoredBox */
-	void Mess_SetTextJustify__FUc(int);                               /* Mess_SetTextJustify */
+	void Mess_SetTextJustify__FUc(int);                                  /* Mess_SetTextJustify */
 	void Mess_SetScale__Fi(int);
 	void Mess_SetRGB__FUcUcUci(int, int, int, int);
 	void Mess_DrawText__FiiPCciUiib(int, int, char *, int, int, int, int); /* Mess_DrawText */
-	void FUN_8006b26c(void);                                 /* HiRes_DrawOTag */
-	int FUN_80070ff4(void); /* Pad_Update */
+	void FUN_8006b26c(void);                                               /* HiRes_DrawOTag */
+	int FUN_80070ff4(void);                                                /* Pad_Update */
 	int Card_LoadReplayFromCD__FPUlT0Pc(ulong *, ulong *, uchar *);
-	int Career_Got__Fi(int);                     /* Career_Got */
+	int Career_Got__Fi(int);                                           /* Career_Got */
 	void Video_Start__FP6CBruce10EVideoModeii(CBody *, int, int, int); /* Video_Start */
 	void Video_SyncObsIfNeeded__Fv(void);
 	void Flash_Reset__Fv(void);   /* Flash_Reset */
-	void Video_Cleanup__Fv(void);   /* Video_Cleanup */
-	int FUN_8007cd64(CBody *); /* InCompetitionIntro */
+	void Video_Cleanup__Fv(void); /* Video_Cleanup */
+	int FUN_8007cd64(CBody *);    /* InCompetitionIntro */
 	void FUN_800920b4(int);
 	void Ob_AI__FPP5CBody(CBody **); /* Ob_AI */
 	void FUN_800242cc(void);
@@ -103,7 +103,7 @@ extern "C" {
 	void FUN_80024258(void);
 	void Video_HandleStepping__Fv(void);
 	void Game_Logic__Fv(void); /* Game_Logic */
-	void FUN_80048fec(void); /* Db_WaitRender */
+	void FUN_80048fec(void);   /* Db_WaitRender */
 	void FUN_80025440(void);
 	void FUN_80024fa4(void); /* Game_Display */
 	void Panel_DrawFlatShadedPoly__FiiiiUcUcUci(int, int, int, int, int, int, int, int);
@@ -171,8 +171,7 @@ void PlayAway(void) {
 		if (GVideoRestart.NumSkaters == 1)
 			LoadError = Card_Load__F9EFileTypePUlT1(1, GVInfo1.pBlockStart, 0);
 		else
-			LoadError =
-			    Card_Load__F9EFileTypePUlT1(1, GVInfo1.pBlockStart, GVInfo2.pBlockStart);
+			LoadError = Card_Load__F9EFileTypePUlT1(1, GVInfo1.pBlockStart, GVInfo2.pBlockStart);
 
 		VblankUpdateBar = 0;
 
@@ -229,8 +228,8 @@ void PlayAway(void) {
 		int LoadError;
 
 		VblankUpdateBar = 1;
-		LoadError = Card_LoadReplayFromCD__FPUlT0Pc(GVInfo1.pBlockStart,
-		                                            GVInfo2.pBlockStart, DemoName);
+		LoadError =
+		    Card_LoadReplayFromCD__FPUlT0Pc(GVInfo1.pBlockStart, GVInfo2.pBlockStart, DemoName);
 		DemoName[4]++;
 
 		if (DemoName[4] > 'J')
@@ -306,12 +305,14 @@ void PlayAway(void) {
 		if (GVideoReplay > 0) {
 			GVInfo1.ReplayHighlight = GVideoReplay;
 			GVInfo2.ReplayHighlight = GVideoReplay;
-			Video_Start__FP6CBruce10EVideoModeii(pSkater, 2, GVInfo1.Highlights[GVideoReplay - 1].FromFrame,
-			             GVInfo1.Highlights[GVideoReplay - 1].ToFrame);
+			Video_Start__FP6CBruce10EVideoModeii(pSkater, 2,
+			                                     GVInfo1.Highlights[GVideoReplay - 1].FromFrame,
+			                                     GVInfo1.Highlights[GVideoReplay - 1].ToFrame);
 
 			if (pSkater2)
-				Video_Start__FP6CBruce10EVideoModeii(pSkater2, 2, GVInfo1.Highlights[GVideoReplay - 1].FromFrame,
-				             GVInfo1.Highlights[GVideoReplay - 1].ToFrame);
+				Video_Start__FP6CBruce10EVideoModeii(pSkater2, 2,
+				                                     GVInfo1.Highlights[GVideoReplay - 1].FromFrame,
+				                                     GVInfo1.Highlights[GVideoReplay - 1].ToFrame);
 
 			Video_SyncObsIfNeeded__Fv();
 		} else {
@@ -376,7 +377,8 @@ void PlayAway(void) {
 
 		FUN_800242cc();
 
-		if (!GSkater->mPhysicsState && (!DAT_800d17cc || !DAT_800d17cc->mPhysicsState) && GState == 1) {
+		if (!GSkater->mPhysicsState && (!DAT_800d17cc || !DAT_800d17cc->mPhysicsState) &&
+		    GState == 1) {
 			if (--GSpin <= 0) {
 				if (GGame != 7 && GSkater->mPanel.mLandedTotal) {
 					GSpinSpeed = 0;
@@ -464,9 +466,8 @@ void PlayAway(void) {
 		if (!DemoTimer)
 			Front_PrintDemo__Fv();
 
-		FUN_8002357c(Levels[GLevel].FMV && (GNumberOfPlayers == 1 || GGame == 7)
-		                 ? M3d_WireframeMode
-						 : 0);
+		FUN_8002357c(Levels[GLevel].FMV && (GNumberOfPlayers == 1 || GGame == 7) ? M3d_WireframeMode
+		                                                                         : 0);
 
 		M3d_WireframeMode = 0;
 

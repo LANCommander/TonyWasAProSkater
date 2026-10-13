@@ -13,12 +13,12 @@ extern PadBuffer DAT_800bf104;
 extern int DAT_800bf0d4[]; /* picture x by screen */
 extern int DAT_800bf0e0[]; /* picture y by screen */
 extern int DAT_800d1d80;
-extern uint GameFade; /* GameFade */
-extern int DAT_800d1cb8;  /* START+SELECT quit */
+extern uint GameFade;    /* GameFade */
+extern int DAT_800d1cb8; /* START+SELECT quit */
 
 int DAT_800d1ce8;
 int DAT_800d1cec;     /* loading finished */
-int BackOut;     /* backed out */
+int BackOut;          /* backed out */
 int DAT_800d1cf8;     /* screen type */
 Sprite *DAT_800d1d00; /* got-tape marker */
 Sprite *DAT_800d1d04; /* "Press X" */

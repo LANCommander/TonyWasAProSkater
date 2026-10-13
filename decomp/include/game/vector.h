@@ -52,30 +52,32 @@ struct CVector {
 		vy = y;
 		vz = z;
 	}
-	void Zero() { vx = vy = vz = 0; }
+	void Zero() {
+		vx = vy = vz = 0;
+	}
 
-	int Length() const;                         /* 0x8004d900 */
-	void Normalize();                           /* 0x8004d980 */
-	void KillSmall();                           /* 0x8004d9e0 */
-	CVector &operator+=(const CVector &);       /* 0x8004da3c */
-	CVector &operator-=(const CVector &);       /* 0x8004da78 */
-	CVector &operator*=(const int &);           /* 0x8004dab4 */
-	CVector &operator/=(const int &);           /* 0x8004db04 */
-	CVector &operator>>=(const int &);          /* 0x8004db54 */
-	CVector &operator<<=(const int &);          /* 0x8004db90 */
-	CVector &operator%=(const CFriction &);     /* 0x8004dbcc */
-	int operator==(const CVector &);            /* 0x8004dc18 */
-	int operator!=(const CVector &);            /* 0x8004dc5c */
-	CVector operator-() const;                  /* 0x8004df2c */
+	int Length() const;                     /* 0x8004d900 */
+	void Normalize();                       /* 0x8004d980 */
+	void KillSmall();                       /* 0x8004d9e0 */
+	CVector &operator+=(const CVector &);   /* 0x8004da3c */
+	CVector &operator-=(const CVector &);   /* 0x8004da78 */
+	CVector &operator*=(const int &);       /* 0x8004dab4 */
+	CVector &operator/=(const int &);       /* 0x8004db04 */
+	CVector &operator>>=(const int &);      /* 0x8004db54 */
+	CVector &operator<<=(const int &);      /* 0x8004db90 */
+	CVector &operator%=(const CFriction &); /* 0x8004dbcc */
+	int operator==(const CVector &);        /* 0x8004dc18 */
+	int operator!=(const CVector &);        /* 0x8004dc5c */
+	CVector operator-() const;              /* 0x8004df2c */
 };
 
-CVector operator+(const CVector &, const CVector &);  /* 0x8004dca4 */
-CVector operator-(const CVector &, const CVector &);  /* 0x8004dcfc */
-CVector operator*(const CVector &, const int &);      /* 0x8004dd54 */
-CVector operator*(const int &, const CVector &);      /* 0x8004ddbc */
-CVector operator/(const CVector &, const int &);      /* 0x8004de24 */
-CVector operator>>(const CVector &, const int &);     /* 0x8004de8c */
-CVector operator<<(const CVector &, const int &);     /* 0x8004dedc */
+CVector operator+(const CVector &, const CVector &); /* 0x8004dca4 */
+CVector operator-(const CVector &, const CVector &); /* 0x8004dcfc */
+CVector operator*(const CVector &, const int &);     /* 0x8004dd54 */
+CVector operator*(const int &, const CVector &);     /* 0x8004ddbc */
+CVector operator/(const CVector &, const int &);     /* 0x8004de24 */
+CVector operator>>(const CVector &, const int &);    /* 0x8004de8c */
+CVector operator<<(const CVector &, const int &);    /* 0x8004dedc */
 
 struct CSVector {
 	short vx; /* 0x0 */
@@ -94,11 +96,11 @@ struct CSVector {
 		vz = z;
 	}
 
-	void Mask();                                /* 0x8004df58 */
-	void KillSmall();                           /* 0x8004df80 */
-	CSVector &operator+=(const CSVector &);     /* 0x8004dfe8 */
-	CSVector &operator/=(const int &);          /* 0x8004e024 */
-	CSVector &operator%=(const CFriction &);    /* 0x8004e074 */
+	void Mask();                             /* 0x8004df58 */
+	void KillSmall();                        /* 0x8004df80 */
+	CSVector &operator+=(const CSVector &);  /* 0x8004dfe8 */
+	CSVector &operator/=(const int &);       /* 0x8004e024 */
+	CSVector &operator%=(const CFriction &); /* 0x8004e074 */
 };
 
 CSVector operator-(const CSVector &, const CSVector &); /* 0x8004e0c4 */

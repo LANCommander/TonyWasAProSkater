@@ -1,6 +1,7 @@
 /* FUN_80060e98 (0x80060e98) */
 #include "names.h"
 #include "game/padbuttons.h"
+
 struct VT {
 	char pad[8];
 	short off;
@@ -155,7 +156,8 @@ void FUN_80060e98(void) {
 			Mess_Display();
 			FUN_8006b26c();
 
-			if (s0 > 128 || !(Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED]))
+			if (s0 > 128 || !(Pad[PAD_MENU_START + PAD_TRIGGERED] ||
+			                  Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED]))
 				continue;
 
 			Pad[PAD_MENU_START + PAD_TRIGGERED] = 0;

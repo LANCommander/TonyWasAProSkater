@@ -1,5 +1,6 @@
 /* Competition_MarqueeDisplay__Fv (0x800764d8) */
 #include "names.h"
+
 typedef struct {
 	char pad[0xd4];
 	char *text;

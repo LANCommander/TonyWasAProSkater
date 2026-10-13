@@ -12,8 +12,8 @@
    all `goto done` (a `break` lets expand_end_loop roll the leading exit test to the bottom), and
    FUN_80093240 (RotMatrix) returns MATRIX*. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
+	#include <sys/types.h>
+	#include <libgte.h>
 }
 
 /* emit this TU's out-of-line copy of CClass's inline destructor and its vtable (retail
@@ -545,7 +545,8 @@ extern "C" int FUN_80059794() {
 			if (pBruce->mPos.vx >= DAT_800d2334 && pBruce->mPos.vx <= DAT_800d2330) {
 				M3d_BuildTransform(pBruce);
 				FUN_80043f70(pBruce);
-				M3d_RenderSetup__FP7SCameraP9SViewportPUi(MikeCamera, viewport, pDoubleBuffer + 140);
+				M3d_RenderSetup__FP7SCameraP9SViewportPUi(MikeCamera, viewport,
+				                                          pDoubleBuffer + 140);
 				M3d_Render__FPv(MechList);
 				FUN_80083774();
 			}
@@ -553,8 +554,8 @@ extern "C" int FUN_80059794() {
 			if (--blink == 0)
 				blink = 96;
 
-			if (!noTapes && !state && !GCareer.CharacterProgress[DAT_800d1c40].NumTapes && blink >= 23 &&
-			    GGame == 1) {
+			if (!noTapes && !state && !GCareer.CharacterProgress[DAT_800d1c40].NumTapes &&
+			    blink >= 23 && GGame == 1) {
 				Mess_SetCurrentFont("stats1.fnt");
 				Mess_SetRGB(250, 190, 60, 0);
 				Mess_SetTextJustify__FUc(0);
@@ -662,30 +663,36 @@ extern "C" int FUN_80059794() {
 			Mess_SetCurrentFont("stats1.fnt");
 			Mess_SetRGB(128, 128, 128, 0);
 			Mess_SetTextJustify__FUc(1);
-			Mess_DrawText__FiiPCciUiib(203,
-			             299 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[0]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[0]),
-			             Stats[DAT_800d1c40].pBio[0], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(203,
-			             320 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[1]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[1]),
-			             Stats[DAT_800d1c40].pBio[1], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(203,
-			             341 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[2]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[2]),
-			             Stats[DAT_800d1c40].pBio[2], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(203,
-			             362 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[3]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[3]),
-			             Stats[DAT_800d1c40].pBio[3], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(203,
-			             383 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[4]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[4]),
-			             Stats[DAT_800d1c40].pBio[4], 0, 0, 256, 0);
-			Mess_DrawText__FiiPCciUiib(203,
-			             404 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[5]) >> 1) +
-			                 Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[5]),
-			             Stats[DAT_800d1c40].pBio[5], 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(
+			    203,
+			    299 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[0]) >> 1) +
+			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[0]),
+			    Stats[DAT_800d1c40].pBio[0], 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(
+			    203,
+			    320 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[1]) >> 1) +
+			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[1]),
+			    Stats[DAT_800d1c40].pBio[1], 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(
+			    203,
+			    341 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[2]) >> 1) +
+			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[2]),
+			    Stats[DAT_800d1c40].pBio[2], 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(
+			    203,
+			    362 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[3]) >> 1) +
+			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[3]),
+			    Stats[DAT_800d1c40].pBio[3], 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(
+			    203,
+			    383 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[4]) >> 1) +
+			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[4]),
+			    Stats[DAT_800d1c40].pBio[4], 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(
+			    203,
+			    404 - (Mess_TextHeight(Stats[DAT_800d1c40].pBio[5]) >> 1) +
+			        Mess_TextHeightAboveBaseline__FPCc(Stats[DAT_800d1c40].pBio[5]),
+			    Stats[DAT_800d1c40].pBio[5], 0, 0, 256, 0);
 
 			if (textTimer == 0)
 				medalTimer = 3;
@@ -700,7 +707,8 @@ extern "C" int FUN_80059794() {
 			tapes[1] = n % 10 + '0';
 			tapes[2] = 0;
 			medalTimer--;
-			tapesY = (Mess_TextHeight(tapes) >> 1) + 385 - Mess_TextHeightBelowBaseline__FPCc(tapes);
+			tapesY =
+			    (Mess_TextHeight(tapes) >> 1) + 385 - Mess_TextHeightBelowBaseline__FPCc(tapes);
 
 			for (int c = 0; c < 3; c++) {
 				int j = 0;

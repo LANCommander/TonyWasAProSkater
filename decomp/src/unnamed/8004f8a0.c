@@ -1,5 +1,6 @@
 /* FUN_8004f8a0 (0x8004f8a0) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;
@@ -150,8 +151,8 @@ void FUN_8004f8a0(void) {
 
 								if (bx >= cmin.x && cmax.x >= ax && by >= cmin.y && cmax.y >= ay &&
 								    bz >= cmin.z && cmax.z >= az) {
-									s6 = M3dUtils_LineLineClosestPoints(
-									    &o->ff0, &o->bb, &pa, &pb, &v60, &d, &v70, &t);
+									s6 = M3dUtils_LineLineClosestPoints(&o->ff0, &o->bb, &pa, &pb,
+									                                    &v60, &d, &v70, &t);
 
 									if (s6 < o->f6f0 &&
 									    ((o->f734 != 0 && o->f734 != 2) || v70.y >= o->bb.y)) {

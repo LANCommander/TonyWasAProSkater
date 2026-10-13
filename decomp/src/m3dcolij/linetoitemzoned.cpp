@@ -12,6 +12,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+
 #include "game/colij.h"
 
 extern SPSXRegion PSXRegion[];

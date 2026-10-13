@@ -19,6 +19,7 @@ extern "C" {
 
 #ifdef PC_PORT
 #include "pc_saves.h"
+
 extern "C" char SaveGameName[];
 #endif
 

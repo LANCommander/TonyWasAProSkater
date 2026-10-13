@@ -44,32 +44,69 @@
 #define SCR_FACEFLAGS   0x3f4 /* GlobalFaceFlags: a face's flags are (flags & hi) | lo */
 
 /* face record */
-enum { FACE_FLAGS = 0, FACE_VERTS = 1, FACE_COLOUR = 2, FACE_LIGHT = 3, FACE_UV0 = 4,
-       FACE_UV1 = 5, FACE_UV23 = 6, FACE_TEXWINDOW = 7 };
+enum {
+	FACE_FLAGS = 0,
+	FACE_VERTS = 1,
+	FACE_COLOUR = 2,
+	FACE_LIGHT = 3,
+	FACE_UV0 = 4,
+	FACE_UV1 = 5,
+	FACE_UV23 = 6,
+	FACE_TEXWINDOW = 7
+};
 
 enum {
-	FF_TEXTURED = 0x1, FF_REFLECT = 0x2, FF_VERTEXLIT = 0x4, FF_TINTED = 0x8, FF_TRIANGLE = 0x10,
-	FF_TEXWINDOW = 0x20, FF_SEMITRANS = 0x40, FF_DRAW = 0xc0, FF_ABR = 0x180,
-	FF_GOURAUD = 0x800, FF_SUBDIVIDE = 0x1000, FF_PUSHBACK1 = 0x2000, FF_PUSHBACK2 = 0x4000
+	FF_TEXTURED = 0x1,
+	FF_REFLECT = 0x2,
+	FF_VERTEXLIT = 0x4,
+	FF_TINTED = 0x8,
+	FF_TRIANGLE = 0x10,
+	FF_TEXWINDOW = 0x20,
+	FF_SEMITRANS = 0x40,
+	FF_DRAW = 0xc0,
+	FF_ABR = 0x180,
+	FF_GOURAUD = 0x800,
+	FF_SUBDIVIDE = 0x1000,
+	FF_PUSHBACK1 = 0x2000,
+	FF_PUSHBACK2 = 0x4000
 };
 
 /* GPU primitive codes (the top byte of a packet's first command word) */
-enum { CODE_F3 = 0x20, CODE_FT3 = 0x24, CODE_F4 = 0x28, CODE_FT4 = 0x2c, CODE_G3 = 0x30,
-       CODE_GT3 = 0x34, CODE_G4 = 0x38, CODE_GT4 = 0x3c };
+enum {
+	CODE_F3 = 0x20,
+	CODE_FT3 = 0x24,
+	CODE_F4 = 0x28,
+	CODE_FT4 = 0x2c,
+	CODE_G3 = 0x30,
+	CODE_GT3 = 0x34,
+	CODE_G4 = 0x38,
+	CODE_GT4 = 0x3c
+};
+
 #define CODE_SEMITRANS 0x02000000u
 #define CODE_QUAD_BIT  0x08000000u /* F3 <-> F4, G3 <-> G4 ... */
 
 /* GTE data registers and commands beyond vertex.h's */
-enum { GTE_SXY0 = 12, GTE_SXY1 = 13, GTE_SXYP = 15, GTE_RGB0 = 20, GTE_RGB1 = 21, GTE_RGB2 = 22,
-       GTE_MAC0 = 24, GTE_DQA = 27, GTE_DQB = 28 };
+enum {
+	GTE_SXY0 = 12,
+	GTE_SXY1 = 13,
+	GTE_SXYP = 15,
+	GTE_RGB0 = 20,
+	GTE_RGB1 = 21,
+	GTE_RGB2 = 22,
+	GTE_MAC0 = 24,
+	GTE_DQA = 27,
+	GTE_DQB = 28
+};
+
 #define GTE_CMD_NCLIP 0x1400006u
 #define GTE_CMD_DPCS  0x0780010u
 #define GTE_CMD_DPCL  0x0680029u
 #define GTE_CMD_DPCT  0x0f8002au
 
-extern uint32_t *pPoly;            /* next free word of the packet buffer */
+extern uint32_t *pPoly; /* next free word of the packet buffer */
 extern uint8_t *PolyBufferEnd;
-extern uint32_t *pColourTable;     /* gouraud faces' colours */
+extern uint32_t *pColourTable; /* gouraud faces' colours */
 extern uint32_t *CurrentOrderingTable;
 
 /* A packet-buffer word by its 24-bit address. */
@@ -77,23 +114,21 @@ extern uint32_t *CurrentOrderingTable;
 
 /* The walk's state while one face is drawn. */
 typedef struct PolyState {
-	uint32_t pkt;          /* next free packet word (24-bit address) */
-	uint32_t limit;        /* no new face once pkt reaches this: PolyBufferEnd - 100 */
-	uint32_t *ot;          /* CurrentOrderingTable */
+	uint32_t pkt;   /* next free packet word (24-bit address) */
+	uint32_t limit; /* no new face once pkt reaches this: PolyBufferEnd - 100 */
+	uint32_t *ot;   /* CurrentOrderingTable */
 	const uint32_t *face;
-	uint32_t flags;        /* the face's flags (after GlobalFaceFlags; fade mode adds 0x1c0) */
-	int zmax;              /* the face's greatest vertex depth */
+	uint32_t flags; /* the face's flags (after GlobalFaceFlags; fade mode adds 0x1c0) */
+	int zmax;       /* the face's greatest vertex depth */
 } PolyState;
 
-static __inline__ void pp_begin(PolyState *ps)
-{
+static __inline__ void pp_begin(PolyState *ps) {
 	ps->pkt = (uint32_t)pPoly & 0xffffff;
 	ps->limit = ((uint32_t)PolyBufferEnd & 0xffffff) - 100;
 	ps->ot = CurrentOrderingTable;
 }
 
-static __inline__ void pp_end(PolyState *ps)
-{
+static __inline__ void pp_end(PolyState *ps) {
 	pPoly = (uint32_t *)(ps->pkt | 0x80000000u);
 }
 
@@ -101,40 +136,42 @@ static __inline__ void pp_end(PolyState *ps)
  * distance beyond it scaled by DpqShift. In fade-to-colour mode a fogged face becomes
  * semi-transparent with blend mode 1 (added onto the fade polygon drawn under it). Loads IR0
  * (the depth-cue weight of the colour commands) and keeps the value in SCR_FOG. */
-static __inline__ int pp_fog(PolyState *ps)
-{
+static __inline__ int pp_fog(PolyState *ps) {
 	int d = ps->zmax - SCR16S(SCR_DPQMIN), shift = SCR16S(SCR_DPQSHIFT), fog = 0;
 
 	if (d > 0) {
 		if ((int32_t)SCR32(SCR_FADECOLOUR) >= 0)
 			ps->flags = (ps->flags | 0x1c0) ^ 0x100;
+
 		fog = shift < 0 ? d >> (-shift & 31) : (int)((uint32_t)d << (shift & 31));
 	}
+
 	gte_set(GTE_IR0, fog);
+
 	SCR16(SCR_FOG) = (uint16_t)fog;
 	return d;
 }
 
 /* The packet's first command word: the colour with the primitive code (and the
  * semi-transparency bit). */
-static __inline__ void pp_code(PolyState *ps, uint32_t rgb, int code)
-{
+static __inline__ void pp_code(PolyState *ps, uint32_t rgb, int code) {
 	PKT(ps->pkt)[1] = rgb | (uint32_t)code << 24 | (ps->flags & FF_SEMITRANS) << 19;
 }
 
 /* The sort depth's ordering-table entry: the face's farthest depth, pushed back by the
  * scratchpad offsets for flags 0x2000/0x4000 (not below 0), a word per 4 units, the last entry
  * for anything beyond. */
-static __inline__ uint32_t *pp_ot_entry(PolyState *ps)
-{
+static __inline__ uint32_t *pp_ot_entry(PolyState *ps) {
 	int z = ps->zmax;
 	uint32_t off;
 
 	if (ps->flags & (FF_PUSHBACK1 | FF_PUSHBACK2)) {
 		z += (ps->flags & FF_PUSHBACK1) ? SCR16S(SCR_PUSHBACK1) : SCR16S(SCR_PUSHBACK2);
+
 		if (z < 0)
 			z = 0;
 	}
+
 	off = (uint32_t)z < 0x4000 ? (uint32_t)z & 0xfffc : 0x3ffc;
 	return (uint32_t *)((char *)ps->ot + off);
 }
@@ -145,12 +182,12 @@ static __inline__ uint32_t *pp_ot_entry(PolyState *ps)
  * same ordering-table entry. The subtractive version carries a draw-mode word and a NOP before
  * the polygon, and leaves two unused words after it. */
 static __inline__ void pp_add_fade_poly(PolyState *ps, uint32_t *ote, uint32_t colour, int fog,
-                                        const uint32_t xy[4])
-{
+                                        const uint32_t xy[4]) {
 	uint32_t start = ps->pkt, old, *p;
 	int len = 0;
 
 	gte_set(GTE_RGBC, colour);
+
 	if (colour >> 24 & 2) {
 		PKT(start)[1] = 0xe1000240; /* draw mode: blend mode 2 (subtract), dither */
 		PKT(start)[2] = 0;
@@ -159,15 +196,19 @@ static __inline__ void pp_add_fade_poly(PolyState *ps, uint32_t *ote, uint32_t c
 	} else {
 		fog = 4096 - fog;
 	}
+
 	gte_set(GTE_IR0, fog);
+
 	old = *ote;
 	*ote = start;
 	PC_GteCommand(GTE_CMD_DPCS);
+
 	p = PKT(ps->pkt);
 	p[2] = xy[0];
 	p[3] = xy[1];
 	p[4] = xy[2];
 	p[5] = xy[3]; /* also for a triangle (the word after its packet) */
+
 	if (ps->flags & FF_TRIANGLE) {
 		p[1] = PC_GteGetData(GTE_RGB2) | (uint32_t)CODE_F3 << 24;
 		len += 4;
@@ -175,6 +216,7 @@ static __inline__ void pp_add_fade_poly(PolyState *ps, uint32_t *ote, uint32_t c
 		p[1] = PC_GteGetData(GTE_RGB2) | (uint32_t)CODE_F4 << 24;
 		len += 5;
 	}
+
 	PKT(start)[0] = old | (uint32_t)len << 24;
 	ps->pkt += len * 4 + 4;
 }
@@ -186,8 +228,7 @@ static __inline__ void pp_add_fade_poly(PolyState *ps, uint32_t *ote, uint32_t c
  * gets a draw-mode packet with its blend mode in front of it instead (linked to `last`).
  * Then, in fade-to-colour mode, the fade polygon (xy: the face's screen words). */
 static __inline__ void pp_link(PolyState *ps, uint32_t start, uint32_t last, uint32_t len,
-                               const uint32_t xy[4])
-{
+                               const uint32_t xy[4]) {
 	uint32_t *ote = pp_ot_entry(ps), old = *ote, size, fade;
 	int fog;
 
@@ -209,6 +250,7 @@ static __inline__ void pp_link(PolyState *ps, uint32_t start, uint32_t last, uin
 		*ote = start;
 		PKT(last)[0] = old | len << 24;
 		size = len * 4 + 4;
+
 		if ((ps->flags & (FF_SEMITRANS | FF_TEXTURED)) == FF_SEMITRANS) {
 			uint32_t dm = last + size;
 
@@ -220,8 +262,10 @@ static __inline__ void pp_link(PolyState *ps, uint32_t start, uint32_t last, uin
 			ps->pkt = last + size;
 		}
 	}
+
 	fog = SCR16S(SCR_FOG);
 	fade = SCR32(SCR_FADECOLOUR);
+
 	if (fog != 0 && (int32_t)fade >= 0)
 		pp_add_fade_poly(ps, ote, fade, fog, xy);
 }

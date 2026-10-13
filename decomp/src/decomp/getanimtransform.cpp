@@ -9,6 +9,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+
 #include "game/m3d.h"
 #include "game/ob.h"
 
@@ -139,7 +140,8 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 			}
 
 			if ((signed char)pSuper->mDecompressedFrame != pSuper->mFrame || NewAnim) {
-				SEulerPivot *pEulerPivots = (SEulerPivot *)(pSuper->mpDecompressedFrame + NumModels);
+				SEulerPivot *pEulerPivots =
+				    (SEulerPivot *)(pSuper->mpDecompressedFrame + NumModels);
 				SMatrix *pMat;
 				SEulerPivot *pRootEuler;
 

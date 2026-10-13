@@ -17,44 +17,44 @@ class CPowerUp;
 
 class CJudge : public CClass {
   public:
-	uchar mProPlayer;              /* 0x4 */
-	uchar mProBias;                /* 0x5 */
-	uchar mConPlayer;              /* 0x6 */
-	uchar mConBias;                /* 0x7 */
-	/* sizeof(CJudge) == 0x8 */
+	uchar mProPlayer; /* 0x4 */
+	uchar mProBias;   /* 0x5 */
+	uchar mConPlayer; /* 0x6 */
+	uchar mConBias;   /* 0x7 */
+	                  /* sizeof(CJudge) == 0x8 */
 };
 
 class CCompetition : public CClass {
   public:
-	uchar mCompetitorList[10];     /* 0x004 */
+	uchar mCompetitorList[10]; /* 0x004 */
 	char pad0e[0x10 - 0xe];
-	uint mJudgeTimer;              /* 0x010 */
-	uint mLadderTimer;             /* 0x014 */
-	int mWinLoseCheer;             /* 0x018 */
-	uchar mLastLadderEntry;        /* 0x01c */
+	uint mJudgeTimer;       /* 0x010 */
+	uint mLadderTimer;      /* 0x014 */
+	int mWinLoseCheer;      /* 0x018 */
+	uchar mLastLadderEntry; /* 0x01c */
 	char pad1d[0x20 - 0x1d];
-	int mJudgeFullyDisplayed;      /* 0x020 */
-	int mLadderFullyDisplayed;     /* 0x024 */
-	CJudge mJudges[5];             /* 0x028 */
-	short mJudgesScore[5];         /* 0x050 */
-	uchar mHighScore;              /* 0x05a */
-	uchar mLowScore;               /* 0x05b */
-	uchar mPlacing[10];            /* 0x05c */
-	uchar mOrdering[10];           /* 0x066 */
-	ushort mScore[10][3];          /* 0x070 */
-	ushort mTotalScore[10];        /* 0x0ac */
-	uchar mCurrentHeat;            /* 0x0c0 */
+	int mJudgeFullyDisplayed;  /* 0x020 */
+	int mLadderFullyDisplayed; /* 0x024 */
+	CJudge mJudges[5];         /* 0x028 */
+	short mJudgesScore[5];     /* 0x050 */
+	uchar mHighScore;          /* 0x05a */
+	uchar mLowScore;           /* 0x05b */
+	uchar mPlacing[10];        /* 0x05c */
+	uchar mOrdering[10];       /* 0x066 */
+	ushort mScore[10][3];      /* 0x070 */
+	ushort mTotalScore[10];    /* 0x0ac */
+	uchar mCurrentHeat;        /* 0x0c0 */
 	char padc1[0xc4 - 0xc1];
-	int medal_mask;                /* 0x0c4 */
-	CPowerUp *mMedal1;             /* 0x0c8 */
-	CPowerUp *mMedal2;             /* 0x0cc */
-	CPowerUp *mMedal3;             /* 0x0d0 */
-	char *mMarqueeText;            /* 0x0d4 */
-	char mMarqueeTextBuf[75];      /* 0x0d8 */
+	int medal_mask;           /* 0x0c4 */
+	CPowerUp *mMedal1;        /* 0x0c8 */
+	CPowerUp *mMedal2;        /* 0x0cc */
+	CPowerUp *mMedal3;        /* 0x0d0 */
+	char *mMarqueeText;       /* 0x0d4 */
+	char mMarqueeTextBuf[75]; /* 0x0d8 */
 	char pad123[0x124 - 0x123];
-	uint mMarqueeTimer;            /* 0x124 */
-	int our_skater_num;            /* 0x128 */
-	int mFading;                   /* 0x12c */
+	uint mMarqueeTimer; /* 0x124 */
+	int our_skater_num; /* 0x128 */
+	int mFading;        /* 0x12c */
 	/* sizeof(CCompetition) == 0x130 */
 
 	/* inlined into _GLOBAL_.I (0x800770dc) */

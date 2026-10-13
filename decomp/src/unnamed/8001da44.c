@@ -1,5 +1,6 @@
 /* Mess_TextWidth__FPCc (0x8001da44) */
 #include "names.h"
+
 typedef struct E {
 	char p0[0x14];
 	struct E *f14;

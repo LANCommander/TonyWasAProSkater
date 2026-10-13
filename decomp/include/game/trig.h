@@ -9,23 +9,23 @@
 #include "game/types.h"
 
 struct SSinCos {
-	short s;                       /* 0x0 */
-	short c;                       /* 0x2 */
+	short s; /* 0x0 */
+	short c; /* 0x2 */
 };
 
 /* a node's command list in the trigger file (CommandPoints) */
 struct SCommandPoint {
-	ushort *pCommands;             /* 0x00 */
-	uchar Collision;               /* 0x04 */
-	uchar Executed;                /* 0x05 */
-	uchar NumPulsesSet;            /* 0x06 */
-	uchar PulsesReceived;          /* 0x07 */
-	ushort NumPulses;              /* 0x08 */
-	ushort NodeIndex;              /* 0x0a */
-	uint Checksum;                 /* 0x0c */
-	SCommandPoint *pNextSimilar;   /* 0x10 */
-	SCommandPoint *pNext;          /* 0x14 */
-	/* sizeof == 0x18 */
+	ushort *pCommands;           /* 0x00 */
+	uchar Collision;             /* 0x04 */
+	uchar Executed;              /* 0x05 */
+	uchar NumPulsesSet;          /* 0x06 */
+	uchar PulsesReceived;        /* 0x07 */
+	ushort NumPulses;            /* 0x08 */
+	ushort NodeIndex;            /* 0x0a */
+	uint Checksum;               /* 0x0c */
+	SCommandPoint *pNextSimilar; /* 0x10 */
+	SCommandPoint *pNext;        /* 0x14 */
+	                             /* sizeof == 0x18 */
 };
 
 #endif

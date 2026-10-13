@@ -1,5 +1,6 @@
 /* SaveReturnState__Fv (0x80012774) */
 #include "names.h"
+
 int GSaveAction;
 int GReturnToState;
 

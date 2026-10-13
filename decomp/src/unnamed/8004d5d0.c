@@ -1,5 +1,6 @@
 /* Mem_Delete__FPv (0x8004d5d0) */
 #include "names.h"
+
 typedef struct B {
 	struct B *next;
 	int flags : 4;

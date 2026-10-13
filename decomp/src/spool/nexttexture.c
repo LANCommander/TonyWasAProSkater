@@ -1,5 +1,6 @@
 /* NextTexture__Fv (0x8006f0ac) */
 #include "names.h"
+
 typedef struct STexture {
 	char pad[0x20];
 	struct STexture *next;

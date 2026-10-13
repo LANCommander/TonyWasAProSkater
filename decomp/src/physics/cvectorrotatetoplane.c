@@ -1,5 +1,6 @@
 /* CVectorRotateToPlane__FP7CVectorP7SVECTORT0 (0x80030090) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

@@ -5,8 +5,8 @@
 
 void Font_String(ushort x, ushort y, char *s, uchar r, uchar g, uchar b, uchar a);
 
-extern char s_Tripod[], DAT_800d20b0[], DAT_800d20b4[], DAT_800d20b8[], s_Stick_O[], s_Stick_Length[],
-    s_Stick_Offset[];
+extern char s_Tripod[], DAT_800d20b0[], DAT_800d20b4[], DAT_800d20b8[], s_Stick_O[],
+    s_Stick_Length[], s_Stick_Offset[];
 
 void CamPos::DisplayLabels(ushort x, ushort y, uchar r, uchar g, uchar b) {
 	ushort x2;

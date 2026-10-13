@@ -1,5 +1,6 @@
 /* Split__FRC7CVectorN20iiiiiiUii (0x80020f1c) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;
@@ -30,8 +31,7 @@ extern void __pl__FRC7CVectorT0(V *, V *, V *);
 extern void __rs__FRC7CVectorRCi(V *, V *, int *);
 extern void __rs__FRC8CSVectorRCi(CS *, CS *, int *);
 
-void Split(V *a0, V *a1, V *a2, int a3, int a4, int a5, int a6, int a7,
-                                    int a8, int a9, int a10) {
+void Split(V *a0, V *a1, V *a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10) {
 	V t30;
 	int p30;
 	V t40;
@@ -210,8 +210,8 @@ void Split(V *a0, V *a1, V *a2, int a3, int a4, int a5, int a6, int a7,
 
 			UseCacheForBits = 1;
 			CChunkBit_SetRGB(o, AverageR, AverageG, AverageB);
-			CChunkBit_SetUVs(o, VRAMClut, VRAMTPage, a3 & 255, a4 & 255,
-			                                   a5 & 255, a6 & 255, a7 & 255, a8 & 255);
+			CChunkBit_SetUVs(o, VRAMClut, VRAMTPage, a3 & 255, a4 & 255, a5 & 255, a6 & 255,
+			                 a7 & 255, a8 & 255);
 
 			*(int *)((char *)o + 0xbc) = a9;
 		}

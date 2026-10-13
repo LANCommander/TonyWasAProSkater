@@ -1,5 +1,6 @@
 /* FUN_800117b4 (0x800117b4) */
 #include "game/padbuttons.h"
+
 int CursorPos;
 int SizeUp;
 int GSaveAction;

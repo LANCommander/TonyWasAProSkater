@@ -1,5 +1,6 @@
 /* FUN_8002566c (0x8002566c) */
 #include "names.h"
+
 /* PlayAway_Init (demo twin PlayAway_Init). b826/b827 pick each player's skater, b828[] the W1*.bmp
    colour; reading b828 through GCareer (not as a separate global) fixes the loop's
    preheader order (sp+16 hoisted before sp+48). */
@@ -17,15 +18,16 @@ struct GA {
 };
 
 extern struct GA GCareer;
-extern short ApocalypseViewport_c[], LeftViewport_c[], RightViewport_c[], TopViewport_c[], BottomViewport_c[],
-    TopLeftViewport_c[], BottomRightViewport_c[], TopLeftBigViewport_c[], BottomRightBigViewport_c[];
+extern short ApocalypseViewport_c[], LeftViewport_c[], RightViewport_c[], TopViewport_c[],
+    BottomViewport_c[], TopLeftViewport_c[], BottomRightViewport_c[], TopLeftBigViewport_c[],
+    BottomRightBigViewport_c[];
 extern int SelectedSkater;
 extern char InShell;
 extern int DAT_800d1f14, DAT_800d1f18;
 
-int SelectedSkater2, EndCode, TTime, EveryOther, XFrames, GNumberOfPlayers,
-    GState, GStartTime, GSkaterRegion, DAT_800d1798, GClear1, GClear2,
-    XFramesShifted, DAT_800d183c, DAT_800d1840, LastXblanks;
+int SelectedSkater2, EndCode, TTime, EveryOther, XFrames, GNumberOfPlayers, GState, GStartTime,
+    GSkaterRegion, DAT_800d1798, GClear1, GClear2, XFramesShifted, DAT_800d183c, DAT_800d1840,
+    LastXblanks;
 
 extern volatile int Vblanks, Xblanks;
 

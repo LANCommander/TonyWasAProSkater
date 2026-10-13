@@ -1,5 +1,6 @@
 /* Video_SyncObsIfNeeded__Fv (0x800695f4) */
 #include "names.h"
+
 typedef struct {
 	short a, b;
 	int c;

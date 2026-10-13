@@ -1,5 +1,6 @@
 /* Video_Start__FP6CBruce10EVideoModeii (0x80069684) */
 #include "names.h"
+
 typedef struct {
 	int f0;
 	int *f4;

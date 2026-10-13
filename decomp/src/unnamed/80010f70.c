@@ -1,5 +1,6 @@
 /* FUN_80010f70 (0x80010f70) */
 #include "names.h"
+
 struct S {
 	char pad[76];
 	int f;

@@ -1,5 +1,6 @@
 /* DeleteList__FP5CBody (0x80071b00) */
 #include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;

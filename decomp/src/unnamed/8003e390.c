@@ -1,5 +1,6 @@
 /* FUN_8003e390 (0x8003e390) */
 #include "names.h"
+
 typedef struct {
 	char pad0[16];
 	unsigned short uh10;
@@ -185,8 +186,7 @@ void FUN_8003e390(S *p) {
 				}
 
 				*(SV *)&v38 = *(SV *)PB(0x10);
-				Utils_TurnTowards(*(SV *)&v38, (SV *)PB(0x88),
-				                                              (SV *)PB(0x8e), aim, v);
+				Utils_TurnTowards(*(SV *)&v38, (SV *)PB(0x88), (SV *)PB(0x8e), aim, v);
 
 				p->uh10 = 0;
 				Utils_GetVecFromMagDir(PB(0x78), p->uh1d4, &aim);
@@ -236,8 +236,7 @@ void FUN_8003e390(S *p) {
 				}
 
 				*(SV *)&v38 = *(SV *)PB(0x10);
-				Utils_TurnTowards(*(SV *)&v38, (SV *)PB(0x88),
-				                                              (SV *)PB(0x8e), aim, v);
+				Utils_TurnTowards(*(SV *)&v38, (SV *)PB(0x88), (SV *)PB(0x8e), aim, v);
 
 				p->uh10 = 0;
 				Utils_GetVecFromMagDir(PB(0x78), p->uh1d4, &aim);

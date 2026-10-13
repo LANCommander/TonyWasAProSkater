@@ -1,7 +1,7 @@
 /* Flash_Fade__Fii (0x8001f3b8) */
 #include "names.h"
-int Fading, FadeCountdown, FlashSort, CurrentB, CurrentG, CurrentR,
-    dR;
+
+int Fading, FadeCountdown, FlashSort, CurrentB, CurrentG, CurrentR, dR;
 unsigned char CurrentImportance;
 
 void Flash_Fade(int a, int b) {

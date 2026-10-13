@@ -114,6 +114,7 @@ int Front_MemCardUpdate() {
 					   careers); there's always room */
 					PC_SaveListDir(GSaveAction == 1 ? PC_SAVE_CAREER : PC_SAVE_REPLAY, SLOT_DIR,
 					               (int32_t *)FileType);
+
 					SaveFreeBlocks = 15;
 #else
 					SaveFreeBlocks = Card_GetDirAndFreeBlocks(0, 0);
@@ -525,6 +526,7 @@ int Front_MemCardUpdate() {
 #ifdef PC_PORT
 					/* PC: only the saves of the type being loaded, so there can be 15 of each */
 					PC_SaveListDir(WantedFileType, SLOT_DIR, (int32_t *)FileType);
+
 					SaveFreeBlocks = 15;
 #endif
 
@@ -562,7 +564,8 @@ int Front_MemCardUpdate() {
 											}
 
 											if ((uchar)CardHead.Title[Offset + j * 2] == 0x82)
-												*p++ = (uchar)CardHead.Title[Offset + j * 2 + 1] - 31;
+												*p++ =
+												    (uchar)CardHead.Title[Offset + j * 2 + 1] - 31;
 											else
 												*p++ = ' ';
 										}

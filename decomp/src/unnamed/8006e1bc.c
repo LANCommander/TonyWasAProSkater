@@ -1,5 +1,6 @@
 /* FUN_8006e1bc (0x8006e1bc) */
 #include "names.h"
+
 typedef struct {
 	int Score;
 	char pad[16];

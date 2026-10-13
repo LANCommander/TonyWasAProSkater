@@ -1,5 +1,6 @@
 /* FUN_8004f000 (0x8004f000) */
 #include "names.h"
+
 /* EXP module. 146/147: the only residue is the zero return after FUN_8004eed8: cse follows the
    single-use `goto out` and folds `return ret` to `v0 = 0`, which reorg copies into the `beq`
    slot (retail: nop). Giving `out` a second user (`if(!s0){ret=1;goto out;}`, retail's

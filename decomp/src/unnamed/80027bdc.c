@@ -1,5 +1,6 @@
 /* RemoveDeadBits__FP4CBit (0x80027bdc) */
 #include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;

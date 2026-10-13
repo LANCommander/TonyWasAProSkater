@@ -1,5 +1,6 @@
 /* FUN_8001ccf8 (0x8001ccf8) */
 #include "names.h"
+
 extern char *TrigFileName;
 extern char s_skate2_vab[];
 extern char s_scorep_bmp[];

@@ -1,5 +1,6 @@
 /* DisplayOutOfBounds__FP6CBruceUsUs (0x8006d704) */
 #include "names.h"
+
 /* PANEL.CPP, as C (demo twin; its pString local). Shows the out-of-bounds message (one of four by
    reason) as a text effect at the player's viewport offset until the effect completes. */
 typedef struct {

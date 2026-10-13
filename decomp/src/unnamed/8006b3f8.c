@@ -1,5 +1,6 @@
 /* FUN_8006b3f8 (0x8006b3f8) */
 #include "names.h"
+
 extern char s_shell_vab_800a2320[];
 
 void FUN_800171f0(void);

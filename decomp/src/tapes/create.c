@@ -1,5 +1,6 @@
 /* Tape_Create__Fiiiiiiii (0x80073a64) */
 #include "names.h"
+
 typedef struct {
 	short vx, vy, vz, pad;
 } SVECTOR;

@@ -1,5 +1,6 @@
 /* FUN_80023528 (0x80023528) */
 #include "names.h"
+
 short GameFMV_StartX;
 
 struct S {

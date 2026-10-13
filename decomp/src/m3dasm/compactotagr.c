@@ -5,8 +5,7 @@
 
 /* An ordering-table link: a PS1 pointer's low 24 bits. (Retail also writes through such
  * stripped pointers, the KUSEG mirror of the same RAM; here the table's own pointers are used.) */
-static uint32_t ot_link(const uint32_t *p)
-{
+static uint32_t ot_link(const uint32_t *p) {
 	return (uint32_t)p & 0xffffff;
 }
 
@@ -15,8 +14,7 @@ static uint32_t ot_link(const uint32_t *p)
  * (an entry still linking to the next one down) the first entry, which the chain above leads
  * into, gets the link of the next entry that has primitives, so the run is skipped; ot[0] (the
  * terminator) ends the last run. The GPU then walks only the entries that draw something. */
-void CompactOTagR(uint32_t *ot, int n)
-{
+void CompactOTagR(uint32_t *ot, int n) {
 	uint32_t *link = &ot[n - 1]; /* the entry whose link is being extended */
 	int skipping = 1;            /* inside a run of empty entries that starts at *link */
 	int i;
@@ -32,6 +30,7 @@ void CompactOTagR(uint32_t *ot, int n)
 			skipping = 1;
 		}
 	}
+
 	if (skipping)
 		*link = ot[0];
 }

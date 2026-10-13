@@ -1,5 +1,6 @@
 /* Trig_SetRestart__FPc (0x80044ae4) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;
@@ -19,8 +20,7 @@ void Trig_SetRestart(char *name) {
 		if (*OffsetList[i] == 8) {
 			V v;
 
-			if (Utils_CompareStrings__FPCcT0Ui(Trig_GetPosition(&v, i) + 6, name,
-			                                   -1)) {
+			if (Utils_CompareStrings__FPCcT0Ui(Trig_GetPosition(&v, i) + 6, name, -1)) {
 				RestartNode = i;
 				return;
 			}

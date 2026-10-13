@@ -1,5 +1,6 @@
 /* Front_InitMemCardMenus__Fi13EMemCardState13EPausedStatus (0x8001160c) */
 #include "names.h"
+
 int GReturnToState;
 int FreeSprite;
 int MCResolution;

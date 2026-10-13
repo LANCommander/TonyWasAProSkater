@@ -1,5 +1,6 @@
 /* Db_UpdateSky__Fv (0x80048c8c) */
 #include "names.h"
+
 typedef struct {
 	char pad[24];
 	unsigned char on, r, g, b;

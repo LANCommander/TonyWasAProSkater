@@ -1,5 +1,6 @@
 /* Options_Init__Fv (0x800105f4) */
 #include "names.h"
+
 extern int GPreferences[];
 extern char s_HORSE[];
 extern char s_AAA[];

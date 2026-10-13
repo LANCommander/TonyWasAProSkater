@@ -1,5 +1,6 @@
 /* FUN_8005e754 (0x8005e754) */
 #include "game/padbuttons.h"
+
 typedef struct {
 	int a, b, c, d, e, f;
 } S;
@@ -61,8 +62,10 @@ int FUN_8005e754(int a) {
 						r = FUN_80060854(a);
 					} else {
 						PC_RequestQuit();
+
 						r = -1;
 					}
+
 					break;
 				case 5:
 					r = FUN_80060274(a);

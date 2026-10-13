@@ -1,5 +1,6 @@
 /* SFX_ModifyVol__FUiii (0x8004b7cc) */
 #include "names.h"
+
 typedef struct {
 	int a, b;
 	short c, d;

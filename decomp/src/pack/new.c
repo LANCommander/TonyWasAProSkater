@@ -1,5 +1,6 @@
 /* Pack_New__FPP6TSPack (0x8004961c) */
 #include "names.h"
+
 typedef struct TSPack {
 	unsigned short x, y, w, h;
 	struct TSPack *next;

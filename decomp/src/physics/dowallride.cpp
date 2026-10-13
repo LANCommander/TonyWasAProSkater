@@ -195,8 +195,7 @@ void CBruce::DoWallRidePhysics() {
 				mSameNormal++;
 			} else {
 				mSameNormal = 0;
-				SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
-				          line_info.Normal.vz)
+				SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
 			}
 
 			OrientToNormal();
@@ -213,10 +212,9 @@ void CBruce::DoWallRidePhysics() {
 				RotMatrixFromFRUVectors();
 
 				mSameNormal = 0;
-				SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy,
-				          line_info.Normal.vz)
-				    SetVector(&mOldNormal, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
-				        ProjectCVectorToPlane(&mVel, line_info.Normal);
+				SetVector(&mNormal, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
+				    SetVector(&mOldNormal, line_info.Normal.vx, line_info.Normal.vy,
+					          line_info.Normal.vz) ProjectCVectorToPlane(&mVel, line_info.Normal);
 			} else {
 				int Steep = line_info.Normal.vy >= 3278;
 

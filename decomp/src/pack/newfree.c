@@ -1,5 +1,6 @@
 /* Pack_NewFree__Fiiii (0x80049650) */
 #include "names.h"
+
 typedef struct TSPack {
 	unsigned short x, y, w, h;
 	struct TSPack *next;

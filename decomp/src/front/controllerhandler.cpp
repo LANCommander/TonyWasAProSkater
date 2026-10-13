@@ -55,8 +55,8 @@ void FUN_8005eb78(VerticalMenu *menu) {
 
 	Pad_ClearTriggers(&Pad[1 - pl]);
 
-	if (Pad[pl].MenuStart.Triggered || Pad[pl].MenuAccept.Triggered ||
-	    Pad[pl].MenuUp.Triggered || Pad[pl].MenuDown.Triggered) {
+	if (Pad[pl].MenuStart.Triggered || Pad[pl].MenuAccept.Triggered || Pad[pl].MenuUp.Triggered ||
+	    Pad[pl].MenuDown.Triggered) {
 		switch (DAT_800d2350) {
 			case 0:
 				if (DAT_800bf260[pl].Function[2] == DAT_800bf260[pl].Function[0])
@@ -203,7 +203,8 @@ void FUN_8005eb78(VerticalMenu *menu) {
 
 			GPreferences.VibrationEnabled[pl] = left != 0;
 			FUN_8008b900(buf, s_s_s, GameText.pVibration,
-			             GPreferences.VibrationEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
+			             GPreferences.VibrationEnabled[pl] ? GameText.pBooleanOn
+			                                               : GameText.pBooleanOff);
 			menu->setString(4, buf);
 		}
 
@@ -213,7 +214,8 @@ void FUN_8005eb78(VerticalMenu *menu) {
 
 			GPreferences.AutoKickEnabled[pl] = left != 0;
 			FUN_8008b900(buf, s_s_s, GameText.pAutoKick,
-			             GPreferences.AutoKickEnabled[pl] ? GameText.pBooleanOn : GameText.pBooleanOff);
+			             GPreferences.AutoKickEnabled[pl] ? GameText.pBooleanOn
+			                                              : GameText.pBooleanOff);
 			menu->setString(5, buf);
 			menu->setString(0, FUN_8005ea74(DAT_800bf260[pl].Function[0]));
 			menu->setString(1, FUN_8005ea74(DAT_800bf260[pl].Function[1]));

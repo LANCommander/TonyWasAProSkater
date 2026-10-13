@@ -52,9 +52,8 @@ void PadBuffer::update() {
 			    !Pad[mWhich_pad].MenuUp.Pressed && !Pad[mWhich_pad].MenuDown.Pressed)
 				down = 0;
 		} else {
-			if (!Pad[0].MenuLeft.Pressed && !Pad[0].MenuRight.Pressed &&
-			    !Pad[0].MenuUp.Pressed && !Pad[0].MenuDown.Pressed &&
-			    !Pad[1].MenuLeft.Pressed && !Pad[1].MenuRight.Pressed &&
+			if (!Pad[0].MenuLeft.Pressed && !Pad[0].MenuRight.Pressed && !Pad[0].MenuUp.Pressed &&
+			    !Pad[0].MenuDown.Pressed && !Pad[1].MenuLeft.Pressed && !Pad[1].MenuRight.Pressed &&
 			    !Pad[1].MenuUp.Pressed && !Pad[1].MenuDown.Pressed)
 				down = 0;
 		}

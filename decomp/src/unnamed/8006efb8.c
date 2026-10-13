@@ -1,5 +1,6 @@
 /* RemoveTextureEntry__FP7Texture (0x8006efb8) */
 #include "names.h"
+
 struct N {
 	char pad[16];
 	unsigned f;

@@ -1,5 +1,6 @@
 /* Mem_Copy__FPvT0i (0x8004d8b4) */
 #include "names.h"
+
 void Mem_Copy(int *d, int *s, int n) {
 	int w = n >> 2;
 	char *dc, *sc;

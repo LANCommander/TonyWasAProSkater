@@ -1,5 +1,6 @@
 /* Spool_Sync__Fv (0x8007079c) */
 #include "names.h"
+
 extern char SpoolQ[][17];
 extern int Loading;
 

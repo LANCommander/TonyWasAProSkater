@@ -9,6 +9,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+
 #include "game/ob.h"
 #include "game/colij.h"
 

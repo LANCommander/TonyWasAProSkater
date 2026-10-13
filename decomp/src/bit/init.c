@@ -1,5 +1,6 @@
 /* Bit_Init__Fv (0x800279cc) */
 #include "names.h"
+
 int BitCount;
 int NonRenderedBitList;
 int FlatBitList;

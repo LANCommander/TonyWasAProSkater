@@ -1,16 +1,17 @@
 /* FUN_80025440 (0x80025440) */
 #include "names.h"
+
 extern int GamePaused;
 extern int Xblanks;
 extern int DAT_800a7214[];
 extern char DAT_800d2580[], s_d_FPS[];
 
-int DAT_800d1750, LastXblanks, Cheat_SlowMo, TimeScale, XFramesShifted, XFrames,
-    TimeScaleSquared, Cheat_FPS, DAT_800d2230, GameFrozen;
+int DAT_800d1750, LastXblanks, Cheat_SlowMo, TimeScale, XFramesShifted, XFrames, TimeScaleSquared,
+    Cheat_FPS, DAT_800d2230, GameFrozen;
 
 int FUN_8008b900(char *, char *, int);
-void Font_String(unsigned short, unsigned short, char *, unsigned char,
-                                  unsigned char, unsigned char, unsigned char);
+void Font_String(unsigned short, unsigned short, char *, unsigned char, unsigned char,
+                 unsigned char, unsigned char);
 void Font_Display(void);
 
 int FUN_80025440(void) {
@@ -60,8 +61,7 @@ int FUN_80025440(void) {
 			else if (s1 >= 22)
 				Font_String(450, 210, DAT_800d2580, 100, 100, 50, 1);
 			else
-				Font_String(450, 210, DAT_800d2580, (DAT_800d2230 + 50) & 255, 50,
-				                             50, 1);
+				Font_String(450, 210, DAT_800d2580, (DAT_800d2230 + 50) & 255, 50, 50, 1);
 
 			Font_Display();
 		}

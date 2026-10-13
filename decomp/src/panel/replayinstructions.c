@@ -1,5 +1,6 @@
 /* Panel_ReplayInstructions__Fv (0x8006d858) */
 #include "names.h"
+
 extern int GVInfo1[];
 extern int DemoTimer;
 extern int Status;
@@ -11,8 +12,7 @@ void Mess_SetTextJustify(int);
 int Mess_DrawPanelText(int, int, const char *, int, unsigned, int);
 
 void Panel_ReplayInstructions(void) {
-	if (GVInfo1[0] == 2 && DemoTimer && Status != 20 && Status != 22 &&
-	    Status != 21) {
+	if (GVInfo1[0] == 2 && DemoTimer && Status != 20 && Status != 22 && Status != 21) {
 		int m = GVInfo1[19];
 
 		if ((m == 0 && (unsigned)(GVInfo1[7] - GVInfo1[8]) < 90) || m == 1) {

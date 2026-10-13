@@ -46,8 +46,7 @@ void Options_SetPreferences() {
 		for (i = GPreferences.HorseLen; i < 11; i++)
 			GCareer.Options.HorseWord[i] = 0;
 
-		FUN_8008b900(GCareer.Options.LastHighScoreInitials,
-		             GPreferences.LastHighScoreInitials);
+		FUN_8008b900(GCareer.Options.LastHighScoreInitials, GPreferences.LastHighScoreInitials);
 	}
 
 	Options_RemapControllers();

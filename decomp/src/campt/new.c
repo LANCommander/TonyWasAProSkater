@@ -1,5 +1,6 @@
 /* CamPt_New__Fi (0x8004e21c) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

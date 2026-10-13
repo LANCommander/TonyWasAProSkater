@@ -1,5 +1,6 @@
 /* GraffitiColor__FP6CBruce (0x8006ca1c) */
 #include "names.h"
+
 extern int GGame;
 extern int GSkater;
 

@@ -42,7 +42,8 @@ void Video_HandleStepping(void) {
 	if (Status == 20 || Status == 22 || Status == 21)
 		return;
 
-	if (Pad[0].b[PAD_FLIP + PAD_TRIGGERED] || (GNumberOfPlayers == 2 && Pad[1].b[PAD_FLIP + PAD_TRIGGERED])) {
+	if (Pad[0].b[PAD_FLIP + PAD_TRIGGERED] ||
+	    (GNumberOfPlayers == 2 && Pad[1].b[PAD_FLIP + PAD_TRIGGERED])) {
 		v = GVInfo1.step;
 		Pad[0].b[PAD_FLIP + PAD_TRIGGERED] = 0;
 		Pad[1].b[PAD_FLIP + PAD_TRIGGERED] = 0;
@@ -57,7 +58,8 @@ void Video_HandleStepping(void) {
 
 	GameFrozen = 1;
 
-	if (Pad[0].b[PAD_GRAB + PAD_PRESSED] || (GNumberOfPlayers == 2 && Pad[1].b[PAD_GRAB + PAD_PRESSED])) {
+	if (Pad[0].b[PAD_GRAB + PAD_PRESSED] ||
+	    (GNumberOfPlayers == 2 && Pad[1].b[PAD_GRAB + PAD_PRESSED])) {
 		if (DAT_800d1df0 != 0) {
 			DAT_800d1df0--;
 			return;
@@ -68,7 +70,8 @@ void Video_HandleStepping(void) {
 		return;
 	}
 
-	if (Pad[0].b[PAD_GRIND + PAD_PRESSED] || (GNumberOfPlayers == 2 && Pad[1].b[PAD_GRIND + PAD_PRESSED])) {
+	if (Pad[0].b[PAD_GRIND + PAD_PRESSED] ||
+	    (GNumberOfPlayers == 2 && Pad[1].b[PAD_GRIND + PAD_PRESSED])) {
 		if (DAT_800d1df0 != 0) {
 			DAT_800d1df0--;
 			return;

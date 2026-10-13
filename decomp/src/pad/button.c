@@ -1,5 +1,6 @@
 /* Pad_Button__FP7SButtoni (0x80070c74) */
 #include "names.h"
+
 typedef struct {
 	unsigned char down, trig;
 	int held, released, count;

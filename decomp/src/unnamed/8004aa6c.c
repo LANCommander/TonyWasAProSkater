@@ -1,5 +1,6 @@
 /* Pal_Init__Fv (0x8004aa6c) */
 #include "names.h"
+
 int DAT_800d1a80;
 char Pal256X[4];
 char Pal256Y[4];

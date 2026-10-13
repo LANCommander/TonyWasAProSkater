@@ -1,5 +1,6 @@
 /* M3dUtils_InBetween__FP6CSuper (0x80081448) */
 #include "names.h"
+
 typedef struct {
 	short _0[4];
 } Frame;

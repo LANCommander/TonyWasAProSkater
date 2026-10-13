@@ -1,5 +1,6 @@
 /* Spool_RemoveUnusedTextures__Fv (0x8006f1f8) */
 #include "names.h"
+
 typedef struct {
 	char pad[4];
 	unsigned short refs;

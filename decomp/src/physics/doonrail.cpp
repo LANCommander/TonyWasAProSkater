@@ -33,9 +33,10 @@ extern int UseCacheForBits;
 extern ushort DAT_800a7edc[];
 
 #define GetStat(n)                                                                                 \
-	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
-	                    mpStatBonus[n])
+	(Cheat_StatsOverride                                                                           \
+	     ? Cheat_StatsOverride                                                                     \
+		 : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +              \
+		       mpStatBonus[n])
 
 short PingPong(int, int, int);
 int Redbook_Rnd(int);
@@ -76,8 +77,7 @@ void CBruce::DoOnRailPhysics() {
 		switch (mAnim) {
 			case 41:
 			case 68:
-				if (Stats[mSkaterIndex].ComboID == 0 ||
-				    Stats[mSkaterIndex].ComboID == 0x6000)
+				if (Stats[mSkaterIndex].ComboID == 0 || Stats[mSkaterIndex].ComboID == 0x6000)
 					Debug_RunAnim(41, 3104);
 				else
 					Debug_RunAnim1(41, 5, 3106);
@@ -85,8 +85,7 @@ void CBruce::DoOnRailPhysics() {
 				break;
 			case 40:
 			case 67:
-				if (Stats[mSkaterIndex].ComboID == 0 ||
-				    Stats[mSkaterIndex].ComboID == 0x6000)
+				if (Stats[mSkaterIndex].ComboID == 0 || Stats[mSkaterIndex].ComboID == 0x6000)
 					Debug_RunAnim(40, 3112);
 				else
 					Debug_RunAnim1(40, 3, 3114);

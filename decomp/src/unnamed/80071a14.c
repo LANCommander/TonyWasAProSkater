@@ -1,5 +1,6 @@
 /* FUN_80071a14 (0x80071a14) */
 #include "names.h"
+
 struct L {
 	char *vt;
 	char pad[40];

@@ -9,6 +9,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <inline_c.h>
 }
+
 #include "game/m3d.h"
 #include "game/ob.h"
 #include "game/camera.h"
@@ -172,7 +173,8 @@ void RenderSuperItem(Item *pItem) {
 				WorldTransform.t[2] += pItem->Position.vz >> 12;
 			}
 
-			if (DoEllipsoids && (!TestTheWater || WorldTransform.t[1] < (CurrentWaterLevel >> 12) - 40))
+			if (DoEllipsoids &&
+			    (!TestTheWater || WorldTransform.t[1] < (CurrentWaterLevel >> 12) - 40))
 				M3dElips_RenderEllipsoid(pModel, &WorldTransform, Rgb, Scale, OTPushback,
 				                         pAnimTex->pTexture);
 
@@ -180,9 +182,10 @@ void RenderSuperItem(Item *pItem) {
 				int s;
 
 				for (s = 0; s < ((CSuper *)pItem)->mShadowLights; s++)
-					M3dElips_RenderShadow(pModel, &WorldTransform, &((CSuper *)pItem)->mShadowNormal,
-					                      &((CSuper *)pItem)->mShadowPos, &((CSuper *)pItem)->mpShadowSource[s],
-					                      ((CSuper *)pItem)->mpShadowRGB[s]);
+					M3dElips_RenderShadow(
+					    pModel, &WorldTransform, &((CSuper *)pItem)->mShadowNormal,
+					    &((CSuper *)pItem)->mShadowPos, &((CSuper *)pItem)->mpShadowSource[s],
+					    ((CSuper *)pItem)->mpShadowRGB[s]);
 			}
 		}
 	}

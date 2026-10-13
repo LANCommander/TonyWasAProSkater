@@ -11,13 +11,13 @@
 
 class CBackground : public CBody {
   public:
-	ushort mIndex;                 /* 0x134 */
+	ushort mIndex; /* 0x134 */
 	char pad136[0x138 - 0x136];
 	/* sizeof(CBackground) == 0x138 */
 
-	CBackground(uint, const CSVector &);          /* 0x80078188 */
-	virtual ~CBackground();                       /* slot 0: 0x8007821c */
-	virtual void AI();                            /* slot 2: 0x8007828c */
+	CBackground(uint, const CSVector &); /* 0x80078188 */
+	virtual ~CBackground();              /* slot 0: 0x8007821c */
+	virtual void AI();                   /* slot 2: 0x8007828c */
 };
 
 #endif

@@ -1,6 +1,7 @@
 /* FUN_80026d44 (0x80026d44) */
 #include "names.h"
 #include "game/padbuttons.h"
+
 extern volatile unsigned char Pad[];
 
 int GNumberOfPlayers;
@@ -29,21 +30,24 @@ int FUN_80026d44(void) {
 
 	p = Pad;
 
-	if (p[PAD_PAUSE + PAD_PRESSED] == 0 && (p[PAD_SPIN_LEFT + PAD_PRESSED] == 0 || p[PAD_TAP_SPIN_LEFT + PAD_PRESSED] == 0))
+	if (p[PAD_PAUSE + PAD_PRESSED] == 0 &&
+	    (p[PAD_SPIN_LEFT + PAD_PRESSED] == 0 || p[PAD_TAP_SPIN_LEFT + PAD_PRESSED] == 0))
 		GameFMV_PlayMovie(-1);
 
 	FUN_80070ff4();
 
 	p = Pad;
 
-	if (p[PAD_PAUSE + PAD_PRESSED] == 0 && (p[PAD_SPIN_LEFT + PAD_PRESSED] == 0 || p[PAD_TAP_SPIN_LEFT + PAD_PRESSED] == 0))
+	if (p[PAD_PAUSE + PAD_PRESSED] == 0 &&
+	    (p[PAD_SPIN_LEFT + PAD_PRESSED] == 0 || p[PAD_TAP_SPIN_LEFT + PAD_PRESSED] == 0))
 		GameFMV_PlayMovie(-2);
 
 	FUN_80070ff4();
 
 	p = Pad;
 
-	if (p[PAD_PAUSE + PAD_PRESSED] == 0 && (p[PAD_SPIN_LEFT + PAD_PRESSED] == 0 || p[PAD_TAP_SPIN_LEFT + PAD_PRESSED] == 0))
+	if (p[PAD_PAUSE + PAD_PRESSED] == 0 &&
+	    (p[PAD_SPIN_LEFT + PAD_PRESSED] == 0 || p[PAD_TAP_SPIN_LEFT + PAD_PRESSED] == 0))
 		GameFMV_PlayMovie(-25);
 
 	Init_Restart(0, 16);

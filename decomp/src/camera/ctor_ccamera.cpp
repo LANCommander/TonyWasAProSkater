@@ -18,9 +18,9 @@ CCamera::CCamera(CBody *tripod, ushort mike_index)
     : mMikeIndex(mike_index), mTripod(tripod), mCalcTripod(1), new_focus(0), mFocus(tripod),
       mCalcFocus(1), mZoom(192), mOnRail(0), mPitchDamper(0), mTripodPosYDamper(0),
       mCollisionRayLR(-1), mCollisionRayBack(-1), mCollisionAngLR(512), mCollisionAngBack(784),
-      mCollisionBack(1384), mCameraMode(CAMERAMODE_NORMAL), mCameraModeIncDir(ASCENDING), mBossCamSpinRate(15), mTimer(0),
-      testQuat(mTimer), mColCheckIndex(0), mColCheckCycleCounter(0), mDownDist(0), mSpeedUpIntro(0),
-      mStoppedExtraYRot(0) {
+      mCollisionBack(1384), mCameraMode(CAMERAMODE_NORMAL), mCameraModeIncDir(ASCENDING),
+      mBossCamSpinRate(15), mTimer(0), testQuat(mTimer), mColCheckIndex(0),
+      mColCheckCycleCounter(0), mDownDist(0), mSpeedUpIntro(0), mStoppedExtraYRot(0) {
 	loose_cam_timer = 0;
 
 	if (((CBruce *)mTripod)->mpPad == &Pad[0])

@@ -1,5 +1,6 @@
 /* Medal_Create__F10EMedalTypeiiiii (0x80073dc8) */
 #include "names.h"
+
 typedef struct {
 	short vx, vy, vz, pad;
 } SVECTOR;

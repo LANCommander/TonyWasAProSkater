@@ -1,5 +1,6 @@
 /* FUN_8006b630 (0x8006b630) */
 #include "names.h"
+
 extern char __vt_4CCar[];
 extern char BaddyList[];
 

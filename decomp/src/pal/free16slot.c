@@ -1,5 +1,6 @@
 /* Free16Slot__FUs (0x8004ad38) */
 #include "names.h"
+
 extern unsigned char Free16Slots[];
 
 int Pal16X, Pal16Y;

@@ -1,10 +1,12 @@
 /* FUN_80061270 (0x80061270) */
 #include "names.h"
+
 int DAT_800d1d84;
 int DAT_800d1d88;
 short DAT_800d1d8c, DAT_800d1d8e;
 
-extern char s_checking_memory_card[], s_Loading_saved_data_from_MEMORY_C[], s_in_MEMORY_CARD_slot_1[];
+extern char s_checking_memory_card[], s_Loading_saved_data_from_MEMORY_C[],
+    s_in_MEMORY_CARD_slot_1[];
 
 void FUN_8006b240(void);
 void FUN_80061ea0(void);

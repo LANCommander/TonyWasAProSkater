@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent  # decomp/
@@ -291,7 +292,16 @@ def format_layout(path):
     if normalise(new) != normalise(lines):
         raise SystemExit(f"{path}: layout pass would change more than whitespace; not written")
     if new != lines:
-        path.write_bytes(nl.join(new).encode("latin-1"))
+        # a file clang-format just wrote can still be held open briefly (virus scanners, editors'
+        # file watchers), which fails the open with EINVAL/EACCES on Windows
+        for tries in range(20):
+            try:
+                path.write_bytes(nl.join(new).encode("latin-1"))
+                break
+            except OSError:
+                if tries == 19:
+                    raise
+                time.sleep(0.1)
 
 
 # ---------------------------------------------------------------- driver

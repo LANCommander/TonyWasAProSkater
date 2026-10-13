@@ -1,5 +1,6 @@
 /* _clear_event__Fv (0x80014f8c) */
 #include "names.h"
+
 int ev0, ev1, ev2, ev3;
 
 int FUN_8008eb08(int);

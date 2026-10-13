@@ -76,8 +76,8 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 			if (pBruce->mBalanceTime != -1) {
 				if (pBruce->mBalanceFlash)
 					DrawGouraudPoly(xpos - 1, ypos + 10, pBruce->mBalanceFlash * 120 / 750, 3,
-					                (Xblanks % 40) * 6, (Xblanks % 40) * 6, 50,
-					                (Xblanks % 40) * 6, (Xblanks % 40) * 6, 50, 0);
+					                (Xblanks % 40) * 6, (Xblanks % 40) * 6, 50, (Xblanks % 40) * 6,
+					                (Xblanks % 40) * 6, 50, 0);
 				else if (pBruce->mBalanceTime)
 					DrawGouraudPoly(xpos - 1, ypos + 10, pBruce->mBalanceTime / 25, 3, 0, 150, 0, 0,
 					                150, 50, 0);
@@ -106,8 +106,7 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 				if (pBruce->mBalanceFlash == 0)
 					pBarSprite->draw(xpos - 4, ypos, 1, r, g, b);
 				else
-					pBarSprite->draw(xpos - 4, ypos, 1, (Xblanks % 40) * 6,
-					                   (Xblanks % 40) * 6, 50);
+					pBarSprite->draw(xpos - 4, ypos, 1, (Xblanks % 40) * 6, (Xblanks % 40) * 6, 50);
 			}
 		}
 	}

@@ -64,7 +64,8 @@ void Shatter_Glass(int n, const CVector &p0, const CVector &p1, const CVector &p
 		ShatterSoundPos = middle;
 		ShatterSound = 1;
 	} else {
-		CVector CamPos(MikeCamera[Camera_CurrentMikeCamera].Position.vx, MikeCamera[Camera_CurrentMikeCamera].Position.vy,
+		CVector CamPos(MikeCamera[Camera_CurrentMikeCamera].Position.vx,
+		               MikeCamera[Camera_CurrentMikeCamera].Position.vy,
 		               MikeCamera[Camera_CurrentMikeCamera].Position.vz);
 
 		CamPos <<= 12;

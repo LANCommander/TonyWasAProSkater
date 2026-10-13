@@ -1,5 +1,6 @@
 /* GetBit__FP10SVideoInfo (0x80068d38) */
 #include "names.h"
+
 typedef struct {
 	int state, f4, f8, fc;
 	unsigned *p;

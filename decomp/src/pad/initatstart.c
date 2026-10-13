@@ -1,5 +1,6 @@
 /* Pad_InitAtStart__Fv (0x80070878) */
 #include "names.h"
+
 typedef struct {
 	char c[0x10];
 } SButton;

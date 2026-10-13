@@ -8,7 +8,6 @@
  * M3dAsm_SetSuperTransforms the frame's translation is used unshifted, so the result stays at
  * 16x scale (the "dewibbled" path projects at that scale for sub-pixel precision). */
 void M3dAsm_SetSuperTransformsDewibbled__FP6MATRIXT0P7SMatrix(MATRIX *a, MATRIX *b,
-                                                              struct SMatrix *c)
-{
+                                                              struct SMatrix *c) {
 	m3d_set_super_transforms(a, b, c, 0);
 }

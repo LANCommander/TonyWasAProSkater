@@ -1,5 +1,6 @@
 /* LoadNameExt__FPcT0 (0x80070140) */
 #include "names.h"
+
 extern char SpoolQ[][17];
 
 int FreePos;

@@ -1,5 +1,6 @@
 /* Card_FormatCard__Fii (0x80015474) */
 #include "names.h"
+
 extern char s_bu_1d_1d_8009e124[];
 
 void FUN_8008b900(char *, char *, int, int);

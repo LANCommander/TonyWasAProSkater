@@ -1,6 +1,5 @@
 /* M3dInit_SetResolution__FUiUi (0x800820e4) */
-extern unsigned Xres __attribute__((section(".data"))),
-    Yres __attribute__((section(".data")));
+extern unsigned Xres __attribute__((section(".data"))), Yres __attribute__((section(".data")));
 extern unsigned PixelAspectX __attribute__((section(".data"))),
     PixelAspectY __attribute__((section(".data")));
 

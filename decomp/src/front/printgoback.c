@@ -1,5 +1,6 @@
 /* Front_PrintGoBack__Fv (0x800178e4) */
 #include "names.h"
+
 typedef struct {
 	int pad[2];
 } SAnimFrame;

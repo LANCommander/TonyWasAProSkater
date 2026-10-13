@@ -1,5 +1,6 @@
 /* SFX_Pause__Fv (0x8004b8f4) */
 #include "names.h"
+
 struct S {
 	int a, b, c, d, e;
 	short f;

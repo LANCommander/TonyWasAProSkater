@@ -1,5 +1,6 @@
 /* FUN_8002a77c (0x8002a77c) */
 #include "names.h"
+
 extern char __vt_9CGlassBit[];
 
 char GlassList[8];

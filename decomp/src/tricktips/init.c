@@ -1,5 +1,6 @@
 /* TrickTips_Init__Fv (0x8007236c) */
 #include "names.h"
+
 extern int TrickTipMonitor[];
 
 void TrickTips_Init(void) {

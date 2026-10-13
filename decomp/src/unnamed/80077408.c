@@ -1,5 +1,6 @@
 /* QFromV__FRC7CVector (0x80077408) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

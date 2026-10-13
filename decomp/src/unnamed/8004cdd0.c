@@ -1,5 +1,6 @@
 /* FileIO_Sync__Fv (0x8004cdd0) */
 #include "names.h"
+
 int LoadFromPRE;
 int Loading;
 

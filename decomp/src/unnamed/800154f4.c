@@ -1,5 +1,6 @@
 /* FUN_800154f4 (0x800154f4) */
 #include "names.h"
+
 struct B {
 	int w[628];
 };

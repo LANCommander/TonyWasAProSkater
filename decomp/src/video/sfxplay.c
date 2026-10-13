@@ -1,5 +1,6 @@
 /* Video_SFXPlay__Fisi (0x80068e8c) */
 #include "names.h"
+
 typedef struct {
 	int state, f4, f8, fc;
 	unsigned *p;

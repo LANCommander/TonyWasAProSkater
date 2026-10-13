@@ -1,5 +1,6 @@
 /* Mess_DeleteAll__Fv (0x8001d5fc) */
 #include "names.h"
+
 typedef struct Message {
 	char pad[0x14];
 	struct Message *next;

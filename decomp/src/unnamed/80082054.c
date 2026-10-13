@@ -1,5 +1,6 @@
 /* FUN_80082054 (0x80082054) */
 #include "names.h"
+
 extern short WibbleTables[];
 extern short rcossin_tbl;
 extern int M3d_FadeColour;

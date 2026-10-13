@@ -1,5 +1,6 @@
 /* FUN_8003e934 (0x8003e934) */
 #include "names.h"
+
 struct VT {
 	char pad[16];
 	short off;

@@ -1,5 +1,6 @@
 /* FUN_8006d0c8 (0x8006d0c8) */
 #include "names.h"
+
 /* Panel: the current combo/score readout (PANEL.CPP), as C. Sums the pending trick scores, works out
    the multiplier, and draws the score and x-multiplier text. */
 extern int GCareer_9b8[];

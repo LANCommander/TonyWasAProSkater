@@ -1,5 +1,6 @@
 /* Bit_RemoveDeadBits__Fv (0x80027c54) */
 #include "names.h"
+
 void *NonRenderedBitList;
 void *FlatBitList;
 void *Linked2EndedBitList;

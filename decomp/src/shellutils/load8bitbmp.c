@@ -1,5 +1,6 @@
 /* Load8BitBMP__FPcPPcPiT2PUs (0x80061654) */
 #include "names.h"
+
 extern char s_File_s_not_found[];
 extern char s_Not_enough_memory_to_load_s[];
 

@@ -1,5 +1,6 @@
 /* Pad_ClearAllOne__Fi (0x80070960) */
 #include "names.h"
+
 extern char Pad[];
 
 extern void Pad_Clear(char *);

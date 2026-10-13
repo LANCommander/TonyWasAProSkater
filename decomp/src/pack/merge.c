@@ -1,5 +1,6 @@
 /* Pack_Merge__FP6TSPack (0x8004a590) */
 #include "names.h"
+
 typedef struct TSPack {
 	unsigned short x, y, w, h;
 	struct TSPack *next;

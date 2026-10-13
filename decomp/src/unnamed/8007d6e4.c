@@ -8,8 +8,7 @@ typedef struct {
 } V;
 
 extern V DemoFocus_8, DAT_800d3a04, DAT_800d3a14, DAT_800d3a24, DAT_800d3a34, DAT_800d3a44,
-    DAT_800d3a54, DAT_800d3a64, DAT_800d3a74, DAT_800d3a84, DAT_800d3a94, FlyFocus,
-    DAT_800d3ab4;
+    DAT_800d3a54, DAT_800d3a64, DAT_800d3a74, DAT_800d3a84, DAT_800d3a94, FlyFocus, DAT_800d3ab4;
 extern Q UpDownPosition_8, testquat2, testquat3;
 extern char DAT_800a35b4[];
 

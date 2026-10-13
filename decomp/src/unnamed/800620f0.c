@@ -1,5 +1,6 @@
 /* FUN_800620f0 (0x800620f0) */
 #include "names.h"
+
 extern char __vt_11SlicedImage[];
 extern char DAT_800a21b0[];
 

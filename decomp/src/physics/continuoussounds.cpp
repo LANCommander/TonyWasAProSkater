@@ -20,9 +20,10 @@ extern int Cheat_Fire;
 extern int GLevel;
 
 #define GetStat(n)                                                                                 \
-	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
-	                    mpStatBonus[n])
+	(Cheat_StatsOverride                                                                           \
+	     ? Cheat_StatsOverride                                                                     \
+		 : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +              \
+		       mpStatBonus[n])
 #define MaxSpeed (((GetStat(1) + 50) << 12) * 3 * 15 / 28)
 
 extern "C" {

@@ -1,5 +1,6 @@
 /* Font_Reset__Fv (0x8004c180) */
 #include "names.h"
+
 extern int StringBuffer[];
 extern char NumberStrings[];
 

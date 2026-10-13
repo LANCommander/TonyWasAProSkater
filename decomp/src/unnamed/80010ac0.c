@@ -1,5 +1,6 @@
 /* FUN_80010ac0 (0x80010ac0) */
 #include "names.h"
+
 struct S {
 	char pad[76];
 	int f;

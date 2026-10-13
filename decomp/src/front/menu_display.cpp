@@ -69,7 +69,8 @@ void CMenu::Display() {
 						FUN_8001d2c4(1);
 
 					{
-						int length = Mess_DrawText__FiiPCciUiib(mX, y, mEntry[i].pString, 0, 0, 0, 0);
+						int length =
+						    Mess_DrawText__FiiPCciUiib(mX, y, mEntry[i].pString, 0, 0, 0, 0);
 
 						if (mHasCursor && i == mCursorLine && !mJustification) {
 							int off = length * mEntry[i].CurrentScale / 512 +

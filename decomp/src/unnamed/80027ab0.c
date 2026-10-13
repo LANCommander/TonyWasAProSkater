@@ -1,5 +1,6 @@
 /* DeleteBitList__FP4CBit (0x80027ab0) */
 #include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;

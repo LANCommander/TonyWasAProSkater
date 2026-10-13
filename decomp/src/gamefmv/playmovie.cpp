@@ -9,6 +9,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
+
 #include "game/pad.h"
 
 struct CdlATV {
@@ -127,7 +128,8 @@ void GameFMV_PlayMovie(int track) {
 		for (i = 0; i < GameFMV_SliceBuffers; i++) {
 			int h = GameFMV_Height;
 
-			if (!(decodeSliceBuffer[i] = (u_long *)Mem_NewX__FUiii(GameFMV_Is24Bit ? h * 48 : h * 32, 1, 0)))
+			if (!(decodeSliceBuffer[i] =
+			          (u_long *)Mem_NewX__FUiii(GameFMV_Is24Bit ? h * 48 : h * 32, 1, 0)))
 				goto InsufficientMemory;
 		}
 	}
@@ -176,6 +178,7 @@ void GameFMV_PlayMovie(int track) {
 	   pc_movie.c in 24-bit at (0, 256) */
 	if (PC_MovieOpen()) {
 		FUN_800914fc(&disp, 0, 256, 480, 240);
+
 		disp.isrgb24 = 1;
 		disp.disp.w = 320;
 		FUN_8008eebc(0);

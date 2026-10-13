@@ -1,5 +1,6 @@
 /* FUN_80070f18 (0x80070f18) */
 #include "names.h"
+
 /* Maps a raw analog axis reading to -127..127 given its calibrated min/max and centre, with a
    dead zone of 32 either side of the centre. Movement outside it marks the pad active. */
 int Pad_IdleTime;

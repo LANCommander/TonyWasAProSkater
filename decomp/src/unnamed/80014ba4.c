@@ -1,5 +1,6 @@
 /* FUN_80014ba4 (0x80014ba4) */
 #include "names.h"
+
 typedef struct {
 	int a, b;
 } T;

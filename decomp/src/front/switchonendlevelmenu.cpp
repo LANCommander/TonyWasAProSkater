@@ -74,10 +74,8 @@ void Front_SwitchOnEndLevelMenu() {
 				int j;
 
 				for (j = 7; j > i; j--) {
-					GCareer.HighScore[GLevel][j].Score =
-					    GCareer.HighScore[GLevel][j - 1].Score;
-					GCareer.HighScore[GLevel][j].Skater =
-					    GCareer.HighScore[GLevel][j - 1].Skater;
+					GCareer.HighScore[GLevel][j].Score = GCareer.HighScore[GLevel][j - 1].Score;
+					GCareer.HighScore[GLevel][j].Skater = GCareer.HighScore[GLevel][j - 1].Skater;
 
 					{
 						/* the counter is initialised between the two pointers (retail's t0/a3 order) */

@@ -1,5 +1,6 @@
 /* strInit__Fv (0x80023cb8) */
 #include "names.h"
+
 int pRingBuffer;
 int GameFMV_RingBufferSectors;
 unsigned char GameFMV_Is24Bit;

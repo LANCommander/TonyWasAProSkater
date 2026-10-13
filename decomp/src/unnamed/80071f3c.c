@@ -1,5 +1,6 @@
 /* FUN_80071f3c (0x80071f3c) */
 #include "names.h"
+
 void FUN_800491e8(void);
 void FUN_800171f0(void);
 void Video_InitOnce(void);

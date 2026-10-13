@@ -1,5 +1,6 @@
 /* Shatter_MaybeMakeGlassShatterSound__Fv (0x80022440) */
 #include "names.h"
+
 int ShatterSound;
 
 extern int GLevel;

@@ -67,86 +67,87 @@ enum EPausedStatus {
 
 enum EMemCardState { SVSTATUS_CHECKINGCARDPAUSE };
 enum ESaveAction { SAVE_VIDEO, SAVE_GAME };
-extern SControl Pad[2];         /* Pad */
-extern SVideoInfo GVInfo1;          /* GVInfo1 */
-extern SVideoInfo GVInfo2;          /* GVInfo2 */
-extern SLevel Levels[];        /* Levels */
-extern SCareer GCareer;             /* GCareer */
-extern SOptions GPreferences;        /* GPreferences */
-extern LocalText GameText;             /* GameText */
-extern char soundBuf[];              /* soundBuf */
-extern char musicBuf[];              /* musicBuf */
-extern char *CheatRestarts[];             /* CheatRestarts */
-extern char *HorseRestarts[];             /* HorseRestarts */
-extern CTape *GTape[];            /* GTape */
+
+extern SControl Pad[2];                  /* Pad */
+extern SVideoInfo GVInfo1;               /* GVInfo1 */
+extern SVideoInfo GVInfo2;               /* GVInfo2 */
+extern SLevel Levels[];                  /* Levels */
+extern SCareer GCareer;                  /* GCareer */
+extern SOptions GPreferences;            /* GPreferences */
+extern LocalText GameText;               /* GameText */
+extern char soundBuf[];                  /* soundBuf */
+extern char musicBuf[];                  /* musicBuf */
+extern char *CheatRestarts[];            /* CheatRestarts */
+extern char *HorseRestarts[];            /* HorseRestarts */
+extern CTape *GTape[];                   /* GTape */
 extern FallingTextEffect DAT_800a5b28[]; /* GHorseFallingText */
 extern char s_de[];
-extern CBruce *MechList;       /* MechList */
+extern CBruce *MechList;      /* MechList */
 extern CBruce *GSkater;       /* GSkater[0] */
-extern CBruce *DAT_800d17cc;       /* GSkater[1] */
+extern CBruce *DAT_800d17cc;  /* GSkater[1] */
 extern volatile uint Vblanks; /* Vblanks */
 extern volatile int Xblanks;  /* Xblanks */
 extern int EndCode;           /* EndCode */
-extern int GameFrozen;           /* GameFrozen */
-extern int GNumberOfPlayers;           /* GNumberOfPlayers */
-extern int DemoTimer;           /* DemoTimer */
+extern int GameFrozen;        /* GameFrozen */
+extern int GNumberOfPlayers;  /* GNumberOfPlayers */
+extern int DemoTimer;         /* DemoTimer */
 extern int XFrames;
-extern int GLevel; /* GLevel */
-extern int GGame; /* GGame */
-extern int Cheat_RestartSkip; /* Cheat_RestartSkip */
-extern int CheatCheck; /* CheatCheck */
-extern int GState; /* GState */
-extern int GSpin; /* GSpin */
-extern int GHorseClearInput2; /* GHorseClearInput2 */
-extern int NumCheatRestarts; /* NumCheatRestarts */
+extern int GLevel;               /* GLevel */
+extern int GGame;                /* GGame */
+extern int Cheat_RestartSkip;    /* Cheat_RestartSkip */
+extern int CheatCheck;           /* CheatCheck */
+extern int GState;               /* GState */
+extern int GSpin;                /* GSpin */
+extern int GHorseClearInput2;    /* GHorseClearInput2 */
+extern int NumCheatRestarts;     /* NumCheatRestarts */
 extern int GLoadedCareerIsSaved; /* GLoadedCareerIsSaved */
 extern int StartScreen;
 extern int GVideoReplay; /* GVideoReplay */
 extern int SizeUp;
-extern int GHorseCursorPos; /* GHorseCursorPos */
-extern int GHorseWaitTime; /* GHorseWaitTime */
-extern int GHorseMode; /* GHorseMode */
-extern int GHorseRestart; /* GHorseRestart */
-extern int GHorseScore; /* GHorseScore */
-extern int GHorseLetters; /* GHorseLetters[0] */
-extern int GHorseLetters_4; /* GHorseLetters[1] */
-extern int GHorsePlayer; /* GHorsePlayer */
+extern int GHorseCursorPos;  /* GHorseCursorPos */
+extern int GHorseWaitTime;   /* GHorseWaitTime */
+extern int GHorseMode;       /* GHorseMode */
+extern int GHorseRestart;    /* GHorseRestart */
+extern int GHorseScore;      /* GHorseScore */
+extern int GHorseLetters;    /* GHorseLetters[0] */
+extern int GHorseLetters_4;  /* GHorseLetters[1] */
+extern int GHorsePlayer;     /* GHorsePlayer */
 extern int GHorseWordChosen; /* GHorseWordChosen */
-extern int GHorseDoneStart; /* GHorseDoneStart */
-extern int GClear1; /* GClear1 */
-extern int GClear2; /* GClear2 */
+extern int GHorseDoneStart;  /* GHorseDoneStart */
+extern int GClear1;          /* GClear1 */
+extern int GClear2;          /* GClear2 */
 
-EPausedStatus Status; /* Status */
-int GSoftResetEnabled;           /* GSoftResetEnabled */
-int DAT_800d14d8;           /* StartSelectPressed */
-uint DAT_800d14dc;          /* VblanksWhenStartSelectFirstPressed */
-int GamePaused;           /* GamePaused */
-int WobbleAmplitude;           /* WobbleAmplitude */
-int WobbleT;           /* WobbleT */
-CMenu *pYesNoMenu;        /* pYesNoMenu */
-CMenu *pESMenu;        /* pESMenu */
-CMenu *pVSMenu;        /* pVSMenu */
-CMenu *pVS2Menu;        /* pVS2Menu */
-CMenu *pVS3Menu;        /* pVS3Menu */
-CMenu *pEHMenu;        /* pEHMenu */
-CMenu *pSoundMenu;        /* pSoundMenu */
-CMenu *pPausedMenu;        /* pPausedMenu */
-CMenu *pRestartsMenu;        /* pRestartsMenu */
-int GStart1;           /* GStart1 */
-int GStart2;           /* GStart2 */
-int Front_OnTime;           /* Front_OnTime */
-int GRollCredits;           /* GRollCredits */
-int GHighScoreLineIndex;           /* GHighScoreLineIndex */
-int GHighScoreInitialCursorPos;           /* GHighScoreInitialCursorPos */
-int GHorseContinue;           /* GHorseContinue */
-int GHorseSounded;           /* GHorseSounded */
-int NextHorseMode;           /* NextHorseMode */
-int NextHorsePlayer;           /* NextHorsePlayer */
-int NextHorseScore;           /* NextHorseScore */
+EPausedStatus Status;           /* Status */
+int GSoftResetEnabled;          /* GSoftResetEnabled */
+int DAT_800d14d8;               /* StartSelectPressed */
+uint DAT_800d14dc;              /* VblanksWhenStartSelectFirstPressed */
+int GamePaused;                 /* GamePaused */
+int WobbleAmplitude;            /* WobbleAmplitude */
+int WobbleT;                    /* WobbleT */
+CMenu *pYesNoMenu;              /* pYesNoMenu */
+CMenu *pESMenu;                 /* pESMenu */
+CMenu *pVSMenu;                 /* pVSMenu */
+CMenu *pVS2Menu;                /* pVS2Menu */
+CMenu *pVS3Menu;                /* pVS3Menu */
+CMenu *pEHMenu;                 /* pEHMenu */
+CMenu *pSoundMenu;              /* pSoundMenu */
+CMenu *pPausedMenu;             /* pPausedMenu */
+CMenu *pRestartsMenu;           /* pRestartsMenu */
+int GStart1;                    /* GStart1 */
+int GStart2;                    /* GStart2 */
+int Front_OnTime;               /* Front_OnTime */
+int GRollCredits;               /* GRollCredits */
+int GHighScoreLineIndex;        /* GHighScoreLineIndex */
+int GHighScoreInitialCursorPos; /* GHighScoreInitialCursorPos */
+int GHorseContinue;             /* GHorseContinue */
+int GHorseSounded;              /* GHorseSounded */
+int NextHorseMode;              /* NextHorseMode */
+int NextHorsePlayer;            /* NextHorsePlayer */
+int NextHorseScore;             /* NextHorseScore */
 int NextHorseRestart;           /* NextHorseRestart */
 int NextHorseLetters;           /* NextHorseLetters[0] */
-int NextHorseLetters_4;           /* NextHorseLetters[1] */
-int SFXLEVEL;           /* SFXLEVEL */
+int NextHorseLetters_4;         /* NextHorseLetters[1] */
+int SFXLEVEL;                   /* SFXLEVEL */
 int XALEVEL;
 int soundVol; /* soundVol */
 int musicVol; /* musicVol */
@@ -206,8 +207,7 @@ void Front_Update() {
 	int AnyButton;
 	int Start;
 
-	if ((!Pad[0].SpinLeft.Pressed || Status != STATUS_PAUSEDMENU) &&
-	    Status != STATUS_MEMCARDMENUS)
+	if ((!Pad[0].SpinLeft.Pressed || Status != STATUS_PAUSEDMENU) && Status != STATUS_MEMCARDMENUS)
 		Front_GetButtons(Activated, GoBack, AnyButton, Start);
 
 	if (Status)
@@ -255,8 +255,7 @@ void Front_Update() {
 			}
 		}
 
-			if ((Start || !Pad[0].Type || (GNumberOfPlayers == 2 && !Pad[1].Type)) &&
-			    DemoTimer) {
+			if ((Start || !Pad[0].Type || (GNumberOfPlayers == 2 && !Pad[1].Type)) && DemoTimer) {
 				GamePaused = 1;
 				GSkater->m310 = XFrames;
 
@@ -280,10 +279,9 @@ void Front_Update() {
 
 				pPausedMenu = new CMenu(256, 0, 0, 335, 256, 22);
 				pPausedMenu->AddEntry(GameText.pContinue);
-				pPausedMenu->AddEntry(
-				    (Levels[GLevel].isCompetition && GGame == 1)
-				        ? GameText.pRestart
-						: GameText.pRetry);
+				pPausedMenu->AddEntry((Levels[GLevel].isCompetition && GGame == 1)
+				                          ? GameText.pRestart
+										  : GameText.pRetry);
 				pPausedMenu->AddEntry(GameText.pSkipToRestart);
 
 				if (!Cheat_RestartSkip)
@@ -365,10 +363,9 @@ void Front_Update() {
 					SwitchOffPauseMode = 1;
 				}
 
-				if (pPausedMenu->ChoiceIs(
-				        (Levels[GLevel].isCompetition && GGame == 1)
-				            ? GameText.pRestart
-							: GameText.pRetry)) {
+				if (pPausedMenu->ChoiceIs((Levels[GLevel].isCompetition && GGame == 1)
+				                              ? GameText.pRestart
+											  : GameText.pRetry)) {
 					SwitchOffPauseMode = 1;
 					Horse_Reset();
 
@@ -561,10 +558,9 @@ void Front_Update() {
 						} else {
 							Status = STATUS_REALLYMAINMENU;
 						}
-					} else if (pESMenu->ChoiceIs(
-					               (Levels[GLevel].isCompetition && GGame == 1)
-					                   ? GameText.pRestart
-									   : GameText.pRetry)) {
+					} else if (pESMenu->ChoiceIs((Levels[GLevel].isCompetition && GGame == 1)
+					                                 ? GameText.pRestart
+													 : GameText.pRetry)) {
 						EndCode = 7;
 						SwitchOffPauseMode = 1;
 						Competition_Init();
@@ -904,8 +900,8 @@ void Front_Update() {
 						            .Name[GHighScoreInitialCursorPos] == ' ' ||
 						    GCareer.HighScore[GLevel][GHighScoreLineIndex]
 						            .Name[GHighScoreInitialCursorPos] == 0) {
-							GCareer.HighScore[GLevel][GHighScoreLineIndex].Name[GHighScoreInitialCursorPos] =
-							    'A';
+							GCareer.HighScore[GLevel][GHighScoreLineIndex]
+							    .Name[GHighScoreInitialCursorPos] = 'A';
 						} else {
 							GCareer.HighScore[GLevel][GHighScoreLineIndex]
 							    .Name[GHighScoreInitialCursorPos]++;
@@ -925,8 +921,8 @@ void Front_Update() {
 						            .Name[GHighScoreInitialCursorPos] == ' ' ||
 						    GCareer.HighScore[GLevel][GHighScoreLineIndex]
 						            .Name[GHighScoreInitialCursorPos] == 0) {
-							GCareer.HighScore[GLevel][GHighScoreLineIndex].Name[GHighScoreInitialCursorPos] =
-							    'Z';
+							GCareer.HighScore[GLevel][GHighScoreLineIndex]
+							    .Name[GHighScoreInitialCursorPos] = 'Z';
 						} else {
 							GCareer.HighScore[GLevel][GHighScoreLineIndex]
 							    .Name[GHighScoreInitialCursorPos]--;
@@ -1209,10 +1205,9 @@ void Front_Update() {
 		case STATUS_SETSOUNDLEVELS:
 			pSoundMenu->Update();
 
-			XALEVEL =
-			    (pSoundMenu->ChoiceIs(musicBuf) || pSoundMenu->ChoiceIs(GameText.pSkipTrack))
-			        ? GPreferences.MusicVolume * 0x555
-			        : 0;
+			XALEVEL = (pSoundMenu->ChoiceIs(musicBuf) || pSoundMenu->ChoiceIs(GameText.pSkipTrack))
+			              ? GPreferences.MusicVolume * 0x555
+			              : 0;
 
 			if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
 				Pad[0].MenuLeft.Triggered = 0;

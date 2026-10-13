@@ -4,6 +4,7 @@
    which pad pressed it). */
 #include "names.h"
 #include "game/padbuttons.h"
+
 typedef struct {
 	unsigned char b[0x16c];
 } SControl;

@@ -1,5 +1,6 @@
 /* FUN_80010d84 (0x80010d84) */
 #include "names.h"
+
 typedef struct {
 	char p[0x4c];
 	int f4c;

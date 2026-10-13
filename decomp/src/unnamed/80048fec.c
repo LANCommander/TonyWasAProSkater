@@ -1,5 +1,6 @@
 /* FUN_80048fec (0x80048fec) flags=-fstrict-aliasing */
 #include "names.h"
+
 typedef struct {
 	char pad0[0x74];
 	int Busy;   /* 0x74 */

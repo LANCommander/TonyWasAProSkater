@@ -1,5 +1,6 @@
 /* FUN_8001a1c8 (0x8001a1c8) */
 #include "names.h"
+
 extern int GVInfo1[];
 extern int GVInfo2[];
 extern char *GameText_1b8[];

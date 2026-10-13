@@ -1,5 +1,6 @@
 /* FUN_80042380 (0x80042380) */
 #include "names.h"
+
 extern char DAT_800a0534[];
 
 char MechList[8];

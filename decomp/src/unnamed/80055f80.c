@@ -1,5 +1,6 @@
 /* FUN_80055f80 (0x80055f80) */
 #include "names.h"
+
 struct E {
 	char pad[8];
 	char *n8;

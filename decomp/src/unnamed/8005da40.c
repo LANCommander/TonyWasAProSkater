@@ -1,6 +1,7 @@
 /* FUN_8005da40 (0x8005da40) */
 #include "names.h"
 #include "game/padbuttons.h"
+
 struct VT {
 	char pad[8];
 	short off;

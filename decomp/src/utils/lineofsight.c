@@ -1,5 +1,6 @@
 /* Utils_LineOfSight__FRC7CVectorT0 (0x80048170) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

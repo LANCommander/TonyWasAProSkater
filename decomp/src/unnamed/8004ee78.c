@@ -1,5 +1,6 @@
 /* TrickOb_DeleteAll__Fv (0x8004ee78) */
 #include "names.h"
+
 struct VT {
 	char pad[8];
 	short off;

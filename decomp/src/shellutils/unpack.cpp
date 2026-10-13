@@ -21,5 +21,6 @@ void SlicedImage::unpack() {
 	}
 
 	Mem_Delete(sliceTab);
+
 	sliceTab = 0;
 }

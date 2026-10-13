@@ -16,7 +16,7 @@ CGlow::CGlow(uint NumPoints, uint NumFringes) {
 	mpFringes = (SFringeQuad *)(mpSections + mNumSections);
 
 	for (uint i = 0; i < mNumSections * mNumFringes; i++)
-		mpFringes[i].CodeBGR= 0x3a000000;
+		mpFringes[i].CodeBGR = 0x3a000000;
 
 	mCentreCodeBGR = 0x32000000;
 	mMask = 0xffffffff;

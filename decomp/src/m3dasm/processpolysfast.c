@@ -16,16 +16,18 @@
  * normally. */
 #include "processpolys.h"
 
-void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, int count)
-{
+void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, int count) {
 	PolyState ps;
 	const uint32_t *face = faces;
 	uint32_t *colours = pColourTable;
 
 	(void)normals;
+
 	if (count == 0)
 		return;
+
 	pp_begin(&ps);
+
 	for (; count != 0; count--, face = (const uint32_t *)((const char *)face + (face[0] >> 16))) {
 		uint32_t vi = face[FACE_VERTS], f, xy[4], c, len, *p;
 		int z[4], n1, n2, i, visible, tri;
@@ -35,57 +37,77 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 			v[i] = &FAST_CACHE[vi >> 8 * i & 0xff];
 			xy[i] = v[i]->XY;
 		}
+
 		/* NCLIP of corners 0, 1, 2 (the words x4: the flags shift out of the 16-bit halves) */
 		gte_set(GTE_SXY0, xy[0] << 2);
 		gte_set(GTE_SXY1, xy[1] << 2);
 		gte_set(GTE_SXY2, xy[2] << 2);
 		PC_GteCommand(GTE_CMD_NCLIP);
+
 		f = face[FACE_FLAGS];
+
 		if ((int32_t)(xy[0] & xy[1] & xy[2] & xy[3]) >= 0 ||
 		    (xy[0] & xy[1] & xy[2] & xy[3] & 0x6000e000))
 			continue;
+
 		n1 = gte_get(GTE_MAC0);
 		gte_set(GTE_SXYP, xy[3] << 2);
 		PC_GteCommand(GTE_CMD_NCLIP); /* corners 1, 2, 3 */
+
 		if (!(f & FF_DRAW))
 			continue;
+
 		n2 = gte_get(GTE_MAC0);
+
 		if (!SCR16(SCR_MIRROR))
 			visible = n1 > 0 || n2 < 0;
 		else
 			visible = n1 < 0 || n2 > 0;
+
 		if (!visible)
 			continue;
+
 		p = PKT(ps.pkt);
 		p[2] = xy[0];
+
 		if (ps.pkt >= ps.limit)
 			break; /* FullFast */
 
 		ps.face = face;
 		ps.flags = f;
+
 		for (i = 0; i < 4; i++)
 			z[i] = v[i]->z;
+
 		ps.zmax = z[0];
+
 		for (i = 1; i < 4; i++)
 			if (ps.zmax < z[i])
 				ps.zmax = z[i];
+
 		pp_fog(&ps);
+
 		f = ps.flags;
 		tri = (f & FF_TRIANGLE) != 0;
 
 		c = face[FACE_COLOUR];
+
 		if (!(f & FF_GOURAUD)) {
 			gte_set(GTE_RGBC, c);
 			PC_GteCommand(GTE_CMD_DPCS);
+
 			if (!(f & FF_TEXTURED)) {
 				p[3] = xy[1];
 				p[4] = xy[2];
+
 				if (tri) {
 					pp_code(&ps, PC_GteGetData(GTE_RGB2), CODE_F3);
+
 					len = 4;
 				} else {
 					p[5] = xy[3];
 					pp_code(&ps, PC_GteGetData(GTE_RGB2), CODE_F4);
+
 					len = 5;
 				}
 			} else {
@@ -94,13 +116,16 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 				p[3] = face[FACE_UV0];
 				p[5] = face[FACE_UV1] | (f & FF_ABR) << 14;
 				p[7] = face[FACE_UV23];
+
 				if (tri) {
 					pp_code(&ps, PC_GteGetData(GTE_RGB2), CODE_FT3);
+
 					len = 7;
 				} else {
 					p[8] = xy[3];
 					p[9] = face[FACE_UV23] >> 16;
 					pp_code(&ps, PC_GteGetData(GTE_RGB2), CODE_FT4);
+
 					len = 9;
 				}
 			}
@@ -112,21 +137,26 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 			gte_set(GTE_RGB1, colours[c >> 8 & 0xff]);
 			gte_set(GTE_RGB2, colours[c >> 16 & 0xff]);
 			PC_GteCommand(GTE_CMD_DPCT);
+
 			if (!(f & FF_TEXTURED)) {
 				p[4] = xy[1];
 				p[6] = xy[2];
 				gte_set(GTE_RGBC, colours[c >> 24]);
+
 				col0 = PC_GteGetData(GTE_RGB0); /* (with the code byte DPCT left) */
 				p[3] = PC_GteGetData(GTE_RGB1);
 				p[5] = PC_GteGetData(GTE_RGB2);
 				PC_GteCommand(GTE_CMD_DPCS);
+
 				if (tri) {
 					pp_code(&ps, col0, CODE_G3);
+
 					len = 6;
 				} else {
 					p[8] = xy[3];
 					p[7] = PC_GteGetData(GTE_RGB2);
 					pp_code(&ps, col0, CODE_G4);
+
 					len = 8;
 				}
 			} else {
@@ -138,23 +168,29 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 				p[6] = face[FACE_UV1] | (f & FF_ABR) << 14;
 				p[9] = uv23;
 				gte_set(GTE_RGBC, colours[c >> 24]);
+
 				col0 = PC_GteGetData(GTE_RGB0) & 0xffffff;
 				p[4] = PC_GteGetData(GTE_RGB1);
 				p[7] = PC_GteGetData(GTE_RGB2);
 				PC_GteCommand(GTE_CMD_DPCS);
+
 				if (tri) {
 					pp_code(&ps, col0, CODE_GT3);
+
 					len = 9;
 				} else {
 					p[11] = xy[3];
 					p[12] = uv23 >> 16;
 					p[10] = PC_GteGetData(GTE_RGB2);
 					pp_code(&ps, col0, CODE_GT4);
+
 					len = 12;
 				}
 			}
 		}
+
 		pp_link(&ps, ps.pkt, ps.pkt, len, xy);
 	}
+
 	pp_end(&ps);
 }

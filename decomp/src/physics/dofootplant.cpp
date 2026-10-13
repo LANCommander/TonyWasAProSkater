@@ -17,9 +17,10 @@ extern int Cheat_Fire;
 extern char s_FOOTPLANT[];
 
 #define GetStat(n)                                                                                 \
-	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
-	                    mpStatBonus[n])
+	(Cheat_StatsOverride                                                                           \
+	     ? Cheat_StatsOverride                                                                     \
+		 : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +              \
+		       mpStatBonus[n])
 
 void CBruce::DoFootPlantPhysics() {
 	Trick_Trick(65, s_FOOTPLANT, 100, 0);
@@ -31,8 +32,9 @@ void CBruce::DoFootPlantPhysics() {
 	mVel = -mFront * mVel.Length();
 	mVel.vx += mFront.vx * 5;
 	mVel.vz += mFront.vz * 5;
-	mVel.vy -= (mJumpStrength * (((32 - (10 - GetStat(0)) / 2) + ((10 - GetStat(0)) / 3 - 18)) << 10) /
-	                (15 - (GetStat(0) + GetStat(2)) / 2) +
-	            ((32 - (10 - GetStat(0)) / 2) << 10)) *
-	           3;
+	mVel.vy -=
+	    (mJumpStrength * (((32 - (10 - GetStat(0)) / 2) + ((10 - GetStat(0)) / 3 - 18)) << 10) /
+		     (15 - (GetStat(0) + GetStat(2)) / 2) +
+		 ((32 - (10 - GetStat(0)) / 2) << 10)) *
+	    3;
 }

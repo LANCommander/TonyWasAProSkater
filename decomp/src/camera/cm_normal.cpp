@@ -44,7 +44,8 @@ void CCamera::CM_Normal() {
 
 	in_pool_timer++;
 
-	if (dot_up < 3572 && (((CBruce *)mTripod)->mPhysicsState == 2 || ((CBruce *)mTripod)->mPhysicsState == 8)) {
+	if (dot_up < 3572 &&
+	    (((CBruce *)mTripod)->mPhysicsState == 2 || ((CBruce *)mTripod)->mPhysicsState == 8)) {
 		if (!big_air && ((CBruce *)mTripod)->m740)
 			((CBruce *)mTripod)->mBigAirs++;
 

@@ -1,11 +1,12 @@
 /* FileIO_Continue__Fv (0x8004cc18) */
 #include "names.h"
+
 typedef struct {
 	short x, y, w, h;
 } R;
 
-int LoadFromPRE, Loading, LastLoading, CurrentPos, FileSize, FileOpen,
-    ReadSyncFailures, NumSectors, Dest;
+int LoadFromPRE, Loading, LastLoading, CurrentPos, FileSize, FileOpen, ReadSyncFailures, NumSectors,
+    Dest;
 char FileStart[8];
 
 extern R DAT_800d1b20[];

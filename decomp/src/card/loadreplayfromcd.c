@@ -1,5 +1,6 @@
 /* Card_LoadReplayFromCD__FPUlT0Pc (0x80014c74) */
 #include "names.h"
+
 extern char s_Checksum_error_for_1P_in_Card_Lo[];
 extern char s_Checksum_error_for_2P_in_Card_Lo[];
 

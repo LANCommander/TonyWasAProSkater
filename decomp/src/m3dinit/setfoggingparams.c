@@ -1,6 +1,6 @@
 /* M3dInit_SetFoggingParams__FiiUi (0x80082158) */
-extern int DpqMax __attribute__((section(".data"))),
-    DpqMin __attribute__((section(".data"))), DpqShift __attribute__((section(".data")));
+extern int DpqMax __attribute__((section(".data"))), DpqMin __attribute__((section(".data"))),
+    DpqShift __attribute__((section(".data")));
 
 int LastDpqMax, LastDpqMin, LastDpqShift;
 

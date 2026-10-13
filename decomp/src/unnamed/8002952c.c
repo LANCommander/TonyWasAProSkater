@@ -1,5 +1,6 @@
 /* Bit_SetSparkTrajectoryCone__FRC8CSVector (0x8002952c) */
 #include "names.h"
+
 struct S6 {
 	short x, y, z;
 };

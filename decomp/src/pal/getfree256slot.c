@@ -1,5 +1,6 @@
 /* GetFree256Slot__Fv (0x8004ad9c) */
 #include "names.h"
+
 extern unsigned char Free256Slots[];
 
 int GetFree256Slot(void) {

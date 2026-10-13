@@ -1,5 +1,6 @@
 /* PreProcessAnimPacket__FPUiT0 (0x8006ff48) */
 #include "names.h"
+
 typedef struct {
 	char pad[4];
 	unsigned char f4;

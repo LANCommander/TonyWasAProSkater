@@ -1,5 +1,6 @@
 /* AddToFreeList__FP12SBlockHeaderi (0x8004ce54) */
 #include "names.h"
+
 typedef struct SBlockHeader {
 	struct SBlockHeader *next;
 	unsigned flags : 4;

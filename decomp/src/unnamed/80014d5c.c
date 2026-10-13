@@ -1,6 +1,5 @@
 /* FUN_80014d5c (0x80014d5c) */
-int DAT_800d137c, CardLoadFlag, CardStatusMode, ev0, ev1, ev2,
-    ev3, ev10, ev11, ev12, ev13;
+int DAT_800d137c, CardLoadFlag, CardStatusMode, ev0, ev1, ev2, ev3, ev10, ev11, ev12, ev13;
 
 void FUN_8008e944(int);
 void FUN_8008e9d4(void);

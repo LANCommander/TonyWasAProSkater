@@ -1,5 +1,6 @@
 /* Game_Over__Fv (0x800242d4) */
 #include "names.h"
+
 typedef struct {
 	char p[0x1f0];
 	int f1f0;
@@ -11,8 +12,7 @@ int GGame, GState, GSpin, GSpinSpeed;
 B *GSkater;
 B *DAT_800d17cc;
 
-extern int GWins1, GLosses1, GStreak1, GHighTags1, GWins2, GLosses2,
-    GStreak2, GHighTags2;
+extern int GWins1, GLosses1, GStreak1, GHighTags1, GWins2, GLosses2, GStreak2, GHighTags2;
 
 void Game_Over(void) {
 	int a, b, c;

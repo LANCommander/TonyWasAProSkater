@@ -78,52 +78,54 @@ struct ControlsRow {
 };
 
 static const ControlsRow s_rows[] = {
-	{ROW_DEVICE, 0, 0},
-	{ROW_AUTOKICK, 0, 0},
-	{ROW_VIBRATION, 0, 0},
-	{ROW_HEADER, 0, "SKATING"},
-	{ROW_ACTION, PC_ACT_UP, 0},
-	{ROW_ACTION, PC_ACT_DOWN, 0},
-	{ROW_ACTION, PC_ACT_LEFT, 0},
-	{ROW_ACTION, PC_ACT_RIGHT, 0},
-	{ROW_ACTION, PC_ACT_OLLIE, 0},
-	{ROW_ACTION, PC_ACT_FLIP, 0},
-	{ROW_ACTION, PC_ACT_GRAB, 0},
-	{ROW_ACTION, PC_ACT_GRIND, 0},
-	{ROW_ACTION, PC_ACT_SPIN_LEFT, 0},
-	{ROW_ACTION, PC_ACT_SPIN_RIGHT, 0},
-	{ROW_ACTION, PC_ACT_TAP_SPIN_LEFT, 0},
-	{ROW_ACTION, PC_ACT_TAP_SPIN_RIGHT, 0},
-	{ROW_ACTION, PC_ACT_CAMERA, 0},
-	{ROW_ACTION, PC_ACT_PAUSE, 0},
-	{ROW_HEADER, 0, "MENUS"},
-	{ROW_ACTION, PC_ACT_MENU_UP, 0},
-	{ROW_ACTION, PC_ACT_MENU_DOWN, 0},
-	{ROW_ACTION, PC_ACT_MENU_LEFT, 0},
-	{ROW_ACTION, PC_ACT_MENU_RIGHT, 0},
-	{ROW_ACTION, PC_ACT_MENU_ACCEPT, 0},
-	{ROW_ACTION, PC_ACT_MENU_BACK, 0},
-	{ROW_RESET, 0, "RESET TO DEFAULT"},
-	{ROW_BACK, 0, "BACK TO OPTIONS"},
+	{ ROW_DEVICE, 0, 0 },
+	{ ROW_AUTOKICK, 0, 0 },
+	{ ROW_VIBRATION, 0, 0 },
+	{ ROW_HEADER, 0, "SKATING" },
+	{ ROW_ACTION, PC_ACT_UP, 0 },
+	{ ROW_ACTION, PC_ACT_DOWN, 0 },
+	{ ROW_ACTION, PC_ACT_LEFT, 0 },
+	{ ROW_ACTION, PC_ACT_RIGHT, 0 },
+	{ ROW_ACTION, PC_ACT_OLLIE, 0 },
+	{ ROW_ACTION, PC_ACT_FLIP, 0 },
+	{ ROW_ACTION, PC_ACT_GRAB, 0 },
+	{ ROW_ACTION, PC_ACT_GRIND, 0 },
+	{ ROW_ACTION, PC_ACT_SPIN_LEFT, 0 },
+	{ ROW_ACTION, PC_ACT_SPIN_RIGHT, 0 },
+	{ ROW_ACTION, PC_ACT_TAP_SPIN_LEFT, 0 },
+	{ ROW_ACTION, PC_ACT_TAP_SPIN_RIGHT, 0 },
+	{ ROW_ACTION, PC_ACT_CAMERA, 0 },
+	{ ROW_ACTION, PC_ACT_PAUSE, 0 },
+	{ ROW_HEADER, 0, "MENUS" },
+	{ ROW_ACTION, PC_ACT_MENU_UP, 0 },
+	{ ROW_ACTION, PC_ACT_MENU_DOWN, 0 },
+	{ ROW_ACTION, PC_ACT_MENU_LEFT, 0 },
+	{ ROW_ACTION, PC_ACT_MENU_RIGHT, 0 },
+	{ ROW_ACTION, PC_ACT_MENU_ACCEPT, 0 },
+	{ ROW_ACTION, PC_ACT_MENU_BACK, 0 },
+	{ ROW_RESET, 0, "RESET TO DEFAULT" },
+	{ ROW_BACK, 0, "BACK TO OPTIONS" },
 };
 
-#define NUM_ROWS ((int)(sizeof s_rows / sizeof s_rows[0]))
-#define VISIBLE_ROWS 13
-#define ROW_TOP 70     /* centre of the first visible row */
-#define ROW_HEIGHT 24
-#define NAME_X 130     /* action names, left-justified */
-#define SLOT_X0 400    /* the two binding columns, centred */
-#define SLOT_X1 535
-#define HINT_Y 406
+#define NUM_ROWS       ((int)(sizeof s_rows / sizeof s_rows[0]))
+#define VISIBLE_ROWS   13
+#define ROW_TOP        70 /* centre of the first visible row */
+#define ROW_HEIGHT     24
+#define NAME_X         130 /* action names, left-justified */
+#define SLOT_X0        400 /* the two binding columns, centred */
+#define SLOT_X1        535
+#define HINT_Y         406
 #define CAPTURE_FRAMES 300
 
 /* (this font has letters and digits but no '.', '-' or ':', so the screen's own text is words) */
 
 /* the area redrawn every frame (640x480 front-end coordinates = VRAM), and the background there */
-static RECT s_area = {110, 40, 520, 380};
+static RECT s_area = { 110, 40, 520, 380 };
 static ulong *s_saved;
 
-static void RestoreArea(void) { LoadImage(&s_area, s_saved); }
+static void RestoreArea(void) {
+	LoadImage(&s_area, s_saved);
+}
 
 static void SetColour(int selected, int dim) {
 	if (selected)
@@ -149,11 +151,13 @@ static int Repeat(SButton *b) {
 	return b->Pressed && b->PressedTime > 18 && (b->PressedTime & 3) == 0;
 }
 
-static int Selectable(int row) { return s_rows[row].kind != ROW_HEADER; }
+static int Selectable(int row) {
+	return s_rows[row].kind != ROW_HEADER;
+}
 
 static int AnyMenuButton(SControl *p) {
-	return p->MenuUp.Pressed || p->MenuDown.Pressed || p->MenuLeft.Pressed || p->MenuRight.Pressed ||
-	       p->MenuAccept.Pressed || p->MenuBack.Pressed;
+	return p->MenuUp.Pressed || p->MenuDown.Pressed || p->MenuLeft.Pressed ||
+	       p->MenuRight.Pressed || p->MenuAccept.Pressed || p->MenuBack.Pressed;
 }
 
 extern "C" int FUN_8005f6bc(int a) {
@@ -164,17 +168,22 @@ extern "C" int FUN_8005f6bc(int a) {
 	int base_scale = Mess_GetFontScale();
 	int small_scale = base_scale * 3 / 4;
 	(void)a;
+
 	FUN_8005c97c(11);
 	FUN_8005ca64();
 	FUN_80061714(FUN_8005ca3c(s_options_bmp));
 	DrawSync(0);
+
 	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
+
 	StoreImage(&s_area, s_saved);
 	DrawSync(0);
+
 	pc_hires_before_draw = RestoreArea;
 
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
+
 	DemoTimer = 1600;
 
 	for (;;) {
@@ -202,6 +211,7 @@ extern "C" int FUN_8005f6bc(int a) {
 
 			if (in != PC_BIND_NONE) {
 				PC_InputBind(pl, gamepad, (PcAction)s_rows[sel].action, slot, in);
+
 				dirty = 1;
 				capturing = 0;
 				settling = 1;
@@ -224,6 +234,7 @@ extern "C" int FUN_8005f6bc(int a) {
 			if (Repeat(&p->MenuUp)) {
 				do
 					sel = sel ? sel - 1 : NUM_ROWS - 1;
+
 				while (!Selectable(sel));
 
 				SFX_PlayX(144, 8192, 0);
@@ -232,6 +243,7 @@ extern "C" int FUN_8005f6bc(int a) {
 			if (Repeat(&p->MenuDown)) {
 				do
 					sel = sel == NUM_ROWS - 1 ? 0 : sel + 1;
+
 				while (!Selectable(sel));
 
 				SFX_PlayX(144, 8192, 0);
@@ -258,6 +270,7 @@ extern "C" int FUN_8005f6bc(int a) {
 					case ROW_DEVICE:
 						if (pl == 0)
 							gamepad ^= 1;
+
 						SFX_PlayX(144, 8192, 0);
 						break;
 					case ROW_AUTOKICK:
@@ -275,9 +288,11 @@ extern "C" int FUN_8005f6bc(int a) {
 							capturing = CAPTURE_FRAMES;
 							SFX_PlayX(145, 8192, 0);
 						}
+
 						break;
 					case ROW_RESET:
 						PC_InputResetDevice(pl, gamepad);
+
 						dirty = 1;
 						SFX_PlayX(145, 8192, 0);
 						break;
@@ -293,6 +308,7 @@ extern "C" int FUN_8005f6bc(int a) {
 			if (kind == ROW_ACTION && PC_InputClearPressed(pl) &&
 			    PC_InputGetBind(pl, gamepad, (PcAction)s_rows[sel].action, slot) != PC_BIND_NONE) {
 				PC_InputBind(pl, gamepad, (PcAction)s_rows[sel].action, slot, PC_BIND_NONE);
+
 				dirty = 1;
 				SFX_PlayX(147, 8192, 0);
 			}
@@ -355,7 +371,8 @@ extern "C" int FUN_8005f6bc(int a) {
 
 					for (s = 0; s < PC_BIND_SLOTS; s++) {
 						int in = PC_InputGetBind(pl, gamepad, (PcAction)r->action, s);
-						const char *label = in == PC_BIND_NONE ? "NONE" : PC_InputInputLabel(gamepad, in);
+						const char *label =
+						    in == PC_BIND_NONE ? "NONE" : PC_InputInputLabel(gamepad, in);
 
 						if (on && s == slot && capturing)
 							label = (capturing >> 4) & 1 ? "" : "PRESS";
@@ -363,6 +380,7 @@ extern "C" int FUN_8005f6bc(int a) {
 						SetColour(on && s == slot, in == PC_BIND_NONE);
 						Text(s ? SLOT_X1 : SLOT_X0, y, 0, label);
 					}
+
 					break;
 				}
 				default:
@@ -401,6 +419,7 @@ extern "C" int FUN_8005f6bc(int a) {
 
 	/* leave the options background clean for the options menu */
 	pc_hires_before_draw = 0;
+
 	LoadImage(&s_area, s_saved);
 	DrawSync(0);
 	free(s_saved);
@@ -434,12 +453,13 @@ enum {
 
 #define KEEP_FRAMES (15 * 60)
 
-static const char *const s_modeLabels[PC_VIDEO_MODES] = {"WINDOWED", "BORDERLESS", "FULLSCREEN"};
-static const char *const s_fogLabels[PC_FOG_MODES] = {"NORMAL", "LIGHT", "OFF"};
+static const char *const s_modeLabels[PC_VIDEO_MODES] = { "WINDOWED", "BORDERLESS", "FULLSCREEN" };
+static const char *const s_fogLabels[PC_FOG_MODES] = { "NORMAL", "LIGHT", "OFF" };
 
 /* the distance steps, in percent (Settings.ini may hold others in between); the last, the entire
    level, only for the draw distance */
-static const int s_distances[] = {100, 200, 300, 400, PC_DISTANCE_FULL};
+static const int s_distances[] = { 100, 200, 300, 400, PC_DISTANCE_FULL };
+
 #define DRAW_STEPS   5
 #define OBJECT_STEPS 4
 
@@ -531,13 +551,17 @@ extern "C" void PC_GraphicsOptions(int a) {
 	FUN_8005ca64();
 	FUN_80061714(FUN_8005ca3c(s_options_bmp));
 	DrawSync(0);
+
 	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
+
 	StoreImage(&s_area, s_saved);
 	DrawSync(0);
+
 	pc_hires_before_draw = RestoreArea;
 
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
+
 	DemoTimer = 1600;
 
 	for (;;) {
@@ -566,6 +590,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 			} else if (p->MenuBack.Triggered || --keep == 0) {
 				keep = 0;
 				PC_VideoApply(&old);
+
 				edit = old;
 				SFX_PlayX(147, 8192, 0);
 			}
@@ -615,12 +640,14 @@ extern "C" void PC_GraphicsOptions(int a) {
 					SFX_PlayX(147, 8192, 0);
 				} else if (SameWindow(&edit, &cur)) {
 					PC_VideoApply(&edit);
+
 					cur = edit;
 					PC_VideoSave();
 					SFX_PlayX(145, 8192, 0);
 				} else {
 					old = cur;
 					PC_VideoApply(&edit);
+
 					keep = KEEP_FRAMES;
 					SFX_PlayX(145, 8192, 0);
 				}
@@ -733,6 +760,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 		PC_VideoApply(&old);
 
 	pc_hires_before_draw = 0;
+
 	LoadImage(&s_area, s_saved);
 	DrawSync(0);
 	free(s_saved);

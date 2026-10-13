@@ -1,5 +1,6 @@
 /* FUN_800201c8 (0x800201c8) */
 #include "names.h"
+
 struct VT {
 	char pad[0x10];
 	short off;

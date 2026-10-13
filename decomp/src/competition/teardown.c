@@ -23,5 +23,6 @@ void FUN_80077060(void) {
 			vt[1].fn(e + vt[1].delta, 2);
 		}
 	}
+
 	*(char **)t = __vt_6CClass;
 }

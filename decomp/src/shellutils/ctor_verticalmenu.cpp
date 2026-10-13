@@ -60,9 +60,10 @@ VerticalMenu::VerticalMenu(int top, int bottom, int spacing, char **items, int n
 			else
 				list[i].erase_sprite_x = 45;
 
-			list[i].erase_sprite = new Sprite(
-			    list[i].erase_sprite_x, list[i].y - (list[i].h >> 1) * font_scale_big / font_scale - 1, 550,
-			    list[i].h * font_scale_big / font_scale + 4, 1, 32, 128);
+			list[i].erase_sprite =
+			    new Sprite(list[i].erase_sprite_x,
+				           list[i].y - (list[i].h >> 1) * font_scale_big / font_scale - 1, 550,
+				           list[i].h * font_scale_big / font_scale + 4, 1, 32, 128);
 			FUN_8008c468(0);
 
 			if (list[i].grayed)
@@ -70,8 +71,8 @@ VerticalMenu::VerticalMenu(int top, int bottom, int spacing, char **items, int n
 			else
 				Mess_SetRGB(122, 122, 122, 0);
 
-			Mess_DrawText__FiiPCciUiib(list[i].x, list[i].y - (list[i].h >> 1) + list[i].baseline, list[i].string, 0, 0,
-			             256, 0);
+			Mess_DrawText__FiiPCciUiib(list[i].x, list[i].y - (list[i].h >> 1) + list[i].baseline,
+			                           list[i].string, 0, 0, 256, 0);
 		}
 	}
 

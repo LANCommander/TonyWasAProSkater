@@ -1,5 +1,6 @@
 /* FUN_80066768 (0x80066768) */
 #include "names.h"
+
 typedef struct {
 	char p[0x24];
 	int f24;

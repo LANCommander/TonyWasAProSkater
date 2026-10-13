@@ -1,5 +1,6 @@
 /* FUN_8001f0dc (0x8001f0dc) */
 #include "names.h"
+
 struct S {
 	int a;
 	char r[32];

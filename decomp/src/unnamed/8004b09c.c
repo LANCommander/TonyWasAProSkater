@@ -1,5 +1,6 @@
 /* FUN_8004b09c (0x8004b09c) */
 #include "names.h"
+
 extern char DAT_800b9014[];
 
 char pSFXVABHeader[8];

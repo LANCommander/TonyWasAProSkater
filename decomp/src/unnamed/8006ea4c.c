@@ -1,5 +1,6 @@
 /* FUN_8006ea4c (0x8006ea4c) */
 #include "names.h"
+
 void Video_HighlightEnd(char *b, int n);
 void FallingTextEffect_init(char *p);
 

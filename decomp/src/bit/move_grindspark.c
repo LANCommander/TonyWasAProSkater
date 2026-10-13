@@ -1,5 +1,6 @@
 /* Move__11CGrindSpark (0x8002780c) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

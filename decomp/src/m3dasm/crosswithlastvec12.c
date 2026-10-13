@@ -7,8 +7,7 @@
  * takes the first operand from the rotation matrix diagonal, so v goes into R11, R22, R33
  * (R12 and R23 become 0, the rest of the rotation matrix is left as it was). Result in
  * IR1..3/MAC1..3: (v.y*IR3 - v.z*IR2, v.z*IR1 - v.x*IR3, v.x*IR2 - v.y*IR1) >> 12. */
-void M3dMaths_CrossWithLastVec12__FP7SVector(struct SVector *v)
-{
+void M3dMaths_CrossWithLastVec12__FP7SVector(struct SVector *v) {
 	PC_GteSetCtrl(0, (unsigned short)v->vx); /* R11 = x, R12 = 0 */
 	PC_GteSetCtrl(2, (unsigned short)v->vy); /* R22 = y, R23 = 0 */
 	PC_GteSetCtrl(4, (unsigned short)v->vz); /* R33 = z */

@@ -47,8 +47,7 @@ void Career_Init() {
 				GCareer.HighScore[Level][Score].Name[0] = (*pHighScore)[0];
 				GCareer.HighScore[Level][Score].Name[1] = (*pHighScore)[1];
 				GCareer.HighScore[Level][Score].Name[2] = (*pHighScore)[2];
-				GCareer.HighScore[Level][Score].Score =
-				    Levels[Level].HiScore + (7 - Score) * 5000;
+				GCareer.HighScore[Level][Score].Score = Levels[Level].HiScore + (7 - Score) * 5000;
 				GCareer.HighScore[Level][Score].Skater = Redbook_Rnd(10);
 			}
 		}

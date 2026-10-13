@@ -1,5 +1,6 @@
 /* FUN_80010bb8 (0x80010bb8) */
 #include "names.h"
+
 typedef struct {
 	int a0, a1, a2, a3, a4, a5;
 } S;
@@ -31,8 +32,7 @@ void FUN_80010bb8(void) {
 				if (Crowd[i].a0) {
 					if (Crowd_MoveTowards(&Crowd[i].a1, Crowd[i].a3, 100) ||
 					    Crowd_MoveTowards(&Crowd[i].a2, Crowd[i].a4, 100)) {
-						SFX_ModifyVol(Crowd[i].a0, (Crowd[i].a1 * 2) / 3,
-						             (Crowd[i].a2 * 2) / 3);
+						SFX_ModifyVol(Crowd[i].a0, (Crowd[i].a1 * 2) / 3, (Crowd[i].a2 * 2) / 3);
 					} else {
 						if (Redbook_Rnd(30) == 0) {
 							Crowd[i].a3 = Redbook_Rnd(8192);

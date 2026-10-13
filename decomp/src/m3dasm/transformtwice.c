@@ -9,8 +9,7 @@
  * (llirbk). The point is left in the GTE's IR1..3 / MAC1..3 for the caller to read.
  * GTE state changed: V0, rotation matrix + TR (= sm), light matrix (= m), RBK/GBK/BBK (= m->t). */
 void M3dAsm_TransformTwice__FP7SVectorP7SMatrixP6MATRIX(struct SVector *v, struct SMatrix *sm,
-                                                        MATRIX *m)
-{
+                                                        MATRIX *m) {
 	PC_GteSetData(0, m3d_pack(v->vx, v->vy));
 	PC_GteSetData(1, (uint32_t)(int)v->vz);
 	gte_SetRotMatrix(sm);

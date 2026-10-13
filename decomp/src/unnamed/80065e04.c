@@ -1,5 +1,6 @@
 /* FUN_80065e04 (0x80065e04) */
 #include "names.h"
+
 extern int SpoolerBlocksFileIO;
 
 void Mem_Delete(int);

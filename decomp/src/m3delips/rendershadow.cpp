@@ -1,11 +1,12 @@
 /* M3dElips_RenderShadow__FP6SModelP6MATRIXP8CSVectorP7CVectorP7SVECTORG7CVECTOR (0x8007d9ac) flags=-fstructure-noalias */
 /* C++ (M3DELIPS.CPP). Locals, their order and types come from the demo's MAIN.SYM. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
-#include <libgpu.h>
-#include <inline_c.h>
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+	#include <inline_c.h>
 }
+
 #include "game/m3d.h"
 #include "game/camera.h"
 

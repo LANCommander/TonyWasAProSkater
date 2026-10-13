@@ -232,7 +232,8 @@ void Competition_WinLoseDisplay() {
 			Mess_SetRGB(122, 122, 122, 0);
 			FUN_8008b900(buf, s_dth, our_placing + 1);
 			Mess_SetScale(384);
-			Mess_DrawText__FiiPCciUiib(256, 120, Stats[c->mCompetitorList[c->our_skater_num]].Name, 0, 0, 256, 0);
+			Mess_DrawText__FiiPCciUiib(256, 120, Stats[c->mCompetitorList[c->our_skater_num]].Name,
+			                           0, 0, 256, 0);
 			Mess_DrawText__FiiPCciUiib(256, 150, buf, 0, 0, 256, 0);
 			break;
 		}
@@ -262,7 +263,8 @@ void Competition_WinLoseDisplay() {
 			if (MedalMessage[8])
 				Mess_DrawText__FiiPCciUiib(256, 195, MedalMessage[8], 0, 0, 256, 0);
 		} else {
-			switch ((GCareer.Options.MedalMessagesUsed[GSkater->mSkaterIndex] & c->medal_mask) ^ c->medal_mask) {
+			switch ((GCareer.Options.MedalMessagesUsed[GSkater->mSkaterIndex] & c->medal_mask) ^
+			        c->medal_mask) {
 				case 8:
 					if (MedalMessage[0])
 						Mess_DrawText__FiiPCciUiib(256, 155, MedalMessage[0], 0, 0, 256, 0);

@@ -1,5 +1,6 @@
 /* FUN_8004d6a0 (0x8004d6a0) */
 #include "names.h"
+
 typedef struct B {
 	struct B *next;
 	int flags : 4;

@@ -1,5 +1,6 @@
 /* FUN_80025a88 (0x80025a88) flags=-fstructure-noalias */
 #include "names.h"
+
 typedef struct L {
 	char pad[12];
 	int f;
@@ -83,8 +84,7 @@ void FUN_80025a88(void) {
 	pCam->m1412 = 1;
 	TrickTips_Init();
 
-	if (Levels[GLevel].f && GGame == 1 && GVideoRestart[0] == 0 &&
-	    GVideoReplay == 0)
+	if (Levels[GLevel].f && GGame == 1 && GVideoRestart[0] == 0 && GVideoReplay == 0)
 		CCamera_StartCompetitionIntro(pCam);
 
 	if (GGame != 7 || GHorsePlayer == 0)

@@ -1,5 +1,6 @@
 /* Font_String__FUsUsPcUcUcUcUc (0x8004c1a8) */
 #include "names.h"
+
 typedef struct {
 	int a;
 	short x, y;
@@ -12,8 +13,8 @@ typedef struct {
 SFont *BufferPos;
 int CodeVal;
 
-void Font_String(unsigned short x, unsigned short y, char *s, unsigned char c0,
-                                  unsigned char c1, unsigned char c2, unsigned char c3) {
+void Font_String(unsigned short x, unsigned short y, char *s, unsigned char c0, unsigned char c1,
+                 unsigned char c2, unsigned char c3) {
 	SFont *p = BufferPos;
 
 	p->z = 0;

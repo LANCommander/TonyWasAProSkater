@@ -1,5 +1,6 @@
 /* Mess_Update__Fv (0x8001d6bc) */
 #include "names.h"
+
 typedef struct Prog {
 	unsigned short dur;
 	char pad[0x1c];

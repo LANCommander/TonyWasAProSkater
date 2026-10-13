@@ -1,5 +1,6 @@
 /* FUN_8006b1c8 (0x8006b1c8) */
 #include "names.h"
+
 typedef struct {
 	short m[3][3];
 	int t[3];

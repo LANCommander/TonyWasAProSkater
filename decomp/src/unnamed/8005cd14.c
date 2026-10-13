@@ -1,6 +1,7 @@
 /* FUN_8005cd14 (0x8005cd14) */
 #include "names.h"
 #include "game/padbuttons.h"
+
 typedef struct {
 	char p[0xc];
 	int fc;

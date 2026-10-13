@@ -1,5 +1,6 @@
 /* DetachOldEnviro__FUc (0x8006fbe4) */
 #include "names.h"
+
 typedef struct {
 	char name[10];
 	unsigned char f0a, f0b;

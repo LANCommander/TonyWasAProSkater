@@ -13,5 +13,6 @@ extern SStats Stats[];
 void CBruce::BoardOn() {
 	SStats *pStats = &Stats[mSkaterIndex];
 
-	mSubObjectDisplayMask &= ~((1 << pStats->Board) | (1 << pStats->Wheel1) | (1 << pStats->Wheel2));
+	mSubObjectDisplayMask &=
+	    ~((1 << pStats->Board) | (1 << pStats->Wheel1) | (1 << pStats->Wheel2));
 }

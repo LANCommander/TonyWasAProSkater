@@ -1,5 +1,6 @@
 /* FUN_8006ed2c (0x8006ed2c) */
 #include "names.h"
+
 /* Copy of FUN_8006edb8 in the other direction; the loop keeps its entry jump, which comes from
    a goto loop (cc1 rotates while/for loops). */
 typedef struct {

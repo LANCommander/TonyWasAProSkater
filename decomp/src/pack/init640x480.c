@@ -1,5 +1,6 @@
 /* Pack_Init640x480__Fv (0x800497d4) */
 #include "names.h"
+
 int Pack_pFree, Pack_pFull, TotSlots, Pack_Width, LastPackInitType;
 
 void *Pack_NewFree(int, int, int, int);

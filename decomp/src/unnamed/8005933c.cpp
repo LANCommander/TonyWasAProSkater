@@ -4,8 +4,8 @@
    goofy flag from the stance string ('R'/'r'). Lever: -fstructure-noalias keeps the selected index
    in a register across the mSkaterIndex store. */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
+	#include <sys/types.h>
+	#include <libgte.h>
 }
 
 #include "game/bruce.h"

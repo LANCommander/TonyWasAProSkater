@@ -1,5 +1,6 @@
 /* Backgrnd_Off__FUs (0x8007813c) */
 #include "names.h"
+
 char *BackgroundList;
 
 void Backgrnd_Off(unsigned short id) {

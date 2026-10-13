@@ -1,5 +1,6 @@
 /* Competition_WinLoseLogic__FR13EPausedStatusRi (0x80075560) flags=-fstructure-noalias */
 #include "names.h"
+
 /* Competition win/lose logic (COMPETITION.CPP, demo Competition_WinLoseLogic), as C; sibling of
    FUN_80076880 and written the same way. */
 struct VT {
@@ -97,8 +98,7 @@ void Competition_WinLoseLogic(int *a0, int *a1) {
 
 		if (Flash_FadeFinished()) {
 			g->f12c = 0;
-			CMenu_SetLine(pYesNoMenu,
-			                  CMenu_FindEntry(pYesNoMenu, GameText_1b4[0]) & 0xff);
+			CMenu_SetLine(pYesNoMenu, CMenu_FindEntry(pYesNoMenu, GameText_1b4[0]) & 0xff);
 			DEL(g->a);
 			DEL(g->b);
 			DEL(g->c);
@@ -122,10 +122,8 @@ void Competition_WinLoseLogic(int *a0, int *a1) {
 			GameFMV_PlayMovie(-11);
 			Flash_Reset();
 
-			DoubleBuffer.a =
-			    Mem_NewX((Levels[GLevel].x[GNumberOfPlayers - 1] + 0x17c00) * 2, 1, 1);
-			DoubleBuffer.b =
-			    DoubleBuffer.a + 0x17c00 + Levels[GLevel].x[GNumberOfPlayers - 1];
+			DoubleBuffer.a = Mem_NewX((Levels[GLevel].x[GNumberOfPlayers - 1] + 0x17c00) * 2, 1, 1);
+			DoubleBuffer.b = DoubleBuffer.a + 0x17c00 + Levels[GLevel].x[GNumberOfPlayers - 1];
 			*a0 = 27;
 		}
 	} else {
@@ -149,8 +147,7 @@ void Competition_WinLoseLogic(int *a0, int *a1) {
 					}
 
 					*a0 = 7;
-					CMenu_SetLine(pYesNoMenu,
-					                  CMenu_FindEntry(pYesNoMenu, GameText_1b4[0]) & 0xff);
+					CMenu_SetLine(pYesNoMenu, CMenu_FindEntry(pYesNoMenu, GameText_1b4[0]) & 0xff);
 				} else
 					return;
 			} else {

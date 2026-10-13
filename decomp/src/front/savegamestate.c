@@ -1,5 +1,6 @@
 /* Front_SaveGameState__Fv (0x8001cbf0) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } CVector;

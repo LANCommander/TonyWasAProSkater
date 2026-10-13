@@ -38,9 +38,10 @@ extern char s_FASTPLANT[];
 extern char s_NOLLIE[];
 
 #define GetStat(n)                                                                                 \
-	(Cheat_StatsOverride ? Cheat_StatsOverride                                                                   \
-	              : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +     \
-	                    mpStatBonus[n])
+	(Cheat_StatsOverride                                                                           \
+	     ? Cheat_StatsOverride                                                                     \
+		 : (Stats[mSkaterIndex].Stats[n] + ((mBalanceFlash || Cheat_Fire) ? 3 : 0)) +              \
+		       mpStatBonus[n])
 
 int Redbook_Rnd(int);
 
@@ -294,17 +295,19 @@ void CBruce::HandleJump() {
 			}
 
 			if (ABS(mUp.vy) < 2500)
-				JumpBoost = -(
-				    (mJumpStrength * (((32 - (10 - GetStat(2)) / 2) + ((10 - GetStat(2)) / 3 - 18)) << 10) /
-					     (15 - (GetStat(0) + GetStat(2)) / 2) +
-					 ((32 - (10 - GetStat(2)) / 2) << 10)) *
-				    3);
+				JumpBoost =
+				    -((mJumpStrength *
+					       (((32 - (10 - GetStat(2)) / 2) + ((10 - GetStat(2)) / 3 - 18)) << 10) /
+					       (15 - (GetStat(0) + GetStat(2)) / 2) +
+					   ((32 - (10 - GetStat(2)) / 2) << 10)) *
+					  3);
 			else
-				JumpBoost = -(
-				    (mJumpStrength * (((32 - (10 - GetStat(0)) / 2) + ((10 - GetStat(0)) / 3 - 18)) << 10) /
-					     (15 - (GetStat(0) + GetStat(2)) / 2) +
-					 ((32 - (10 - GetStat(0)) / 2) << 10)) *
-				    3);
+				JumpBoost =
+				    -((mJumpStrength *
+					       (((32 - (10 - GetStat(0)) / 2) + ((10 - GetStat(0)) / 3 - 18)) << 10) /
+					       (15 - (GetStat(0) + GetStat(2)) / 2) +
+					   ((32 - (10 - GetStat(0)) / 2) << 10)) *
+					  3);
 
 			mVel.vy += JumpBoost;
 			mJumps++;

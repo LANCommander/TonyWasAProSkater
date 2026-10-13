@@ -1,5 +1,6 @@
 /* Bit_CalculateSparkVelocity__FR7CVectori (0x80029550) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

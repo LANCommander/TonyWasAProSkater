@@ -1,5 +1,6 @@
 /* Init_KillAll__Fv (0x80071b7c) */
 #include "names.h"
+
 extern void *MechList, *CameraList, *BaddyList, *EnvironmentalObjectList, *BackgroundList,
     *PowerUpList, *SuspendedList;
 

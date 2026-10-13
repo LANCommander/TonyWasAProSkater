@@ -13,6 +13,7 @@ extern "C" {
 	#include <libgpu.h>
 	#include <inline_c.h>
 }
+
 #include "game/bit.h"
 #include "game/m3d.h"
 #include "game/trig.h"
@@ -102,14 +103,16 @@ void Bit_Display() {
 				RGBFade = RotCoords.vz * 255 / 700 + 1;
 
 			if (RotCoords.vz < GTEZedLimit) {
-				CentreX = pCurrentViewport->Zoom * RotCoords.vx / RotCoords.vz + pCurrentViewport->xC;
+				CentreX =
+				    pCurrentViewport->Zoom * RotCoords.vx / RotCoords.vz + pCurrentViewport->xC;
 
 				if (CentreX > 1023)
 					CentreX = 1023;
 				else if (CentreX < -1024)
 					CentreX = -1024;
 
-				CentreY = pCurrentViewport->Zoom * RotCoords.vy / RotCoords.vz + pCurrentViewport->yC;
+				CentreY =
+				    pCurrentViewport->Zoom * RotCoords.vy / RotCoords.vz + pCurrentViewport->yC;
 
 				if (CentreY > 1023)
 					CentreY = 1023;

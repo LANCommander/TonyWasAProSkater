@@ -1,5 +1,6 @@
 /* Utils_VblankProcessing__Fv (0x8004777c) */
 #include "names.h"
+
 typedef struct {
 	unsigned tag;
 	unsigned char r0, g0, b0, code;

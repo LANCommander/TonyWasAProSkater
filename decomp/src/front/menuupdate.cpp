@@ -24,7 +24,8 @@ void CMenu::Update() {
 
 	if (Pad[0].MenuUp.Pressed || Pad[0].MenuDown.Pressed || Pad[1].MenuUp.Pressed ||
 	    Pad[1].MenuDown.Pressed) {
-		if (UpDownAutoRepeatTimer == 0 || (UpDownAutoRepeatTimer >= 16 && (UpDownAutoRepeatTimer & 3) == 0)) {
+		if (UpDownAutoRepeatTimer == 0 ||
+		    (UpDownAutoRepeatTimer >= 16 && (UpDownAutoRepeatTimer & 3) == 0)) {
 			if (Pad[0].MenuUp.Pressed || Pad[1].MenuUp.Pressed) {
 				mEntry[mLine].TargetScale = mEntry[mLine].LowScale;
 

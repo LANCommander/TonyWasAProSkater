@@ -1,5 +1,6 @@
 /* arccos__Fi (0x80035dc8) */
 #include "names.h"
+
 typedef struct {
 	int w[85];
 } A;

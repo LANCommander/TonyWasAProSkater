@@ -1,5 +1,6 @@
 /* Redbook_XAAllow__Fb (0x80024004) */
 #include "names.h"
+
 int DAT_800d1694;
 
 void Redbook_XAAllow(int v) {

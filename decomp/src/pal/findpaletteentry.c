@@ -1,5 +1,6 @@
 /* Pal_FindPaletteEntry__FUi (0x8004abf4) */
 #include "names.h"
+
 typedef struct SPalette {
 	char pad[8];
 	unsigned id;

@@ -22,8 +22,8 @@ void VerticalDialog::draw() {
 		else
 			Mess_SetRGB(122, 122, 122, 0);
 
-		Mess_DrawText(list[i].x, list[i].y - (list[i].h >> 1) + list[i].baseline, list[i].string,
-		              0, 0, 256, false);
+		Mess_DrawText(list[i].x, list[i].y - (list[i].h >> 1) + list[i].baseline, list[i].string, 0,
+		              0, 256, false);
 		Mess_SetFontScale(font_scale);
 	}
 }

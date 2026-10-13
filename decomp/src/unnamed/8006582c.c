@@ -1,5 +1,6 @@
 /* FUN_8006582c (0x8006582c) */
 #include "names.h"
+
 typedef struct E {
 	int p;
 	char s[16];
@@ -12,8 +13,8 @@ typedef struct C {
 	E e[8];
 } C;
 
-extern char s_fe[], s_FE[], DAT_800d1dac[], DAT_800d1db0[], s_pre[],
-    s_PRE[], s_File_s_not_found[], s_Not_enough_memory_to_load_s[];
+extern char s_fe[], s_FE[], DAT_800d1dac[], DAT_800d1db0[], s_pre[], s_PRE[], s_File_s_not_found[],
+    s_Not_enough_memory_to_load_s[];
 extern int SpoolerBlocksFileIO;
 
 int FileIO_Open(char *);
@@ -49,8 +50,8 @@ void FUN_8006582c(C *a) {
 		s++;
 		ok = 0;
 
-		if (!FUN_8008f6fc(s, s_fe) || !FUN_8008f6fc(s, s_FE) ||
-		    !FUN_8008f6fc(s, DAT_800d1dac) || !FUN_8008f6fc(s, DAT_800d1db0))
+		if (!FUN_8008f6fc(s, s_fe) || !FUN_8008f6fc(s, s_FE) || !FUN_8008f6fc(s, DAT_800d1dac) ||
+		    !FUN_8008f6fc(s, DAT_800d1db0))
 			ok = 1;
 
 		if (ok)

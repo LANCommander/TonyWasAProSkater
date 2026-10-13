@@ -262,8 +262,7 @@ void CBruce::HandleTricksNew() {
 	if (mAnimDir == -1)
 		m360 = 1;
 	else {
-		if ((m368 & 0x4000) && Group[Trick].Frames &&
-		    mFrame >= mNumFrames - Group[Trick].w5 - 1)
+		if ((m368 & 0x4000) && Group[Trick].Frames && mFrame >= mNumFrames - Group[Trick].w5 - 1)
 			m360 = 1;
 
 		if ((m368 & 0x2000) && mFrame >= mNumFrames - Group[Trick].w5 - 1)

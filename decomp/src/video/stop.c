@@ -1,5 +1,6 @@
 /* Video_Stop__FP6CBruce (0x8006981c) */
 #include "names.h"
+
 typedef struct CBruce CBruce;
 
 typedef struct {

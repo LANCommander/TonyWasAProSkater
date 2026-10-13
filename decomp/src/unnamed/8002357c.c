@@ -1,11 +1,12 @@
 /* FUN_8002357c (0x8002357c) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;
 
-int DAT_800d1650, GameFMV_NumSoundSources, GameFMV_Active, alreadyHandledPause, GameFMV_RewindSwitch, sendVLC,
-    currentVlcBuffer, currentDecodeBuffer;
+int DAT_800d1650, GameFMV_NumSoundSources, GameFMV_Active, alreadyHandledPause,
+    GameFMV_RewindSwitch, sendVLC, currentVlcBuffer, currentDecodeBuffer;
 short decodeSlice_4, decodeSlice_6;
 int vlcBuffer[2];
 

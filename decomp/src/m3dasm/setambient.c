@@ -5,7 +5,6 @@
 
 /* Loads the ambient light colour (three ints: r, g, b) into the GTE background colour
  * registers RBK/GBK/BBK. */
-void M3dAsm_SetAmbient__FPi(int *rgb)
-{
+void M3dAsm_SetAmbient__FPi(int *rgb) {
 	gte_ldbkdir(rgb[0], rgb[1], rgb[2]);
 }

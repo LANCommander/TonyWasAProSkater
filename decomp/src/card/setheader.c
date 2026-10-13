@@ -1,5 +1,6 @@
 /* Card_SetHeader__FP9SCardHeadiPcT2 (0x80014300) */
 #include "names.h"
+
 extern int GSaveAction;
 extern char CARD_GTITLE[];
 extern char CARD_VTITLE[];

@@ -6,7 +6,7 @@
 void *Mem_NewX(unsigned int, int, int);
 
 extern "C" {
-	int FUN_8008c468(int);          /* DrawSync */
+	int FUN_8008c468(int);            /* DrawSync */
 	int FUN_8008c774(RECT *, void *); /* StoreImage */
 }
 

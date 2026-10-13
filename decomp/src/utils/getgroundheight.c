@@ -1,5 +1,6 @@
 /* Utils_GetGroundHeight__FRC7CVectorii (0x800481e8) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

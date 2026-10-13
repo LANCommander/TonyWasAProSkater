@@ -1,5 +1,6 @@
 /* FUN_80017898 (0x80017898) */
 #include "names.h"
+
 extern int DAT_800d1858;
 extern int OT_entry;
 

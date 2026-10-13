@@ -3,8 +3,8 @@
    skater index from DAT_800d2304[Player], a per-player x position, and the stance flag. Lever:
    -fstructure-noalias (the index re-reads come from the separate array expressions). */
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
+	#include <sys/types.h>
+	#include <libgte.h>
 }
 
 #include "game/bruce.h"
@@ -38,8 +38,7 @@ extern "C" CBruce *FUN_8005622c(int Player) {
 		pBruce->mPos.Set(DAT_800d22fc, DAT_800d22f8, 0x1bc000);
 	FUN_8008b238(&pBruce->mRotMatrix);
 
-	if (*Stats[DAT_800d2304[Player]].pBio[4] == 'R' ||
-	    *Stats[DAT_800d2304[Player]].pBio[4] == 'r')
+	if (*Stats[DAT_800d2304[Player]].pBio[4] == 'R' || *Stats[DAT_800d2304[Player]].pBio[4] == 'r')
 		pBruce->mExtraFlags |= 2;
 	pBruce->mpLight = (SLight *)DAT_800be444;
 	return pBruce;

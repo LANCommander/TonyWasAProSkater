@@ -1,5 +1,6 @@
 /* TrickOb_DarkenNode__Fi (0x8004f24c) */
 #include "names.h"
+
 typedef struct Node {
 	int _0;
 	unsigned key;

@@ -25,8 +25,9 @@ void Db_Render() {
 #ifdef PC_PORT
 		if (getenv("THPS_TRACE_CULL")) {
 			extern volatile unsigned pc_heartbeat;
-			fprintf(stderr, "db_render_stall f%u other=%p RenderNow=%d Rendering=%d\n", pc_heartbeat,
-			        (void *)pOtherBuffer, pOtherBuffer->RenderNow, pOtherBuffer->Rendering);
+			fprintf(stderr, "db_render_stall f%u other=%p RenderNow=%d Rendering=%d\n",
+			        pc_heartbeat, (void *)pOtherBuffer, pOtherBuffer->RenderNow,
+			        pOtherBuffer->Rendering);
 		}
 #endif
 		Pause(1);
@@ -37,8 +38,8 @@ void Db_Render() {
 
 	pDoubleBuffer->Clip.tag =
 	    (pDoubleBuffer->Clip.tag & 0xff000000) | (pDoubleBuffer->OT & 0xffffff);
-	pDoubleBuffer->OT = (pDoubleBuffer->OT & 0xff000000) |
-	                                 ((unsigned long)&pDoubleBuffer->Clip & 0xffffff);
+	pDoubleBuffer->OT =
+	    (pDoubleBuffer->OT & 0xff000000) | ((unsigned long)&pDoubleBuffer->Clip & 0xffffff);
 	FUN_80089ddc(&pDoubleBuffer->OT2D, FUN_80048c74());
 
 	pDoubleBuffer->RenderNow = 1;

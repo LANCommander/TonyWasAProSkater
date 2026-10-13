@@ -1,5 +1,6 @@
 /* Ob_AI__FPP5CBody (0x800444bc) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

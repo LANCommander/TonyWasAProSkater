@@ -7,7 +7,6 @@ extern CTape *GTape[5];
 
 int CTape::mOkayToDisplayContinueButton, CTape::mOkayToDisplayTitle;
 
-
 void Mess_SetTextJustify(unsigned char);
 void Mess_SetScale(int);
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);
@@ -58,8 +57,7 @@ void CTape::AI(int tape_no) {
 			if (i == 4) {
 				messages[4] = &mMessageTable[GTape[4]->mTapeNum];
 			} else {
-				STapeMessage *m =
-				    (STapeMessage *)((GTape[i]->mTapeNum << 4) + (int)mMessageTable);
+				STapeMessage *m = (STapeMessage *)((GTape[i]->mTapeNum << 4) + (int)mMessageTable);
 
 				if (m->essential == 1)
 					messages[i] = m;

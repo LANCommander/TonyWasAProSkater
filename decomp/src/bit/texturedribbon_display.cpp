@@ -11,6 +11,7 @@ extern "C" {
 	#include <libgte.h>
 	#include <libgpu.h>
 }
+
 #include "game/bit.h"
 #include "game/m3d.h"
 #include "game/trig.h"
@@ -162,14 +163,13 @@ void CTexturedRibbon::Display() {
 				NewBottomB = ((y - dyB) << 16) | ((x - dxB) & 0xffff);
 
 				if (mWibble && i >= mNumPoints / 2) {
-					NewTop = ((y + dy + rcossin_tbl[(TTime * 200 + 130) & 4095].s / 2048)
-					          << 16) |
+					NewTop = ((y + dy + rcossin_tbl[(TTime * 200 + 130) & 4095].s / 2048) << 16) |
 					         ((x + dx) & 0xffff);
 					y += rcossin_tbl[(TTime * 250) & 4094].s * 3 / 4096;
 					pBuf->Pos = (pBuf->Pos & 0xffff) | (y << 16);
-					NewBottom = ((y - dy + rcossin_tbl[(TTime * 150 + 100) & 4095].s / 2048)
-					             << 16) |
-					            ((x - dx) & 0xffff);
+					NewBottom =
+					    ((y - dy + rcossin_tbl[(TTime * 150 + 100) & 4095].s / 2048) << 16) |
+					    ((x - dx) & 0xffff);
 				}
 
 				pTopPoly = (POLY_GT4 *)pPoly;

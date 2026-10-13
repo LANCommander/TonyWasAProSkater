@@ -1,5 +1,6 @@
 /* FUN_8002e290 (0x8002e290) */
 #include "names.h"
+
 extern char __vt_15CTexturedRibbon[];
 
 void Mem_Delete(int a);

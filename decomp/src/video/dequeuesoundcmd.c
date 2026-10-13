@@ -1,5 +1,6 @@
 /* DequeueSoundCmd__FR13ESoundCmdTypeRi (0x80068e10) */
 #include "names.h"
+
 typedef struct {
 	int type, val;
 } SSoundCmd;

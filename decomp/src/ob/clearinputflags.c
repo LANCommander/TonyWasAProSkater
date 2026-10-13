@@ -1,5 +1,6 @@
 /* Ob_ClearInputFlags__FP5CBody (0x80044484) */
 #include "names.h"
+
 void Ob_ClearInputFlags(char *b) {
 	char *n;
 

@@ -1,5 +1,6 @@
 /* FUN_800506d0 (0x800506d0) flags=-fstructure-noalias */
 #include "names.h"
+
 struct E {
 	char pad[8];
 	char *n8;

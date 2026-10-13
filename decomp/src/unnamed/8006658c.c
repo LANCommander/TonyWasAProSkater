@@ -1,5 +1,6 @@
 /* FUN_8006658c (0x8006658c) */
 #include "names.h"
+
 extern char s_mainf_fnt_800a21c0[];
 
 int DAT_800d2368;

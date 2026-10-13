@@ -1,5 +1,6 @@
 /* GameFMV_StartFMV__Fi (0x80023270) */
 #include "names.h"
+
 typedef struct {
 	char pad[0x18];
 	int p;
@@ -9,13 +10,13 @@ typedef struct {
 extern FE movieDetails[];
 extern int decodeSliceBuffer[];
 
-int GameFMV_Active, GameFMV_IsMovie, currentDecodeBuffer, currentVlcBuffer, sendVLC, alreadyHandledPause,
-    GameFMV_RewindSwitch;
+int GameFMV_Active, GameFMV_IsMovie, currentDecodeBuffer, currentVlcBuffer, sendVLC,
+    alreadyHandledPause, GameFMV_RewindSwitch;
 int vlcBuffer[2];
 int GameFMV_VLCBufferSize, GameFMV_RingBufferSectors, pRingBuffer;
 unsigned char GameFMV_Is24Bit, GameFMV_SliceBuffers;
-unsigned short GameFMV_StartX, GameFMV_StartY, GameFMV_Width, GameFMV_Height, decodeSlice, decodeSlice_2,
-    decodeSlice_4, decodeSlice_6;
+unsigned short GameFMV_StartX, GameFMV_StartY, GameFMV_Width, GameFMV_Height, decodeSlice,
+    decodeSlice_2, decodeSlice_4, decodeSlice_6;
 unsigned char GameFMV_CurrentTrack;
 
 int Mem_NewX(int, int, int);

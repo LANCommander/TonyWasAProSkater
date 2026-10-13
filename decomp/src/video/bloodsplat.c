@@ -1,5 +1,6 @@
 /* Video_BloodSplat__FP6CBruceii (0x80068ee8) */
 #include "names.h"
+
 typedef struct CBruce CBruce;
 
 typedef struct {

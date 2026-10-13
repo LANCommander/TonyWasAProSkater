@@ -1,5 +1,6 @@
 /* Utils_CalcAim__FR8CSVectorRC7CVectorT1 (0x80047ddc) */
 #include "names.h"
+
 typedef struct {
 	short x, y, z;
 } SV;

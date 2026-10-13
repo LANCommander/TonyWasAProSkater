@@ -1,5 +1,6 @@
 /* FUN_8005de08 (0x8005de08) */
 #include "names.h"
+
 extern int DAT_800bf0f4[];
 extern int DAT_800bf100[];
 extern char DAT_800bf104[];

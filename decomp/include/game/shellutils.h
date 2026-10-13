@@ -18,9 +18,9 @@
 #pragma interface /* see class.h */
 
 extern "C" {
-#include <sys/types.h>
-#include <libgte.h>
-#include <libgpu.h>
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
 }
 
 #include "game/types.h"
@@ -42,20 +42,22 @@ class SlicedImage : public CClass {
 	int m_removed_from_memory; /* 0x30 */
 	/* sizeof(SlicedImage) == 0x34 */
 
-	SlicedImage(char *pPixels, int w, int h, int sw, int sh, int depth, ushort clutid); /* 0x80061ef4 */
-	virtual ~SlicedImage();                                     /* slot 0: 0x800620f0 */
-	int pack();                                                 /* 0x800621c0 */
-	void packAt(int x, int y);                                  /* 0x800627ec (FUN_; THPS1-only) */
-	void unpack();                                              /* 0x80062d00 */
-	void removeFromMemory();                                    /* 0x80062de8 */
-	void draw(int x, int y, int otFront, int r, int g, int b, int semiTrans, int drawNow); /* 0x80062e20 */
+	SlicedImage(char *pPixels, int w, int h, int sw, int sh, int depth,
+	            ushort clutid); /* 0x80061ef4 */
+	virtual ~SlicedImage();     /* slot 0: 0x800620f0 */
+	int pack();                 /* 0x800621c0 */
+	void packAt(int x, int y);  /* 0x800627ec (FUN_; THPS1-only) */
+	void unpack();              /* 0x80062d00 */
+	void removeFromMemory();    /* 0x80062de8 */
+	void draw(int x, int y, int otFront, int r, int g, int b, int semiTrans,
+	          int drawNow); /* 0x80062e20 */
 #ifdef PC_PORT
 	/* draw, scaled to w x h pixels (the size a Sprite is laid out at; platform/pc) */
 	void drawScaled(int x, int y, int w, int h, int otFront, int r, int g, int b, int semiTrans,
 	                int drawNow);
 #endif
-	void rotateDraw(int x, int y);                              /* 0x80063474 */
-	void removeBlack();                                         /* 0x800637d0 */
+	void rotateDraw(int x, int y); /* 0x80063474 */
+	void removeBlack();            /* 0x800637d0 */
 };
 
 class Sprite : public CClass {
@@ -67,15 +69,15 @@ class Sprite : public CClass {
 	SlicedImage *m_image; /* 0x14 */
 	/* sizeof(Sprite) == 0x18 */
 
-	Sprite(char *pName, int packed, int maxw, int maxh);                  /* 0x80063830 */
-	Sprite(int x, int y, int w, int h, int packed, int maxw, int maxh);   /* 0x80063928 */
-	virtual ~Sprite();                                                    /* slot 0: 0x80063b64 */
-	void draw(int x, int y, int otFront, int r, int g, int b);            /* 0x80063be4 */
-	void prepare();          /* 0x80063c48 (FUN_; name from front/boardselect*: FUN_80063290(m_image)) */
-	void drawFaded(int x, int y, int otFront, int r, int g, int b);       /* 0x80063c6c */
-	void pack();                                                          /* 0x80063cb4 */
-	void unpack();                                                        /* 0x80063cec */
-	void removeFromMemory();                                              /* 0x80063d24 */
+	Sprite(char *pName, int packed, int maxw, int maxh);                /* 0x80063830 */
+	Sprite(int x, int y, int w, int h, int packed, int maxw, int maxh); /* 0x80063928 */
+	virtual ~Sprite();                                                  /* slot 0: 0x80063b64 */
+	void draw(int x, int y, int otFront, int r, int g, int b);          /* 0x80063be4 */
+	void prepare(); /* 0x80063c48 (FUN_; name from front/boardselect*: FUN_80063290(m_image)) */
+	void drawFaded(int x, int y, int otFront, int r, int g, int b); /* 0x80063c6c */
+	void pack();                                                    /* 0x80063cb4 */
+	void unpack();                                                  /* 0x80063cec */
+	void removeFromMemory();                                        /* 0x80063d24 */
 };
 
 class EraseSprite : public CClass {
@@ -121,40 +123,40 @@ struct VerticalMenuItem {
 
 class VerticalMenu : public CClass {
   public:
-	int item_spacing;           /* 0x004 */
-	int font_scale;             /* 0x008 */
-	int font_scale_big;         /* 0x00c */
-	int num_items;              /* 0x010 */
-	int old_selected;           /* 0x014 */
-	int selected;               /* 0x018 */
-	VerticalMenuItem list[12];  /* 0x01c */
-	int tick;                   /* 0x31c */
-	Sprite *mTri1;              /* 0x320 */
-	Sprite *mTri2;              /* 0x324 */
-	Sprite *mEraseTri1;         /* 0x328 */
-	Sprite *mEraseTri2;         /* 0x32c */
-	int mDontDeleteSprites;     /* 0x330 */
+	int item_spacing;          /* 0x004 */
+	int font_scale;            /* 0x008 */
+	int font_scale_big;        /* 0x00c */
+	int num_items;             /* 0x010 */
+	int old_selected;          /* 0x014 */
+	int selected;              /* 0x018 */
+	VerticalMenuItem list[12]; /* 0x01c */
+	int tick;                  /* 0x31c */
+	Sprite *mTri1;             /* 0x320 */
+	Sprite *mTri2;             /* 0x324 */
+	Sprite *mEraseTri1;        /* 0x328 */
+	Sprite *mEraseTri2;        /* 0x32c */
+	int mDontDeleteSprites;    /* 0x330 */
 	/* sizeof(VerticalMenu) == 0x334 */
 
 	VerticalMenu(int top, int bottom, int spacing, char **items, int num, int *xlist, int *ylist,
-	             int selection);            /* 0x800642e8 */
-	void setString(int i, char *pString);   /* 0x800646b0 */
-	virtual ~VerticalMenu();                /* slot 0: 0x80064720 */
-	virtual void draw();                    /* slot 1: 0x80064990 */
-	void erase();                           /* 0x80064f9c */
-	void select(int i);                     /* 0x80065120 */
-	int getSelected();                      /* 0x8006516c */
-	void up();                              /* 0x80065178 */
-	void down();                            /* 0x80065230 */
+	             int selection);          /* 0x800642e8 */
+	void setString(int i, char *pString); /* 0x800646b0 */
+	virtual ~VerticalMenu();              /* slot 0: 0x80064720 */
+	virtual void draw();                  /* slot 1: 0x80064990 */
+	void erase();                         /* 0x80064f9c */
+	void select(int i);                   /* 0x80065120 */
+	int getSelected();                    /* 0x8006516c */
+	void up();                            /* 0x80065178 */
+	void down();                          /* 0x80065230 */
 };
 
 class VerticalDialog : public VerticalMenu {
   public:
 	/* sizeof(VerticalDialog) == 0x334 */
 	VerticalDialog(int top, int bottom, int spacing, char **items, int num, int *xlist, int *ylist,
-	               int selection);          /* 0x800652e4 (FUN_; C source) */
-	virtual ~VerticalDialog();              /* slot 0: 0x80065340 */
-	virtual void draw();                    /* slot 1: 0x80065394 */
+	               int selection); /* 0x800652e4 (FUN_; C source) */
+	virtual ~VerticalDialog();     /* slot 0: 0x80065340 */
+	virtual void draw();           /* slot 1: 0x80065394 */
 };
 
 /* one file of a FileLoader set (THPS1-only, no demo twin; names from fileloader_setfiles) */

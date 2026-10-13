@@ -1,5 +1,6 @@
 /* FUN_800343f0 (0x800343f0) */
 #include "names.h"
+
 typedef struct {
 	int x, y, z;
 } V;

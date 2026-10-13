@@ -1,5 +1,6 @@
 /* Video_Record__FP6CBruce (0x8006a118) */
 #include "names.h"
+
 typedef struct CBruce CBruce;
 
 extern int GState;

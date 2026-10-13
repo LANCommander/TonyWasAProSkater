@@ -33,7 +33,8 @@ void CBruce::DoShadowCheck() {
 	M3dColij_InitLineInfo(&line_info);
 	M3dZone_LineToItem(&line_info, 1);
 
-	if (line_info.pItem && line_info.Normal.vy < -1900 && mPhysicsState != 4 && mPhysicsState != 8) {
+	if (line_info.pItem && line_info.Normal.vy < -1900 && mPhysicsState != 4 &&
+	    mPhysicsState != 8) {
 		{
 			int _x = line_info.Position.vx;
 			int _y = line_info.Position.vy;
@@ -56,7 +57,8 @@ void CBruce::DoShadowCheck() {
 
 		if (GNumberOfPlayers == 1) {
 			mShadowLights = 1;
-			mpShadowRGB->r = mpShadowRGB->g = mpShadowRGB->b = ((4300 - line_info.Distance) << 7) / 4000;
+			mpShadowRGB->r = mpShadowRGB->g = mpShadowRGB->b =
+			    ((4300 - line_info.Distance) << 7) / 4000;
 		}
 	} else {
 		mShadowLights = 0;

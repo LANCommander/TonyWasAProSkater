@@ -1,5 +1,6 @@
 /* FUN_800448b8 (0x800448b8) */
 #include "names.h"
+
 extern int HashTable[];
 
 int *CommandPoints;

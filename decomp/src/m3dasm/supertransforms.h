@@ -15,8 +15,7 @@
  * GTE state left behind: V0 = the shifted translation, V1/V2 = columns 1 and 2 of Rc, IR/MAC from
  * the translation product, and the rotation, translation and light registers above. */
 static __inline__ void m3d_set_super_transforms(MATRIX *a, MATRIX *b, struct SMatrix *c,
-                                                int tshift)
-{
+                                                int tshift) {
 	short prod[3][3];
 	int col;
 

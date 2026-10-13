@@ -1,5 +1,6 @@
 /* Flash_Reset__Fv (0x8001f310) */
 #include "names.h"
+
 int FlashCountdown;
 int FadeCountdown;
 int Fading;
