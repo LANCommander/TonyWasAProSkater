@@ -141,7 +141,7 @@ slot; a few PS1 tones have no entry and stay silent). Compared with the PS1 VABs
 - **Pitch**: the DC sample count over the PS1's, times the PS1 tone's playback rate at note 60
   (from its centre note/fine tune), over the KAT rate, is 0.94-0.95 for nearly every sound across
   banks, rates (8000/11025/22050) and centre notes: the PS1 plays them one semitone below the
-  KAT rate. The port plays them at `rate * 2^(-1/12)` (`PC_SPU_PCM_TUNE`), so they sound as on
+  KAT rate. The port plays them at `rate * 2^(-1/12)` (`PCM_TUNE` in `pc_sound.c`), so they sound as on
   the PS1 (outliers are the sounds the DC re-cut).
 - **Loudness**: median RMS ratio DC/PS1 0.96: mixed at unity.
 - **Tone attributes**: `playSFX` only reads centre/fine, ADSR and the sample index from the VAB.
@@ -149,8 +149,8 @@ slot; a few PS1 tones have no entry and stay silent). Compared with the PS1 VABs
 `src/pc_dcsound.c` builds a VAB from the `.kat` when the game asks for the `.vab`: centre note
 60, the PS1 banks' usual ADSR (looped `a9ff/5fcc`, one-shots `80ff/1fc0`), and per sound a
 32-byte stand-in sample (`DCPC` + id in a near-silent ADPCM block, then an end block). The
-samples go to the SPU's PCM registry (`PC_SpuPcmAdd`, once per bank); a voice keyed on at a
-stand-in plays the PCM with the voice's pitch, volume and envelope, and zeroes its envelope at
+samples go to the sound's PCM registry (`PC_SoundPcmAdd`, once per bank); a channel keyed on at a
+stand-in plays the PCM with the channel's pitch, volume and envelope, and zeroes its envelope at
 the end like an ADPCM one-shot (the voice-freeing rule). Verified: every key-on in a
 front-end-to-gameplay run hits a PCM sample.
 

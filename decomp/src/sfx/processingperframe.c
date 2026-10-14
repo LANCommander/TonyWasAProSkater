@@ -1,5 +1,8 @@
 /* SFX_ProcessingPerFrame__Fv (0x8004bf30) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 
 int keyon_queue, keyoff_queue, reverb_queue;
 unsigned char reverb_changed;
@@ -17,19 +20,32 @@ void SFX_ProcessingPerFrame(void) {
 	voicefree_flag = 0;
 
 	if (keyon_queue) {
+#ifdef PC_PORT
+		PC_SoundKeyOn(keyon_queue);
+#else
 		FUN_800947e4(1, keyon_queue);
+#endif
 
 		keyon_queue = 0;
 	}
 
 	if (keyoff_queue) {
+#ifdef PC_PORT
+		PC_SoundKeyOff(keyoff_queue);
+#else
 		FUN_800947e4(0, keyoff_queue);
+#endif
 
 		keyoff_queue = 0;
 	}
 
 	if (reverb_changed) {
+#ifdef PC_PORT
+		PC_SoundReverbChannels(0, 0xffffff);
+		PC_SoundReverbChannels(1, reverb_queue);
+#else
 		FUN_80094c74(8, reverb_queue);
+#endif
 
 		reverb_changed = 0;
 	}
@@ -43,7 +59,11 @@ void SFX_ProcessingPerFrame(void) {
 		if (loop_flag & m)
 			continue;
 
+#ifdef PC_PORT
+		st[0] = (short)PC_SoundChannelLevel(i);
+#else
 		FUN_800947c4(i, st);
+#endif
 
 		if (voiceon_flag & m) {
 			if (st[0])

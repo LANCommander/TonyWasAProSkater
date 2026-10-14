@@ -1,4 +1,7 @@
 /* SFX_SetVoicePitch__FUiUs (0x8004b5d0) */
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 typedef struct {
 	short left, right;
 } VOL;
@@ -37,9 +40,13 @@ void SFX_SetVoicePitch(unsigned m, unsigned short p) {
 
 	for (i = 0; i < 24; i++) {
 		if (m & (1 << i)) {
+#ifdef PC_PORT
+			PC_SoundChannelPitch(i, p);
+#else
 			a.mask = 16;
 			a.pitch = p;
 			SpuNSetVoiceAttr(i, &a);
+#endif
 		}
 	}
 }

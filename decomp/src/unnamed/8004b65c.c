@@ -1,5 +1,8 @@
 /* SFX_ModifyPos__FUiRC7CVectori (0x8004b65c) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 
 typedef struct {
 	int id;
@@ -71,7 +74,14 @@ void SFX_ModifyPos(unsigned a, void *pos, int b) {
 					s.v = y;
 				}
 
+#ifdef PC_PORT
+				PC_SoundChannelVolume(i, s.l, s.r);
+
+				if (s.cmd & 16)
+					PC_SoundChannelPitch(i, (unsigned short)s.v);
+#else
 				SpuNSetVoiceAttr(i, &s);
+#endif
 			}
 
 			tab += 1;

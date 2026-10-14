@@ -1,4 +1,7 @@
 /* SFX_SetReverbDepth__FUcUc (0x8004bb1c) */
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 typedef struct {
 	short left, right;
 } VOL;
@@ -19,5 +22,9 @@ void SFX_SetReverbDepth(unsigned char l, unsigned char r) {
 	a.mask = 6;
 	a.depth.left = l << 8;
 	a.depth.right = r << 8;
+#ifdef PC_PORT
+	PC_SoundReverbDepth(a.depth.left, a.depth.right);
+#else
 	FUN_80093914(&a);
+#endif
 }

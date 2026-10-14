@@ -84,7 +84,7 @@ int PC_BmpLayoutSize(const void *bmp, int *lw, int *lh) {
 
 /* A silent sound bank (VAB): 32 programs of 16 tones at volume 0, one empty sample. Header,
  * 128 program entries, 16 tone entries per program, 256 sample sizes (in 8-byte units), samples:
- * the game keeps the first three parts and sends the samples to the SPU (FUN_8004b188). */
+ * the game keeps the first three parts and loads the samples as a bank (FUN_8004b188, pc_sound.h). */
 static void SilentVab(void) {
     enum { PROGS = 32, TONES = 16, HEAD = 2592 + PROGS * 512, SAMPLE = 32 };
     uint8_t *v = calloc(1, HEAD + SAMPLE);

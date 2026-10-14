@@ -1,4 +1,7 @@
 /* SFX_SetReverbType__FUc (0x8004ba7c) */
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 typedef struct {
 	short left, right;
 } VOL;
@@ -23,6 +26,15 @@ void SFX_SetReverbType(unsigned char t) {
 	a.mask = 1;
 	a.mode = t;
 
+#ifdef PC_PORT
+	/* PC: the native reverb (pc_sound.h); its depth is set when the timer runs out */
+	if (!PC_SoundReverbMode(t))
+		return;
+
+	SFX_ReverbDepthSetTimer = t ? 0xf0 : 0;
+	PC_SoundReverbChannels(t != 0, 0xffffff);
+	return;
+#endif
 	if (FUN_80093914(&a) == -1)
 		return;
 

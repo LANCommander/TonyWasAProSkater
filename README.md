@@ -14,7 +14,7 @@ This repository contains **no game code or data from the original game**: to bui
 - **Open source**: This port contains no copyrighted code or assets and is MIT licensed.
 - **Cross-platform**: For the first time, play THPS natively on Windows or Linux.
 
-Known gaps: SPU reverb, exact ADSR curves, a 64-bit build. See [platform/pc/README.md](platform/pc/README.md#status).
+Known gaps: the PS1's exact reverb (the port's own is an approximation), a 64-bit build. See [platform/pc/README.md](platform/pc/README.md#status).
 
 ## Playing
 
@@ -98,7 +98,7 @@ enough.
 | path | what |
 |---|---|
 | `decomp/` | the matching decompilation: `src/` (one file per function or class, with its symbols), `data/` (the initialised globals, one file per module), `include/game/` (class and struct layouts), `functions.tsv` (every function in the retail game code), `matched.tsv` and `reimpl.tsv` (what is byte-exact, what is rewritten for the port), the matching toolchain in `tools/`. See [decomp/README.md](decomp/README.md) |
-| `platform/pc/` | the Windows and Linux port: runtime, reimplemented Sony libraries, GPU/SPU/MDEC, renderers, build scripts, tests. See [platform/pc/README.md](platform/pc/README.md) |
+| `platform/pc/` | the Windows and Linux port: runtime, reimplemented Sony libraries (GPU, GTE, MDEC), sound, renderers, build scripts, tests. See [platform/pc/README.md](platform/pc/README.md) |
 | `tools/` | analysis: the Psy-Q `.SYM` parser, the demo-to-retail function matcher, disc and file format tools |
 | `docs/` | write-ups: how the work was scoped, the Dreamcast data |
 | `scripts/`, `ghidra_scripts/` | Ghidra project setup and symbol import |

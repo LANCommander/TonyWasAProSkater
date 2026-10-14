@@ -1,4 +1,7 @@
 /* SFX_GetVoicePitch__FUi (0x8004b590) */
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 typedef struct {
 	short left, right;
 } VOL;
@@ -32,8 +35,17 @@ int SFX_GetVoicePitch(unsigned v) {
 		return 1000;
 
 	if (v) {
+#ifdef PC_PORT
+		int i = 0;
+
+		while (!(v >> i & 1))
+			i++;
+
+		return PC_SoundChannelGetPitch(i);
+#else
 		a.voice = v;
 		FUN_80094f70(&a);
 		return a.pitch;
+#endif
 	}
 }

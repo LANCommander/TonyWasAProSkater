@@ -65,7 +65,7 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 |---|---|
 | `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `inline_c.h`, `sys/types.h`) |
 | `include/pc_*.h` | interfaces between the port's subsystems |
-| `src/` | runtime: boot, memory map, frame clock, input, video, saves, streams, and the remaining HLE libraries (GPU, GTE, SPU, MDEC) |
+| `src/` | runtime: boot, memory map, frame clock, input, video, saves, streams, and the remaining HLE libraries (GPU, GTE, MDEC) |
 | `include/pc_platform.h`, `src/pc_platform.c` | what differs between Windows and Linux: paths, folders, files, clock |
 | `tools/` | build driver and code generators (`toolchain.py`: the host's compiler and object format) |
 
@@ -195,7 +195,7 @@ movies play (`src/pc_movie.c`: pl_mpeg decodes the 320x240 video into the 24-bit
 timed to the audio; any button skips, as on the PS1); the songs' 96x64 thumbnail video is not
 shown. Its sound banks (`.kat`: the same sounds as 8/16-bit PCM at 22 kHz instead of 4-bit ADPCM
 at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.c`): each sound is a PCM sample
-the SPU plays in place of a stand-in in sound RAM, tuned to the PS1 banks' pitch. The Dreamcast
+played in place of a stand-in in the bank's sample data, tuned to the PS1 banks' pitch. The Dreamcast
 logos (Crave, Treyarch, Sofdec) are not played. Needs the OpenGL renderer.
 
 ## Checking C against the retail code
@@ -392,7 +392,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log VRAM transfers and drawing-environment changes / polygon counts per frame |
 | `THPS_TRACE_PSX`, `THPS_TRACE_CULL`, `THPS_TRACE_RENDER` | spooler, frustum-culling and renderer traces |
 | `THPS_AUDIO=0` / `THPS_AUDIO_DUMP=file` | no sound device / also write the mixed output as raw s16le stereo 44.1 kHz |
-| `THPS_TRACE_SPU=1` | log SPU key on/off per voice |
+| `THPS_TRACE_SOUND=1` | log sound channel key on/off, bank loads and reverb modes (with `THPS_TRACE=1`) |
 
 Crash logs and the 5-second hang watchdog print native backtraces;
 `python platform/pc/tools/symbolize.py < log` turns them into function/file:line.
@@ -402,9 +402,10 @@ than they really take (harmless on MIPS, where the value stays in its register; 
 ## Status
 
 Boots through the front end (menus, skater/board/level select with 3D models) into a level, and
-the game plays with full 3D rendering. Sound effects and music play: `src/pc_spu.c` models the
-SPU (sound RAM, 24 ADPCM voices, ADSR, master volume, CD audio input) and mixes it to an SDL audio
-device. The songs are XA audio inside the soundtrack STR files; `src/pc_stream.c` streams them
+the game plays with full 3D rendering. Sound effects and music play: `src/pc_sound.c` decodes the sound
+banks to PCM, plays them on 24 channels with the PS1's ADSR envelopes and gains, adds a reverb in
+the PS1 modes' spirit (Freeverb-style rooms and halls, feedback echoes: not the SPU's algorithm)
+and the music, and mixes it to an SDL audio device. The songs are XA audio inside the soundtrack STR files; `src/pc_stream.c` streams them
 from the extracted files at the rate the drive read them (150 sectors a second) and `src/pc_xa.c`
 decodes them. `src/pc_music.c` picks the next song from
 `Data/Music/Playlist.m3u` instead of the game's fixed rotation. With the Dreamcast's data the
@@ -413,8 +414,8 @@ movies play through the game's own movie player (`GameFMV_PlayMovie`): `src/pc_m
 MDEC (the game decodes the bitstream itself, `DecDCTvlc3`; this does the inverse DCT and colour
 conversion into the slices the game uploads), and the player's busy-waits wait a frame for the
 stream instead (PC branch, `PC_MovieWait`). The same decoder shows the songs' 96x64 video on
-the levels' TV screens (the credits screen shows them the same way). Not done yet: SPU reverb,
-exact ADSR curves, 64-bit build. Running every game function as translated MIPS
+the levels' TV screens (the credits screen shows them the same way). Not done yet: the PS1's exact
+reverb, 64-bit build. Running every game function as translated MIPS
 (`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase (the translation
 also loses level polygons in `THPS_RENDER3D=psx` mode, which the C renderer doesn't).
 

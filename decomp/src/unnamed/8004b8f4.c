@@ -2,6 +2,7 @@
 #include "names.h"
 #ifdef PC_PORT
 #include "pc_stream.h"
+#include "pc_sound.h"
 #endif
 
 struct S {
@@ -31,8 +32,13 @@ void SFX_Pause(void) {
 		s.f = 0;
 
 		for (; i < 24; i++) {
+#ifdef PC_PORT
+			*q = (unsigned short)PC_SoundChannelGetPitch(i);
+			PC_SoundChannelPitch(i, 0);
+#else
 			FUN_80094424(i, q);
 			SpuNSetVoiceAttr(i, &s);
+#endif
 
 			q++;
 		}

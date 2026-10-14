@@ -8,7 +8,7 @@
  *
  * The VAB made from it has the PS1 layout the game reads (FUN_8004b188, playSFX): header,
  * 128 program entries, 16 tone entries of 32 bytes per program, 256 sample sizes, the samples.
- * Each entry's tone plays its PCM stand-in (pc_spu.h); the tone's centre note is 60, so the
+ * Each entry's tone plays its PCM stand-in (pc_sound.h); the tone's centre note is 60, so the
  * game's note 60 plays the sample at its own (tuned) rate, and its ADSR is the one the PS1 banks
  * use for that kind of sound: looped ones fade in and out, one-shots start and stop at once. */
 #include <stdio.h>
@@ -19,7 +19,7 @@
 #include "pc_dcsound.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
-#include "pc_spu.h"
+#include "pc_sound.h"
 
 #define KAT_ENTRY 44
 #define VAB_PROGS_MAX 128
@@ -97,7 +97,7 @@ static Bank *LoadBank(const char *kat) {
         for (j = 0; j < frames; j++)
             pcm[j] = bits == 8 ? (int16_t)((int8_t)d[off + j] * 256)
                                : (int16_t)(d[off + 2 * j] | d[off + 2 * j + 1] << 8);
-        pid = PC_SpuPcmAdd(pcm, frames, (int)rate, loop != 0, ls / bps, le / bps);
+        pid = PC_SoundPcmAdd(pcm, frames, (int)rate, loop != 0, ls / bps, le / bps);
         free(pcm);
         if (pid < 0) {
             PC_Log("%s: too many samples", kat);
@@ -138,7 +138,7 @@ uint8_t *PC_DcSoundVab(const char *vab, int *outSize) {
     if (!progs)
         progs = 1;
     head = VAB_HEAD(progs);
-    size = head + vags * PC_SPU_PCM_STUB;
+    size = head + vags * PC_SOUND_PCM_STUB;
     v = calloc(1, (size_t)size);
     memcpy(v, "pBAV", 4);
     v[4] = 7;                                       /* version */
@@ -169,9 +169,9 @@ uint8_t *PC_DcSoundVab(const char *vab, int *outSize) {
             *(int16_t *)(ta + 20) = (int16_t)prog;
             *(int16_t *)(ta + 22) = 1;
             if (pid >= 0) {
-                PC_SpuPcmStub(pid, v + head + ++vags * PC_SPU_PCM_STUB - PC_SPU_PCM_STUB);
+                PC_SoundPcmStub(pid, v + head + ++vags * PC_SOUND_PCM_STUB - PC_SOUND_PCM_STUB);
                 *(int16_t *)(ta + 22) = (int16_t)vags;
-                looped = PC_SpuPcmLooped(pid);
+                looped = PC_SoundPcmLooped(pid);
             }
             *(uint16_t *)(ta + 16) = looped ? ADSR1_LOOP : ADSR1_ONESHOT;
             *(uint16_t *)(ta + 18) = looped ? ADSR2_LOOP : ADSR2_ONESHOT;
@@ -179,7 +179,7 @@ uint8_t *PC_DcSoundVab(const char *vab, int *outSize) {
     }
     /* sample sizes in 8-byte units; entry 0 is not a sample */
     for (t = 1; t <= vags; t++)
-        *(uint16_t *)(v + 0x820 + progs * 512 + t * 2) = PC_SPU_PCM_STUB >> 3;
+        *(uint16_t *)(v + 0x820 + progs * 512 + t * 2) = PC_SOUND_PCM_STUB >> 3;
     *outSize = size;
     return v;
 }

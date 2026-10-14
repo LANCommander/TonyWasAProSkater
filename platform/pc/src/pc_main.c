@@ -29,7 +29,7 @@
 #include "pc_recomp.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
-#include "pc_spu.h"
+#include "pc_sound.h"
 
 #define EXE_GAME_MAIN 0x80026d44u
 #define EXE_GP 0x800d1080u
@@ -1101,7 +1101,7 @@ static void PlatformInit(void) {
         PC_Log("note: the Dreamcast models and textures need the native 3D renderer (not "
                "THPS_RENDER3D=psx): they will look wrong");
     PC_InputInit();
-    PC_SpuInit();
+    PC_SoundInit();
 }
 
 /* ---- entry ---------------------------------------------------------------------------------- */

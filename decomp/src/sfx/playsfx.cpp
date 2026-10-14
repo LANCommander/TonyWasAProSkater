@@ -1,4 +1,7 @@
 /* playSFX__FUiUcssi (0x8004bb74) */
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
@@ -169,8 +172,13 @@ int playSFX(uint sfx, uchar pitch, short vl, short vr, int pitch_offset) {
 								attr.voice = 1 << v;
 								attr.volume.left = vl;
 								attr.volume.right = vr;
+#ifdef PC_PORT
+								attr.pitch =
+								    PC_SoundNotePitch(pitch, 0, p_vagatr->center, p_vagatr->shift);
+#else
 								attr.pitch =
 								    SsPitchFromNote(pitch, 0, p_vagatr->center, p_vagatr->shift);
+#endif
 								SFXFalloffArray[v] = attr.pitch;
 
 								{
@@ -188,7 +196,12 @@ int playSFX(uint sfx, uchar pitch, short vl, short vr, int pitch_offset) {
 
 								attr.adsr1 = p_vagatr->adsr1;
 								attr.adsr2 = p_vagatr->adsr2;
+#ifdef PC_PORT
+								PC_SoundChannelSet(v, attr.addr, attr.pitch, attr.volume.left,
+								                   attr.volume.right, attr.adsr1, attr.adsr2);
+#else
 								SpuNSetVoiceAttr(v, &attr);
+#endif
 
 								if (looping)
 									loop_flag |= 1 << v;

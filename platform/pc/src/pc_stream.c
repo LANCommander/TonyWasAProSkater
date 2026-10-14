@@ -18,7 +18,7 @@
 #include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_sfd.h"
-#include "pc_spu.h"
+#include "pc_sound.h"
 #include "pc_stream.h"
 #include "pc_xa.h"
 
@@ -244,7 +244,7 @@ void PC_StreamPlay(int id) {
     s_reading = 1;
     s_paused = 0;
     s_owed = 0;
-    s_heardFrom = PC_SpuCdConsumed() + PC_SpuCdQueued();
+    s_heardFrom = PC_SoundMusicConsumed() + PC_SoundMusicQueued();
     s_filmRate = 0;
     PC_Trace("stream %d plays from the start", id);
 }
@@ -271,9 +271,9 @@ void PC_StreamResume(void) {
     s_owed = 0;
 }
 
-void PC_StreamMix(const uint8_t levels[4]) { PC_SpuCdSetMix(levels); }
+void PC_StreamMix(const uint8_t levels[4]) { PC_SoundMusicMix(levels); }
 
-void PC_StreamMute(int mute) { PC_SpuCdMute(mute); }
+void PC_StreamMute(int mute) { PC_SoundMusicMute(mute); }
 
 int PC_StreamBusy(void) {
     if (s_reading && !s_paused)
@@ -285,7 +285,7 @@ int PC_StreamBusy(void) {
 }
 
 double PC_StreamFilmTime(void) {
-    uint64_t now = PC_SpuCdConsumed();
+    uint64_t now = PC_SoundMusicConsumed();
     if (!s_sfd || !s_filmRate || now < s_heardFrom)
         return 0.0;
     return (double)(now - s_heardFrom) / s_filmRate;
@@ -293,7 +293,7 @@ double PC_StreamFilmTime(void) {
 
 static void FilmAudio(void) {
     static int16_t pcm[FILM_CHUNK * 2];
-    while (PC_SpuCdQueued() < FILM_AHEAD) {
+    while (PC_SoundMusicQueued() < FILM_AHEAD) {
         int rate, n = PC_SfdAudio(s_sfd, pcm, FILM_CHUNK, &rate);
         if (!n) {
             PC_Trace("stream %d: end of the film's audio", s_id);
@@ -302,7 +302,7 @@ static void FilmAudio(void) {
             return;
         }
         s_filmRate = rate;
-        PC_SpuCdQueue(pcm, n, rate);
+        PC_SoundMusicQueue(pcm, n, rate);
     }
 }
 
@@ -328,7 +328,7 @@ void PC_StreamFrame(void) {
         if (raw[18] & 0x04) { /* submode: audio */
             int rate, n = PC_XaDecodeSector(raw, pcm, &rate);
             if (n)
-                PC_SpuCdQueue(pcm, n, rate);
+                PC_SoundMusicQueue(pcm, n, rate);
         } else {
             VideoChunk(raw + 24);
         }

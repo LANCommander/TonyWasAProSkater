@@ -1,5 +1,8 @@
 /* SFX_ModifyVol__FUiii (0x8004b7cc) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 
 typedef struct {
 	int a, b;
@@ -43,7 +46,11 @@ void SFX_ModifyVol(unsigned mask, int a, int b) {
 				s.b = 3;
 				s.c = a;
 				s.d = b;
+#ifdef PC_PORT
+				PC_SoundChannelVolume(i, s.c, s.d);
+#else
 				SpuNSetVoiceAttr(i, &s);
+#endif
 			}
 		}
 	}

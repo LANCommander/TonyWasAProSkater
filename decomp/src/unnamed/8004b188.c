@@ -1,5 +1,8 @@
 /* FUN_8004b188 (0x8004b188) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 
 /* Loads a VAB sound bank: reads the file, sends the sample body (after the header and the
    512-byte-per-program tables) to SPU memory, then shrinks the buffer to the header. The SPU
@@ -30,10 +33,14 @@ int FUN_8004b188(char *name, SVabHead **out) {
 
 	head = (vab->NumProgs << 9) + 2592;
 	body = (vab->Size - head + 63) & ~63;
+#ifdef PC_PORT
+	addr = PC_SoundBankLoad((char *)vab + head, body);
+#else
 	addr = FUN_800949a4(body);
 	FUN_800938b4(addr);
 	FUN_80093df4((char *)vab + head, body);
 	FUN_80094d94(1);
+#endif
 
 	vab->Size = addr;
 	Mem_Shrink(vab, head);

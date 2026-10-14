@@ -1,4 +1,7 @@
 /* FUN_8004ba34 (0x8004ba34) */
+#ifdef PC_PORT
+#include "pc_sound.h"
+#endif
 int nko_flag;
 int keyon_queue;
 int keyoff_queue;
@@ -11,7 +14,11 @@ char reverb_changed;
 void FUN_800947e4(int a, int b);
 
 void FUN_8004ba34(void) {
+#ifdef PC_PORT
+	PC_SoundKeyOff(0xffffffff);
+#else
 	FUN_800947e4(0, -1);
+#endif
 
 	nko_flag = 0;
 	keyon_queue = 0;
