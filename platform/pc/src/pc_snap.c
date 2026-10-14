@@ -9,7 +9,19 @@
  * takes `count` snapshots (default 4) of each function, one every `every` calls (default 1).
  * A snapshot is the RAM the game uses, the scratchpad, the GTE registers, the first 12 argument
  * words and the native stack above them (decompiled callers pass pointers to their locals),
- * written to <dir>/<addr>_<n>.snp (read by tests/test_asm.c). The function then runs as usual. */
+ * written to <dir>/<addr>_<n>.snp (read by tests/test_asm.c). The function then runs as usual.
+ * Translated retail code keeps state the port's C has no copy of (MIPS and GTE registers), so this
+ * is in build.py --mips builds only (PC_MIPS). */
+#ifndef PC_MIPS
+#include <stdlib.h>
+
+#include "pc_runtime.h"
+
+void PC_SnapInstall(void) {
+    if (getenv("THPS_SNAP"))
+        PC_Log("THPS_SNAP: snapshots need a build.py --mips build");
+}
+#else
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -175,3 +187,5 @@ void PC_SnapInstall(void) {
 #endif
     PC_Log("THPS_SNAP: %d functions hooked, snapshots to %s", s_nsnap, s_dir);
 }
+
+#endif

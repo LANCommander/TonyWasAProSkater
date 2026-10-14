@@ -9,10 +9,12 @@ typedef struct {
 	int x, y, z;
 } V;
 
+#ifndef PC_PORT
 #define CTC2(n, v) __asm__ volatile("ctc2 %0, $" #n : : "r"(v))
 #define MTC2(n, v) __asm__ volatile("mtc2 %0, $" #n : : "r"(v))
 #define STLVNL(p)                                                                                  \
 	__asm__ volatile("swc2 $25, 0(%0); swc2 $26, 4(%0); swc2 $27, 8(%0)" : : "r"(p) : "memory")
+#endif
 
 typedef struct {
 	unsigned short flags;
@@ -35,6 +37,16 @@ Tape *Tape_Create(int x, int y, int z, int p, int e, int f, int g, int h) {
 		v.vx = x;
 		v.vy = y;
 		v.vz = z;
+#ifdef PC_PORT
+		{
+			/* v through the camera's transform, unshifted */
+			GeomAcc r;
+
+			geom_ld_mat(pc_geom.rot, pCurrentCamera + 0x34);
+			r = geom_mvmva(pc_geom.rot, 0, v.vx, v.vy, v.vz, 0, 0, 0);
+			geom_st_lv(&o, r.mac);
+		}
+#else
 		CTC2(0, *(int *)(pCurrentCamera + 0x34));
 		CTC2(1, *(int *)(pCurrentCamera + 0x38));
 		CTC2(2, *(int *)(pCurrentCamera + 0x3c));
@@ -45,6 +57,7 @@ Tape *Tape_Create(int x, int y, int z, int p, int e, int f, int g, int h) {
 		__asm__ volatile("nop; nop; cop2 0x406012");
 
 		STLVNL(&o);
+#endif
 
 		pos1.x = o.x + (*(int *)(pCurrentCamera + 4) << 12);
 		pos1.y = o.y + (*(int *)(pCurrentCamera + 8) << 12);
@@ -58,6 +71,16 @@ Tape *Tape_Create(int x, int y, int z, int p, int e, int f, int g, int h) {
 		o.x = 0;
 		o.y = 0;
 		o.z = 0;
+#ifdef PC_PORT
+		{
+			/* v through the camera's transform, unshifted */
+			GeomAcc r;
+
+			geom_ld_mat(pc_geom.rot, pCurrentCamera + 0x34);
+			r = geom_mvmva(pc_geom.rot, 0, v.vx, v.vy, v.vz, 0, 0, 0);
+			geom_st_lv(&o, r.mac);
+		}
+#else
 		CTC2(0, *(int *)(pCurrentCamera + 0x34));
 		CTC2(1, *(int *)(pCurrentCamera + 0x38));
 		CTC2(2, *(int *)(pCurrentCamera + 0x3c));
@@ -68,6 +91,7 @@ Tape *Tape_Create(int x, int y, int z, int p, int e, int f, int g, int h) {
 		__asm__ volatile("nop; nop; cop2 0x406012");
 
 		STLVNL(&o);
+#endif
 
 		pos2.x = o.x + (*(int *)(pCurrentCamera + 4) << 12);
 		pos2.y = o.y + (*(int *)(pCurrentCamera + 8) << 12);

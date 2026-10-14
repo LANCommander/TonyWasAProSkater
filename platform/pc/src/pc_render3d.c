@@ -2,13 +2,13 @@
  *
  * Geometry. The retail vertex transforms (M3DASM, as C in decomp/src/m3dasm) keep running: callers use their
  * results (outcodes, culling), and shadows and collision read the projected-vertex cache they
- * fill. Each one is wrapped so that the GTE also hands over every vertex it transforms unrounded
- * (PC_GteCaptureBegin); those are stored in a float copy of the cache, slot for slot, following
+ * fill. Each one is wrapped so that its projections also hand over every vertex unrounded
+ * (PC_CaptureBegin); those are stored in a float copy of the cache, slot for slot, following
  * the stitch vertices that skater parts share. Each slot remembers the screen word retail wrote
  * there, so a slot some other code has since overwritten is never used.
  *
  * Faces. ProcessPolys and ProcessPolysFast are replaced. The face walk keeps retail's decisions
- * (which faces are visible, their colours: the same GTE colour commands with the same fog value,
+ * (which faces are visible, their colours: the same colour maths with the same fog value,
  * the same ordering-table bucket) and drops what only the PS1 needed: screen-space subdivision,
  * near-plane clipping by subdivision (OpenGL clips), packets. Faces crossing the water surface of
  * an item that tests it are clipped against the plane in view space. Fade-to-colour mode (fog
@@ -21,7 +21,7 @@
  * ordering table layer. When PC_GpuDrawChain reaches the marker, the batch's faces are sorted by
  * bucket and drawn while the chain walks that layer: before each primitive of bucket b, the faces
  * of buckets >= b, so everything the GPU still draws keeps its place in the PS1's painter order.
- * The faces write a depth buffer; GTE-projected primitives in the layer are tested against it.
+ * The faces write a depth buffer; projected primitives in the layer are tested against it.
  *
  * Widescreen (pc_gpu_gl.h): the transforms' outcodes compare screen x with the viewport, so for a
  * widened (full-width) viewport they are worked out again against the widened one, and so is
@@ -43,7 +43,8 @@
 #include "pc_dctex.h"
 #include "pc_gpu.h"
 #include "pc_gpu_gl.h"
-#include "pc_gte.h"
+#include "pc_geom.h"
+#include "pc_precise.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
 
@@ -85,10 +86,6 @@ void PC_RenderTrace(const char *what, uint32_t ret);
 
 #define MARKER0 0x00523344u  /* GP0 NOP "R3D" */
 #define MARKER1 0x7233444eu
-
-/* GTE commands as ProcessPolys issues them */
-#define GTE_DPCS 0x0780010u
-#define GTE_DPCL 0x0680029u
 
 static int s_native, s_verify, s_stats, s_neardrop, s_retailfade, s_nclip;
 
@@ -149,8 +146,8 @@ static void verify_slot(int kind, uint32_t slot, uint32_t rot)
     if (!s || fabsf(s->x) > 30000 || fabsf(s->y) > 30000 || fabsf(s->z) > 30000)
         return;
     if (kind == T_SFAST || kind == T_SFAST_DW || kind == T_FAST) {
-        float h = (float)(PC_GteGetCtrl(26) & 0xffff);
-        float ofx = (float)(int32_t)PC_GteGetCtrl(24) / 65536.0f;
+        float h = (float)pc_geom.h;
+        float ofx = (float)pc_geom.ofx / 65536.0f;
         int sx = (int)((int32_t)(M32(slot) << 21) >> 21);
         int z = S16(slot + 6);
         if (fabsf(s->z - z) > 1.5f)
@@ -259,8 +256,8 @@ static int clamp16(double v, int lo, int hi)
 static uint32_t far_transform(uint32_t a0, int n)
 {
     uint32_t pv = M32(G_PROJECTED), rot = M32(G_ROTATED), vp = M32(G_VIEWPORT);
-    double h = (double)(PC_GteGetCtrl(26) & 0xffff);
-    double ofx = (int32_t)PC_GteGetCtrl(24) / 65536.0, ofy = (int32_t)PC_GteGetCtrl(25) / 65536.0;
+    double h = (double)pc_geom.h;
+    double ofx = pc_geom.ofx / 65536.0, ofy = pc_geom.ofy / 65536.0;
     int xr = M16(vp), yb = M16(vp + 2), xl = M16(vp + 4), yt = M16(vp + 6), hither = M16(vp + 8);
     int wxl, wxr, pad = viewport_pad(&wxl, &wxr);
     uint32_t all = 0xffff;
@@ -283,7 +280,7 @@ static uint32_t far_transform(uint32_t a0, int n)
             sx = clamp16(ofx + h * o[0] / o[2], -1024, 1023);
             sy = clamp16(ofy + h * o[1] / o[2], -1024, 1023);
         } else {
-            /* the GTE's divide overflows: saturated, away from the axis */
+            /* the projection's divide overflows: saturated, away from the axis */
             sx = o[0] > 0 ? 1023 : -1024;
             sy = o[1] > 0 ? 1023 : -1024;
         }
@@ -323,11 +320,11 @@ static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uin
     uint32_t out = fast ? SCR(0) : pv;
     int n = (int)a1;
 
-    PC_GteCaptureBegin(s_cap, (int)(sizeof s_cap / sizeof s_cap[0]));
-    PC_GtePreciseZScale(sc);   /* for primitives retail still draws from these */
+    PC_CaptureBegin(s_cap, (int)(sizeof s_cap / sizeof s_cap[0]));
+    PC_PreciseZScale(sc);   /* for primitives retail still draws from these */
     uint32_t r = fn[kind](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
-    PC_GtePreciseZScale(1);
-    int nc = PC_GteCaptureEnd();
+    PC_PreciseZScale(1);
+    int nc = PC_CaptureEnd();
     s_pv_base = pv;
     s_last_kind = kind;
 
@@ -338,9 +335,9 @@ static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uin
              * a centre vertex, perpendicular to the screen direction toward a second vertex, x
              * stretched by 10485/4096, at the centre's depth. Worked out again from the float
              * vertices, as retail's whole-pixel screen positions make billboards jitter. */
-            float h = (float)(PC_GteGetCtrl(26) & 0xffff);
-            float ofx = (float)(int32_t)PC_GteGetCtrl(24) / 65536.0f;
-            float ofy = (float)(int32_t)PC_GteGetCtrl(25) / 65536.0f;
+            float h = (float)pc_geom.h;
+            float ofx = (float)pc_geom.ofx / 65536.0f;
+            float ofy = (float)pc_geom.ofy / 65536.0f;
             for (; i < n; i++) {
                 v = a0 + (uint32_t)i * 8;
                 dst = out + (uint32_t)i * 8;
@@ -473,9 +470,9 @@ void hleov_800831f8(uint32_t cam, uint32_t vp, uint32_t ot)
     b->valid = 1;
     b->sorted = 0;
     b->nf = b->nv = b->npages = 0;
-    b->h = (float)(PC_GteGetCtrl(26) & 0xffff);
-    b->ofx = (float)(int32_t)PC_GteGetCtrl(24) / 65536.0f;
-    b->ofy = (float)(int32_t)PC_GteGetCtrl(25) / 65536.0f;
+    b->h = (float)pc_geom.h;
+    b->ofx = (float)pc_geom.ofx / 65536.0f;
+    b->ofy = (float)pc_geom.ofy / 65536.0f;
     b->hither = (float)M16(vp + 8);
     if (b->hither < 1)
         b->hither = 1;
@@ -572,22 +569,26 @@ static void sort_batch(Batch *b)
 /* ---------------------------------------------------------------------------------------------
  * Faces (ProcessPolys) */
 
+/* the fog (0..4096) towards the far colour the colours below get, as retail's colours */
+static int16_t s_fog;
+
 static uint32_t dpcs(uint32_t rgbc)
 {
-    PC_GteSetData(6, rgbc);
-    PC_GteCommand(GTE_DPCS);
-    return PC_GteGetData(22);
+    uint32_t rgb;
+    geom_dpcs(&pc_geom, rgbc & 0xffffff, (uint8_t)(rgbc >> 24), s_fog, 12, 0, &rgb, NULL);
+    return rgb;
 }
 
 /* colour * light (11:11:10, 128 = 1.0 in each), then the fog */
 static uint32_t dpcl(uint32_t rgbc, uint32_t light)
 {
-    PC_GteSetData(6, rgbc);
-    PC_GteSetData(9, light << 5);
-    PC_GteSetData(10, light >> 6);
-    PC_GteSetData(11, light >> 17);
-    PC_GteCommand(GTE_DPCL);
-    return PC_GteGetData(22);
+    int16_t l[3];
+    uint32_t rgb;
+    l[0] = (int16_t)(light << 5);
+    l[1] = (int16_t)(light >> 6);
+    l[2] = (int16_t)(light >> 17);
+    geom_dpcl(&pc_geom, rgbc, l, s_fog, 12, 0, &rgb, NULL);
+    return rgb;
 }
 
 static int32_t nclip(int x0, int y0, int x1, int y1, int x2, int y2)
@@ -884,7 +885,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
         } else if (d > 0) {
             fog = dpqshift < 0 ? d >> -dpqshift : d << dpqshift;
         }
-        PC_GteSetData(8, (uint32_t)fog);
+        s_fog = (int16_t)fog;
         /* fade-to-colour mode (the front end): beyond the fog distance a face is added onto a
          * flat polygon of the fade colour, which takes the share the fog would (below) */
         if (fade >= 0 && d > 0) {
@@ -893,7 +894,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
             st.fade++;
         }
 
-        /* colours: the GTE commands retail uses */
+        /* colours: the colour maths retail uses */
         uint32_t c = M32(a0 + 8), col[4];
         int gouraud = 0;
 #define TABLE(i) M32(ctab + ((c >> (8 * (i))) & 0xff) * 4)
@@ -1057,7 +1058,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
             /* fade-to-colour: the flat polygon under the face (added after it, so drawn first,
              * as retail links it) in the fade colour with the fog's share, DPCS(fade, 1 - fog) */
             static const uint8_t tw0[4] = { 0xff, 0xff, 0, 0 }, uvr0[4] = { 0, 0, 255, 255 };
-            PC_GteSetData(8, (uint32_t)(4096 - fog));
+            s_fog = (int16_t)(4096 - fog);
             uint32_t oc = dpcs((uint32_t)fade), ofirst = (uint32_t)b->nv;
             PC_GlVert *o = alloc_verts(b, nv);
             for (int i = 0; i < nv; i++) {
@@ -1113,11 +1114,9 @@ static uint32_t process(uint32_t addr, int fast, uint32_t a0, uint32_t a1, uint3
     }
     if (!fast) {
         /* what retail leaves behind */
-        PC_GteSetCtrl(5, 0);
-        PC_GteSetCtrl(6, 0);
-        PC_GteSetCtrl(7, 0);
-        PC_GteSetCtrl(28, 0x10000000);
-        PC_GteSetCtrl(27, 0);
+        geom_load_vector(pc_geom.tr, 0, 0, 0);
+        pc_geom.dqb = 0x10000000;
+        pc_geom.dqa = 0;
         M32(SCR(964)) = 0x80088790u;
         M16(SCR(676)) = 0;
     }
@@ -1333,6 +1332,6 @@ void R3d_Init(int gl)
     s_retailfade = getenv("THPS_R3D_RETAILFADE") && atoi(getenv("THPS_R3D_RETAILFADE"));
     s_nclip = getenv("THPS_R3D_NCLIP") && atoi(getenv("THPS_R3D_NCLIP"));
     if (s_native)
-        PC_GtePreciseEnable(1);
+        PC_PreciseEnable(1);
     fprintf(stderr, "[r3d] 3D: %s\n", s_native ? "native" : "PS1 (THPS_RENDER3D=psx)");
 }

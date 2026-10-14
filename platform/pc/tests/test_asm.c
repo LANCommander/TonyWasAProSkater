@@ -1,10 +1,10 @@
 /* Differential test for the C that replaces retail MIPS: hand-written assembly (decomp/src/m3dasm,
- * decomp/reimpl.tsv) and Psy-Q library code (src/hle_libgte.c ...). Each snapshot the port
+ * decomp/reimpl.tsv) and Psy-Q library code (src/pc_libgte.c ...). Each snapshot the port
  * recorded at a function's entry (THPS_SNAP, src/pc_snap.c) is replayed twice: through the retail
  * MIPS in tests/mips_ref.c (COP2 on the software GTE) and through the C, from the same RAM,
  * scratchpad, GTE registers, arguments and native stack (the arguments often point at a caller's
  * locals). The two must leave the same RAM (outside the code and the MIPS stack frames),
- * scratchpad, native stack, GTE registers and return value.
+ * scratchpad, native stack, GTE registers (see AsmImpl.gte_cmp) and return value.
  *
  *   python platform/pc/tools/build_test_asm.py      (-> build/pc/test_asm.exe)
  *   build/pc/test_asm.exe [-v] [--exe SLUS_008.60] [--only 8008b670 ...] snapshot.snp|dir ...
@@ -43,7 +43,23 @@ typedef struct {
 	/* pointer words the C keeps in KSEG0 where the retail code leaves a KUSEG (bit 31 clear)
 	 * value: compared with bit 31 set on both sides, 0-terminated */
 	uint32_t kseg[4];
+	/* the GTE registers compared afterwards: bit r data register r, bit 32 + r control register r.
+	 * Retail code leaves its working values in the data registers; C on the port's geometry maths
+	 * (pc_geom.h) has no registers, so it declares the results its callers read
+	 * (`test_asm: gte_out ...`) and is compared on those and the state (control registers). */
+	uint64_t gte_cmp;
+	/* works on M3DMATHS' last vector (decomp/src/m3dasm/lastvec.h), which retail kept in the
+	 * GTE: 1 loaded from IR1..3 and MAC1..3, 2 from V0 and MAC1..3, 3 output only; stored back
+	 * to IR1..3/MAC1..3 afterwards */
+	int lastvec;
+	/* works on M3dAsm_ColourCode (processpolys.h), retail's RGBC: loaded from and stored back
+	 * to it */
+	int colourcode;
 } AsmImpl;
+
+#include "pc_geom.h"
+extern GeomAcc M3dMaths_LastVec __attribute__((weak));
+extern uint32_t M3dAsm_ColourCode __attribute__((weak));
 
 #include "test_asm_impls.h" /* generated: AsmImpl asm_impls[] */
 
@@ -51,7 +67,7 @@ static int verbose;
 static uint8_t *s_exe;   /* the retail image, 0x80010000.. */
 static uint32_t s_exeSize;
 
-/* The port's native-data lookup (pc_main.c; hle_libgte.c's tables): in a snapshot every global is
+/* The port's native-data lookup (pc_main.c; pc_libgte.c's tables): in a snapshot every global is
  * at its retail address */
 void *PC_Data(uint32_t addr) { return (void *)(uintptr_t)addr; }
 
@@ -236,8 +252,29 @@ static void RunSnap(const char *path) {
 	memcpy((void *)(uintptr_t)SCRATCH_BASE, s.scratch, 1024);
 	memcpy((void *)(uintptr_t)s.stack_base, s.stack, s.stack_size);
 	PC_GteLoadState(s.gte);
+	if (im->lastvec && &M3dMaths_LastVec) {
+		for (i = 0; i < 3; i++) {
+			M3dMaths_LastVec.mac[i] = (int32_t)PC_GteGetData(25 + i);
+			M3dMaths_LastVec.ir[i] = (int16_t)PC_GteGetData(9 + i);
+		}
+		if (im->lastvec == 2) {
+			M3dMaths_LastVec.ir[0] = (int16_t)PC_GteGetData(0);
+			M3dMaths_LastVec.ir[1] = (int16_t)(PC_GteGetData(0) >> 16);
+			M3dMaths_LastVec.ir[2] = (int16_t)PC_GteGetData(1);
+		}
+	}
+	if (im->colourcode && &M3dAsm_ColourCode)
+		M3dAsm_ColourCode = PC_GteGetData(6);
 	v_c = ((Fn12)im->fn)(s.args[0], s.args[1], s.args[2], s.args[3], s.args[4], s.args[5],
 	                     s.args[6], s.args[7], s.args[8], s.args[9], s.args[10], s.args[11]);
+	if (im->lastvec && &M3dMaths_LastVec) {
+		for (i = 0; i < 3; i++) {
+			PC_GteSetData(25 + i, (uint32_t)M3dMaths_LastVec.mac[i]);
+			PC_GteSetData(9 + i, (uint32_t)(int32_t)M3dMaths_LastVec.ir[i]);
+		}
+	}
+	if (im->colourcode && &M3dAsm_ColourCode)
+		PC_GteSetData(6, M3dAsm_ColourCode);
 	PC_GteSaveState(gte_c);
 
 	if (im->ret && v_mips != v_c) {
@@ -297,6 +334,8 @@ static void RunSnap(const char *path) {
 		int r;
 		for (r = 0; r < 64; r++) {
 			uint32_t x, y;
+			if (!(im->gte_cmp >> r & 1))
+				continue;
 			PC_GteLoadState(gte_mips);
 			x = r < 32 ? PC_GteGetData(r) : PC_GteGetCtrl(r - 32);
 			PC_GteLoadState(gte_c);

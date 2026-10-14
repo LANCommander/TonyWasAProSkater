@@ -23,7 +23,10 @@
 
 #include "pc_assets.h"
 #include "pc_gpu.h"
+#include "pc_geom.h"
+#ifdef PC_MIPS
 #include "pc_gte.h"
+#endif
 #include "pc_input.h"
 #include "pc_platform.h"
 #include "pc_recomp.h"
@@ -1128,7 +1131,10 @@ int main(int argc, char **argv) {
     BuildFunctionTable();
     InstallTrampolines();
     PC_SnapInstall();
+    PC_GeomReset();
+#ifdef PC_MIPS
     PC_GteReset();
+#endif
     PlatformInit();
     Crt0();
     if (getenv("THPS_WATCH")) {

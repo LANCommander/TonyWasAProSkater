@@ -1,10 +1,10 @@
 /* Force-included ahead of every decompiled TU in the PC build (build.py: -include). The sources
- * themselves stay byte-for-byte the matching ones; portsrc.py rewrites their inline GTE asm into
- * calls declared here. */
+ * themselves stay byte-for-byte the matching ones; their PC_PORT branches use the port's services,
+ * and the geometry maths (pc_geom.h) where the PS1 used the GTE. */
 #ifndef PC_GAME_H
 #define PC_GAME_H
 
-#include "pc_gte.h"
+#include "pc_geom.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,6 +16,11 @@ extern "C" {
  * the same (see link.py). */
 void pc_delete_mark(void *p);
 void pc_vdelete(void *vtable, int slot, void *obj);
+
+/* What portsrc.py makes of a GTE instruction (inline asm) in code the PC build compiles: an error.
+ * The port has no GTE; give the code a PC_PORT branch on the geometry maths (pc_geom.h). */
+void PC_GteAsmInPcBuild(void)
+    __attribute__((error("GTE asm in code the PC build compiles: needs a PC_PORT branch")));
 #ifdef __cplusplus
 }
 template <class T> static inline void pc_delete(T *p) {

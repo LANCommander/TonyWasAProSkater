@@ -4,7 +4,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/camera.h"
@@ -374,10 +376,14 @@ void CCamera::ReactToCollision() {
 
 	if (mColAngBuffer[4]) {
 		Utils_CalcUnit(vStick, mTripod->mPos - mPos);
+#ifdef PC_PORT
+		geom_cross(&vVel, &vStick, &vColCheck, 0);
+#else
 		gte_ldopv1(&vVel);
 		gte_ldopv2(&vStick);
 		gte_op0();
 		gte_stlvnl(&vColCheck);
+#endif
 
 		vColCheck.vx *= mColAngBuffer[4];
 		vColCheck.vy *= mColAngBuffer[4];

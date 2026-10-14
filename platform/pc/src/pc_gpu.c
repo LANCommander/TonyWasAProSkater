@@ -10,7 +10,7 @@
 
 #include "pc_gpu.h"
 #include "pc_gpu_gl.h"
-#include "pc_gte.h"
+#include "pc_precise.h"
 #include "pc_render3d.h"
 
 extern volatile uint32_t pc_heartbeat;
@@ -196,17 +196,18 @@ static void gl_vertex(PC_GlVertex *o, const Vtx *v)
 /* Set while draw_chain is past the ordering table's 2D entries (is_2d_entry). */
 static int s_chain_2d;
 
-/* Precise positions and depths from the GTE (pc_gte.h) for a polygon's vertices, by the SXY words
- * in its packet. All or nothing: a polygon that isn't entirely GTE-projected (2D, or vertices
- * the game computed itself) is drawn exactly as before. The lookup goes by value, so a 2D quad
- * over dense geometry can find a projection within a pixel of every corner (and be drawn with
- * their unrelated depths: warped HUD text); the 2D entries' polygons are never looked up. */
+/* Precise positions and depths of the game's projections (pc_precise.h) for a polygon's vertices,
+ * by the screen words in its packet. All or nothing: a polygon that isn't entirely projected (2D,
+ * or vertices the game computed itself) is drawn exactly as before. The lookup goes by value, so
+ * a 2D quad over dense geometry can find a projection within a pixel of every corner (and be
+ * drawn with their unrelated depths: warped HUD text); the 2D entries' polygons are never looked
+ * up. */
 static void gl_precise(PC_GlVertex *gv, const uint32_t *xy, int n)
 {
     static int stats = -1;
     static uint32_t frame, hit, miss;
     float x[4], y[4], z[4];
-    int ok = !s_chain_2d && PC_GtePrecisePolygon(xy, n, x, y, z);
+    int ok = !s_chain_2d && PC_PrecisePolygon(xy, n, x, y, z);
     if (stats < 0)
         stats = getenv("THPS_GLSTATS") && atoi(getenv("THPS_GLSTATS"));
     if (stats) {

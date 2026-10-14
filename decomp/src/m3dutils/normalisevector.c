@@ -1,7 +1,9 @@
 /* M3dUtils_NormaliseVector (0x80081f24): shrink into GTE range, SQR+SquareRoot0, scale to 4096. */
 #include <sys/types.h>
 #include <libgte.h>
+#ifndef PC_PORT
 #include <inline_c.h>
+#endif
 
 typedef struct {
 	int x, y, z;
@@ -21,9 +23,13 @@ void M3dUtils_NormaliseVector(V *v) {
 		__ars__7CVectorRCi(v, &one);
 	}
 
+#ifdef PC_PORT
+	geom_square(v, &t);
+#else
 	gte_ldlvl(v);
 	gte_sqr0();
 	gte_stlvnl(&t);
+#endif
 
 	len = SquareRoot0(t.vx + t.vy + t.vz);
 

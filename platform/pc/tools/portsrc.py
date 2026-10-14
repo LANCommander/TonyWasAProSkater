@@ -3,8 +3,10 @@
 The decompiled sources are written for egcs 1.1.2 on MIPS. Two things in them don't carry over:
 
 * Inline MIPS asm. Every `__asm__` in the tree drives the GTE (mtc2/ctc2/lwc2/swc2/mfc2/cfc2) or is
-  dead code kept for matching (HandleJump's lone `mult`). `translate_asm` rewrites each statement
-  into calls on the software GTE (pc_gte.h), keeping the side effects of its input operands.
+  dead code kept for matching (HandleJump's lone `mult`). The port has no GTE: the GTE asm is in
+  the #else branches of PC_PORT ones on the geometry maths (pc_geom.h). `translate_asm` rewrites
+  each statement into C (before the preprocessor, so the dead branches too); a GTE instruction
+  becomes a call that stops the build if the code is compiled (PC_GteAsmInPcBuild, pc_game.h).
 * C++ virtual functions. egcs puts a class's vtable pointer after its data members and lays out
   vtable entries as {short delta, short index, pfn}; modern g++ uses the Itanium ABI (vptr at
   offset 0), which would shift every field. `transform_cxx` strips `virtual`, inserts an explicit
@@ -89,7 +91,7 @@ def _split_top(s, sep):
 
 
 # --------------------------------------------------------------------------------------------
-# inline asm -> software GTE
+# inline asm -> C
 
 _ASM_RE = re.compile(r"\b(__asm__|asm)\s*(volatile|__volatile__)?\s*\(")
 
@@ -193,20 +195,11 @@ def translate_asm_stmt(tmpl, outputs, inputs):
         args = [a.strip() for a in args]
         if mnem == "nop":
             continue
-        if mnem in ("mtc2", "ctc2"):
-            fn = "PC_GteSetData" if mnem == "mtc2" else "PC_GteSetCtrl"
-            stmts.append("%s(%s, (unsigned int)%s)" % (fn, _reg_expr(args[1], params), gpr(args[0])))
-        elif mnem in ("mfc2", "cfc2"):
-            fn = "PC_GteGetData" if mnem == "mfc2" else "PC_GteGetCtrl"
-            stmts.append("%s = %s(%s)" % (gpr(args[0]), fn, _reg_expr(args[1], params)))
-        elif mnem in ("lwc2", "swc2"):
-            reg = _reg_expr(args[0], params)
-            if mnem == "lwc2":
-                stmts.append("PC_GteSetData(%s, *(unsigned int *)%s)" % (reg, mem(args[1])))
-            else:
-                stmts.append("*(unsigned int *)%s = PC_GteGetData(%s)" % (mem(args[1]), reg))
-        elif mnem in ("cop2", ".word"):
-            stmts.append("PC_GteCommand((%s) & 0x1ffffff)" % args[0])
+        if mnem in ("mtc2", "ctc2", "mfc2", "cfc2", "lwc2", "swc2", "cop2", ".word"):
+            # The port has no GTE: the matching sources' GTE asm is in their #else branches (the
+            # PC_PORT ones use pc_geom.h), which the preprocessor drops. One in code the PC build
+            # compiles stops it (pc_game.h).
+            stmts.append("PC_GteAsmInPcBuild()")
         elif mnem in _LOADS:
             stmts.append("%s = *(%s *)%s" % (gpr(args[0]), _LOADS[mnem], mem(args[1])))
         elif mnem in _STORES:

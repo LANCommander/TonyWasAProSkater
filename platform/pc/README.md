@@ -31,14 +31,15 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
 - **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` renderer and maths, 0x800858ac-
   0x8008b900, and a few game helpers) is C interpretations in `decomp/src/m3dasm/` and elsewhere,
   listed in `decomp/reimpl.tsv` (built like decompiled C); the Psy-Q library code the game uses is
-  the port's own C (the HLE files below; `src/hle_libgte.c` for the GTE maths). Each is checked
+  the port's own C (the HLE files below; `src/pc_libgte.c` for libgte). Each is checked
   against the retail code by a test in `tests/` that runs the original MIPS in a small reference
   interpreter (`tests/mips_ref.c`); see "Checking C against the retail code" below.
   `reimpl.tsv` also holds byte-exact C for the few compiler-generated C++ functions a native
   build can't take from their matching source. No retail code runs in the port: functions with
   no C are stubs that log a call (none is called in play). For debugging, `build.py --mips`
   also translates the retail MIPS to C (`tools/mips2c.py`: a register file, memory at the same
-  addresses, GTE instructions on the software GTE), which `THPS_MIPS` and `THPS_SNAP` use.
+  addresses, GTE instructions on the software GTE, `src/pc_gte.c`), which `THPS_MIPS` and
+  `THPS_SNAP` use.
 - **C++ classes.** To stay byte-exact, the matching decomp wrote many class members as C (raw
   `this + offset` access, explicit vptr stores and base-class calls). The port's copies are real
   C++ classes with the same logic (`reimpl.tsv` rows marked `cxx`; `decomp/tools/port_cxx.py`).
@@ -50,9 +51,35 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
   calls dispatch through the retail vtable, and compiles with `-funsigned-char` (plain `char` is
   unsigned on the PS1). `tools/header_check.py`, `tools/layouts.py` and `tools/tu_diff.py` check
   header layouts and that a refactor doesn't change what a TU links to.
-- **Hardware libraries** (GPU, CD, SPU, pad, BIOS) are high-level reimplementations
-  ("HLE") of the Psy-Q entry points, in `src/`. The memory card isn't one: saves are files
-  (see Saves).
+- **Platform services, not a PS1.** Where the game used the PS1's libraries, the port's goal is
+  that it calls native services directly (`#ifdef PC_PORT` branches in `decomp/src`):
+  - the C library is the host's (`sprintf`, `strcpy`...; `build.py` `NATIVE_OK`); the game's
+    debug `printf` goes to the trace log (`PC_GameDebugf`, `THPS_TRACE=1`, `NATIVE_RENAME`);
+  - VSync and the vblank callback are the frame clock (`pc_frame.h`: `PC_FrameWait`,
+    `PC_FrameCount`, `PC_FramePoll`, `PC_SetFrameHandler`);
+  - controllers are `pc_input.h` (actions, presence, rumble), with no pad receive buffers;
+  - the memory card is gone: saves are files (see Saves), with no BIOS card events;
+  - songs and movies are streams of their files (`pc_stream.h`), not CD reads: the game keeps a
+    stream's id where it kept the file's position on the disc;
+  - sound is `pc_sound.h`: banks decoded to PCM at load (the game keeps a bank's base where it kept
+    the sample data's SPU address), 24 channels with the PS1's ADSR envelopes, a native reverb,
+    and the music input; no sound RAM or libspu;
+  - the static constructors run from `PC_RunStaticCtors` (libsn's `__main`);
+  - the GTE's 3D maths is `pc_geom.h`: plain C fixed-point functions with explicit inputs and
+    outputs (projection, matrix times vector, cross product, depth cue ...), bit-identical to the
+    hardware (44-bit sums, 16-bit saturation, the UNR divide, the same FLAG word), and a
+    `GeomState` for what the game keeps between calls (the current rotation, translation, light
+    and colour matrices, screen). libgte is `src/pc_libgte.c` on it (the game's calls go there by
+    address: `build.py` `NATIVE_AT`), and the matching sources' GTE macros and asm have PC_PORT
+    branches on it. M3DMATHS' "last vector" and the colour code the face renderer carries between
+    faces, which retail kept in GTE registers, are explicit (`decomp/src/m3dasm/lastvec.h`,
+    `processpolys.h`).
+
+  There's no BIOS, CD, SPU or GTE in the port. The GPU and MDEC are still high-level
+  reimplementations ("HLE") of their Psy-Q entry points (`src/hle_*.c`, `pc_mdec.c`),
+  each on its way to a native subsystem. A `build.py --mips` build adds the BIOS that translated
+  retail code calls (`src/mips_bios.c`, `PC_MIPS`); Psy-Q functions the port no longer provides
+  run there as translated retail code.
 
 ## Calling convention
 
@@ -63,9 +90,9 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 
 | path | what |
 |---|---|
-| `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `inline_c.h`, `sys/types.h`) |
+| `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `sys/types.h`) |
 | `include/pc_*.h` | interfaces between the port's subsystems |
-| `src/` | runtime: boot, memory map, frame clock, input, video, saves, streams, and the remaining HLE libraries (GPU, GTE, MDEC) |
+| `src/` | runtime: boot, memory map, frame clock, input, video, saves, streams, geometry maths, and the remaining HLE libraries (GPU, MDEC) |
 | `include/pc_platform.h`, `src/pc_platform.c` | what differs between Windows and Linux: paths, folders, files, clock |
 | `tools/` | build driver and code generators (`toolchain.py`: the host's compiler and object format) |
 
@@ -204,13 +231,22 @@ The C that replaced hand-written assembly and library code is checked against th
 on real game states. A `build.py --mips` build records snapshots at function entries
 (`THPS_SNAP=80086f40:8:500,...`: RAM, scratchpad, GTE registers, arguments and the native stack
 the arguments point into; `src/pc_snap.c`). `tools/build_test_asm.py --run` builds
-`build/pc/test_asm.exe` from every `reimpl.tsv` row marked `test_asm` and `src/hle_libgte.c`, and
+`build/pc/test_asm.exe` from every `reimpl.tsv` row marked `test_asm` and `src/pc_libgte.c`, and
 replays each snapshot (default: all under `build/pc/snaps`) through the retail MIPS in
-`tests/mips_ref.c` (COP2 on the software GTE) and through the C: both must leave the same RAM,
-scratchpad, native stack, GTE registers and return value. Paths the game rarely takes are covered
-by snapshots edited to take them. Exceptions (scratch words only the retail code's register saves
-use, pointers the port keeps in KSEG0) are listed in the sources as `test_asm:` comments.
-`test_asm` builds and runs on Windows only for now.
+`tests/mips_ref.c` (COP2 on the software GTE, `src/pc_gte.c`) and through the C: both must leave
+the same RAM, scratchpad, native stack and return value, and the C the same geometry state
+(`pc_geom`) as retail left in the GTE's control registers; of the data registers, only what a
+function's callers read (`test_asm: gte_out`, `lastvec`, `colourcode`). Paths the game rarely takes
+are covered by snapshots edited to take them. Exceptions (scratch words only the retail code's
+register saves use, pointers the port keeps in KSEG0) are listed in the sources as `test_asm:`
+comments. `test_asm` builds and runs on Windows only for now.
+
+The geometry maths itself is checked against the software GTE (which follows psx-spx) by
+`tests/test_geom.c`: every operation and variant the game uses, on tens of millions of random
+inputs biased to the edges (saturation, overflow, the divide's limits) and an exhaustive sweep of
+the perspective divide, comparing every result and FLAG bit
+(`gcc -m32 -O2 -DPC_MIPS -Iinclude tests/test_geom.c src/pc_gte.c src/pc_geom.c`). The software
+GTE has its own hand-worked tests (`tests/test_gte.c`).
 
 ## Saves
 
@@ -263,16 +299,16 @@ no depth buffer, which is where its wobbling geometry, seams and warping texture
 OpenGL, the world and models (everything THPS1's hand-written M3DASM renderer draws: level,
 skaters, cars, sky) are drawn natively by `src/pc_render3d.c`: the retail vertex transforms still
 run, but their view-space vertices are kept unrounded, and ProcessPolys is replaced by a face walk
-that keeps retail's visibility, colours (the same GTE colour commands) and ordering-table position,
+that keeps retail's visibility, colours (the same depth-cued colours) and ordering-table position,
 then draws with a projection, a depth buffer and OpenGL's near-plane clipping instead of
 subdivision. The faces are drawn while the GPU walks the ordering table, so everything still sent
 as GPU packets (particles, shadows, 3D text, the HUD) keeps its place in the PS1's painter order;
-of those, the ones the GTE projected are depth-tested against the world. Those packets use the
-precise-vertex lookup: the GTE (`src/pc_gte.c`) also records each projection unrounded, with its
-depth, keyed by the screen coordinates the game puts in its GPU packets, and the GPU looks a
-polygon's vertices up again and draws it at sub-pixel positions with perspective-correct textures
-(THPS1's polygon subdivision re-projects and nudges vertices, which the lookup allows for, see
-`PC_GtePrecisePolygon`). Faces the native renderer doesn't handle yet (water clipping and the
+of those, the ones the game projected are depth-tested against the world. Those packets use the
+precise-vertex lookup: every projection (`pc_geom.h`) is also recorded unrounded, with its depth,
+keyed by the screen coordinates the game puts in its GPU packets (`src/pc_precise.c`), and the GPU
+looks a polygon's vertices up again and draws it at sub-pixel positions with perspective-correct
+textures (THPS1's polygon subdivision re-projects and nudges vertices, which the lookup allows for,
+see `PC_PrecisePolygon`). Faces the native renderer doesn't handle yet (water clipping and the
 fade-to-colour mode of some levels) still go through the retail code and that lookup.
 `THPS_RENDER3D=psx` draws all 3D the PS1 way. With that and the lookup turned off
 (`THPS_RENDER3D=psx THPS_GL_PRECISE=0 THPS_GL_PERSPECTIVE=0`), OpenGL at 1x samples the same
@@ -364,7 +400,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_FAR_RANGE=n` | entire level: items reaching beyond n (default 30000) take the double-precision path; a small n compares it with the PS1 transforms on near items |
 | `THPS_HEADLESS=1` | no visible window (for automated runs: OpenGL draws into a hidden one) |
 | `THPS_GL_SCALE=n` | OpenGL: draw the screens at n times the PS1 resolution (default: the window's resolution) |
-| `THPS_GL_PRECISE=0` | OpenGL: draw 3D polygons at the PS1's whole-pixel positions (default: sub-pixel, from the GTE) |
+| `THPS_GL_PRECISE=0` | OpenGL: draw 3D polygons at the PS1's whole-pixel positions (default: sub-pixel, from the projections) |
 | `THPS_GL_PERSPECTIVE=0` | OpenGL: affine texturing like the PS1 (default: perspective-correct) |
 | `THPS_RENDER3D=psx` | OpenGL: draw the world and models through the PS1 path (default `native`, see Graphics) |
 | `THPS_R3DSTATS=1` | once a second: native 3D faces, culled faces, draws, and calls left to the retail code |

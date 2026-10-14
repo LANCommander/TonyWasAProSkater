@@ -56,25 +56,26 @@ extern struct SCamera *pCurrentCamera;
 
 /* The model's bounding box relative to the camera, at half scale like the sphere test's
  * position, as 8 corners in the scratchpad (corner c: bit 0 picks x's second box face, bit 1
- * y's, bit 2 z's); the GTE loads them as vertices. */
+ * y's, bit 2 z's). */
 #define CORNERS ((SVECTOR *)0x1f800000)
 
-/* The six view-frustum planes are the rows of the GTE light matrix (planes 0-2, with the back
+/* The six view-frustum planes are the rows of the light matrix (planes 0-2, with the back
  * colour as their distances) and colour matrix (planes 3-5, through the camera). For each plane
  * the box corner to test is chosen by the signs of its normal: a negative component picks that
  * axis's second face. */
-static SVECTOR *plane_corner(uint32_t x_neg, uint32_t y_neg, uint32_t z_neg) {
-	return &CORNERS[x_neg | y_neg << 1 | z_neg << 2];
+static void corner_choice(const int16_t m[3][3], SVECTOR *corner[3]) {
+	int i;
+
+	for (i = 0; i < 3; i++)
+		corner[i] = &CORNERS[(m[i][0] < 0) | (m[i][1] < 0) << 1 | (m[i][2] < 0) << 2];
 }
 
-static void corner_choice(int mx, SVECTOR *corner[3]) {
-	uint32_t w0 = gte_getc(mx + 0), w1 = gte_getc(mx + 1), w2 = gte_getc(mx + 2);
-	uint32_t w3 = gte_getc(mx + 3), w4 = gte_getc(mx + 4);
-
-	/* the sign bits of M11 M12 M13 / M21 M22 M23 / M31 M32 M33 in the packed words */
-	corner[0] = plane_corner(w0 >> 15 & 1, w0 >> 31, w1 >> 15 & 1);
-	corner[1] = plane_corner(w1 >> 31, w2 >> 15 & 1, w2 >> 31);
-	corner[2] = plane_corner(w3 >> 15 & 1, w3 >> 31, w4 >> 15 & 1);
+/* plane i's distance (>> 12, saturated to 16 bits) of a box corner: not negative if the corner is
+ * not behind it */
+static int corner_distance(int i, const SVECTOR *c) {
+	GeomAcc d = i < 3 ? geom_mvmva(pc_geom.llm, pc_geom.bk, c->vx, c->vy, c->vz, 12, 0, 0)
+	                  : geom_mvmva(pc_geom.lcm, 0, c->vx, c->vy, c->vz, 12, 0, 0);
+	return d.ir[i % 3];
 }
 
 /* the sphere and box tests of one item; 1 if it may be visible */
@@ -83,9 +84,9 @@ static int item_visible(struct Item *it, uint32_t flags, SVECTOR *corner[6],
 	int dx, dy, dz, r, i;
 	int no_yon = flags & IF_NO_YON;
 	struct SModel *model;
-	int dist[6];
+	GeomAcc near3, far3;
 
-	/* the position relative to the camera, in whole units: it must fit the GTE's 16 bits */
+	/* the position relative to the camera, in whole units: it must fit in 16 bits */
 	dx = (it->Position.vx >> 12) - cam->vx;
 
 	if (dx >= 32767 || dx < -32767)
@@ -104,10 +105,11 @@ static int item_visible(struct Item *it, uint32_t flags, SVECTOR *corner[6],
 	if (dy >= 32767 || dy < -32767)
 		return 0;
 
-	/* the centre's signed distances from the planes (at half scale) */
-	gte_set(GTE_VXY0, vtx_pack(dx >> 1, dy >> 1));
-	gte_set(GTE_VZ0, dz >> 1);
-	gte_mvmva(1, MX_LLM, MV_V0, CV_BK, 0);
+	/* the centre's signed distances from the planes (at half scale, 16 bits per coordinate) */
+	far3 = geom_mvmva(pc_geom.llm, pc_geom.bk, (int16_t)(dx >> 1), (int16_t)(dy >> 1),
+	                  (int16_t)(dz >> 1), 12, 0, 0);
+	near3 = geom_mvmva(pc_geom.lcm, 0, (int16_t)(dx >> 1), (int16_t)(dy >> 1),
+	                   (int16_t)(dz >> 1), 12, 0, 0);
 
 	model = PSXRegion[it->Region].ppModels[it->Model];
 	r = (int)(model->Radius >> 13);
@@ -124,20 +126,15 @@ static int item_visible(struct Item *it, uint32_t flags, SVECTOR *corner[6],
 		r = (int)((uint32_t)(r * s) >> 12);
 	}
 
-	dist[0] = gte_get(GTE_MAC1);
-	dist[1] = gte_get(GTE_MAC2);
-	dist[2] = gte_get(GTE_MAC3);
-	gte_mvmva(1, MX_LCM, MV_V0, CV_NONE, 0);
-
 	/* the sphere wholly behind a plane (plane 0, the far plane, not for IF_NO_YON items) */
 	r = -r;
 
 	for (i = no_yon ? 1 : 0; i < 3; i++)
-		if (dist[i] < r)
+		if (far3.mac[i] < r)
 			return 0;
 
 	for (i = 0; i < 3; i++)
-		if (gte_get(GTE_MAC1 + i) < r)
+		if (near3.mac[i] < r)
 			return 0;
 
 	/* the box test, for unrotated, unscaled box-tested items */
@@ -157,62 +154,21 @@ static int item_visible(struct Item *it, uint32_t flags, SVECTOR *corner[6],
 		}
 	}
 
-	/* Each plane's chosen corner must not be behind it (IR, saturated). The loads of the next
-	 * corner are interleaved with the tests as in retail, which leaves them in the GTE even when
-	 * an earlier test culls; plane 0's x/y load happens even for IF_NO_YON items. */
-	gte_set(GTE_VXY0, vtx_pack(corner[0]->vx, corner[0]->vy));
-
-	if (!no_yon) {
-		gte_set(GTE_VZ0, vtx_pack(corner[0]->vz, corner[0]->pad));
-		gte_mvmva(1, MX_LLM, MV_V0, CV_BK, 0);
-
-		if (gte_get(GTE_IR1) < 0)
+	/* each plane's chosen corner must not be behind it */
+	for (i = no_yon ? 1 : 0; i < 6; i++)
+		if (corner_distance(i, corner[i]) < 0)
 			return 0;
-	}
 
-	gte_ldv1(corner[1]);
-	gte_mvmva(1, MX_LLM, MV_V1, CV_BK, 0);
-
-	i = gte_get(GTE_IR2);
-	gte_ldv2(corner[2]);
-
-	if (i < 0)
-		return 0;
-
-	gte_mvmva(1, MX_LLM, MV_V2, CV_BK, 0);
-
-	i = gte_get(GTE_IR3);
-	gte_ldv0(corner[3]);
-
-	if (i < 0)
-		return 0;
-
-	gte_mvmva(1, MX_LCM, MV_V0, CV_NONE, 0);
-
-	i = gte_get(GTE_IR1);
-	gte_ldv1(corner[4]);
-
-	if (i < 0)
-		return 0;
-
-	gte_mvmva(1, MX_LCM, MV_V1, CV_NONE, 0);
-
-	i = gte_get(GTE_IR2);
-	gte_ldv2(corner[5]);
-
-	if (i < 0)
-		return 0;
-
-	gte_mvmva(1, MX_LCM, MV_V2, CV_NONE, 0);
-	return gte_get(GTE_IR3) >= 0;
+	return 1;
 }
 
 /* View-frustum culling of an item list before it is drawn, with the frustum planes the caller
- * loaded into the GTE (M3d_Render): each item's flags get IF_CULLED set or cleared. Items with
+ * loaded (M3d_Render): each item's flags get IF_CULLED set or cleared. Items with
  * any of the flags in skip (or IF_ALWAYS_SKIP) are culled outright; the others are tested by
  * bounding sphere (the model's radius, scaled for IF_SCALED items) and, when that passes and the
  * item is neither rotated nor scaled, by bounding box against the six planes. The box corners
- * are left in the scratchpad (0x1f800000-0x1f80003f). */
+ * are left in the scratchpad (0x1f800000-0x1f80003f).
+ * test_asm: gte_out none */
 void M3dAsm_BoundingSpherePreprocessing(struct Item *it, int skip) {
 	SVECTOR *corner[6];
 	struct Vec3 cam;
@@ -221,8 +177,8 @@ void M3dAsm_BoundingSpherePreprocessing(struct Item *it, int skip) {
 		return;
 
 	skip |= IF_ALWAYS_SKIP;
-	corner_choice(GTE_LLM, &corner[0]);
-	corner_choice(GTE_LCM, &corner[3]);
+	corner_choice(pc_geom.llm, &corner[0]);
+	corner_choice(pc_geom.lcm, &corner[3]);
 
 	cam = pCurrentCamera->Position;
 

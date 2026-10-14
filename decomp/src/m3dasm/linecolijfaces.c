@@ -1,11 +1,12 @@
 /* M3dAsm_LineColijProcessFaces__FP6SModelP16SProjectedVertexP9SLineInfoP4Item (0x8008ab28) -- C interpretation of hand-written assembly (M3DASM) */
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
+/* test_asm: gte_out none (no caller reads what retail left in the GTE's data registers) */
 
 /* Second half of the per-face line test (M3dColij_LineToThisItem), after
  * M3dAsm_LineColijProcessVertices put the model's vertices in line space (the line is the +z axis
  * from 0 to Length). For each collidable face not wholly on one side of the line, the line (the
- * point x = y = 0) must lie inside the face's 2D outline: three or four GTE outer products of the
+ * point x = y = 0) must lie inside the face's 2D outline: three or four outer products of the
  * vertices' (x, y) give the edge-side signs. Then the face plane is intersected with the line: with
  * the face normal n in line space, d = v0 . n must lie in [(Length+2) * nz, 0], and the hit
  * distance along the line is d / nz. A trigger face only records the item's model in
@@ -13,8 +14,10 @@
  * hit so far becomes the new hit in the SLineInfo and NearestHit. Finally the hit position (or the
  * end point for no hit) is interpolated along the line into info->Position.
  *
- * GTE state used: the colour matrix (line space, set by the caller); this routine replaces light
- * matrix row 1 with each tested face's first vertex (L21 = 0) and row 3 with (0, 0, Length+2). */
+ * State used: the colour matrix (line space, set by the caller); this routine replaces the light
+ * matrix's row 1 with each tested face's first vertex (llm[1][0] = 0) and row 3 with
+ * (0, 0, Length+2), and the rotation's diagonal with the outer products' operands, as retail
+ * leaves them. */
 #include "linecolij.h"
 
 extern unsigned int M3dColij_ZeroMask; /* face flag word bits allowed to be clear */
@@ -40,31 +43,29 @@ static int LineInsideFace(const SFace *f, const SProjectedVertex *pv) {
 	const SProjectedVertex *c = &pv[f->VertexNums[2]];
 	int s2, s3;
 
-	/* (Ax, Bx, Cx) on the rotation diagonal: MACi = the edge functions of the triangle at the
-	 * origin, x_b*y_c - x_c*y_b and so on */
-	PC_GteSetCtrl(0, *(const unsigned *)a);
-	PC_GteSetCtrl(2, *(const unsigned *)b);
-	PC_GteSetCtrl(4, *(const unsigned *)c);
-	LineCross(a->y, b->y, c->y);
+	GeomAcc e;
 
-	s2 = GTE_S(26);
-	s3 = GTE_S(27);
+	/* (Ax, Bx, Cx) on the rotation diagonal (loaded as the words x | y << 16): the edge functions
+	 * of the triangle at the origin, x_b*y_c - x_c*y_b and so on */
+	geom_load_op_diag(&pc_geom, *(const unsigned *)a, *(const unsigned *)b, *(const unsigned *)c);
+	e = LineCross(a->y, b->y, c->y);
 
-	if (GTE_S(25) < 0) {
+	s2 = e.mac[1];
+	s3 = e.mac[2];
+
+	if (e.mac[0] < 0) {
 		/* outside edge b-c: a quad can still contain it in its other triangle (d, b, c) */
 		const SProjectedVertex *d = &pv[f->VertexNums[3]];
 
 		if (f->Flags & FACE_TRIANGLE)
 			return 0;
 
-		PC_GteSetData(10, (unsigned)b->y);
-		PC_GteSetData(11, (unsigned)c->y);
-		PC_GteSetCtrl(0, *(const unsigned *)d);
-		PC_GteSetData(9, (unsigned)d->y);
-		gte_op0();
+		pc_geom.rot[0][0] = d->x;
+		pc_geom.rot[0][1] = d->y;
+		e = LineCross(d->y, b->y, c->y);
 
-		s2 = -GTE_S(26);
-		s3 = -GTE_S(27);
+		s2 = -e.mac[1];
+		s3 = -e.mac[2];
 	}
 
 	return (s2 | s3) >= 0;
@@ -76,6 +77,7 @@ static void TestFace(SFace *f, const SProjectedVertex *pv, SVECTOR *normals, SLi
 	SVECTOR *n;
 	const SProjectedVertex *a;
 	int d, dmin, nz, t;
+	GeomAcc r;
 
 	if (w & M3dColij_OneMask)
 		return;
@@ -98,23 +100,23 @@ static void TestFace(SFace *f, const SProjectedVertex *pv, SVECTOR *normals, SLi
 	if (!LineInsideFace(f, pv))
 		return;
 
-	/* the normal into line space (colour matrix, no translation) */
+	/* the normal into line space (colour matrix, no translation, 16-bit results) */
 	n = (SVECTOR *)((char *)normals + (w & 0xffff));
-	PC_GteSetData(0, *(unsigned *)&n->vx);
-	PC_GteSetData(1, *(unsigned *)&n->vz);
+	r = geom_mvmva(pc_geom.lcm, 0, n->vx, n->vy, n->vz, 12, 0, 0);
 
+	/* light matrix row 1 = the first vertex: d = a . n; row 3 = (0, 0, Length+2):
+	 * dmin = (Length+2) * nz */
 	a = &pv[f->VertexNums[0]];
-	gte_mvmva(1, 2, 0, 3, 0);
-	/* light matrix row 1 = the first vertex: MAC1 = a . n; row 3 = (0, 0, Length+2):
-	 * MAC3 = (Length+2) * nz */
-	PC_GteSetCtrl(8, *(const unsigned *)a);
-	PC_GteSetCtrl(9, (unsigned short)a->z);
+	pc_geom.llm[0][0] = a->x;
+	pc_geom.llm[0][1] = a->y;
+	pc_geom.llm[0][2] = a->z;
+	pc_geom.llm[1][0] = 0;
 
-	nz = GTE_S(11);
-	gte_mvmva(0, 1, 3, 3, 0);
+	nz = r.ir[2];
+	r = geom_mvmva(pc_geom.llm, 0, r.ir[0], r.ir[1], r.ir[2], 0, 0, 0);
 
-	d = GTE_S(25);
-	dmin = GTE_S(27);
+	d = r.mac[0];
+	dmin = r.mac[2];
 
 	if (d > 0 || d < dmin)
 		return; /* the plane doesn't cross the line between start and end */
@@ -144,9 +146,13 @@ void M3dAsm_LineColijProcessFaces__FP6SModelP16SProjectedVertexP9SLineInfoP4Item
 	SVECTOR *normals = model->Vertices + model->NumVertices;
 	SFace *f = (SFace *)(normals + model->NumNormals);
 	int n = model->NumFaces, t, i;
+	int16_t dir[3];
+	int32_t start[3];
+	GeomAcc p;
 
-	PC_GteSetCtrl(11, 0);                            /* L31 = L32 = 0 */
-	PC_GteSetCtrl(12, (unsigned)(info->Length + 2)); /* L33 */
+	pc_geom.llm[2][0] = 0;
+	pc_geom.llm[2][1] = 0;
+	pc_geom.llm[2][2] = (int16_t)(info->Length + 2);
 
 	do {
 		TestFace(f, pv, normals, info, item);
@@ -154,20 +160,18 @@ void M3dAsm_LineColijProcessFaces__FP6SModelP16SProjectedVertexP9SLineInfoP4Item
 		f = (SFace *)((char *)f + f->Size);
 	} while (--n);
 
-	/* Position = Start + (End - Start) * Distance / Length (GTE GPL: MAC += IR * IR0) */
+	/* Position = Start + (End - Start) * Distance / Length (the direction and the ratio in 16
+	 * bits each) */
 	t = MipsDiv((int)((unsigned)info->Distance << 12), info->Length);
 
-	for (i = 0; i < 3; i++)
-		PC_GteSetData(25 + i, (unsigned)info->StartCoords[i]);
+	for (i = 0; i < 3; i++) {
+		start[i] = info->StartCoords[i];
+		dir[i] = (int16_t)((int)((unsigned)info->EndCoords[i] - (unsigned)info->StartCoords[i]) >>
+		                   12);
+	}
+
+	p = geom_gpl((int16_t)t, dir, start, 0, 0, 0, 0, 0);
 
 	for (i = 0; i < 3; i++)
-		PC_GteSetData(
-		    9 + i,
-		    (unsigned)((int)((unsigned)info->EndCoords[i] - (unsigned)info->StartCoords[i]) >> 12));
-
-	PC_GteSetData(8, (unsigned)t);
-	gte_gpl0();
-
-	for (i = 0; i < 3; i++)
-		info->Position[i] = GTE_S(25 + i);
+		info->Position[i] = p.mac[i];
 }

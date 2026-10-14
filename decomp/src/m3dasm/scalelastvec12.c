@@ -2,10 +2,10 @@
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
 #include "m3dmaths.h"
+#include "lastvec.h"
 
-/* Multiplies the "last vector" in the GTE's IR1..3 by the 4.12 factor k (GPF, sf=1:
- * IR = IR * k >> 12, k goes through IR0). */
+/* Multiplies the last vector (lastvec.h) by the 4.12 factor k (16 bits): v = v * k >> 12.
+ * test_asm: lastvec ir */
 void M3dMaths_ScaleLastVec12__Fi(int k) {
-	PC_GteSetData(8, (uint32_t)k);
-	gte_gpf12();
+	M3dMaths_LastVec = geom_gpf((int16_t)k, M3dMaths_LastVec.ir, 12, 0, 0, 0, 0);
 }

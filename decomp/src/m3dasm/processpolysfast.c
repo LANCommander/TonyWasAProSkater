@@ -10,6 +10,7 @@
  *
  * test_asm: kseg 0x800d1a54
  * (pPoly: the retail code stores it back without its top byte; the port keeps it in KSEG0.)
+ * test_asm: colourcode
  *
  * When the packet buffer is full retail jumps to ProcessPolys' exit (0x80087628), which stores
  * pPoly and returns but restores registers from the wrong (40-byte) frame; this returns
@@ -38,26 +39,19 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 			xy[i] = v[i]->XY;
 		}
 
-		/* NCLIP of corners 0, 1, 2 (the words x4: the flags shift out of the 16-bit halves) */
-		gte_set(GTE_SXY0, xy[0] << 2);
-		gte_set(GTE_SXY1, xy[1] << 2);
-		gte_set(GTE_SXY2, xy[2] << 2);
-		PC_GteCommand(GTE_CMD_NCLIP);
-
 		f = face[FACE_FLAGS];
 
 		if ((int32_t)(xy[0] & xy[1] & xy[2] & xy[3]) >= 0 ||
 		    (xy[0] & xy[1] & xy[2] & xy[3] & 0x6000e000))
 			continue;
 
-		n1 = gte_get(GTE_MAC0);
-		gte_set(GTE_SXYP, xy[3] << 2);
-		PC_GteCommand(GTE_CMD_NCLIP); /* corners 1, 2, 3 */
-
 		if (!(f & FF_DRAW))
 			continue;
 
-		n2 = gte_get(GTE_MAC0);
+		/* the windings of corners 0, 1, 2 and 1, 2, 3 (the words x4: the flags shift out of
+		 * the 16-bit halves) */
+		n1 = pp_nclip(xy[0] << 2, xy[1] << 2, xy[2] << 2);
+		n2 = pp_nclip(xy[1] << 2, xy[2] << 2, xy[3] << 2);
 
 		if (!SCR16(SCR_MIRROR))
 			visible = n1 > 0 || n2 < 0;
@@ -93,20 +87,21 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 		c = face[FACE_COLOUR];
 
 		if (!(f & FF_GOURAUD)) {
-			gte_set(GTE_RGBC, c);
-			PC_GteCommand(GTE_CMD_DPCS);
+			uint32_t rgb = pp_dpcs(c, c, ps.fog);
+
+			M3dAsm_ColourCode = c;
 
 			if (!(f & FF_TEXTURED)) {
 				p[3] = xy[1];
 				p[4] = xy[2];
 
 				if (tri) {
-					pp_code(&ps, PC_GteGetData(GTE_RGB2), CODE_F3);
+					pp_code(&ps, rgb, CODE_F3);
 
 					len = 4;
 				} else {
 					p[5] = xy[3];
-					pp_code(&ps, PC_GteGetData(GTE_RGB2), CODE_F4);
+					pp_code(&ps, rgb, CODE_F4);
 
 					len = 5;
 				}
@@ -118,35 +113,38 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 				p[7] = face[FACE_UV23];
 
 				if (tri) {
-					pp_code(&ps, PC_GteGetData(GTE_RGB2), CODE_FT3);
+					pp_code(&ps, rgb, CODE_FT3);
 
 					len = 7;
 				} else {
 					p[8] = xy[3];
 					p[9] = face[FACE_UV23] >> 16;
-					pp_code(&ps, PC_GteGetData(GTE_RGB2), CODE_FT4);
+					pp_code(&ps, rgb, CODE_FT4);
 
 					len = 9;
 				}
 			}
 		} else {
-			/* gouraud: corners 0-2 by DPCT, corner 3 by DPCS (also for a triangle) */
-			uint32_t col0;
+			/* gouraud: the table colours of the corners depth-cued, corners 0-2 with the code byte
+			 * the colour code holds (the last face's), corner 3 with its own (also for a
+			 * triangle) */
+			uint32_t in[3], col[3], col0, col3;
 
-			gte_set(GTE_RGB0, colours[c & 0xff]);
-			gte_set(GTE_RGB1, colours[c >> 8 & 0xff]);
-			gte_set(GTE_RGB2, colours[c >> 16 & 0xff]);
-			PC_GteCommand(GTE_CMD_DPCT);
+			in[0] = colours[c & 0xff];
+			in[1] = colours[c >> 8 & 0xff];
+			in[2] = colours[c >> 16 & 0xff];
+			geom_dpct(&pc_geom, in, (uint8_t)(M3dAsm_ColourCode >> 24), (int16_t)ps.fog, 12, 0,
+			          col, 0);
+			M3dAsm_ColourCode = colours[c >> 24];
+			col3 = pp_dpcs(M3dAsm_ColourCode, M3dAsm_ColourCode, ps.fog);
 
 			if (!(f & FF_TEXTURED)) {
 				p[4] = xy[1];
 				p[6] = xy[2];
-				gte_set(GTE_RGBC, colours[c >> 24]);
 
-				col0 = PC_GteGetData(GTE_RGB0); /* (with the code byte DPCT left) */
-				p[3] = PC_GteGetData(GTE_RGB1);
-				p[5] = PC_GteGetData(GTE_RGB2);
-				PC_GteCommand(GTE_CMD_DPCS);
+				col0 = col[0];
+				p[3] = col[1];
+				p[5] = col[2];
 
 				if (tri) {
 					pp_code(&ps, col0, CODE_G3);
@@ -154,7 +152,7 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 					len = 6;
 				} else {
 					p[8] = xy[3];
-					p[7] = PC_GteGetData(GTE_RGB2);
+					p[7] = col3;
 					pp_code(&ps, col0, CODE_G4);
 
 					len = 8;
@@ -167,12 +165,10 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 				p[3] = face[FACE_UV0];
 				p[6] = face[FACE_UV1] | (f & FF_ABR) << 14;
 				p[9] = uv23;
-				gte_set(GTE_RGBC, colours[c >> 24]);
 
-				col0 = PC_GteGetData(GTE_RGB0) & 0xffffff;
-				p[4] = PC_GteGetData(GTE_RGB1);
-				p[7] = PC_GteGetData(GTE_RGB2);
-				PC_GteCommand(GTE_CMD_DPCS);
+				col0 = col[0] & 0xffffff;
+				p[4] = col[1];
+				p[7] = col[2];
 
 				if (tri) {
 					pp_code(&ps, col0, CODE_GT3);
@@ -181,7 +177,7 @@ void M3dAsm_ProcessPolysFast__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, 
 				} else {
 					p[11] = xy[3];
 					p[12] = uv23 >> 16;
-					p[10] = PC_GteGetData(GTE_RGB2);
+					p[10] = col3;
 					pp_code(&ps, col0, CODE_GT4);
 
 					len = 12;

@@ -6,14 +6,18 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/m3d.h"
 
+#ifndef PC_PORT
 #define gte_ldRGBC_r(r0) __asm__ volatile("mtc2 %0, $6" : : "r"(r0))
 #define gte_ldlvnl(r0)                                                                             \
 	__asm__ volatile("lwc2 $25, 0( %0 ); lwc2 $26, 4( %0 ); lwc2 $27, 8( %0 )" : : "r"(r0))
+#endif
 
 extern SPSXRegion PSXRegion[];
 
@@ -31,6 +35,9 @@ void M3d_PreprocessPulsingColours(int Region) {
 	int rgb0[3];
 	int drgb[3];
 	SRGBI *RGBs;
+#ifdef PC_PORT
+	int16_t k; /* the interpolation weight, 4.12 */
+#endif
 
 	if (Region == -1)
 		return;
@@ -76,14 +83,30 @@ void M3d_PreprocessPulsingColours(int Region) {
 			drgb[0] = (RGBs[ListPos].r << 4) - rgb0[0];
 			drgb[1] = (RGBs[ListPos].g << 4) - rgb0[1];
 			drgb[2] = (RGBs[ListPos].b << 4) - rgb0[2];
+#ifdef PC_PORT
+			k = (int16_t)((t << 12) / RGBs[Old].Interval);
+#else
 			gte_ldRGBC_r(0);
 			gte_lddp((t << 12) / RGBs[Old].Interval);
+#endif
 		}
 
+#ifdef PC_PORT
+		{
+			/* rgb0 + drgb * k, saturated into a colour word (16-bit drgb and k) */
+			int16_t d[3];
+			uint32_t rgb;
+
+			geom_ld_lv(d, drgb);
+			geom_gpl(k, d, rgb0, 12, 0, 0, &rgb, 0);
+			__builtin_memcpy(&pColourTable[((uchar *)pData)[0]], &rgb, 4);
+		}
+#else
 		gte_ldlvnl(&rgb0[0]);
 		gte_ldlvl(&drgb[0]);
 		gte_gpl12();
 		gte_strgb(&pColourTable[((uchar *)pData)[0]]);
+#endif
 
 		pData = (uint *)(ListLen * 4 + (int)pData) + 1;
 	}

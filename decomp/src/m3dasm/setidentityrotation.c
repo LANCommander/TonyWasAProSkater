@@ -1,6 +1,7 @@
 /* M3dMaths_SetIdentityRotation__FP6MATRIX (0x8008b238) -- C interpretation of hand-written assembly (M3DMATHS) */
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
+/* test_asm: gte_out none (no caller reads what retail left in the GTE's data registers) */
 #include "m3dmaths.h"
 
 /* Sets a matrix's rotation to the identity (1.0 = 4096 on the diagonal). The translation is left

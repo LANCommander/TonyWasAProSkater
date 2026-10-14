@@ -7,7 +7,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/camera.h"

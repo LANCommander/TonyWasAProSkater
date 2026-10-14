@@ -202,12 +202,14 @@ class Ctx:
         self.static_ctors = [int.from_bytes(img[off + 4 * i:off + 4 * i + 4], "little")
                              for i in range(19)]
         self.psyq = {}
+        self.native_at = {}
         p = os.path.join(ROOT, "build", "psyq_names.tsv")
         if os.path.exists(p):
             for q in read_tsv(p):
                 self.psyq.setdefault(q[1], int(q[0], 16))
-        self.native_at = {"_psx_%08x" % self.psyq[n]: "_" + t for n, t in NATIVE_RENAME.items()
-                          if n in self.psyq}
+                t = NATIVE_RENAME.get(q[1]) or NATIVE_AT.get(q[1])
+                if t:  # every copy of a function linked more than once
+                    self.native_at["_psx_%08x" % int(q[0], 16)] = "_" + t
 
 
 BUILTIN_CXX = {
@@ -220,17 +222,25 @@ BUILTIN_CXX = {
 # symbols the native toolchain provides; never remapped
 NATIVE_OK = re.compile(r"^(__alloca|___chkstk.*|__[a-z]*div[sd]i3|__[a-z]*mod[sd]i3|__mul[sd]i3|"
                        r"__ashldi3|__ashrdi3|__lshrdi3|__cmpdi2|__ucmpdi2|_?memcpy|_?memset|"
-                       r"_?memmove|__fixunsdfdi|__floatdidf|_?abort|_?PC_Gte\w+|__ZTV.*|___cxa_.*|"
+                       r"_?memmove|__fixunsdfdi|__floatdidf|_?abort|_?pc_geom\w*|_?M3dMaths_LastVec|"
+                       r"_?M3dAsm_ColourCode|__ZTV.*|___cxa_.*|"
                        r"___gxx_personality.*|__Unwind.*|___dso_handle|_atexit|"
                        r"__GLOBAL_OFFSET_TABLE_|_?pc_delete_mark|_?pc_vdelete|"
                        # the C library: the host's, not Psy-Q's LIBC at its retail addresses
                        r"_?sprintf|_?strcpy|_?strlen|_?strcmp|_?strncmp|_?memchr|_?malloc|_?free)$")
 
 # Psy-Q functions whose callers get a native port function instead: the game's debug printf goes
-# to the port's trace log, and libsn's operator delete (which freed into the BIOS heap, which
-# the game never allocates from) does nothing
+# to the port's trace log, and libsn's operator delete (which freed into the BIOS heap, which the
+# game never allocates from) does nothing
 NATIVE_RENAME = {"printf": "PC_GameDebugf", "puts": "PC_GameDebugPuts",
                  "__builtin_delete": "pc_delete_unowned"}
+# The same, by address only: libgte is src/pc_libgte.c (PC_<name>). Not by name: decompiled
+# sources call the game's own M3dMaths_SquareRoot0 (0x8008b5dc) `SquareRoot0` too.
+NATIVE_AT = dict((n, "PC_" + n) for n in (
+    "SetRotMatrix", "SetTransMatrix", "SetGeomScreen", "SetGeomOffset", "SetFarColor", "InitGeom",
+    "TransposeMatrix", "TransMatrix", "MulMatrix", "MulMatrix0", "ApplyMatrixSV", "ApplyMatrixLV",
+    "RotMatrixYXZ", "RotMatrixYXZ_gte", "RotMatrixY", "VectorNormal", "VectorNormalSS",
+    "SquareRoot0", "catan", "ratan2"))
 
 
 def strip_us(sym):
@@ -766,9 +776,14 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     ctx = Ctx()
     tus = [t for t in ctx.tus.values() if not a.only or a.only in t["src"]]
+    # the port's own headers too (pc_game.h is force-included; pc_geom.h is inline code): the
+    # stamps only see the project headers a TU includes by name
+    pc_headers = "".join(open(os.path.join(PC, "include", h), encoding="utf-8").read()
+                         for h in sorted(os.listdir(os.path.join(PC, "include")))
+                         if h.endswith(".h"))
     flags_hash = hashlib.sha1((json.dumps(COMMON_FLAGS + C_FLAGS + CXX_FLAGS) +
                               open(os.path.join(HERE, "portsrc.py")).read() +
-                              open(__file__).read()).encode()).hexdigest()
+                              open(__file__).read() + pc_headers).encode()).hexdigest()
     metas = []
     with cf.ThreadPoolExecutor(a.j) as ex:
         futs = {ex.submit(build_tu, ctx, t, flags_hash): t for t in tus}

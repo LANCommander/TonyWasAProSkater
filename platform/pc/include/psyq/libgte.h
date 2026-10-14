@@ -1,5 +1,5 @@
 /* Psy-Q libgte types and entry points for the PC build. The structures keep their PS1 layouts
- * (the game data depends on them); the functions are translated from the retail MIPS code. */
+ * (the game data depends on them); the functions the game uses are src/pc_libgte.c. */
 #ifndef PSYQ_LIBGTE_H
 #define PSYQ_LIBGTE_H
 

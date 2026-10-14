@@ -6,7 +6,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/bruce.h"
@@ -55,10 +57,14 @@ void CBruce::AlignToFallLine(int Amount) {
 	mLPN.vx = mPolyNormal.vx;
 	mLPN.vy = mPolyNormal.vy;
 	mLPN.vz = mPolyNormal.vz;
+#ifdef PC_PORT
+	geom_cross(&mLPN, &FallLineUnit, &FallLinePerp, 12);
+#else
 	gte_ldopv1(&mLPN);
 	gte_ldopv2(&FallLineUnit);
 	gte_op12();
 	gte_stlvnl(&FallLinePerp);
+#endif
 
 	FrontInPlane = mFront;
 	ProjectCVectorToPlane(&FrontInPlane, mPolyNormal);

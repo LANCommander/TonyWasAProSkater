@@ -1,6 +1,7 @@
 /* M3dAsm_LineColijPreprocessItemsZoned__FPP4ItemiP9SLineInfoUs (0x8008a948) -- C interpretation of hand-written assembly (M3DASM) */
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
+/* test_asm: gte_out none (no caller reads what retail left in the GTE's data registers) */
 
 /* Coarse pass of a line-collision query over a zone's zero-terminated item array
  * (M3dColij_LineToItemZoned): every item whose model's bounding box, placed at the item's position,

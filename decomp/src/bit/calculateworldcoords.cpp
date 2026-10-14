@@ -3,7 +3,9 @@
    giving the four world-space corners. */
 #include <sys/types.h>
 #include <libgte.h>
+#ifndef PC_PORT
 #include <inline_c.h>
+#endif
 #include "game/bit.h"
 #include "game/m3dasm.h"
 
@@ -13,6 +15,12 @@ void CChunkBit::CalculateWorldCoords() {
 	M3dMaths_RotMatrixYXZ((SVECTOR *)&mAngles, &m);
 	SetRotMatrix(&m);
 	M3dAsm_SetTransVector((Vector *)&mPos);
+#ifdef PC_PORT
+	geom_transform_sv(&mPosA, &mWorldPosA);
+	geom_transform_sv(&mPosB, &mWorldPosB);
+	geom_transform_sv(&mPosC, &mWorldPosC);
+	geom_transform_sv(&mPosD, &mWorldPosD);
+#else
 	gte_ldv0(&mPosA);
 	gte_rtv0tr();
 	gte_stlvnl(&mWorldPosA);
@@ -25,4 +33,5 @@ void CChunkBit::CalculateWorldCoords() {
 	gte_ldv0(&mPosD);
 	gte_rtv0tr();
 	gte_stlvnl(&mWorldPosD);
+#endif
 }

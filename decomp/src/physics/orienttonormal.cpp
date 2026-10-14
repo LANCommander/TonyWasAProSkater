@@ -2,7 +2,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/bruce.h"
@@ -31,15 +33,23 @@ void CBruce::OrientToNormal() {
 
 		M3dUtils_NormaliseVector(&normal);
 		mFront.Set(mRotMatrix.m[0][2], mRotMatrix.m[1][2], mRotMatrix.m[2][2]);
+#ifdef PC_PORT
+		geom_cross(&mFront, &normal, &x1, 12);
+#else
 		gte_ldopv1(&mFront);
 		gte_ldopv2(&normal);
 		gte_op12();
 		gte_stlvnl(&x1);
+#endif
 		M3dUtils_NormaliseVector(&x1);
+#ifdef PC_PORT
+		geom_cross(&normal, &x1, &z1, 12);
+#else
 		gte_ldopv1(&normal);
 		gte_ldopv2(&x1);
 		gte_op12();
 		gte_stlvnl(&z1);
+#endif
 
 		mRotMatrix.m[0][0] = x1.vx;
 		mRight.vx = mRotMatrix.m[0][0];

@@ -1,9 +1,10 @@
 /* M3dAsm_LineColijProcessVertices__FP6SModelP16SProjectedVertexiP6VECTOR (0x8008aa50) -- C interpretation of hand-written assembly (M3DASM) */
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
+/* test_asm: gte_out none (no caller reads what retail left in the GTE's data registers) */
 
 /* First half of the per-face line test (M3dColij_LineToThisItem): moves every vertex of a model
- * into line space (offset by the item position relative to the line start, then through the GTE
+ * into line space (offset by the item position relative to the line start, then through the
  * colour matrix and translation the caller set up, which turn the line into the +z axis from 0 to
  * length). Each vertex is stored with an outcode: which side of the line it lies on in x and y,
  * and whether it's before the start or past the end in z. Returns the AND of all the outcodes
@@ -19,17 +20,11 @@ int M3dAsm_LineColijProcessVertices__FP6SModelP16SProjectedVertexiP6VECTOR(SMode
 	unsigned all = PV_ALL;
 
 	do {
-		int x, y, z;
+		/* colour matrix * the vertex (16 bits per coordinate) + translation */
+		GeomAcc r = geom_mvmva(pc_geom.lcm, pc_geom.tr, (int16_t)(v->vx + ofs->vx),
+		                       (int16_t)(v->vy + ofs->vy), (int16_t)(v->vz + ofs->vz), 12, 0, 0);
+		int x = r.mac[0], y = r.mac[1], z = r.mac[2];
 		unsigned code;
-
-		PC_GteSetData(9, (unsigned)(v->vx + ofs->vx));
-		PC_GteSetData(10, (unsigned)(v->vy + ofs->vy));
-		PC_GteSetData(11, (unsigned)(v->vz + ofs->vz));
-		gte_mvmva(1, 2, 3, 0, 0); /* colour matrix * IR + translation */
-
-		x = GTE_S(25);
-		y = GTE_S(26);
-		z = GTE_S(27);
 
 		code = 0;
 

@@ -7,7 +7,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/ob.h"
@@ -38,9 +40,13 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 	pBodyHit = 0;
 	NearestHit.Dist = 0x7fffffff;
 	DirectionVec = (NewPos - OldPos) >> 12;
+#ifdef PC_PORT
+	geom_square(&DirectionVec, &SquareVec);
+#else
 	gte_ldlvl(&DirectionVec);
 	gte_sqr0();
 	gte_stlvnl(&SquareVec);
+#endif
 
 	Length = SquareRoot0(SquareVec.vx + SquareVec.vy + SquareVec.vz);
 
@@ -48,9 +54,20 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 		return 0;
 
 	DirectionVec = (DirectionVec << 12) / Length;
+#ifdef PC_PORT
+	/* the direction stays loaded for the loop, as in retail: on the rotation's diagonal (for the
+	 * cross products) and as the light matrix's first row (the dot products) */
+	geom_load_op_diag(&pc_geom, DirectionVec.vx, DirectionVec.vy, DirectionVec.vz);
+	SetSVector(&DirVecShort, DirectionVec.vx, DirectionVec.vy, DirectionVec.vz);
+	pc_geom.llm[0][0] = DirVecShort.vx;
+	pc_geom.llm[0][1] = DirVecShort.vy;
+	pc_geom.llm[0][2] = DirVecShort.vz;
+	pc_geom.llm[1][0] = DirVecShort.pad;
+#else
 	gte_ldopv1(&DirectionVec);
 	SetSVector(&DirVecShort, DirectionVec.vx, DirectionVec.vy, DirectionVec.vz);
 	gte_ldsvllrow0(&DirVecShort);
+#endif
 
 	if (OldPos.vx < NewPos.vx) {
 		MinCoords.vx = OldPos.vx;
@@ -98,35 +115,67 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 			continue;
 
 		*(CVector *)&OldToCentre = (pBody->mPos - OldPos) >> 12;
+#ifdef PC_PORT
+		{
+			/* the squares of direction x OldToCentre (16-bit components) */
+			int16_t d[3], v[3];
+			GeomAcc r;
+
+			geom_op_diag(&pc_geom, d);
+			geom_ld_lv(v, &OldToCentre);
+			r = geom_op(d, v, 12, 0, 0);
+			r = geom_sqr(r.ir, 0, 1, 0);
+			geom_st_lv(&SquareVec, r.mac);
+		}
+#else
 		gte_ldopv2(&OldToCentre);
 		gte_op12();
 		gte_sqr0();
 		gte_stlvnl(&SquareVec);
+#endif
 
 		RadiusSquared = pBody->mRMinor * pBody->mRMinor;
 
 		if (SquareVec.vx + SquareVec.vy + SquareVec.vz >= RadiusSquared)
 			continue;
 
+#ifdef PC_PORT
+		{
+			/* direction . OldToCentre */
+			int16_t v[3];
+
+			geom_ld_lv(v, &OldToCentre);
+			DotProd = geom_mvmva(pc_geom.llm, 0, v[0], v[1], v[2], 12, 0, 0).mac[0];
+		}
+#else
 		gte_ldlv0(&OldToCentre);
 		gte_llv0();
 		gte_stlvnl0(&DotProd);
+#endif
 
 		if (DotProd >= NearestHit.Dist)
 			continue;
 
 		if (DotProd < 0) {
+#ifdef PC_PORT
+			geom_square(&OldToCentre, &SquareVec);
+#else
 			gte_ldlvl(&OldToCentre);
 			gte_sqr0();
 			gte_stlvnl(&SquareVec);
+#endif
 
 			if (SquareVec.vx + SquareVec.vy + SquareVec.vz >= RadiusSquared)
 				continue;
 		} else if (DotProd > Length) {
 			*(CVector *)&NewToCentre = (pBody->mPos - NewPos) >> 12;
+#ifdef PC_PORT
+			geom_square(&NewToCentre, &SquareVec);
+#else
 			gte_ldlvl(&NewToCentre);
 			gte_sqr0();
 			gte_stlvnl(&SquareVec);
+#endif
 
 			if (SquareVec.vx + SquareVec.vy + SquareVec.vz >= RadiusSquared)
 				continue;
@@ -137,10 +186,22 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 	}
 
 	if (pBodyHit) {
+#ifdef PC_PORT
+		{
+			/* direction * distance (16 bits each) */
+			int16_t v[3];
+			GeomAcc r;
+
+			geom_ld_lv(v, &DirectionVec);
+			r = geom_gpf((int16_t)NearestHit.Dist, v, 12, 0, 0, 0, 0);
+			geom_st_lv(&ColijPos, r.mac);
+		}
+#else
 		gte_ldlvl(&DirectionVec);
 		gte_lddp(NearestHit.Dist);
 		gte_gpf12();
 		gte_stlvnl(&ColijPos);
+#endif
 		ColijPos <<= 12;
 		ColijPos += OldPos;
 	}

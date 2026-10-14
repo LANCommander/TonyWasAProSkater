@@ -5,7 +5,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/colij.h"
@@ -46,10 +48,14 @@ void M3dColij_InitLineInfo(SLineInfo *pInfo) {
 	s1 = L.vx * L.vx + L.vz * L.vz;
 
 	if (s1) {
+#ifdef PC_PORT
+		lzc = geom_lzc(s1); /* leading zeros */
+#else
 		gte_ldlzc(s1);
 		gte_nop();
 		gte_nop();
 		gte_stlzc(&lzc);
+#endif
 
 		Shift1 = (lzc - 1) >> 1;
 		r1Norm = M3dMaths_SquareRoot0(s1 << ((lzc - 1) & 0x1e));
@@ -68,10 +74,14 @@ void M3dColij_InitLineInfo(SLineInfo *pInfo) {
 		*pShort = Cos;
 
 		s2 = s1 + L.vy * L.vy;
+#ifdef PC_PORT
+		lzc = geom_lzc(s2);
+#else
 		gte_ldlzc(s2);
 		gte_nop();
 		gte_nop();
 		gte_stlzc(&lzc);
+#endif
 
 		Shift2 = (lzc - 1) >> 1;
 		r2Norm = M3dMaths_SquareRoot0(s2 << ((lzc - 1) & 0x1e));
@@ -111,7 +121,11 @@ void M3dColij_InitLineInfo(SLineInfo *pInfo) {
 		pInfo->WorldCst.m[2][2] = 0;
 	}
 
+#ifdef PC_PORT
+	geom_ld_mat(pc_geom.rot, &pInfo->WorldCst);
+#else
 	gte_SetRotMatrix(&pInfo->WorldCst);
+#endif
 
 	p1 = &pInfo->EndCoords;
 

@@ -11,7 +11,9 @@ extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/bit.h"
@@ -50,8 +52,15 @@ void Bit_Display() {
 	CSpecialDisplay *pSpecial;
 	CGlow *pGlow;
 
+#ifdef PC_PORT
+	GeomProj proj; /* the last projection's results */
+
+	geom_ld_mat(pc_geom.rot, &MikeCamera[Camera_CurrentMikeCamera].View);
+	geom_load_vector(pc_geom.tr, 0, 0, 0);
+#else
 	gte_SetRotMatrix(&MikeCamera[Camera_CurrentMikeCamera].View);
 	__asm__ volatile("ctc2 $0, $5; ctc2 $0, $6; ctc2 $0, $7");
+#endif
 
 	camera_pos.vx = MikeCamera[Camera_CurrentMikeCamera].Position.vx;
 	camera_pos.vy = MikeCamera[Camera_CurrentMikeCamera].Position.vy;
@@ -71,8 +80,12 @@ void Bit_Display() {
 			VECTOR RotCoords;
 			CVector Centre = (pGlow->mPos >> 12) - camera_pos;
 
+#ifdef PC_PORT
+			proj = geom_project_lv(&Centre);
+#else
 			gte_ldlv0(&Centre);
 			gte_rtps();
+#endif
 			DR_TPAGE *ptpage = (DR_TPAGE *)pPoly;
 			uchar *newppoly = pPoly + sizeof(DR_TPAGE);
 
@@ -90,7 +103,11 @@ void Bit_Display() {
 			int Ang = pGlow->mAngle;
 			SSection *pSection = pGlow->mpSections;
 
+#ifdef PC_PORT
+			geom_st_lv(&RotCoords, proj.v.mac);
+#else
 			gte_stlvnl(&RotCoords);
+#endif
 
 			if ((uint)RotCoords.vz > 20000)
 				continue;
@@ -119,7 +136,11 @@ void Bit_Display() {
 				else if (CentreY < -1024)
 					CentreY = -1024;
 			} else {
+#ifdef PC_PORT
+				geom_st_word(&y0x0, proj.sxy);
+#else
 				gte_stsxy(&y0x0);
+#endif
 
 				CentreX = (short)y0x0;
 				CentreY = (short)(y0x0 >> 16);
@@ -523,8 +544,12 @@ void Bit_Display() {
 		Temp.vx = (pFlatBit->mPos.vx >> 12) - camera_pos.vx;
 		Temp.vy = (pFlatBit->mPos.vy >> 12) - camera_pos.vy;
 		Temp.vz = (pFlatBit->mPos.vz >> 12) - camera_pos.vz;
+#ifdef PC_PORT
+		proj = geom_project_lv(&Temp);
+#else
 		gte_ldlv0(&Temp);
 		gte_rtps();
+#endif
 		POLY_FT4 *apoly = (POLY_FT4 *)pPoly;
 		uchar *newppoly = pPoly + sizeof(POLY_FT4);
 
@@ -534,7 +559,11 @@ void Bit_Display() {
 		pPoly = newppoly;
 		apoly->tag = 0x09000000;
 		*(u_long *)&apoly->r0 = pFlatBit->mCodeBGR;
+#ifdef PC_PORT
+		zed = proj.v.mac[2];
+#else
 		gte_stlvnl2(&zed);
+#endif
 
 		if (zed < GTEZedLimit || zed > pCurrentViewport->Yon) {
 			pPoly = (uchar *)apoly;
@@ -550,7 +579,11 @@ void Bit_Display() {
 			continue;
 		}
 
+#ifdef PC_PORT
+		geom_st_word(&y0x0, proj.sxy);
+#else
 		gte_stsxy(&y0x0);
+#endif
 		Texture *stored = pFlatBit->mpPSXFrame->pTexture;
 		uint foo1 = *(uint *)&stored->u0;
 		uint foo2 = *(uint *)&stored->u1;
@@ -692,6 +725,10 @@ void Bit_Display() {
 	while (pGlass) {
 		SVECTOR STemp;
 		long zed;
+#ifdef PC_PORT
+		int16_t tri[3][3];
+		GeomProj triProj[3];
+#endif
 		POLY_F3 *aGou;
 		DR_TPAGE *ptpage;
 		uchar *newppoly;
@@ -702,18 +739,31 @@ void Bit_Display() {
 		STemp.vx = (pGlass->mPosA.vx >> 12) - camera_pos.vx;
 		STemp.vy = (pGlass->mPosA.vy >> 12) - camera_pos.vy;
 		STemp.vz = (pGlass->mPosA.vz >> 12) - camera_pos.vz;
+#ifdef PC_PORT
+		geom_ld_sv(tri[0], &STemp);
+#else
 		gte_ldv0(&STemp);
+#endif
 
 		STemp.vx = (pGlass->mPosB.vx >> 12) - camera_pos.vx;
 		STemp.vy = (pGlass->mPosB.vy >> 12) - camera_pos.vy;
 		STemp.vz = (pGlass->mPosB.vz >> 12) - camera_pos.vz;
+#ifdef PC_PORT
+		geom_ld_sv(tri[1], &STemp);
+#else
 		gte_ldv1(&STemp);
+#endif
 
 		STemp.vx = (pGlass->mPosC.vx >> 12) - camera_pos.vx;
 		STemp.vy = (pGlass->mPosC.vy >> 12) - camera_pos.vy;
 		STemp.vz = (pGlass->mPosC.vz >> 12) - camera_pos.vz;
+#ifdef PC_PORT
+		geom_ld_sv(tri[2], &STemp);
+		geom_rtpt(&pc_geom, tri, 12, 0, triProj, 0, 0);
+#else
 		gte_ldv2(&STemp);
 		gte_rtpt();
+#endif
 
 		aGou = (POLY_F3 *)pPoly;
 		ptpage = (DR_TPAGE *)(aGou + 1);
@@ -732,8 +782,15 @@ void Bit_Display() {
 		b = StoredTPagePrim[1];
 		ptpage->tag = a;
 		ptpage->code[0] = b;
+#ifdef PC_PORT
+		geom_st_word(&aGou->x0, triProj[0].sxy);
+		geom_st_word(&aGou->x1, triProj[1].sxy);
+		geom_st_word(&aGou->x2, triProj[2].sxy);
+		zed = triProj[2].v.mac[2];
+#else
 		gte_stsxy3(&aGou->x0, &aGou->x1, &aGou->x2);
 		gte_stlvnl2(&zed);
+#endif
 
 		OTPos = (uint *)((char *)pDoubleBuffer->pOT + (zed & 0x3ffc));
 		addPrim(OTPos, aGou);
@@ -753,23 +810,47 @@ void Bit_Display() {
 		long zed2;
 
 		Temp = (pGLine->mStart >> 12) - camera_pos;
+#ifdef PC_PORT
+		proj = geom_project_lv(&Temp);
+#else
 		gte_ldlv0(&Temp);
 		gte_rtps();
+#endif
+#ifdef PC_PORT
+		zed = proj.v.mac[2];
+#else
 		gte_stlvnl2(&zed);
+#endif
 
 		if (zed >= pCurrentViewport->Hither && zed <= pCurrentViewport->Yon) {
+#ifdef PC_PORT
+			geom_st_word(&y0x01, proj.sxy);
+#else
 			gte_stsxy(&y0x01);
+#endif
 
 			Temp = (pGLine->mEnd >> 12) - camera_pos;
+#ifdef PC_PORT
+			proj = geom_project_lv(&Temp);
+#else
 			gte_ldlv0(&Temp);
 			gte_rtps();
+#endif
+#ifdef PC_PORT
+			zed2 = proj.v.mac[2];
+#else
 			gte_stlvnl2(&zed2);
+#endif
 
 			if (zed2 >= pCurrentViewport->Hither && zed2 <= pCurrentViewport->Yon) {
 				LINE_G2 *aline;
 				uchar *newppoly;
 
+#ifdef PC_PORT
+				geom_st_word(&y0x02, proj.sxy);
+#else
 				gte_stsxy(&y0x02);
+#endif
 
 				aline = (LINE_G2 *)pPoly;
 				newppoly = pPoly + sizeof(LINE_G2);
@@ -812,8 +893,12 @@ void Bit_Display() {
 			uint foo3;
 
 			Temp = (pQuad->mPos >> 12) - camera_pos;
+#ifdef PC_PORT
+			proj = geom_project_lv(&Temp);
+#else
 			gte_ldlv0(&Temp);
 			gte_rtps();
+#endif
 
 			stored = pQuad->mpTexture;
 			apoly = (POLY_FT4 *)pPoly;
@@ -823,30 +908,54 @@ void Bit_Display() {
 				return;
 
 			pPoly = newppoly;
+#ifdef PC_PORT
+			MaxZed = proj.v.mac[2];
+#else
 			gte_stlvnl2(&MaxZed);
+#endif
 
 			if (MaxZed < pCurrentViewport->Hither || MaxZed > pCurrentViewport->Yon) {
 				pPoly = (uchar *)apoly;
 				goto NEXTQUAD;
 			}
 
+#ifdef PC_PORT
+			geom_st_word(&apoly->x0, proj.sxy);
+#else
 			gte_stsxy(&apoly->x0);
+#endif
 
 			Temp = (pQuad->mPosB >> 12) - camera_pos;
+#ifdef PC_PORT
+			proj = geom_project_lv(&Temp);
+#else
 			gte_ldlv0(&Temp);
 			gte_rtps();
+#endif
+#ifdef PC_PORT
+			ZedB = proj.v.mac[2];
+#else
 			gte_stlvnl2(&ZedB);
+#endif
 
 			if (ZedB < pCurrentViewport->Hither || ZedB > pCurrentViewport->Yon) {
 				pPoly = (uchar *)apoly;
 				goto NEXTQUAD;
 			}
 
+#ifdef PC_PORT
+			geom_st_word(&apoly->x1, proj.sxy);
+#else
 			gte_stsxy(&apoly->x1);
+#endif
 
 			Temp = (pQuad->mPosC >> 12) - camera_pos;
+#ifdef PC_PORT
+			proj = geom_project_lv(&Temp);
+#else
 			gte_ldlv0(&Temp);
 			gte_rtps();
+#endif
 
 			apoly->tag = 0x09000000;
 			*(u_long *)&apoly->r0 = pQuad->mCodeBGR;
@@ -854,18 +963,30 @@ void Bit_Display() {
 			if (ZedB > MaxZed)
 				MaxZed = ZedB;
 
+#ifdef PC_PORT
+			ZedC = proj.v.mac[2];
+#else
 			gte_stlvnl2(&ZedC);
+#endif
 
 			if (ZedC < pCurrentViewport->Hither || ZedC > pCurrentViewport->Yon) {
 				pPoly = (uchar *)apoly;
 				goto NEXTQUAD;
 			}
 
+#ifdef PC_PORT
+			geom_st_word(&apoly->x2, proj.sxy);
+#else
 			gte_stsxy(&apoly->x2);
+#endif
 
 			Temp = (pQuad->mPosD >> 12) - camera_pos;
+#ifdef PC_PORT
+			proj = geom_project_lv(&Temp);
+#else
 			gte_ldlv0(&Temp);
 			gte_rtps();
+#endif
 			ushort foo4;
 
 			foo1 = *(uint *)&stored->u0;
@@ -883,14 +1004,22 @@ void Bit_Display() {
 			if (ZedC > MaxZed)
 				MaxZed = ZedC;
 
+#ifdef PC_PORT
+			ZedD = proj.v.mac[2];
+#else
 			gte_stlvnl2(&ZedD);
+#endif
 
 			if (ZedD < pCurrentViewport->Hither || ZedD > pCurrentViewport->Yon) {
 				pPoly = (uchar *)apoly;
 				goto NEXTQUAD;
 			}
 
+#ifdef PC_PORT
+			geom_st_word(&apoly->x3, proj.sxy);
+#else
 			gte_stsxy(&apoly->x3);
+#endif
 
 			if (MaxZed < ZedD)
 				MaxZed = ZedD;
@@ -929,14 +1058,30 @@ void Bit_Display() {
 
 		MaxZed = -1;
 		Temp = p_chunk->mWorldPosA - camera_pos;
+#ifdef PC_PORT
+		proj = geom_project_lv(&Temp);
+#else
 		gte_ldlv0(&Temp);
 		gte_rtps();
+#endif
+#ifdef PC_PORT
+		ZedA = proj.v.mac[2];
+#else
 		gte_stlvnl2(&ZedA);
+#endif
+#ifdef PC_PORT
+		geom_st_word(&y0x0A, proj.sxy);
+#else
 		gte_stsxy(&y0x0A);
+#endif
 
 		Temp = p_chunk->mWorldPosB - camera_pos;
+#ifdef PC_PORT
+		proj = geom_project_lv(&Temp);
+#else
 		gte_ldlv0(&Temp);
 		gte_rtps();
+#endif
 
 		if (ZedA < pCurrentViewport->Hither || ZedA > pCurrentViewport->Yon)
 			goto NEXTCHUNK;
@@ -944,12 +1089,24 @@ void Bit_Display() {
 		if (ZedA > MaxZed)
 			MaxZed = ZedA;
 
+#ifdef PC_PORT
+		ZedB = proj.v.mac[2];
+#else
 		gte_stlvnl2(&ZedB);
+#endif
+#ifdef PC_PORT
+		geom_st_word(&y0x0B, proj.sxy);
+#else
 		gte_stsxy(&y0x0B);
+#endif
 
 		Temp = p_chunk->mWorldPosC - camera_pos;
+#ifdef PC_PORT
+		proj = geom_project_lv(&Temp);
+#else
 		gte_ldlv0(&Temp);
 		gte_rtps();
+#endif
 
 		if (ZedB < pCurrentViewport->Hither || ZedB > pCurrentViewport->Yon)
 			goto NEXTCHUNK;
@@ -957,12 +1114,24 @@ void Bit_Display() {
 		if (ZedB > MaxZed)
 			MaxZed = ZedB;
 
+#ifdef PC_PORT
+		ZedC = proj.v.mac[2];
+#else
 		gte_stlvnl2(&ZedC);
+#endif
+#ifdef PC_PORT
+		geom_st_word(&y0x0C, proj.sxy);
+#else
 		gte_stsxy(&y0x0C);
+#endif
 
 		Temp = p_chunk->mWorldPosD - camera_pos;
+#ifdef PC_PORT
+		proj = geom_project_lv(&Temp);
+#else
 		gte_ldlv0(&Temp);
 		gte_rtps();
+#endif
 
 		if (ZedC < pCurrentViewport->Hither || ZedC > pCurrentViewport->Yon)
 			goto NEXTCHUNK;
@@ -970,7 +1139,11 @@ void Bit_Display() {
 		if (ZedC > MaxZed)
 			MaxZed = ZedC;
 
+#ifdef PC_PORT
+		ZedD = proj.v.mac[2];
+#else
 		gte_stlvnl2(&ZedD);
+#endif
 
 		if (ZedD < pCurrentViewport->Hither || ZedD > pCurrentViewport->Yon)
 			goto NEXTCHUNK;
@@ -978,7 +1151,11 @@ void Bit_Display() {
 		if (ZedD > MaxZed)
 			MaxZed = ZedD;
 
+#ifdef PC_PORT
+		geom_st_word(&y0x0D, proj.sxy);
+#else
 		gte_stsxy(&y0x0D);
+#endif
 
 		pOTPos = (uint *)((char *)pDoubleBuffer->pOT + (MaxZed & 0x3ffc));
 
@@ -1003,9 +1180,13 @@ void Bit_Display() {
 		}
 
 		aft3poly = (POLY_FT3 *)pPoly;
+#ifdef PC_PORT
+		opz = geom_nclip(y0x0A, y0x0B, y0x0C, 0);
+#else
 		gte_ldsxy3(y0x0A, y0x0B, y0x0C);
 		gte_nclip();
 		gte_stopz(&opz);
+#endif
 
 		if (opz <= 0) {
 			aft3poly->tag = 0x07000000;
@@ -1021,9 +1202,13 @@ void Bit_Display() {
 			aft3poly++;
 		}
 
+#ifdef PC_PORT
+		opz = geom_nclip(y0x0A, y0x0D, y0x0B, 0);
+#else
 		gte_ldsxy3(y0x0A, y0x0D, y0x0B);
 		gte_nclip();
 		gte_stopz(&opz);
+#endif
 
 		if (opz <= 0) {
 			aft3poly->tag = 0x07000000;
@@ -1039,9 +1224,13 @@ void Bit_Display() {
 			aft3poly++;
 		}
 
+#ifdef PC_PORT
+		opz = geom_nclip(y0x0B, y0x0D, y0x0C, 0);
+#else
 		gte_ldsxy3(y0x0B, y0x0D, y0x0C);
 		gte_nclip();
 		gte_stopz(&opz);
+#endif
 
 		if (opz <= 0) {
 			aft3poly->tag = 0x07000000;
@@ -1057,9 +1246,13 @@ void Bit_Display() {
 			aft3poly++;
 		}
 
+#ifdef PC_PORT
+		opz = geom_nclip(y0x0C, y0x0D, y0x0A, 0);
+#else
 		gte_ldsxy3(y0x0C, y0x0D, y0x0A);
 		gte_nclip();
 		gte_stopz(&opz);
+#endif
 
 		if (opz <= 0) {
 			aft3poly->tag = 0x07000000;
@@ -1091,8 +1284,12 @@ void Bit_Display() {
 		long zed;
 
 		Temp = (pPixel->mPos >> 12) - camera_pos;
+#ifdef PC_PORT
+		proj = geom_project_lv(&Temp);
+#else
 		gte_ldlv0(&Temp);
 		gte_rtps();
+#endif
 
 		if ((pPixel->mWidthHeight & 0xf) == 1) {
 			TILE_1 *atile;
@@ -1107,7 +1304,11 @@ void Bit_Display() {
 			pPoly = newppoly;
 			atile->tag = pPixel->tag;
 			*(u_long *)&atile->r0 = *(u_long *)&pPixel->r0;
+#ifdef PC_PORT
+			zed = proj.v.mac[2];
+#else
 			gte_stlvnl2(&zed);
+#endif
 
 			if (zed < pCurrentViewport->Hither) {
 				pPoly = (uchar *)atile;
@@ -1119,7 +1320,11 @@ void Bit_Display() {
 				goto SKIPPIXEL;
 			}
 
+#ifdef PC_PORT
+			geom_st_word(&atile->x0, proj.sxy);
+#else
 			gte_stsxy(&atile->x0);
+#endif
 			addPrim((uint *)(((zed - pPixel->mFrigDeltaZ) & 0x3ffc) + (uint)pDoubleBuffer->pOT),
 			        atile);
 		} else {
@@ -1136,7 +1341,11 @@ void Bit_Display() {
 			atile->tag = pPixel->tag;
 			*(u_long *)&atile->r0 = *(u_long *)&pPixel->r0;
 			*(u_long *)&atile->w = pPixel->mWidthHeight;
+#ifdef PC_PORT
+			zed = proj.v.mac[2];
+#else
 			gte_stlvnl2(&zed);
+#endif
 
 			if (zed < pCurrentViewport->Hither) {
 				pPoly = (uchar *)atile;
@@ -1148,7 +1357,11 @@ void Bit_Display() {
 				goto SKIPPIXEL;
 			}
 
+#ifdef PC_PORT
+			geom_st_word(&atile->x0, proj.sxy);
+#else
 			gte_stsxy(&atile->x0);
+#endif
 			addPrim((uint *)(((zed - pPixel->mFrigDeltaZ) & 0x3ffc) + (uint)pDoubleBuffer->pOT),
 			        atile);
 		}
@@ -1217,19 +1430,31 @@ void Bit_Display() {
 			uint Ay0x0;
 
 			Temp = (pLinked2EndedBit->mEndPosA >> 12) - camera_pos;
+#ifdef PC_PORT
+			proj = geom_project_lv(&Temp);
+#else
 			gte_ldlv0(&Temp);
 			gte_rtps();
+#endif
 
 			stored = pLinked2EndedBit->mpPSXFrame->pTexture;
 			Width = pLinked2EndedBit->mpPSXFrame->Width;
+#ifdef PC_PORT
+			zed = proj.v.mac[2];
+#else
 			gte_stlvnl2(&zed);
+#endif
 
 			if (zed < pCurrentViewport->Hither || zed > pCurrentViewport->Yon) {
 				Broken = 1;
 				goto NEXTL2E;
 			}
 
+#ifdef PC_PORT
+			geom_st_word(&Ay0x0, proj.sxy);
+#else
 			gte_stsxy(&Ay0x0);
+#endif
 
 			Ax = (short)Ay0x0;
 			Ay = (short)(Ay0x0 >> 16);
@@ -1245,8 +1470,12 @@ void Bit_Display() {
 		}
 
 		Temp = (pLinked2EndedBit->mEndPosB >> 12) - camera_pos;
+#ifdef PC_PORT
+		proj = geom_project_lv(&Temp);
+#else
 		gte_ldlv0(&Temp);
 		gte_rtps();
+#endif
 
 		apoly = (POLY_FT4 *)pPoly;
 		newppoly = pPoly + sizeof(POLY_FT4);
@@ -1271,7 +1500,11 @@ void Bit_Display() {
 		apoly->v2--;
 		apoly->u3--;
 		apoly->v3--;
+#ifdef PC_PORT
+		zed = proj.v.mac[2];
+#else
 		gte_stlvnl2(&zed);
+#endif
 
 		if (zed < pCurrentViewport->Hither || zed > pCurrentViewport->Yon) {
 			pPoly = (uchar *)apoly;
@@ -1279,7 +1512,11 @@ void Bit_Display() {
 			goto NEXTL2E;
 		}
 
+#ifdef PC_PORT
+		geom_st_word(&By0x0, proj.sxy);
+#else
 		gte_stsxy(&By0x0);
+#endif
 
 		Bx = (short)By0x0;
 		By = (short)(By0x0 >> 16);

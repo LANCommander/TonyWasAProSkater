@@ -6,7 +6,9 @@ extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/font.h"
@@ -38,8 +40,13 @@ void Font_Display() {
 	CVector camera_pos;
 	uint ColourInfo;
 
+#ifdef PC_PORT
+	geom_ld_mat(pc_geom.rot, &MikeCamera[Camera_CurrentMikeCamera].View);
+	geom_load_vector(pc_geom.tr, 0, 0, 0);
+#else
 	gte_SetRotMatrix(&MikeCamera[Camera_CurrentMikeCamera].View);
 	__asm__ volatile("ctc2 $0, $5; ctc2 $0, $6; ctc2 $0, $7");
+#endif
 
 	camera_pos.vx = MikeCamera[Camera_CurrentMikeCamera].Position.vx << 12;
 	camera_pos.vy = MikeCamera[Camera_CurrentMikeCamera].Position.vy << 12;
@@ -53,18 +60,33 @@ void Font_Display() {
 		if (pStringInfo->Is3d) {
 			CVector Temp;
 			uint y0x0;
+#ifdef PC_PORT
+			GeomProj proj;
+#endif
 
 			Temp = (pStringInfo->Pos - camera_pos) >> 12;
+#ifdef PC_PORT
+			proj = geom_project_lv(&Temp);
+#else
 			gte_ldlv0(&Temp);
 			gte_rtps();
+#endif
 
 			ColourInfo = pStringInfo->CodeBGR;
+#ifdef PC_PORT
+			zed = proj.v.mac[2];
+#else
 			gte_stlvnl2(&zed);
+#endif
 
 			if (zed < pCurrentViewport->Hither || zed > pCurrentViewport->Yon)
 				goto SKIP;
 
+#ifdef PC_PORT
+			y0x0 = proj.sxy;
+#else
 			gte_stsxy2(&y0x0);
+#endif
 
 			LetterX = y0x0 & 0xffff;
 			LetterY = y0x0 >> 16;

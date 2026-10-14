@@ -6,7 +6,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
@@ -66,6 +68,10 @@ void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
 			mUp.vx = Normal.vx;
 			mUp.vy = Normal.vy;
 			mUp.vz = Normal.vz;
+#ifdef PC_PORT
+			geom_cross(&mFront, &mUp, &mRight, 12);
+			geom_cross(&mUp, &mRight, &mFront, 12);
+#else
 			gte_ldopv1(&mFront);
 			gte_ldopv2(&mUp);
 			gte_op12();
@@ -74,6 +80,7 @@ void CBruce::HandleBailPerpendicular(SVECTOR Normal) {
 			gte_ldopv2(&mRight);
 			gte_op12();
 			gte_stlvnl(&mFront);
+#endif
 			RotMatrixFromFRUVectors();
 		}
 

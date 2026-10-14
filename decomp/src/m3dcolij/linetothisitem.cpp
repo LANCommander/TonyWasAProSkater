@@ -7,7 +7,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/colij.h"
@@ -38,7 +40,11 @@ void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
 	SModel *pModel;
 	SProjectedVertex *pVertices;
 
+#ifdef PC_PORT
+	geom_ld_mat(pc_geom.lcm, &pInfo->WorldCst);
+#else
 	gte_SetColorMatrix(&pInfo->WorldCst);
+#endif
 
 	pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
 
@@ -51,7 +57,11 @@ void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
 		PosnRelStart.vx = (pItem->Position.vx - pInfo->StartCoords.vx) >> 12;
 		PosnRelStart.vy = (pItem->Position.vy - pInfo->StartCoords.vy) >> 12;
 		PosnRelStart.vz = (pItem->Position.vz - pInfo->StartCoords.vz) >> 12;
+#ifdef PC_PORT
+		geom_load_vector(pc_geom.tr, 0, 0, 0);
+#else
 		__asm__ volatile("ctc2 $0, $5; ctc2 $0, $6; ctc2 $0, $7");
+#endif
 	} else {
 		if (pInfo->DropDown) {
 			Tfm.t[0] = (pItem->Position.vx - pInfo->StartCoords.vx) >> 12;
@@ -61,9 +71,21 @@ void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
 			Tfm.t[0] = (pItem->Position.vx - pInfo->StartCoords.vx) >> 12;
 			Tfm.t[1] = (pItem->Position.vy - pInfo->StartCoords.vy) >> 12;
 			Tfm.t[2] = (pItem->Position.vz - pInfo->StartCoords.vz) >> 12;
+#ifdef PC_PORT
+			{
+				/* through the colour matrix (16 bits per coordinate in) */
+				int16_t v[3];
+				GeomAcc r;
+
+				geom_ld_lv(v, &Tfm.t[0]);
+				r = geom_mvmva(pc_geom.lcm, 0, v[0], v[1], v[2], 12, 0, 0);
+				geom_st_lv(&Tfm.t[0], r.mac);
+			}
+#else
 			gte_ldlv0(&Tfm.t[0]);
 			gte_lcv0();
 			gte_stlvnl(&Tfm.t[0]);
+#endif
 		}
 
 		SetTransMatrix(&Tfm);
@@ -79,12 +101,20 @@ void M3dColij_LineToThisItem(Item *pItem, SLineInfo *pInfo) {
 				M3dMaths_ScaleMatrix(pItem, &Tfm);
 
 			M3dMaths_MulLcmMatrix(&Tfm, &Tfm);
+#ifdef PC_PORT
+			geom_ld_mat(pc_geom.lcm, &Tfm);
+#else
 			gte_SetColorMatrix(&Tfm);
+#endif
 		} else {
 			M3dMaths_SetIdentityRotation(&Tfm);
 			M3dMaths_ScaleMatrix(pItem, &Tfm);
 			M3dMaths_MulLcmMatrix(&Tfm, &Tfm);
+#ifdef PC_PORT
+			geom_ld_mat(pc_geom.lcm, &Tfm);
+#else
 			gte_SetColorMatrix(&Tfm);
+#endif
 		}
 	}
 

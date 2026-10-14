@@ -6,13 +6,19 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 	#include <stdlib.h>
 }
 
+#ifndef PC_PORT
 #define MTC2(n, v) __asm__ volatile("mtc2 %0, $" #n : : "r"(v))
+#endif
 #define ABS(x)     (((x) ^ ((x) >> 31)) - ((x) >> 31))
+#ifndef PC_PORT
 #define CTC2(n, v) __asm__ volatile("ctc2 %0, $" #n : : "r"(v))
+#endif
 
 #include "game/car.h"
 #include "game/bruce.h"
@@ -52,6 +58,20 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 		NewX = pSkater->mPos.vx - pCar->mPos.vx;
 		NewY = pSkater->mPos.vy - pCar->mPos.vy;
 		NewZ = pSkater->mPos.vz - pCar->mPos.vz;
+#ifdef PC_PORT
+		{
+			/* into car space, unshifted (16 bits per coordinate in) */
+			GeomAcc r;
+
+			geom_ld_mat(pc_geom.rot, &tm);
+			r = geom_mvmva(pc_geom.rot, 0, (int16_t)(OldX >> 12), (int16_t)(OldY >> 12),
+			               (int16_t)(OldZ >> 12), 0, 0, 0);
+			geom_st_lv(&OldPos, r.mac);
+			r = geom_mvmva(pc_geom.rot, 0, (int16_t)(NewX >> 12), (int16_t)(NewY >> 12),
+			               (int16_t)(NewZ >> 12), 0, 0, 0);
+			geom_st_lv(&Pos, r.mac);
+		}
+#else
 		CTC2(0, ((int *)&tm)[0]);
 		CTC2(1, ((int *)&tm)[1]);
 		CTC2(2, ((int *)&tm)[2]);
@@ -67,6 +87,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 		MTC2(11, NewZ >> 12);
 		gte_rtir_sf0();
 		gte_stlvnl(&Pos);
+#endif
 
 		XMin = OldPos.vx;
 		XMax = Pos.vx;

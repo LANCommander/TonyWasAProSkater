@@ -2,14 +2,16 @@
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
 #include "m3dmaths.h"
+#include "lastvec.h"
 
-/* v + the "last vector" (IR1..3) scaled by the 4.12 factor k (GPL, sf=1):
- * MAC = ((v << 12) + IR * k) >> 12, saturated into IR1..3. v goes in through MAC1..3, k
- * through IR0. */
+/* v + the last vector (lastvec.h) scaled by the 4.12 factor k (16 bits), as the new last
+ * vector: ((v << 12) + last * k) >> 12, saturated to 16 bits.
+ * test_asm: lastvec ir */
 void M3dMaths_AddScaledLastVec12__FP7SVectori(struct SVector *v, int k) {
-	PC_GteSetData(8, (uint32_t)k);
-	PC_GteSetData(25, (uint32_t)(int)v->vx);
-	PC_GteSetData(26, (uint32_t)(int)v->vy);
-	PC_GteSetData(27, (uint32_t)(int)v->vz);
-	gte_gpl12();
+	int32_t base[3];
+
+	base[0] = v->vx;
+	base[1] = v->vy;
+	base[2] = v->vz;
+	M3dMaths_LastVec = geom_gpl((int16_t)k, M3dMaths_LastVec.ir, base, 12, 0, 0, 0, 0);
 }

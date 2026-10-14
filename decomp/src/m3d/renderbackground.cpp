@@ -7,7 +7,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/m3d.h"
@@ -50,12 +52,20 @@ void M3d_RenderBackground(void *p) {
 	do {
 		if (!(pItem->Flags & 0x8001) && PSXRegion[pItem->Region].Usable) {
 			*(uint *)0x1f8003f4 = GlobalFaceFlags;
+#ifdef PC_PORT
+			geom_ld_mat(pc_geom.rot, &pCurrentCamera->View);
+#else
 			gte_SetRotMatrix(&pCurrentCamera->View);
+#endif
 
 			if (*(int *)&pItem->Angles || pItem->Angles.vz) {
 				M3dMaths_RotMatrixYXZ((SVECTOR *)&pItem->Angles, &WorldTransform);
 				M3dMaths_MulRotMatrix(&WorldTransform, &Transform);
+#ifdef PC_PORT
+				geom_ld_mat(pc_geom.rot, &Transform);
+#else
 				gte_SetRotMatrix(&Transform);
+#endif
 			} else {
 				M3dMaths_SetIdentityRotation(&WorldTransform);
 			}

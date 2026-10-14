@@ -7,7 +7,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/m3d.h"
@@ -15,6 +17,20 @@ extern "C" {
 #include "game/camera.h"
 #include "game/decomp.h"
 #include "game/m3dasm.h"
+
+#ifdef PC_PORT
+#include "../m3dasm/lastvec.h"
+
+/* a position (16 bits per coordinate) through the current rotation, >> 12, into three words */
+static void ViewPosition(const VECTOR *p, long *out) {
+	int16_t v[3];
+	GeomAcc r;
+
+	geom_ld_lv(v, p);
+	r = geom_mvmva(pc_geom.rot, 0, v[0], v[1], v[2], 12, 0, 0);
+	geom_st_lv(out, r.mac);
+}
+#endif
 
 extern SPSXRegion PSXRegion[];
 extern SAnimFrame *QuickAnimLookup[];
@@ -68,24 +84,36 @@ void RenderSuperItem(Item *pItem) {
 		*(short *)0x1f8002d4 = 0;
 	}
 
+#ifdef PC_PORT
+	geom_ld_mat(pc_geom.rot, &pCurrentCamera->View);
+#else
 	gte_SetRotMatrix(&pCurrentCamera->View);
+#endif
 	M3dMaths_MulRotMatrix(&((CSuper *)pItem)->mTransform, &SuperTransform);
 
 	Position.vx = (pItem->Position.vx >> 12) - pCurrentCamera->Position.vx;
 	Position.vy = (pItem->Position.vy >> 12) - pCurrentCamera->Position.vy;
 	Position.vz = (pItem->Position.vz >> 12) - pCurrentCamera->Position.vz;
+#ifdef PC_PORT
+	ViewPosition(&Position, SuperTransform.t);
+#else
 	gte_ldlvl(&Position);
 	gte_rtir();
 	gte_stlvnl(&SuperTransform.t[0]);
+#endif
 
 	if (*(short *)&SuperTransform.t[2] < 1000) {
 		Dewibble = 1;
 		Position.vx = (pItem->Position.vx >> 8) - (pCurrentCamera->Position.vx << 4);
 		Position.vy = (pItem->Position.vy >> 8) - (pCurrentCamera->Position.vy << 4);
 		Position.vz = (pItem->Position.vz >> 8) - (pCurrentCamera->Position.vz << 4);
+#ifdef PC_PORT
+		ViewPosition(&Position, SuperTransform.t);
+#else
 		gte_ldlvl(&Position);
 		gte_rtir();
 		gte_stlvnl(&SuperTransform.t[0]);
+#endif
 	} else {
 		Dewibble = 0;
 	}
@@ -135,7 +163,11 @@ void RenderSuperItem(Item *pItem) {
 		if ((pModel->Flags & 1) || (pItem->Flags & 0x4000)) {
 			M3dAsm_GetReflectionMapping(&WorldTransform, SuperTransform.t, (uint *)pModel);
 		} else if ((pModel->Flags & 4) || (ItemFlags & 128)) {
+#ifdef PC_PORT
+			geom_ld_mat(pc_geom.lcm, (MATRIX *)((char *)pItem->pLight + 20));
+#else
 			gte_SetColorMatrix((MATRIX *)((char *)pItem->pLight + 20));
+#endif
 			M3dAsm_SetAmbient((int *)((char *)pItem->pLight + 40));
 			M3dAsm_GetDynamicLighting((SVECTOR *)((char *)pModel + (pModel->NumVertices * 8 + 28)),
 			                          pModel->NumNormals);
@@ -153,9 +185,15 @@ void RenderSuperItem(Item *pItem) {
 			int DoShadows = ((CSuper *)pItem)->mShadowLights != 0;
 
 			if (DoEllipsoids || DoShadows) {
+#ifdef PC_PORT
+				M3dMaths_SetLastVec(&pAnimTransform->t[0]);
+				M3dMaths_TransformLastVec((ushort *)&((CSuper *)pItem)->mTransform);
+				M3dMaths_GetLastVecSums(&WorldTransform.t[0]);
+#else
 				gte_ldsv(&pAnimTransform->t[0]);
 				M3dMaths_TransformLastVec((ushort *)&((CSuper *)pItem)->mTransform);
 				gte_stlvnl(&WorldTransform.t[0]);
+#endif
 				WorldTransform.t[0] >>= 4;
 				WorldTransform.t[1] >>= 4;
 				WorldTransform.t[2] >>= 4;

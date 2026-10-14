@@ -11,7 +11,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/camera.h"
@@ -48,17 +50,25 @@ void CCamera::MoveToDesiredPos(uint normal_slerp) {
 		V.vx = 0;
 		V.vy = 4096;
 		V.vz = 0;
+#ifdef PC_PORT
+		geom_cross(&V, &N, &U, 0);
+#else
 		gte_ldopv1(&V);
 		gte_ldopv2(&N);
 		gte_op0();
 		gte_stlvnl(&U);
+#endif
 		U.vx >>= 12;
 		U.vy >>= 12;
 		U.vz >>= 12;
+#ifdef PC_PORT
+		geom_cross(&N, &U, &V, 0);
+#else
 		gte_ldopv1(&N);
 		gte_ldopv2(&U);
 		gte_op0();
 		gte_stlvnl(&V);
+#endif
 		V.vx >>= 12;
 		V.vy >>= 12;
 		V.vz >>= 12;

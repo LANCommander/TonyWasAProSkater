@@ -20,7 +20,7 @@
 #include "pc_gpu.h"
 #include "pc_dctex.h"
 #include "pc_gpu_gl.h"
-#include "pc_gte.h"
+#include "pc_precise.h"
 #include "pc_render3d.h"
 #include "pc_gpu_gl_shaders.h"
 
@@ -426,7 +426,7 @@ int PC_GlInit(int fixed_scale, int out_w, int out_h)
     st.on = getenv("THPS_GLSTATS") && atoi(getenv("THPS_GLSTATS"));
     s_precise = !getenv("THPS_GL_PRECISE") || atoi(getenv("THPS_GL_PRECISE"));
     s_perspective = !getenv("THPS_GL_PERSPECTIVE") || atoi(getenv("THPS_GL_PERSPECTIVE"));
-    PC_GtePreciseEnable(s_precise || s_perspective);
+    PC_PreciseEnable(s_precise || s_perspective);
     s_active = 1;
     R3d_Init(1);
     if (s_fixed_scale)
@@ -442,7 +442,7 @@ void PC_GlShutdown(void)
 {
     if (!s_active)
         return;
-    PC_GtePreciseEnable(0);
+    PC_PreciseEnable(0);
     glDeleteProgram(s_draw_prog);
     glDeleteProgram(s_copy_prog);
     glDeleteProgram(s_present_prog);
@@ -741,7 +741,7 @@ static void flush(void)
     glBufferData(GL_ARRAY_BUFFER, sizeof s_verts, NULL, GL_STREAM_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)s_nv * sizeof(GVert), s_verts);
     if (s_layer) {
-        /* inside a native 3D layer: test (don't write) the depth of GTE-projected primitives */
+        /* inside a native 3D layer: test (don't write) the depth of projected primitives */
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);

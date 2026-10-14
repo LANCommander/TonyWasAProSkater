@@ -2,11 +2,17 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/m3d.h"
 #include "game/ob.h"
+
+#ifdef PC_PORT
+#include "../m3dasm/lastvec.h"
+#endif
 
 extern SPSXRegion PSXRegion[];
 extern SMatrix TweenBuffer[];
@@ -50,7 +56,11 @@ void M3dUtils_GetHookPosition(VECTOR *pResult, CSuper *pSuper, int Hook) {
 	}
 
 	M3dAsm_TransformTwice((SVector *)pHook, pAnimTransform, &pSuper->mTransform);
+#ifdef PC_PORT
+	M3dMaths_GetLastVecSums(pResult); /* TransformTwice leaves the point there */
+#else
 	gte_stlvnl(pResult);
+#endif
 	pResult->vx <<= 12;
 	pResult->vy <<= 12;
 	pResult->vz <<= 12;

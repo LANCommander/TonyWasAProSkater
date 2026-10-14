@@ -9,10 +9,12 @@ typedef struct {
 	int vx, vy, vz, pad;
 } VECTOR;
 
+#ifndef PC_PORT
 #define CTC2(n, v) __asm__ volatile("ctc2 %0, $" #n : : "r"(v))
 #define MTC2(n, v) __asm__ volatile("mtc2 %0, $" #n : : "r"(v))
 #define STLVNL(p)                                                                                  \
 	__asm__ volatile("swc2 $25, 0(%0); swc2 $26, 4(%0); swc2 $27, 8(%0)" : : "r"(p) : "memory")
+#endif
 
 typedef struct {
 	unsigned short flags;
@@ -40,6 +42,16 @@ Medal *Medal_Create(int type, int x, int y, int z, int a, int b) {
 	v.vx = x;
 	v.vy = y;
 	v.vz = z;
+#ifdef PC_PORT
+	{
+		/* v through the camera's transform, unshifted */
+		GeomAcc r;
+
+		geom_ld_mat(pc_geom.rot, pCurrentCamera + 0x34);
+		r = geom_mvmva(pc_geom.rot, 0, v.vx, v.vy, v.vz, 0, 0, 0);
+		geom_st_lv(&o, r.mac);
+	}
+#else
 	CTC2(0, *(int *)(pCurrentCamera + 0x34));
 	CTC2(1, *(int *)(pCurrentCamera + 0x38));
 	CTC2(2, *(int *)(pCurrentCamera + 0x3c));
@@ -50,6 +62,7 @@ Medal *Medal_Create(int type, int x, int y, int z, int a, int b) {
 	__asm__ volatile("nop; nop; cop2 0x406012");
 
 	STLVNL(&o);
+#endif
 
 	pos[0] = o.vx + (*(int *)(pCurrentCamera + 4) << 12);
 	pos[1] = o.vy + (*(int *)(pCurrentCamera + 8) << 12);

@@ -5,14 +5,16 @@
  *
  * The retail routines pass everything in registers: the line in s0..s5, the axis-swap flags in
  * v1, the box in t0..t5, the result in t0. Here they are static functions with the line, the flags
- * and the box as explicit arguments. The GTE use is kept: the line's per-axis lengths sit on the
- * rotation-matrix diagonal (R11, R22, R33) and the box tests are GTE outer products. */
+ * and the box as explicit arguments. As in retail, the line's per-axis lengths sit on the
+ * rotation's diagonal (pc_geom.h; the state keeps them there) and the box tests are outer
+ * products with them. */
 #ifndef M3DASM_LINECOLIJ_H
 #define M3DASM_LINECOLIJ_H
 
 #include <sys/types.h>
 #include <libgte.h>
-#include <inline_c.h>
+
+#include "pc_geom.h"
 
 /* M3D's world item (game/m3d.h Item; only what these routines touch is named) */
 typedef struct Item {
@@ -119,11 +121,11 @@ typedef struct {
 } LineBox;
 
 /* SortLineSegmentCoords (0x8008a408): put lo <= hi on each axis, toggling that axis's flip bit
- * when it swaps (the caller's flags are toggled, not reset), and load the per-axis lengths into
- * the GTE rotation-matrix diagonal for the outer products in LineToBoxTest. The whole length
- * word goes to the control register (R11/R22/R33 get its low half; R12/R23 its high half). */
+ * when it swaps (the caller's flags are toggled, not reset), and load the per-axis lengths onto
+ * the rotation's diagonal for the outer products in LineToBoxTest (as whole words: the high
+ * halves land in rot[0][1] and rot[1][2]). */
 static __inline__ void SortLineSegmentCoords(LineSeg *l, unsigned *flip) {
-	int i;
+	int i, lens[3];
 
 	for (i = 0; i < 3; i++) {
 		int len = l->hi[i] - l->lo[i];
@@ -137,8 +139,10 @@ static __inline__ void SortLineSegmentCoords(LineSeg *l, unsigned *flip) {
 			*flip ^= 1u << i;
 		}
 
-		PC_GteSetCtrl(2 * i, (unsigned)len); /* R11R12, R22R23, R33 */
+		lens[i] = len;
 	}
+
+	geom_load_op_diag(&pc_geom, (unsigned)lens[0], (unsigned)lens[1], (unsigned)lens[2]);
 }
 
 /* GetLineSegment (0x8008a3d4): the query line in model units, sorted (flip starts at 0) */
@@ -177,16 +181,17 @@ static __inline__ void GetBoundingBox(const SModel *m, const int ofs[3], unsigne
 	}
 }
 
-/* GTE outer product of the line lengths (rotation diagonal) with (a, b, c), no shift:
- * MAC1 = Ly*c - Lz*b, MAC2 = Lz*a - Lx*c, MAC3 = Lx*b - Ly*a (IR1-3: the same, saturated) */
-static __inline__ void LineCross(int a, int b, int c) {
-	PC_GteSetData(9, (unsigned)a);
-	PC_GteSetData(10, (unsigned)b);
-	PC_GteSetData(11, (unsigned)c);
-	gte_op0();
-}
+/* Outer product of the line lengths (the rotation's diagonal) with (a, b, c) (16 bits each), no
+ * shift: (Ly*c - Lz*b, Lz*a - Lx*c, Lx*b - Ly*a), with saturated 16-bit copies. */
+static __inline__ GeomAcc LineCross(int a, int b, int c) {
+	int16_t d[3], v[3];
 
-#define GTE_S(r) ((int)PC_GteGetData(r))
+	geom_op_diag(&pc_geom, d);
+	v[0] = (int16_t)a;
+	v[1] = (int16_t)b;
+	v[2] = (int16_t)c;
+	return geom_op(d, v, 0, 0, 0);
+}
 
 /* LineToBoxTest (0x8008a52c): does the sorted segment l hit box b? 1 if so.
  * First the boxes must overlap. Then, with everything relative to the line start, the line
@@ -194,7 +199,8 @@ static __inline__ void LineCross(int a, int b, int c) {
  * the corner lies. The first cross product (with the far corner) picks the two box edges the line
  * could pass between; one more cross product with the corner between them decides. */
 static __inline__ int LineToBoxTest(const LineSeg *l, const LineBox *b) {
-	int far[3], near[3], c1, c2, c3, i;
+	int far[3], near[3], i;
+	GeomAcc c, n;
 
 	for (i = 0; i < 3; i++)
 		if (l->hi[i] - b->min[i] < 0)
@@ -207,27 +213,23 @@ static __inline__ int LineToBoxTest(const LineSeg *l, const LineBox *b) {
 			return 0;
 	}
 
-	LineCross(far[0], far[1], far[2]);
+	c = LineCross(far[0], far[1], far[2]);
 
 	for (i = 0; i < 3; i++)
 		near[i] = b->min[i] - l->lo[i];
 
-	c1 = GTE_S(25);
-	c2 = GTE_S(26);
-	c3 = GTE_S(27);
-
-	if (c1 < 0 && c2 >= 0) {
-		LineCross(near[0], near[1], far[2]);
-		return !(GTE_S(9) < 0 || GTE_S(10) > 0);
+	if (c.mac[0] < 0 && c.mac[1] >= 0) {
+		n = LineCross(near[0], near[1], far[2]);
+		return !(n.ir[0] < 0 || n.ir[1] > 0);
 	}
 
-	if (c1 >= 0 && c3 < 0) {
-		LineCross(near[0], far[1], near[2]);
-		return !(GTE_S(9) > 0 || GTE_S(11) < 0);
+	if (c.mac[0] >= 0 && c.mac[2] < 0) {
+		n = LineCross(near[0], far[1], near[2]);
+		return !(n.ir[0] > 0 || n.ir[2] < 0);
 	}
 
-	LineCross(far[0], near[1], near[2]);
-	return !(GTE_S(10) < 0 || GTE_S(11) > 0);
+	n = LineCross(far[0], near[1], near[2]);
+	return !(n.ir[1] < 0 || n.ir[2] > 0);
 }
 
 /* Items the preprocessors reject outright (marked as already looked at): Flags 0x01 and 0x40 both

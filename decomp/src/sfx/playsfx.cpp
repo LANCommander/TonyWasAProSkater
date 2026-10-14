@@ -5,7 +5,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 
 	struct SpuVolume {
 		short left;
@@ -126,14 +128,20 @@ int playSFX(uint sfx, uchar pitch, short vl, short vr, int pitch_offset) {
 			int tone_start;
 			SpuVoiceAttr attr;
 
+#ifndef PC_PORT
 			gte_ldlzc(voice_bf);
+#endif
 
 			if (!(sfx & 0x40000000))
 				p_vab_hdr = pSFXVABHeader;
 			else
 				p_vab_hdr = pLevelSpecificSFXVABHeader;
 
+#ifdef PC_PORT
+			lzc = geom_lzc(voice_bf); /* leading zeros */
+#else
 			gte_stlzc(&lzc);
+#endif
 
 			lzc = 32 - lzc;
 			tone_start = 0;

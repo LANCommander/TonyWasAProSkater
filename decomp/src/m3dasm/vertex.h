@@ -3,8 +3,8 @@
  * reflectionmapping.c, boundingsphere.c). Plain C: the game headers (decomp/include/game) are C++.
  *
  * The transforms fill two caches, one record per model vertex:
- *   - ProjectedVertices (SProjectedVertex): the screen position (the GTE's SXY2 word), the view
- *     depth and an outcode halfword; RotatedVertices (SRotatedVertex, ProjectedVertices + 3200)
+ *   - ProjectedVertices (SProjectedVertex): the screen position (the projection's screen word),
+ *     the view depth and an outcode halfword; RotatedVertices (SRotatedVertex, ProjectedVertices + 3200)
  *     the view-space x and y and a per-vertex word (lighting colour or reflection-map uv).
  *   - the "fast" paths write the scratchpad from 0x1f800000 instead (SFastVertex): the screen word
  *     with clip flags folded into it, and the depth.
@@ -15,54 +15,18 @@
 #define M3DASM_VERTEX_H
 
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #include <libgte.h>
-#include <inline_c.h>
 
-/* GTE data registers (mfc2/mtc2) */
-enum {
-	GTE_VXY0 = 0,
-	GTE_VZ0 = 1,
-	GTE_VXY1 = 2,
-	GTE_VZ1 = 3,
-	GTE_VXY2 = 4,
-	GTE_VZ2 = 5,
-	GTE_RGBC = 6,
-	GTE_IR0 = 8,
-	GTE_IR1 = 9,
-	GTE_IR2 = 10,
-	GTE_IR3 = 11,
-	GTE_SXY2 = 14,
-	GTE_MAC1 = 25,
-	GTE_MAC2 = 26,
-	GTE_MAC3 = 27
-};
+#include "pc_geom.h"
 
-/* GTE control registers (cfc2/ctc2): matrices are five packed words each */
-enum {
-	GTE_RT = 0,
-	GTE_TRX = 5,
-	GTE_TRY = 6,
-	GTE_TRZ = 7,
-	GTE_LLM = 8,
-	GTE_LCM = 16,
-	GTE_OFX = 24,
-	GTE_OFY = 25,
-	GTE_H = 26,
-	GTE_FLAG = 31
-};
+/* The projection of the transforms: (rot * v + tr) >> 12, perspective, lm off. */
+static __inline__ GeomProj vtx_project(int x, int y, int z) {
+	return geom_rtps(&pc_geom, (int16_t)x, (int16_t)y, (int16_t)z, 12, 0, 0, 0);
+}
 
-/* MVMVA operands (see PCGTE_MVMVA in inline_c.h) */
-enum { MX_RT = 0, MX_LLM = 1, MX_LCM = 2 };
-enum { MV_V0 = 0, MV_V1 = 1, MV_V2 = 2, MV_IR = 3 };
-enum { CV_TR = 0, CV_BK = 1, CV_NONE = 3 };
-
-#define gte_get(r)     ((int32_t)PC_GteGetData(r))
-#define gte_set(r, v)  PC_GteSetData((r), (uint32_t)(v))
-#define gte_getc(r)    PC_GteGetCtrl(r)
-#define gte_setc(r, v) PC_GteSetCtrl((r), (uint32_t)(v))
-
-/* Two 16-bit halves in one word (VXY, packed matrix pairs, screen words). */
+/* Two 16-bit halves in one word (packed vertex x/y, matrix pairs, screen words). */
 static __inline__ uint32_t vtx_pack(int lo, int hi) {
 	return ((uint32_t)lo & 0xffff) | ((uint32_t)hi << 16);
 }
@@ -81,13 +45,13 @@ struct SViewport {
 };
 
 struct SProjectedVertex {
-	uint32_t XY;    /* 0x00: the GTE's SXY2 (x low, y high) */
-	short z;        /* 0x04: view depth (IR3) */
+	uint32_t XY;    /* 0x00: the screen word (x low, y high) */
+	short z;        /* 0x04: view depth (the view-space z, 16 bits) */
 	ushort Outcode; /* 0x06: see vtx_outcode */
 };
 
 struct SRotatedVertex {
-	uint32_t xy;      /* 0x00: view-space x, y (IR1, IR2) */
+	uint32_t xy;      /* 0x00: view-space x, y (16 bits each) */
 	uint32_t Special; /* 0x04: lighting colour / reflection-map uv */
 };
 
@@ -149,7 +113,7 @@ static __inline__ uint32_t vtx_outcode_xy(const struct ClipBounds *b, int sx, in
 	return oc;
 }
 
-/* the same for a screen word (SXY2) */
+/* the same for a screen word */
 static __inline__ uint32_t vtx_outcode_bits(const struct ClipBounds *b, uint32_t sxy, int z) {
 	return vtx_outcode_xy(b, (short)sxy, (int32_t)sxy >> 16, z);
 }
@@ -160,8 +124,9 @@ static __inline__ uint32_t vtx_outcode(uint32_t oc) {
 	return oc | (oc ^ 0xff) << 8;
 }
 
-/* Fast-format screen word: SXY2 with flags in the bits the 11-bit screen coordinates leave free.
- * Bits 13/29 are x's and y's own sign bits. Bits 14/30: the halves of SXY2 - (xR | yB << 16) were
+/* Fast-format screen word: the screen word with flags in the bits the 11-bit screen coordinates
+ * leave free. Bits 13/29 are x's and y's own sign bits. Bits 14/30: the halves of
+ * sxy - (xR | yB << 16) were
  * not negative, i.e. x >= xR and y >= yB. Bits 15/31 come from z - Yon: bit 15 its low half not
  * negative (z >= Yon), bit 31 the word negative (z < Yon). The callers AND the words and test
  * bits 13, 14, 29, 30 for "all off one side". */
@@ -172,16 +137,19 @@ static __inline__ uint32_t vtx_fast_word(uint32_t sxy, int z, uint32_t xRyB, int
 	return (sxy & ~0x80008000u) | (dz & 0x80000000u) | (~dz & 0x8000u);
 }
 
-/* A super vertex in the 12.4 fixed point of non-dewibbled models, as the GTE takes it: the three
- * coordinates >> 4, the flags left in the high half of the second word. */
-static __inline__ void vtx_load_super_scaled(const uint32_t *v) {
+/* A super vertex's projection: the three 16-bit coordinates (the flags are in the high half of
+ * the second word), in the 12.4 fixed point of the model: >> 4 first, or for the dewibbled
+ * transforms as they are (16 times the scale; their callers shift the results). */
+static __inline__ GeomProj vtx_project_super(const uint32_t *v, int dewibbled) {
 	int x = (short)v[0], y = (int32_t)v[0] >> 16, z = (short)v[1];
 
-	gte_set(GTE_VXY0, vtx_pack(x >> 4, y >> 4));
-	gte_set(GTE_VZ0, (v[1] & 0xffff0000u) | ((uint32_t)(z >> 4) & 0xffff));
+	if (dewibbled)
+		return vtx_project(x, y, z);
+
+	return vtx_project(x >> 4, y >> 4, z >> 4);
 }
 
-/* SuperVertices (dewibbled: the 12.4 input goes to the GTE as it is, and the results are >> 4).
+/* SuperVertices (dewibbled: the 12.4 input is projected as it is, and the results are >> 4).
  * Item-format results: the rotated position too, and the outcodes. Returns the AND of the outcode
  * halfwords (0xff for no vertices). */
 static __inline__ int vtx_transform_super(const uint32_t *v, int n, int dewibbled) {
@@ -204,25 +172,18 @@ static __inline__ int vtx_transform_super(const uint32_t *v, int n, int dewibble
 	for (; n != 0; n--, v += 2, pv++, rv++) {
 		uint32_t flags = v[1] >> 16;
 
-		/* stitch vertices go through the GTE too (it is all the same to the hardware) */
-		if (dewibbled) {
-			gte_set(GTE_VXY0, v[0]);
-			gte_set(GTE_VZ0, v[1]);
-		} else {
-			vtx_load_super_scaled(v);
-		}
-
-		gte_rtps();
-
 		if (flags & VF_STITCH) {
 			struct SProjectedVertex *src =
 			    (struct SProjectedVertex *)((char *)ProjectedVertices + STITCH_TOP - v[0]);
 
+			/* retail projects stitch vertices too (and the PC renderers count them) */
+			vtx_project_super(v, dewibbled);
 			*pv = *src;
 			rv->xy = ((struct SRotatedVertex *)((char *)src + rot_delta))->xy;
 			all &= src->Outcode;
 		} else {
-			int x = gte_get(GTE_IR1), y = gte_get(GTE_IR2), z = gte_get(GTE_IR3);
+			GeomProj p = vtx_project_super(v, dewibbled);
+			int x = p.v.ir[0], y = p.v.ir[1], z = p.v.ir[2];
 			uint32_t oc;
 
 			if (dewibbled) {
@@ -231,7 +192,7 @@ static __inline__ int vtx_transform_super(const uint32_t *v, int n, int dewibble
 				z >>= 4;
 			}
 
-			pv->XY = PC_GteGetData(GTE_SXY2);
+			pv->XY = p.sxy;
 			oc = vtx_outcode(vtx_outcode_bits(&b, pv->XY, z));
 			all &= oc;
 			pv->z = (short)z;
@@ -267,16 +228,8 @@ static __inline__ int vtx_transform_super_fast(const uint32_t *v, int n, int dew
 
 	for (; n != 0; n--, v += 2, out++) {
 		uint32_t flags = v[1] >> 16, xy;
+		GeomProj p = vtx_project_super(v, dewibbled); /* stitch vertices too, as retail */
 		int z;
-
-		if (dewibbled) {
-			gte_set(GTE_VXY0, v[0]);
-			gte_set(GTE_VZ0, v[1]);
-		} else {
-			vtx_load_super_scaled(v);
-		}
-
-		gte_rtps();
 
 		if (flags & VF_STITCH) {
 			struct SFastVertex *src = (struct SFastVertex *)(FAST_STITCH_TOP - v[0]);
@@ -284,12 +237,12 @@ static __inline__ int vtx_transform_super_fast(const uint32_t *v, int n, int dew
 			xy = src->XY;
 			z = src->z;
 		} else {
-			z = gte_get(GTE_IR3);
+			z = p.v.ir[2];
 
 			if (dewibbled)
 				z >>= 4;
 
-			xy = vtx_fast_word(PC_GteGetData(GTE_SXY2), z, xRyB, yon);
+			xy = vtx_fast_word(p.sxy, z, xRyB, yon);
 
 			if (flags & VF_EXPORT) {
 				pool->XY = xy;

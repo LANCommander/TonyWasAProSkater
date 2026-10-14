@@ -5,7 +5,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/bruce.h"
@@ -20,10 +22,14 @@ void CBruce::UprightSideways() {
 	SVECTOR RotAngle;
 	VECTOR v;
 
+#ifdef PC_PORT
+	geom_cross(&mFront, &WorldUp, &v, 12);
+#else
 	gte_ldopv1(&mFront);
 	gte_ldopv2(&WorldUp);
 	gte_op12();
 	gte_stlvnl(&v);
+#endif
 
 	{
 		int _x = v.vx;

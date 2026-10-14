@@ -1,9 +1,10 @@
 /* M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi (0x80085d28) -- C interpretation of hand-written assembly (M3DASM) */
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
+/* test_asm: gte_out none (no caller reads what retail left in the GTE's data registers) */
 #include "vertex.h"
 
-/* Projects an ordinary model's vertices with the current GTE rotation/translation: for each one
+/* Projects an ordinary model's vertices with the current rotation/translation: for each one
  * the screen position, depth and outcode go to ProjectedVertices and the view-space x, y to
  * RotatedVertices. Returns the AND of all the outcodes (0xff for no vertices), so the caller can
  * skip a model that is wholly off one side of the view. */
@@ -22,15 +23,13 @@ int M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi(SVECTOR *v, int n) {
 	rv = RotatedVertices;
 
 	for (; n != 0; n--, v++, pv++, rv++) {
+		GeomProj p = vtx_project(v->vx, v->vy, v->vz);
 		int z;
 		uint32_t oc;
 
-		gte_ldv0(v);
-		gte_rtps();
-
-		rv->xy = vtx_pack(gte_get(GTE_IR1), gte_get(GTE_IR2));
-		z = gte_get(GTE_IR3);
-		pv->XY = PC_GteGetData(GTE_SXY2);
+		rv->xy = vtx_pack(p.v.ir[0], p.v.ir[1]);
+		z = p.v.ir[2];
+		pv->XY = p.sxy;
 		pv->z = (short)z;
 		oc = vtx_outcode(vtx_outcode_bits(&b, pv->XY, z));
 		pv->Outcode = (ushort)oc;

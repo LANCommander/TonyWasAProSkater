@@ -1,9 +1,17 @@
 /* Software GTE (PS1 COP2), register-accurate, following psx-spx "Geometry Transformation Engine".
  * MAC1-3 accumulate in 44 bits with an overflow check (and wrap) after every addition; MAC0 is
- * checked against 32 bits. Division is the hardware's UNR (Newton-Raphson) reciprocal. */
+ * checked against 32 bits. Division is the hardware's UNR (Newton-Raphson) reciprocal.
+ *
+ * The port's own maths is pc_geom.h; this is the reference it is tested against (the retail MIPS
+ * in tests/mips_ref.c runs its COP2 here, tests/test_geom.c checks pc_geom.h against it), and the
+ * GTE of translated code in build.py --mips builds (PC_MIPS; the port itself has no GTE). The
+ * control registers are pc_geom's state, so translated code and the port's C share one transform. */
+#ifdef PC_MIPS
 #include "pc_gte.h"
+#include "pc_geom.h"
 
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,22 +40,11 @@ typedef struct {
 	uint32_t res1;
 	int32_t mac[4];
 	uint32_t lzcs, lzcr;
-	/* control registers */
-	int16_t rt[3][3];
-	int32_t tr[3];
-	int16_t llm[3][3];
-	int32_t bk[3];
-	int16_t lcm[3][3];
-	int32_t fc[3];
-	int32_t ofx, ofy;
-	uint16_t h;
-	int16_t dqa;
-	int32_t dqb;
-	int16_t zsf3, zsf4;
 	uint32_t flag;
-} Gte;
+} Gte; /* the control registers are the game's GeomState (pc_geom.h): C */
 
 static Gte g;
+#define C pc_geom
 
 enum {
 	F_MAC1_POS = 1u << 30,
@@ -258,9 +255,9 @@ static void mul_mat_vec(int16_t m[3][3], const int32_t *t, int32_t vx, int32_t v
 /* MAC = in + (FC*1000h - in) * IR0, then SAR shift. The intermediate IR saturates signed. */
 static void depth_cue(int64_t m1, int64_t m2, int64_t m3, int shift, int lm)
 {
-	set_mac_ir(1, (int64_t)g.fc[0] * 4096 - m1, shift, 0);
-	set_mac_ir(2, (int64_t)g.fc[1] * 4096 - m2, shift, 0);
-	set_mac_ir(3, (int64_t)g.fc[2] * 4096 - m3, shift, 0);
+	set_mac_ir(1, (int64_t)C.fc[0] * 4096 - m1, shift, 0);
+	set_mac_ir(2, (int64_t)C.fc[1] * 4096 - m2, shift, 0);
+	set_mac_ir(3, (int64_t)C.fc[2] * 4096 - m3, shift, 0);
 	set_mac_ir(1, (int64_t)g.ir[1] * g.ir[0] + m1, shift, lm);
 	set_mac_ir(2, (int64_t)g.ir[2] * g.ir[0] + m2, shift, lm);
 	set_mac_ir(3, (int64_t)g.ir[3] * g.ir[0] + m3, shift, lm);
@@ -273,190 +270,6 @@ static void color_ir_products(int64_t *m)
 	m[2] = ((int64_t)g.rgbc[2] * g.ir[3]) * 16;
 }
 
-/* ---- precise projections (see pc_gte.h) ------------------------------------------------------ */
-
-#define PRECISE_SLOTS (1 << 16)
-#define PRECISE_PROBE 8
-#define PRECISE_CANDS 4
-#define PRECISE_MAX_AGE 6 /* vblanks; a 30 fps frame is projected and then drawn within about 4 */
-
-/* Every distinct projection that rounded to one SXY word in one vblank (usually one). */
-typedef struct {
-	uint32_t key, gen; /* gen: pc_heartbeat + 1 when recorded, 0: never used */
-	int n;
-	float x[PRECISE_CANDS], y[PRECISE_CANDS], z[PRECISE_CANDS];
-} Precise;
-
-static Precise s_precise[PRECISE_SLOTS];
-static int precise_on;
-
-static float (*s_capture)[3];
-static int s_capture_n, s_capture_max;
-
-void PC_GteCaptureBegin(float (*buf)[3], int max)
-{
-	s_capture = buf;
-	s_capture_n = 0;
-	s_capture_max = max;
-}
-
-int PC_GteCaptureEnd(void)
-{
-	s_capture = NULL;
-	return s_capture_n;
-}
-
-void PC_GtePreciseEnable(int on)
-{
-	precise_on = on;
-}
-
-static double precise_zscale = 1.0;
-
-void PC_GtePreciseZScale(float s)
-{
-	precise_zscale = s;
-}
-
-/* Only the 11 bits per coordinate the GPU reads: renderers reuse the others (THPS1's world
- * renderer keeps off-screen flags in bits 14 and 30 of the words it caches). */
-static inline uint32_t precise_key(uint32_t sxy)
-{
-	return sxy & 0x07FF07FFu;
-}
-
-static inline uint32_t precise_hash(uint32_t key)
-{
-	return (key * 0x9E3779B1u) >> 16;
-}
-
-/* The projection RTPS/RTPT just pushed, unrounded: acc = MAC1-3 before the shift. */
-static void precise_record(const int64_t *acc, int shift)
-{
-	/* The hardware is less exact than this (SZ is truncated before the divide: several pixels
-	 * off near the camera), so the results can't be compared; its flags say whether it projected
-	 * at all rather than clamping SXY or IR1/IR2 or overflowing the divide. */
-	if (s_sat_ring[2] || (g.flag & (F_IR1 | F_IR2 | F_DIV)) || acc[2] <= 0)
-		return;
-	double z = (double)acc[2] / 4096.0;
-	if (z > 0xFFFF)
-		return;
-	double scale = (double)g.h / z / (double)(1 << shift); /* IR = MAC >> shift, SZ = MAC3 >> 12 */
-	double cx = g.ofx / 65536.0, cy = g.ofy / 65536.0;
-	double x = (double)acc[0] * scale + cx;
-	double y = (double)acc[1] * scale + cy;
-	z *= precise_zscale;
-
-	uint32_t gen = pc_heartbeat + 1;
-	uint32_t key = precise_key((uint16_t)g.sx[2] | (uint32_t)(uint16_t)g.sy[2] << 16);
-	uint32_t h = precise_hash(key);
-	Precise *slot = NULL;
-	for (int i = 0; i < PRECISE_PROBE; i++) {
-		Precise *e = &s_precise[(h + i) & (PRECISE_SLOTS - 1)];
-		if (e->gen && e->key == key) {
-			if (e->gen != gen) {
-				slot = e;
-				break;
-			}
-			/* The same point projected again from a less exact copy (THPS1's subdivision
-			 * re-projects 16-bit view-space positions) is close in depth and off in proportion
-			 * to the distance from the centre; the first projection is kept. */
-			for (int c = 0; c < e->n; c++) {
-				double dz = fabs(e->z[c] - z) / e->z[c] + 1.0 / 128;
-				if (fabs(e->z[c] - z) <= 1.0 + e->z[c] / 64 &&
-				    fabs(e->x[c] - x) <= 0.25 + fabs(x - cx) * dz &&
-				    fabs(e->y[c] - y) <= 0.25 + fabs(y - cy) * dz)
-					return;
-			}
-			if (e->n < PRECISE_CANDS) {
-				e->x[e->n] = (float)x;
-				e->y[e->n] = (float)y;
-				e->z[e->n] = (float)z;
-				e->n++;
-			}
-			return;
-		}
-		if (!slot || e->gen < slot->gen)
-			slot = e; /* else the oldest in the window */
-	}
-	slot->key = key;
-	slot->gen = gen;
-	slot->n = 1;
-	slot->x[0] = (float)x;
-	slot->y[0] = (float)y;
-	slot->z[0] = (float)z;
-}
-
-static const Precise *precise_find(uint32_t key)
-{
-	uint32_t h = precise_hash(key);
-	for (int i = 0; i < PRECISE_PROBE; i++) {
-		const Precise *e = &s_precise[(h + i) & (PRECISE_SLOTS - 1)];
-		if (e->gen && e->key == key)
-			return pc_heartbeat + 1 - e->gen <= PRECISE_MAX_AGE ? e : NULL;
-	}
-	return NULL;
-}
-
-/* Candidates for one SXY word, into x/y/z (up to 9 * PRECISE_CANDS). THPS1's polygon subdivision
- * moves the vertices on a grid's edges a pixel outwards so that the grid overlaps its neighbours
- * (0x80087ee8), so a word nobody projected falls back to the projections one pixel around it,
- * moved the same way. */
-static int precise_candidates(uint32_t sxy, float *x, float *y, float *z)
-{
-	uint32_t key = precise_key(sxy);
-	int kx = (int)(key << 21) >> 21, ky = (int)(key >> 16 << 21) >> 21, n = 0, dx = 0, dy = 0;
-	const Precise *e = precise_find(key);
-	for (int d = -1; d < 9; d++) {
-		if (d >= 0) {
-			dx = d % 3 - 1;
-			dy = d / 3 - 1;
-			if (!dx && !dy)
-				continue;
-			e = precise_find(precise_key((uint16_t)(kx + dx) | (uint32_t)(uint16_t)(ky + dy) << 16));
-		}
-		for (int c = 0; e && c < e->n; c++) {
-			x[n] = e->x[c] - dx;
-			y[n] = e->y[c] - dy;
-			z[n] = e->z[c];
-			n++;
-		}
-		if (d < 0 && n)
-			return n;
-	}
-	return n;
-}
-
-int PC_GtePrecisePolygon(const uint32_t *sxy, int n, float *x, float *y, float *z)
-{
-	float cx[4][9 * PRECISE_CANDS], cy[4][9 * PRECISE_CANDS], cz[4][9 * PRECISE_CANDS];
-	int nc[4], known = 0;
-	double zsum = 0;
-	for (int i = 0; i < n; i++) {
-		nc[i] = precise_candidates(sxy[i], cx[i], cy[i], cz[i]);
-		if (!nc[i])
-			return 0;
-		if (nc[i] == 1) {
-			zsum += cz[i][0];
-			known++;
-		}
-	}
-	/* where several vertices rounded to the same pixel, the one at the polygon's depth */
-	if (known < n && !known)
-		return 0;
-	double zref = known ? zsum / known : 0;
-	for (int i = 0; i < n; i++) {
-		int best = 0;
-		for (int c = 1; c < nc[i]; c++)
-			if (fabs(cz[i][c] - zref) < fabs(cz[i][best] - zref))
-				best = c;
-		x[i] = cx[i][best];
-		y[i] = cy[i][best];
-		z[i] = cz[i][best];
-	}
-	return 1;
-}
-
 /* ---- commands -------------------------------------------------------------------------------- */
 
 static void cmd_rtp(int idx, int shift, int lm, int last)
@@ -464,10 +277,10 @@ static void cmd_rtp(int idx, int shift, int lm, int last)
 	int32_t vx = g.v[idx][0], vy = g.v[idx][1], vz = g.v[idx][2];
 	int64_t acc[3];
 	for (int i = 0; i < 3; i++) {
-		int64_t a = (int64_t)g.tr[i] * 4096;
-		a = mac_step(i + 1, a + (int64_t)g.rt[i][0] * vx);
-		a = mac_step(i + 1, a + (int64_t)g.rt[i][1] * vy);
-		acc[i] = a + (int64_t)g.rt[i][2] * vz;
+		int64_t a = (int64_t)C.tr[i] * 4096;
+		a = mac_step(i + 1, a + (int64_t)C.rot[i][0] * vx);
+		a = mac_step(i + 1, a + (int64_t)C.rot[i][1] * vy);
+		acc[i] = a + (int64_t)C.rot[i][2] * vz;
 	}
 	set_mac_ir(1, acc[0], shift, lm);
 	set_mac_ir(2, acc[1], shift, lm);
@@ -483,24 +296,19 @@ static void cmd_rtp(int idx, int shift, int lm, int last)
 	g.ir[3] = (int16_t)(ir3 < lo ? lo : ir3 > 0x7FFF ? 0x7FFF : ir3);
 
 	push_sz(z12);
-	uint32_t n = gte_divide(g.h, g.sz[3]);
+	uint32_t n = gte_divide(C.h, g.sz[3]);
 
-	int64_t x = (int64_t)n * g.ir[1] + g.ofx;
-	int64_t y = (int64_t)n * g.ir[2] + g.ofy;
+	int64_t x = (int64_t)n * g.ir[1] + C.ofx;
+	int64_t y = (int64_t)n * g.ir[2] + C.ofy;
 	mac0_check(x);
 	mac0_check(y);
 	push_sxy(x >> 16, y >> 16);
-	if (precise_on)
-		precise_record(acc, shift);
-	if (s_capture && s_capture_n < s_capture_max) {
-		float *c = s_capture[s_capture_n++];
-		c[0] = (float)((double)acc[0] / 4096.0);
-		c[1] = (float)((double)acc[1] / 4096.0);
-		c[2] = (float)((double)acc[2] / 4096.0);
-	}
+	if (pc_geom_observer)
+		pc_geom_observer(&C, acc, shift, (uint16_t)g.sx[2] | (uint32_t)(uint16_t)g.sy[2] << 16,
+		                 g.flag, s_sat_ring[2]);
 
 	if (last) {
-		int64_t dq = (int64_t)n * g.dqa + g.dqb;
+		int64_t dq = (int64_t)n * C.dqa + C.dqb;
 		mac0_check(dq);
 		g.mac[0] = (int32_t)dq;
 		int64_t i0 = dq >> 12;
@@ -531,7 +339,7 @@ static void cmd_nclip(void)
 
 static void cmd_op(int shift, int lm)
 {
-	int64_t d1 = g.rt[0][0], d2 = g.rt[1][1], d3 = g.rt[2][2];
+	int64_t d1 = C.rot[0][0], d2 = C.rot[1][1], d3 = C.rot[2][2];
 	int64_t i1 = g.ir[1], i2 = g.ir[2], i3 = g.ir[3];
 	set_mac_ir(1, d2 * i3 - d3 * i2, shift, lm);
 	set_mac_ir(2, d3 * i1 - d1 * i3, shift, lm);
@@ -548,25 +356,25 @@ static void cmd_sqr(int shift, int lm)
 
 static void cmd_avsz3(void)
 {
-	int64_t v = (int64_t)g.zsf3 * ((int32_t)g.sz[1] + g.sz[2] + g.sz[3]);
+	int64_t v = (int64_t)C.zsf3 * ((int32_t)g.sz[1] + g.sz[2] + g.sz[3]);
 	mac0_check(v);
 	g.mac[0] = (int32_t)v;
 	set_otz(v >> 12);
 	if (nclip_dump_active())
 		fprintf(stderr, "avsz3 f%u sz=%u,%u,%u zsf3=%d raw=%lld otz=%u%s\n", pc_heartbeat, g.sz[1],
-		        g.sz[2], g.sz[3], g.zsf3, (long long)(v >> 12), g.otz,
+		        g.sz[2], g.sz[3], C.zsf3, (long long)(v >> 12), g.otz,
 		        (g.flag & F_SZ3_OTZ) ? " SAT" : "");
 }
 
 static void cmd_avsz4(void)
 {
-	int64_t v = (int64_t)g.zsf4 * ((int32_t)g.sz[0] + g.sz[1] + g.sz[2] + g.sz[3]);
+	int64_t v = (int64_t)C.zsf4 * ((int32_t)g.sz[0] + g.sz[1] + g.sz[2] + g.sz[3]);
 	mac0_check(v);
 	g.mac[0] = (int32_t)v;
 	set_otz(v >> 12);
 	if (nclip_dump_active())
 		fprintf(stderr, "avsz4 f%u sz=%u,%u,%u,%u zsf4=%d raw=%lld otz=%u%s\n", pc_heartbeat, g.sz[0],
-		        g.sz[1], g.sz[2], g.sz[3], g.zsf4, (long long)(v >> 12), g.otz,
+		        g.sz[1], g.sz[2], g.sz[3], C.zsf4, (long long)(v >> 12), g.otz,
 		        (g.flag & F_SZ3_OTZ) ? " SAT" : "");
 }
 
@@ -576,15 +384,15 @@ static void cmd_mvmva(uint32_t op, int shift, int lm)
 	int16_t garbage[3][3];
 	int16_t(*m)[3];
 	switch (mx) {
-	case 0: m = g.rt; break;
-	case 1: m = g.llm; break;
-	case 2: m = g.lcm; break;
+	case 0: m = C.rot; break;
+	case 1: m = C.llm; break;
+	case 2: m = C.lcm; break;
 	default:
 		garbage[0][0] = (int16_t)-(g.rgbc[0] << 4);
 		garbage[0][1] = (int16_t)(g.rgbc[0] << 4);
 		garbage[0][2] = g.ir[0];
-		garbage[1][0] = garbage[1][1] = garbage[1][2] = g.rt[0][2];
-		garbage[2][0] = garbage[2][1] = garbage[2][2] = g.rt[1][1];
+		garbage[1][0] = garbage[1][1] = garbage[1][2] = C.rot[0][2];
+		garbage[2][0] = garbage[2][1] = garbage[2][2] = C.rot[1][1];
 		m = garbage;
 		break;
 	}
@@ -602,7 +410,7 @@ static void cmd_mvmva(uint32_t op, int shift, int lm)
 		/* Hardware bug: FC + first column only reaches the flags; the result is the other two
 		 * columns. */
 		for (int i = 0; i < 3; i++) {
-			int64_t t = mac_step(i + 1, (int64_t)g.fc[i] * 4096 + (int64_t)m[i][0] * vx);
+			int64_t t = mac_step(i + 1, (int64_t)C.fc[i] * 4096 + (int64_t)m[i][0] * vx);
 			set_ir(i + 1, (int32_t)(t >> shift), 0);
 			int64_t acc = mac_step(i + 1, (int64_t)m[i][1] * vy);
 			acc += (int64_t)m[i][2] * vz;
@@ -610,15 +418,15 @@ static void cmd_mvmva(uint32_t op, int shift, int lm)
 		}
 		return;
 	}
-	const int32_t *t = cv == 0 ? g.tr : cv == 1 ? g.bk : NULL;
+	const int32_t *t = cv == 0 ? C.tr : cv == 1 ? C.bk : NULL;
 	mul_mat_vec(m, t, vx, vy, vz, shift, lm);
 }
 
 /* NCS / NCCS / NCDS on vector idx. mode: 0 = NCS, 1 = NCCS, 2 = NCDS */
 static void cmd_nc(int idx, int mode, int shift, int lm)
 {
-	mul_mat_vec(g.llm, NULL, g.v[idx][0], g.v[idx][1], g.v[idx][2], shift, lm);
-	mul_mat_vec(g.lcm, g.bk, g.ir[1], g.ir[2], g.ir[3], shift, lm);
+	mul_mat_vec(C.llm, NULL, g.v[idx][0], g.v[idx][1], g.v[idx][2], shift, lm);
+	mul_mat_vec(C.lcm, C.bk, g.ir[1], g.ir[2], g.ir[3], shift, lm);
 	if (mode) {
 		int64_t m[3];
 		color_ir_products(m);
@@ -635,7 +443,7 @@ static void cmd_nc(int idx, int mode, int shift, int lm)
 
 static void cmd_cdp(int shift, int lm)
 {
-	mul_mat_vec(g.lcm, g.bk, g.ir[1], g.ir[2], g.ir[3], shift, lm);
+	mul_mat_vec(C.lcm, C.bk, g.ir[1], g.ir[2], g.ir[3], shift, lm);
 	int64_t m[3];
 	color_ir_products(m);
 	depth_cue(m[0], m[1], m[2], shift, lm);
@@ -644,7 +452,7 @@ static void cmd_cdp(int shift, int lm)
 
 static void cmd_cc(int shift, int lm)
 {
-	mul_mat_vec(g.lcm, g.bk, g.ir[1], g.ir[2], g.ir[3], shift, lm);
+	mul_mat_vec(C.lcm, C.bk, g.ir[1], g.ir[2], g.ir[3], shift, lm);
 	int64_t m[3];
 	color_ir_products(m);
 	set_mac_ir(1, m[0], shift, lm);
@@ -844,18 +652,18 @@ void PC_GteSetData(int reg, uint32_t value)
 static int16_t *ctrl_matrix(int reg)
 {
 	switch (reg >> 3) {
-	case 0: return &g.rt[0][0];
-	case 1: return &g.llm[0][0];
-	default: return &g.lcm[0][0];
+	case 0: return &C.rot[0][0];
+	case 1: return &C.llm[0][0];
+	default: return &C.lcm[0][0];
 	}
 }
 
 static int32_t *ctrl_vector(int reg)
 {
 	switch (reg >> 3) {
-	case 0: return g.tr;
-	case 1: return g.bk;
-	default: return g.fc;
+	case 0: return C.tr;
+	case 1: return C.bk;
+	default: return C.fc;
 	}
 }
 
@@ -873,13 +681,13 @@ uint32_t PC_GteGetCtrl(int reg)
 		return (uint32_t)ctrl_vector(reg)[k - 5];
 	}
 	switch (reg) {
-	case 24: return (uint32_t)g.ofx;
-	case 25: return (uint32_t)g.ofy;
-	case 26: return (uint32_t)(int32_t)(int16_t)g.h; /* hardware sign-extends H on read */
-	case 27: return (uint32_t)(int32_t)g.dqa;
-	case 28: return (uint32_t)g.dqb;
-	case 29: return (uint32_t)(int32_t)g.zsf3;
-	case 30: return (uint32_t)(int32_t)g.zsf4;
+	case 24: return (uint32_t)C.ofx;
+	case 25: return (uint32_t)C.ofy;
+	case 26: return (uint32_t)(int32_t)(int16_t)C.h; /* hardware sign-extends H on read */
+	case 27: return (uint32_t)(int32_t)C.dqa;
+	case 28: return (uint32_t)C.dqb;
+	case 29: return (uint32_t)(int32_t)C.zsf3;
+	case 30: return (uint32_t)(int32_t)C.zsf4;
 	default: return g.flag;
 	}
 }
@@ -901,13 +709,13 @@ void PC_GteSetCtrl(int reg, uint32_t value)
 		return;
 	}
 	switch (reg) {
-	case 24: g.ofx = (int32_t)value; break;
-	case 25: g.ofy = (int32_t)value; break;
-	case 26: g.h = (uint16_t)value; break;
-	case 27: g.dqa = (int16_t)value; break;
-	case 28: g.dqb = (int32_t)value; break;
-	case 29: g.zsf3 = (int16_t)value; break;
-	case 30: g.zsf4 = (int16_t)value; break;
+	case 24: C.ofx = (int32_t)value; break;
+	case 25: C.ofy = (int32_t)value; break;
+	case 26: C.h = (uint16_t)value; break;
+	case 27: C.dqa = (int16_t)value; break;
+	case 28: C.dqb = (int32_t)value; break;
+	case 29: C.zsf3 = (int16_t)value; break;
+	case 30: C.zsf4 = (int16_t)value; break;
 	default:
 		g.flag = value & 0x7FFFF000u;
 		if (g.flag & F_ERROR_MASK)
@@ -919,19 +727,32 @@ void PC_GteSetCtrl(int reg, uint32_t value)
 void PC_GteReset(void)
 {
 	memset(&g, 0, sizeof g);
+	PC_GeomReset();
 }
+
+/* The blob is the data registers, the control registers and FLAG, in that order (the layout of
+ * the snapshots in build/pc/snaps). */
+#define DATA_SIZE offsetof(Gte, flag)
 
 int PC_GteStateSize(void)
 {
-	return (int)sizeof g;
+	return (int)(DATA_SIZE + sizeof(GeomState) + sizeof g.flag);
 }
 
 void PC_GteSaveState(void *buf)
 {
-	memcpy(buf, &g, sizeof g);
+	uint8_t *p = (uint8_t *)buf;
+	memcpy(p, &g, DATA_SIZE);
+	memcpy(p + DATA_SIZE, &C, sizeof(GeomState));
+	memcpy(p + DATA_SIZE + sizeof(GeomState), &g.flag, sizeof g.flag);
 }
 
 void PC_GteLoadState(const void *buf)
 {
-	memcpy(&g, buf, sizeof g);
+	const uint8_t *p = (const uint8_t *)buf;
+	memcpy(&g, p, DATA_SIZE);
+	memcpy(&C, p + DATA_SIZE, sizeof(GeomState));
+	memcpy(&g.flag, p + DATA_SIZE + sizeof(GeomState), sizeof g.flag);
 }
+
+#endif

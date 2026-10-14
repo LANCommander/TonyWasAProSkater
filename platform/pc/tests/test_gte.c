@@ -1,12 +1,51 @@
-/* Software GTE tests: expected values are worked by hand from the psx-spx formulas.
- *   gcc -m32 -std=gnu11 -I../include -I../include/psyq test_gte.c ../src/pc_gte.c -o test_gte */
+/* Software GTE (the reference, src/pc_gte.c) tests: expected values are worked by hand from the
+ * psx-spx formulas.
+ *   gcc -m32 -std=gnu11 -DPC_MIPS -I../include test_gte.c ../src/pc_gte.c ../src/pc_geom.c */
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <stdint.h>
+
 #include "pc_gte.h"
-#include <sys/types.h>
-#include <libgte.h>
-#include <inline_c.h>
+
+/* the Psy-Q names of the commands (their cop2 words) */
+#define gte_mvmva(sf, mx, v, cv, lm)                                                               \
+	PC_GteCommand(0x0400012u | ((uint32_t)(sf) << 19) | ((uint32_t)(mx) << 17) |                    \
+	              ((uint32_t)(v) << 15) | ((uint32_t)(cv) << 13) | ((uint32_t)(lm) << 10))
+#define gte_avsz3() PC_GteCommand(0x158002d)
+#define gte_avsz4() PC_GteCommand(0x168002e)
+#define gte_cc() PC_GteCommand(0x138041c)
+#define gte_cdp() PC_GteCommand(0x1280414)
+#define gte_dpcl() PC_GteCommand(0x0680029)
+#define gte_dpcs() PC_GteCommand(0x0780010)
+#define gte_dpct() PC_GteCommand(0x0f8002a)
+#define gte_gpf12() PC_GteCommand(0x198003d)
+#define gte_gpl0() PC_GteCommand(0x1a0003e)
+#define gte_gpl12() PC_GteCommand(0x1a8003e)
+#define gte_intpl() PC_GteCommand(0x0980011)
+#define gte_lcv1() PC_GteCommand(0x04ce012)
+#define gte_llv1() PC_GteCommand(0x04ae012)
+#define gte_nccs() PC_GteCommand(0x108041b)
+#define gte_ncct() PC_GteCommand(0x118043f)
+#define gte_ncds() PC_GteCommand(0x0e80413)
+#define gte_ncdt() PC_GteCommand(0x0f80416)
+#define gte_nclip() PC_GteCommand(0x1400006)
+#define gte_ncs() PC_GteCommand(0x0c8041e)
+#define gte_nct() PC_GteCommand(0x0d80420)
+#define gte_op0() PC_GteCommand(0x170000c)
+#define gte_op12() PC_GteCommand(0x178000c)
+#define gte_rtir_sf0() PC_GteCommand(0x041e012)
+#define gte_rtirtr() PC_GteCommand(0x0498012)
+#define gte_rtps() PC_GteCommand(0x0180001)
+#define gte_rtpt() PC_GteCommand(0x0280030)
+#define gte_rtv0tr() PC_GteCommand(0x0480012)
+#define gte_rtv1() PC_GteCommand(0x048e012)
+#define gte_rtv1bk() PC_GteCommand(0x048a012)
+#define gte_rtv1tr() PC_GteCommand(0x0488012)
+#define gte_sqr0() PC_GteCommand(0x0a00428)
+#define gte_sqr12() PC_GteCommand(0x0a80428)
+
+volatile uint32_t pc_heartbeat; /* pc_gte.c */
 
 static int failures, checks;
 
@@ -815,133 +854,6 @@ static void test_gpf_gpl(void)
 }
 
 /* the inline_c.h macros against real structures */
-static void test_macros(void)
-{
-	MATRIX m = {{{0x1000, 0, 0}, {0, 0x1000, 0}, {0, 0, 0x1000}}, {0, 0, 0}};
-	MATRIX r;
-	SVECTOR sv = {100, 50, 1000, 0};
-	VECTOR lv = {-3, 0x12345, 7, 0};
-	long sxy, otz, flag, lzc;
-	SVECTOR out;
-	VECTOR lout;
-
-	PC_GteReset();
-	gte_SetRotMatrix(&m);
-	gte_SetTransMatrix(&m);
-	gte_SetGeomOffset(160, 120);
-	gte_SetGeomScreen(1000);
-	gte_ldv0(&sv);
-	gte_rtps();
-	gte_stsxy(&sxy);
-	CHECK_EQ(sxy, XY(260, 170));
-	gte_stflg(&flag);
-	CHECK_EQ(flag, 0);
-	gte_ReadRotMatrix(&r);
-	CHECK_EQ(r.m[0][0], 0x1000);
-	CHECK_EQ(r.m[2][2], 0x1000);
-	CHECK_EQ(r.m[0][1], 0);
-
-	/* VECTOR -> V0 keeps the low halves */
-	gte_ldlv0(&lv);
-	CHECK_EQ(D(0), XY(-3, 0x2345));
-	CHECK_EQ(D(1), 7);
-
-	/* ldsv zero-extends but the IR registers read back signed */
-	out.vx = -2;
-	out.vy = 3;
-	out.vz = -32768;
-	gte_ldsv(&out);
-	CHECK_EQ(D(9), 0xFFFFFFFE);
-	CHECK_EQ(D(11), 0xFFFF8000);
-	gte_stsv(&out);
-	CHECK_EQ(out.vx, -2);
-	CHECK_EQ(out.vz, -32768);
-
-	/* outer product through ldopv1/ldopv2 and stlvnl */
-	{
-		VECTOR a = {0x1000, 0, 0, 0}, b = {0, 0x1000, 0, 0};
-		gte_ldopv1(&a);
-		gte_ldopv2(&b);
-		gte_op12();
-		gte_stlvnl(&lout);
-		CHECK_EQ(lout.vx, 0);
-		CHECK_EQ(lout.vy, 0);
-		CHECK_EQ(lout.vz, 0x1000);
-		gte_stlvnl2(&lout.vx);
-		CHECK_EQ(lout.vx, 0x1000);
-	}
-
-	/* LZC through the macros */
-	gte_ldlzc(0x00012345);
-	gte_nop();
-	gte_nop();
-	gte_stlzc(&lzc);
-	CHECK_EQ(lzc, 15);
-
-	/* AVSZ4 and OTZ store */
-	gte_ldsz4(100, 200, 300, 400);
-	SETC(30, 0x400);
-	gte_avsz4();
-	gte_stotz(&otz);
-	CHECK_EQ(otz, 250);
-
-	/* pointer arguments are evaluated once */
-	{
-		SVECTOR vs[2] = {{1, 2, 3, 0}, {4, 5, 6, 0}};
-		SVECTOR *p = vs;
-		gte_ldv0(p++);
-		CHECK_EQ(p - vs, 1);
-		CHECK_EQ(D(0), XY(1, 2));
-		gte_ldsv(p++);
-		CHECK_EQ(p - vs, 2);
-		CHECK_EQ(D(10), 5);
-	}
-
-	/* FlipRotMatrixX negates row 1 only */
-	{
-		MATRIX f = {{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}, {0, 0, 0}};
-		gte_SetRotMatrix(&f);
-		gte_FlipRotMatrixX();
-		gte_ReadRotMatrix(&r);
-		CHECK_EQ(r.m[0][0], -1);
-		CHECK_EQ(r.m[0][1], -2);
-		CHECK_EQ(r.m[0][2], -3);
-		CHECK_EQ(r.m[1][0], 4);
-		CHECK_EQ(r.m[1][1], 5);
-		SETC(5, 10);
-		gte_FlipTRX();
-		CHECK_EQ((int32_t)C(5), -10);
-	}
-
-	/* packed difference / sum */
-	{
-		long a = (long)XY(10, 100), b = (long)XY(3, 300), dl[2];
-		short dd[2];
-		gte_subdvl(&a, &b, dl);
-		CHECK_EQ(dl[0], 7);
-		CHECK_EQ(dl[1], -200);
-		gte_adddvd(&a, &b, dd);
-		CHECK_EQ(dd[0], 13);
-		CHECK_EQ(dd[1], 400);
-	}
-
-	/* colour FIFO via strgb, RGBC via ldrgb */
-	{
-		CVECTOR c = {0x80, 0x40, 0x20, 0x30}, o;
-		gte_ldrgb(&c);
-		gte_lddp(0);
-		SETD(9, 0);
-		SETD(10, 0);
-		SETD(11, 0);
-		gte_dpcs();
-		gte_strgb(&o);
-		CHECK_EQ(o.r, 0x80);
-		CHECK_EQ(o.g, 0x40);
-		CHECK_EQ(o.b, 0x20);
-		CHECK_EQ(o.cd, 0x30);
-	}
-}
-
 int main(void)
 {
 	test_registers();
@@ -953,7 +865,6 @@ int main(void)
 	test_mvmva();
 	test_colour();
 	test_gpf_gpl();
-	test_macros();
 	printf("%d/%d checks passed\n", checks - failures, checks);
 	return failures ? 1 : 0;
 }

@@ -4,7 +4,9 @@ extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 	#include <libgpu.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/m3d.h"
@@ -12,6 +14,9 @@ extern "C" {
 
 #define Box ((short *)&pModel->Box)
 
+#ifdef PC_PORT
+#include "../m3dasm/lastvec.h"
+#else
 /* V0/V1/V2 from registers, one mtc2 statement each (the demo's line table has packed xy and z
    on separate lines) */
 #define gte_ldVXY0(r) __asm__ volatile("mtc2 %0, $0" : : "r"(r))
@@ -20,6 +25,7 @@ extern "C" {
 #define gte_ldVZ1(r)  __asm__ volatile("mtc2 %0, $3" : : "r"(r))
 #define gte_ldVXY2(r) __asm__ volatile("mtc2 %0, $4" : : "r"(r))
 #define gte_ldVZ2(r)  __asm__ volatile("mtc2 %0, $5" : : "r"(r))
+#endif
 
 extern SCamera *pCurrentCamera;
 extern SVECTOR *ProjectedVertices;
@@ -62,6 +68,128 @@ void M3dElips_RenderShadow(SModel *pModel, MATRIX *pTransform, CSVector *pNormal
 	b = ((Box[2] - Box[3]) >> 1) * 11 >> 3;
 	c = ((Box[4] - Box[5]) >> 1) * 5 >> 2;
 
+#ifdef PC_PORT
+	/* M3DMATHS' last vector (lastvec.h) carries the vector between its routines */
+	M3dMaths_SetLastVec(&Centre);
+	M3dMaths_TransformLastVec((ushort *)pTransform);
+	M3dMaths_GetLastVec(&t);
+
+	t.vx += pTransform->t[0];
+	t.vy += pTransform->t[1];
+	t.vz += pTransform->t[2];
+
+	d = (a + b + c) / 3;
+	M3dMaths_CopyMat((ushort *)pTransform, (ushort *)R);
+	M3dMaths_TransposeMat((ushort *)R, (ushort *)RT);
+	M3dMaths_ZeroMat((ushort *)d_Ainv);
+
+	d12 = d << 12;
+	d_Ainv[0][0] = d12 / a;
+	d_Ainv[1][1] = d12 / b;
+	d_Ainv[2][2] = d12 / c;
+
+	M3dMaths_SetLastVec(pLightVec);
+	M3dMaths_TransformLastVec((ushort *)RT);
+	M3dMaths_NormaliseLastVec();
+	M3dMaths_TransformLastVec((ushort *)d_Ainv);
+	M3dMaths_GetLastVec(&d_m);
+
+	Mag_d_m = M3dMaths_LastVecMagnitude();
+	M3dMaths_GetLastVecSums(&d_m_Squared);
+
+	v.vx = v.vy = v.vz = 0;
+
+	if (d_m_Squared.vx <= d_m_Squared.vy && d_m_Squared.vx <= d_m_Squared.vz)
+		v.vx = 4096;
+	else if (d_m_Squared.vy <= d_m_Squared.vx && d_m_Squared.vy <= d_m_Squared.vz)
+		v.vy = 4096;
+	else
+		v.vz = 4096;
+
+	M3dMaths_SetLastVec(&d_m);
+	M3dMaths_CrossWithLastVec12(&v);
+	M3dMaths_GetLastVec(&Scaled_q);
+	M3dMaths_NormaliseLastVec();
+
+	k = a * b / d * c * Mag_d_m / d >> 12;
+	M3dMaths_TransformLastVec((ushort *)d_Ainv);
+	M3dMaths_TransformLastVec((ushort *)R);
+	M3dMaths_CrossWithLastVec12((SVector *)pLightVec);
+	M3dMaths_ScaleLastVec12(k);
+	M3dMaths_GetLastVec(&e);
+
+	M3dMaths_SetLastVec(&d_m);
+	M3dMaths_CrossWithLastVec12(&Scaled_q);
+	M3dMaths_NormaliseLastVec();
+	M3dMaths_TransformLastVec((ushort *)d_Ainv);
+	M3dMaths_TransformLastVec((ushort *)R);
+	M3dMaths_CrossWithLastVec12((SVector *)pLightVec);
+	M3dMaths_ScaleLastVec12(k);
+	M3dMaths_GetLastVec(&f);
+
+	M3dMaths_SetLastVec(pNormal); /* (retail: V0) */
+	M3dMaths_TransformVec0((ushort *)pLightVec);
+	n_dot_l = M3dMaths_LastVec.mac[0];
+
+	if (n_dot_l < M3dElips_MinDotProd)
+		return;
+
+	M[0][0] = (pPoint->vx >> 12) - t.vx;
+	M[0][1] = (pPoint->vy >> 12) - t.vy;
+	M[0][2] = (pPoint->vz >> 12) - t.vz;
+	M[1][0] = e.vx;
+	M[1][1] = e.vy;
+	M[1][2] = e.vz;
+	M[2][0] = f.vx;
+	M[2][1] = f.vy;
+	M[2][2] = f.vz;
+	M3dMaths_SetLastVec(pNormal);
+	M3dMaths_TransformVec0((ushort *)M);
+	M3dMaths_GetLastVec(&DotProds);
+
+	if (DotProds.vx > 0)
+		return;
+
+	t.vx -= pCurrentCamera->Position.vx;
+	t.vy -= pCurrentCamera->Position.vy;
+	t.vz -= pCurrentCamera->Position.vz;
+	M3dMaths_SetLastVec(pLightVec);
+	M3dMaths_AddScaledLastVec12(&t, (DotProds.vx << 12) / n_dot_l);
+	M3dMaths_GetLastVec(&Centre);
+	M3dMaths_SetLastVec(pLightVec);
+	M3dMaths_AddScaledLastVec12(&e, -(DotProds.vy << 12) / n_dot_l);
+	M3dMaths_GetLastVec(&e_Proj);
+	M3dMaths_SetLastVec(pLightVec);
+	M3dMaths_AddScaledLastVec12(&f, -(DotProds.vz << 12) / n_dot_l);
+	M3dMaths_GetLastVec(&f_Proj);
+
+	geom_ld_mat(pc_geom.rot, &pCurrentCamera->View);
+	geom_load_vector(pc_geom.tr, 0, 0, 0);
+
+	{
+		/* the quad's corners, Centre -+ e_Proj -+ f_Proj (16 bits each), projected; the sort
+		 * depth is the average of the four */
+		static const int se[4] = { -1, 1, -1, 1 }, sf[4] = { -1, -1, 1, 1 };
+		int16_t q[4][3];
+		GeomProj p[4];
+		int i;
+
+		for (i = 0; i < 4; i++) {
+			q[i][0] = (int16_t)(Centre.vx + se[i] * e_Proj.vx + sf[i] * f_Proj.vx);
+			q[i][1] = (int16_t)(Centre.vy + se[i] * e_Proj.vy + sf[i] * f_Proj.vy);
+			q[i][2] = (int16_t)(Centre.vz + se[i] * e_Proj.vz + sf[i] * f_Proj.vz);
+		}
+
+		geom_rtpt(&pc_geom, q, 12, 0, p, 0, 0);
+		p[3] = geom_rtps(&pc_geom, q[3][0], q[3][1], q[3][2], 12, 0, 0, 0);
+
+		for (i = 0; i < 4; i++)
+			*(uint32_t *)&ProjectedVertices[i] = p[i].sxy;
+
+		OTPos = geom_avsz4(&pc_geom, p[0].sz, p[1].sz, p[2].sz, p[3].sz, 0, 0);
+	}
+
+#else
 	gte_ldsv(&Centre);
 	M3dMaths_TransformLastVec((ushort *)pTransform);
 	gte_stsv(&t);
@@ -188,6 +316,8 @@ void M3dElips_RenderShadow(SModel *pModel, MATRIX *pTransform, CSVector *pNormal
 	gte_stsxy(&ProjectedVertices[3]);
 	gte_avsz4();
 	gte_stotz(&OTPos);
+
+#endif
 
 	if (OTPos >= 4096)
 		OTPos = 4095;

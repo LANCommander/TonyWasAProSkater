@@ -3,8 +3,8 @@
  * platform/pc/tests/test_asm.c. */
 
 /* Draws a model's faces from the ProjectedVertices cache a transform just filled: back-face and
- * outcode culling, fog, the face's colours through the GTE colour commands (flat, gouraud,
- * lit by the vertices' or the item's lighting), GPU packets (F3/FT3/G3/GT3/F4/FT4/G4/GT4) linked
+ * outcode culling, fog, the face's colours (flat, gouraud, lit by the vertices' or the item's
+ * lighting, depth-cued), GPU packets (F3/FT3/G3/GT3/F4/FT4/G4/GT4) linked
  * into the ordering table by the face's farthest depth. Big faces with the subdivide flag (and
  * those crossing the near plane) are cut into a grid of smaller ones, projected again from the
  * view-space vertices; faces crossing the water surface are clipped against it into new faces,
@@ -22,8 +22,14 @@
  * (pPoly: the retail code stores it back without its top byte; the port keeps it in KSEG0.)
  * test_asm: ignore 0x1f800094 0x1f8000a4
  * (Subdivision spills its registers into free scratchpad words and reloads them when it is
- * done; these two hold the caller's s6 and s5, whose values only the retail code itself uses.) */
+ * done; these two hold the caller's s6 and s5, whose values only the retail code itself uses.)
+ * test_asm: colourcode
+ *
+ * The matrices of the state (pc_geom) are the operands of the subdivision and the clipping, as
+ * they were the GTE's in retail, and are left as retail leaves them. */
 #include "processpolys.h"
+
+uint32_t M3dAsm_ColourCode;
 
 int M3dMaths_SquareRoot0__Fi(int n);
 
@@ -32,10 +38,6 @@ extern SVECTOR WaterNormal; /* the water surface's normal (view space); .pad: it
 /* WaterClip's output: faces made by clipping, drawn after the model's own (retail keeps this
  * buffer in the code segment, right after the subdivision code). */
 #define CLIPPED_FACE_BUFFER 0x80088790u
-
-/* GTE commands beyond processpolys.h's */
-#define GTE_CMD_GPF12 0x198003du
-#define GTE_CMD_GPL12 0x1a8003eu
 
 typedef struct {
 	PolyState ps;
@@ -52,65 +54,72 @@ typedef struct {
 #define RV32(pp, off, w) (((uint32_t *)((char *)(pp)->pv + 3200 + (off)))[w])
 #define LIGHT(pp, off)   RV32(pp, off, 1)
 
-/* A lighting word (r, g, b in 11, 11, 10 bits) as IR1-3, the light of DPCL. */
-static void set_light(uint32_t l) {
-	gte_set(GTE_IR1, l << 5);
-	gte_set(GTE_IR2, l >> 6);
-	gte_set(GTE_IR3, l >> 17);
-}
-
 /* ---------------------------------------------------------------------------------------------
  * Near-plane faces */
 
 /* M3dMaths_OriginAgainstPlaneTest (0x8008b894): which side of the plane through three view-space
- * points the eye is on. On entry RT11/RT22/RT33 hold the first point, IR1-3 the second and V0
- * the third: OP gives the plane normal (first x second, unscaled). That goes into the rotation
- * matrix twice, as rounded high halves (row 2) and low halves (row 3), and MVMVA dots both with
- * the third point: returns about (normal . third) >> 16, negative for a face turned away. */
-static int M3dMaths_OriginAgainstPlaneTest(void) {
+ * points the eye is on. The plane normal is the first point x the second (unscaled, retail's OP
+ * with the first point on the rotation's diagonal); it goes into the rotation's rows 2 and 3 as
+ * rounded high halves and low halves, each dotted with the third point: returns about
+ * (normal . third) >> 16, negative for a face turned away. The rotation is left as retail leaves
+ * it. */
+static int M3dMaths_OriginAgainstPlaneTest(const int16_t first[3], const int16_t second[3],
+                                           const int16_t third[3]) {
+	int16_t(*r)[3] = pc_geom.rot;
 	uint32_t nx, ny, nz;
+	GeomAcc n;
 
-	gte_op0();
+	n = geom_op(first, second, 0, 0, 0);
+	nx = (uint32_t)n.mac[0];
+	ny = (uint32_t)n.mac[1];
+	nz = (uint32_t)n.mac[2];
+	r[2][0] = (int16_t)nx;
+	r[2][1] = (int16_t)ny;
+	r[2][2] = (int16_t)nz;
+	r[0][2] = (int16_t)(nx + 0x8000); /* (unused) */
+	r[1][0] = (int16_t)((nx + 0x8000) >> 16);
+	r[1][1] = (int16_t)((ny + 0x8000) >> 16);
+	r[1][2] = (int16_t)((nz + 0x8000) >> 16);
+	n = geom_mvmva(pc_geom.rot, 0, third[0], third[1], third[2], 0, 0, 0);
+	return n.mac[1] + (n.mac[2] >> 16);
+}
 
-	nx = PC_GteGetData(GTE_MAC1);
-	ny = PC_GteGetData(GTE_MAC2);
-	nz = PC_GteGetData(GTE_MAC3);
-	gte_setc(GTE_RT + 3, (nx & 0xffff) | ny << 16); /* RT31, RT32 */
-	gte_setc(GTE_RT + 4, nz);                       /* RT33 */
-	gte_setc(GTE_RT + 1, nx + 0x8000);              /* RT13 (unused), RT21 */
-	gte_setc(GTE_RT + 2, (ny + 0x8000) >> 16 | ((nz + 0x8000) >> 16) << 16); /* RT22, RT23 */
-	gte_mvmva(0, MX_RT, MV_V0, CV_NONE, 0);
-	return gte_get(GTE_MAC2) + (gte_get(GTE_MAC3) >> 16);
+/* a view-space vertex: x, y (16 bits each) from the rotated twin, z from the projected one */
+static void view_vertex(PP *pp, uint32_t off, int16_t v[3]) {
+	uint32_t xy = RV32(pp, off, 0);
+
+	v[0] = (int16_t)xy;
+	v[1] = (int16_t)(xy >> 16);
+	v[2] = (int16_t)PV32(pp, off, 1);
 }
 
 /* A face crossing the near plane has no usable screen winding: it is drawn (subdivided) if the
  * eye is on its front side, by its view-space vertices 0, 1, 2. */
 static int near_face_visible(PP *pp) {
-	uint32_t xy;
+	int16_t a[3], b[3], c[3];
 
-	xy = RV32(pp, pp->off[0], 0);
-	gte_setc(GTE_RT + 0, xy);                      /* RT11 = x0 (RT12 = y0, unused) */
-	gte_setc(GTE_RT + 2, xy >> 16);                /* RT22 = y0 */
-	gte_setc(GTE_RT + 4, PV32(pp, pp->off[0], 1)); /* RT33 = z0 */
-
-	xy = RV32(pp, pp->off[1], 0);
-	gte_set(GTE_IR1, xy);
-	gte_set(GTE_IR2, xy >> 16);
-	gte_set(GTE_IR3, PV32(pp, pp->off[1], 1));
-	gte_set(GTE_VXY0, RV32(pp, pp->off[2], 0));
-	gte_set(GTE_VZ0, PV32(pp, pp->off[2], 1));
-	return M3dMaths_OriginAgainstPlaneTest() >= 0;
+	view_vertex(pp, pp->off[0], a);
+	view_vertex(pp, pp->off[1], b);
+	view_vertex(pp, pp->off[2], c);
+	/* (retail loads the first point as rotation words: rot[0][1] gets y and rot[1][2] 0) */
+	pc_geom.rot[0][0] = a[0];
+	pc_geom.rot[0][1] = a[1];
+	pc_geom.rot[1][1] = a[1];
+	pc_geom.rot[1][2] = 0;
+	pc_geom.rot[2][2] = a[2];
+	return M3dMaths_OriginAgainstPlaneTest(a, b, c) >= 0;
 }
 
 /* ---------------------------------------------------------------------------------------------
  * Subdivision
  *
- * The face is cut into segs x segs pieces. Its screen-space area (twice the NCLIP value, or a
+ * The face is cut into segs x segs pieces. Its screen-space area (twice the winding value, or a
  * huge value for near-plane faces) picks segs: sqrt(area) / 32 rounded up, at most 7. The grid's
  * vertices are worked out in the scratchpad, one 16-byte cell each, rows 128 bytes apart: the
- * GTE's rotation matrix holds the three view-space corners (one per column) and RTPS projects a
- * weighted sum of them (V0 = the weights, 4096 in all); the light and colour matrices hold the
- * corners' uvs and colours the same way, and MVMVA + GPF interpolate those into colour words.
+ * rotation holds the three view-space corners (one per column) and a projection of the weights
+ * (4096 in all) gives a weighted sum of them on screen; the light and colour matrices hold the
+ * corners' uvs and colours the same way, and the same weights interpolate those into colour
+ * words (the projection's depth cue is 4096 here, so that scaling only saturates them).
  * A cell: +0 screen word (clamped, with outcode bits), +8 uv (as a colour word), +12 colour.
  * Every word the renderer keeps in the scratchpad is at +4 of some cell, which the grid never
  * touches; subdivision saves its own state in such words as well. */
@@ -135,6 +144,7 @@ typedef struct {
 	uint32_t code;        /* flat kinds: the quad command word (code | colour) */
 	uint32_t clut, tpage; /* textured kinds: their high halves, for the first two uvs */
 	uint32_t and_out;     /* screen words ANDed over the piece being built (and OFFSCREEN) */
+	uint32_t rgbc;        /* the packet's command word with the quad code: the cells' code */
 } Sub;
 
 /* SubdivSetup (0x80087b3c): saves the walk's state in the scratchpad and picks segs and step. */
@@ -153,8 +163,9 @@ static void subdiv_setup(PP *pp, Sub *s, uint32_t area) {
 	SCR32(0x74) = (uint32_t)pp->ps.zmax;
 	SCR32(0x84) = pp->ps.flags;
 	SCR32(0xb4) = (uint32_t)pp->colours;
-	/* the colour commands below carry this code into the cells: the quad version of the face's */
-	gte_set(GTE_RGBC, PKT(pp->ps.pkt)[1] | CODE_QUAD_BIT);
+	/* the colour words below carry this code into the cells: the quad version of the face's */
+	s->rgbc = PKT(pp->ps.pkt)[1] | CODE_QUAD_BIT;
+	M3dAsm_ColourCode = s->rgbc;
 
 	n = M3dMaths_SquareRoot0__Fi((int)area);
 
@@ -167,45 +178,54 @@ static void subdiv_setup(PP *pp, Sub *s, uint32_t area) {
 	s->last = s->viewport; /* (no piece made yet) */
 }
 
+/* the bytes 0, 1, 2 of three words, x16, as the rows of a matrix (the corners in the columns) */
+static void setup_bytes(int16_t m[3][3], uint32_t a, uint32_t b, uint32_t c, int rows) {
+	int i;
+
+	for (i = 0; i < 3; i++) {
+		m[i][0] = i < rows ? (int16_t)((a >> 8 * i & 0xff) << 4) : 0;
+		m[i][1] = i < rows ? (int16_t)((b >> 8 * i & 0xff) << 4) : 0;
+		m[i][2] = i < rows ? (int16_t)((c >> 8 * i & 0xff) << 4) : 0;
+	}
+}
+
 /* SetupUVs (0x80087bd8): the light matrix's rows get three corners' u and v (x16). */
 static void setup_uvs(uint32_t a, uint32_t b, uint32_t c) {
-	gte_setc(GTE_LLM + 0, (a & 0xff) << 4 | (b & 0xff) << 20);
-	gte_setc(GTE_LLM + 1, (c & 0xff) << 4 | (a & 0xff00) << 12);
-	gte_setc(GTE_LLM + 2, (b & 0xff00) >> 4 | (c & 0xff00) << 12);
-	gte_setc(GTE_LLM + 3, 0);
-	gte_setc(GTE_LLM + 4, 0);
+	setup_bytes(pc_geom.llm, a, b, c, 2);
 }
 
 /* SetupRGBs (0x80087c3c): the colour matrix's rows get three corners' r, g and b (x16). */
 static void setup_rgbs(uint32_t a, uint32_t b, uint32_t c) {
-	gte_setc(GTE_LCM + 0, (a & 0xff) << 4 | (b & 0xff) << 20);
-	gte_setc(GTE_LCM + 1, (c & 0xff) << 4 | (a & 0xff00) << 12);
-	gte_setc(GTE_LCM + 2, (b & 0xff00) >> 4 | (c & 0xff00) << 12);
-	gte_setc(GTE_LCM + 3, (a >> 12 & 0xff0) | (b >> 12 & 0xff0) << 16);
-	gte_setc(GTE_LCM + 4, c >> 12 & 0xff0);
+	setup_bytes(pc_geom.lcm, a, b, c, 3);
 }
 
-/* SetupXYs (0x80087cc0): the rotation matrix's columns get three corners' view-space positions. */
+/* SetupXYs (0x80087cc0): the rotation's columns get three corners' view-space positions. */
 static void setup_xys(PP *pp, uint32_t a, uint32_t b, uint32_t c) {
-	uint32_t xya = RV32(pp, a, 0), xyb = RV32(pp, b, 0), xyc = RV32(pp, c, 0);
+	int16_t va[3], vb[3], vc[3];
+	int i;
 
-	gte_setc(GTE_RT + 0, (xya & 0xffff) | xyb << 16);
-	gte_setc(GTE_RT + 1, (xyc & 0xffff) | (xya & 0xffff0000));
-	gte_setc(GTE_RT + 2, xyb >> 16 | (xyc >> 16) << 16);
-	gte_setc(GTE_RT + 3, (PV32(pp, a, 1) & 0xffff) | PV32(pp, b, 1) << 16);
-	gte_setc(GTE_RT + 4, PV32(pp, c, 1) & 0xffff);
+	view_vertex(pp, a, va);
+	view_vertex(pp, b, vb);
+	view_vertex(pp, c, vc);
+
+	for (i = 0; i < 3; i++) {
+		pc_geom.rot[i][0] = va[i];
+		pc_geom.rot[i][1] = vb[i];
+		pc_geom.rot[i][2] = vc[i];
+	}
 }
 
 /* The grid builder (0x80087d24): a triangle of grid vertices between the three corners in the
- * matrices (weights x, y, z of V0 for the columns a, b, c), starting at cell `out`. Row r
+ * matrices (weights x, y, z for the columns a, b, c, 16 bits each), starting at cell `out`. Row r
  * (rows .. 0 counting down) has segs - rows + 1 vertices, dcol bytes apart, from corner c's
  * weight w toward corner a; rows are drow bytes apart, w falling by step each row (0 on the
  * last). The last row's last vertex is exactly corner b. */
 static void subdiv_grid(const Sub *s, uint32_t out, int w, int dcol, int drow, int rows) {
 	int rgb = s->kind & SUB_COL;
+	uint8_t code = (uint8_t)(s->rgbc >> 24);
 
 	do {
-		uint32_t row = out, next;
+		uint32_t row = out, next, wxy;
 		int a, b, cols;
 
 		if (rows == 0)
@@ -213,17 +233,18 @@ static void subdiv_grid(const Sub *s, uint32_t out, int w, int dcol, int drow, i
 
 		a = 4096 - w;
 		b = 0;
-		gte_set(GTE_VXY0, a);
-		gte_set(GTE_VZ0, w);
+		wxy = (uint32_t)a; /* the weights of columns a, b (16 bits each) */
 
 		out -= dcol;
 		cols = s->segs - rows;
 
 		do {
 			uint32_t xy, flag, d;
+			int16_t wt[3] = { (int16_t)wxy, (int16_t)(wxy >> 16), (int16_t)w };
+			GeomDepthQ dq;
+			GeomProj p = geom_rtps(&pc_geom, wt[0], wt[1], wt[2], 12, 0, &dq, &flag);
+			GeomAcc i;
 			int sx, sy;
-
-			gte_rtps();
 
 			out += dcol;
 			a -= s->step;
@@ -234,7 +255,7 @@ static void subdiv_grid(const Sub *s, uint32_t out, int w, int dcol, int drow, i
 				next = 0x10000000; /* the far corner exactly */
 
 			/* the screen word, clamped to what the GPU takes */
-			xy = PC_GteGetData(GTE_SXY2);
+			xy = p.sxy;
 			sy = (int32_t)xy >> 16;
 			sx = (int16_t)xy;
 
@@ -248,27 +269,24 @@ static void subdiv_grid(const Sub *s, uint32_t out, int w, int dcol, int drow, i
 				sx = -510;
 
 			xy = ((uint32_t)sx & 0xffff) | (uint32_t)sy << 16;
-			flag = gte_getc(GTE_FLAG);
-			gte_mvmva(1, MX_LLM, MV_V0, CV_NONE, 0); /* uv */
 
 			/* outcode bits as the fast transforms make them: 14/30 x >= xR / y >= yB, 15 the
 			 * projection overflowed */
 			d = xy - s->viewport;
 			xy = ((xy & 0xbfffbfff) | ~(d | 0xbfffbfff)) & 0xffff7fff;
-			PC_GteCommand(GTE_CMD_GPF12);
-
 			xy |= flag >> 2 & 0x8000;
 			CELL(out, 0) = xy;
-			CELL(out, 8) = PC_GteGetData(GTE_RGB2);
+
+			/* uv, colour: the weighted corners, saturated into colour words */
+			i = geom_mvmva(pc_geom.llm, 0, wt[0], wt[1], wt[2], 12, 0, 0);
+			geom_gpf(dq.ir0, i.ir, 12, 0, code, &CELL(out, 8), 0);
 
 			if (rgb) {
-				gte_mvmva(1, MX_LCM, MV_V0, CV_NONE, 0); /* colour */
-				PC_GteCommand(GTE_CMD_GPF12);
-
-				CELL(out, 12) = PC_GteGetData(GTE_RGB2);
+				i = geom_mvmva(pc_geom.lcm, 0, wt[0], wt[1], wt[2], 12, 0, 0);
+				geom_gpf(dq.ir0, i.ir, 12, 0, code, &CELL(out, 12), 0);
 			}
 
-			gte_set(GTE_VXY0, next);
+			wxy = next;
 		} while (cols-- != 0);
 
 		w -= s->step;
@@ -533,12 +551,12 @@ static uint32_t subdivide(PP *pp, int kind, int tri, uint32_t area, const int *x
 	}
 
 	if (!(kind & SUB_COL))
-		s.code = PC_GteGetData(GTE_RGBC);
+		s.code = s.rgbc;
 
 	subdiv_rows(pp, &s);
 
 	/* SubdivisionDone (0x80088744) */
-	gte_set(GTE_RGBC, 0);
+	M3dAsm_ColourCode = 0;
 
 	if (pp->ps.pkt == s.start)
 		return 0;
@@ -557,9 +575,10 @@ static uint32_t subdivide(PP *pp, int kind, int tri, uint32_t area, const int *x
 typedef struct {
 	PP *pp;
 	const uint32_t *face;
-	uint32_t out;  /* the next record in ClippedFaceBuffer */
-	uint32_t vtx;  /* the next free ProjectedVertices slot */
-	uint32_t size; /* the face record's size */
+	uint32_t out;    /* the next record in ClippedFaceBuffer */
+	uint32_t vtx;    /* the next free ProjectedVertices slot */
+	uint32_t size;   /* the face record's size */
+	uint32_t uv[2];  /* the uvs where the last two edges met the water, as colour words */
 } Clip;
 
 /* MIPS div: no trap on division by zero (the quotient is -1 or 1) or overflow. */
@@ -574,60 +593,59 @@ static int32_t mips_div(int32_t n, int32_t d) {
 }
 
 /* ClipEdge (0x800894b0): the point where the edge from vertex a to b meets the water, as a new
- * projected vertex (and its rotated twin), and the uv there. The GTE does it all: the edge ends'
- * heights against WaterNormal (MVMVA), the position by GPL from a toward b by the ratio, RTPS,
- * then GPL again on the uvs (left as RGB2's u, v bytes). Returns uvb << 16 | uva. */
+ * projected vertex (and its rotated twin), and the uv there (into c->uv). Retail does it all on
+ * the GTE: the edge ends' heights against WaterNormal (the rotation's rows 1 and 3 hold a and b),
+ * the position from a toward b by the ratio, its projection (with the identity rotation and no
+ * translation, which stay), then the uvs the same way. Returns uvb << 16 | uva. */
 static uint32_t clip_edge(Clip *c, uint32_t a, uint32_t b, uint32_t uva, uint32_t uvb) {
 	PP *pp = c->pp;
-	uint32_t uv = uvb << 16 | uva, xya = RV32(pp, a, 0), xyb = RV32(pp, b, 0), xy, z;
+	uint32_t uv = uvb << 16 | uva, xya = RV32(pp, a, 0), xyb = RV32(pp, b, 0), xy, z, rgb;
 	int za = (int16_t)PV32(pp, a, 1), zb = (int16_t)PV32(pp, b, 1), da, t;
 	int xa = (int16_t)xya, ya = (int32_t)xya >> 16;
+	int16_t(*r)[3] = pc_geom.rot, d[3];
+	int32_t base[3];
+	GeomAcc h;
+	GeomProj p;
 
-	gte_setc(GTE_RT + 0, xya); /* row 1: a */
-	gte_setc(GTE_RT + 1, (uint32_t)za);
-	gte_setc(GTE_RT + 3, xyb); /* row 3: b */
-	gte_setc(GTE_RT + 4, (uint32_t)zb);
-	gte_set(GTE_VXY0, vtx_pack(WaterNormal.vx, WaterNormal.vy));
-	gte_set(GTE_VZ0, vtx_pack(WaterNormal.vz, WaterNormal.pad));
-	gte_mvmva(1, MX_RT, MV_V0, CV_NONE, 0);
+	r[0][0] = (int16_t)xa; /* row 1: a */
+	r[0][1] = (int16_t)ya;
+	r[0][2] = (int16_t)za;
+	r[1][0] = (int16_t)((uint32_t)za >> 16);
+	r[2][0] = (int16_t)xyb; /* row 3: b */
+	r[2][1] = (int16_t)(xyb >> 16);
+	r[2][2] = (int16_t)zb;
+	h = geom_mvmva(pc_geom.rot, 0, WaterNormal.vx, WaterNormal.vy, WaterNormal.vz, 12, 0, 0);
 
-	da = gte_get(GTE_MAC1);
-	t = mips_div((int32_t)((uint32_t)(-WaterNormal.pad - da) << 12), gte_get(GTE_MAC3) - da);
+	da = h.mac[0];
+	t = mips_div((int32_t)((uint32_t)(-WaterNormal.pad - da) << 12), h.mac[2] - da);
 
-	gte_set(GTE_MAC1, xa);
-	gte_set(GTE_MAC2, ya);
-	gte_set(GTE_MAC3, za);
-	gte_set(GTE_IR1, (int16_t)xyb - xa);
-	gte_set(GTE_IR2, ((int32_t)xyb >> 16) - ya);
-	gte_set(GTE_IR3, zb - za);
-	gte_setc(GTE_RT + 0, 4096); /* identity rotation, no translation */
-	gte_setc(GTE_RT + 1, 0);
-	gte_setc(GTE_RT + 2, 4096);
-	gte_setc(GTE_RT + 3, 0);
-	gte_setc(GTE_RT + 4, 4096);
-	gte_setc(GTE_TRX, 0);
-	gte_setc(GTE_TRY, 0);
-	gte_setc(GTE_TRZ, 0);
-	gte_set(GTE_IR0, t);
-	PC_GteCommand(GTE_CMD_GPL12);
+	memset(pc_geom.rot, 0, sizeof pc_geom.rot);
+	r[0][0] = r[1][1] = r[2][2] = 4096; /* identity rotation, no translation */
+	geom_load_vector(pc_geom.tr, 0, 0, 0);
 
-	xy = (PC_GteGetData(GTE_MAC1) & 0xffff) | PC_GteGetData(GTE_MAC2) << 16;
-	z = PC_GteGetData(GTE_MAC3);
-	gte_set(GTE_VXY0, xy);
-	gte_set(GTE_VZ0, z);
-	gte_rtps();
+	geom_load_vector(base, xa, ya, za);
+	d[0] = (int16_t)((int16_t)xyb - xa);
+	d[1] = (int16_t)(((int32_t)xyb >> 16) - ya);
+	d[2] = (int16_t)(zb - za);
+	h = geom_gpl((int16_t)t, d, base, 12, 0, 0, 0, 0);
 
+	xy = ((uint32_t)h.mac[0] & 0xffff) | (uint32_t)h.mac[1] << 16;
+	z = (uint32_t)h.mac[2];
+
+	p = geom_rtps(&pc_geom, (int16_t)xy, (int16_t)(xy >> 16), (int16_t)z, 12, 0, 0, 0);
 	*(uint32_t *)(c->vtx + 3200) = xy;
 	*(uint32_t *)(c->vtx + 4) = (z & 0xffff) | 0xff000000; /* outcode: inside everything */
-	*(uint32_t *)c->vtx = PC_GteGetData(GTE_SXY2);
+	*(uint32_t *)c->vtx = p.sxy;
 	c->vtx += 8;
 
-	gte_set(GTE_MAC1, uv << 4 & 0xff0);
-	gte_set(GTE_MAC2, uv >> 4 & 0xff0);
-	gte_set(GTE_IR1, (uv >> 12 & 0xff0) - (uv << 4 & 0xff0));
-	gte_set(GTE_IR2, (uv >> 20 & 0xff0) - (uv >> 4 & 0xff0));
-	gte_set(GTE_IR0, t);
-	PC_GteCommand(GTE_CMD_GPL12);
+	/* (the third component, unused, is what the projection left: its view z) */
+	geom_load_vector(base, uv << 4 & 0xff0, uv >> 4 & 0xff0, p.v.mac[2]);
+	d[0] = (int16_t)((uv >> 12 & 0xff0) - (uv << 4 & 0xff0));
+	d[1] = (int16_t)((uv >> 20 & 0xff0) - (uv >> 4 & 0xff0));
+	d[2] = p.v.ir[2];
+	geom_gpl((int16_t)t, d, base, 12, 0, (uint8_t)(M3dAsm_ColourCode >> 24), &rgb, 0);
+	c->uv[0] = c->uv[1];
+	c->uv[1] = rgb;
 	return uv;
 }
 
@@ -680,8 +698,8 @@ static void make_clipped_tri(Clip *c, int a) {
 
 	set_verts(c, c->pp->off[a] >> 3, v, v + 1, v + 1);
 
-	OUT_UV(c, 2) = (uint16_t)PC_GteGetData(GTE_RGB0); /* the two new uvs */
-	OUT_UV(c, 4) = (uint16_t)PC_GteGetData(GTE_RGB2);
+	OUT_UV(c, 2) = (uint16_t)c->uv[0]; /* the two new uvs */
+	OUT_UV(c, 4) = (uint16_t)c->uv[1];
 	copy_record(c, 1);
 }
 
@@ -691,8 +709,8 @@ static void make_clipped_quad(Clip *c, int a, int b) {
 
 	set_verts(c, c->pp->off[a] >> 3, c->pp->off[b] >> 3, v, v + 1);
 
-	OUT_UV(c, 4) = (uint16_t)PC_GteGetData(GTE_RGB0);
-	OUT_UV(c, 5) = (uint16_t)PC_GteGetData(GTE_RGB2);
+	OUT_UV(c, 4) = (uint16_t)c->uv[0];
+	OUT_UV(c, 5) = (uint16_t)c->uv[1];
 	copy_record(c, 0);
 }
 
@@ -846,6 +864,21 @@ done:
 /* ---------------------------------------------------------------------------------------------
  * One face */
 
+/* The corners' colours of a gouraud face from its corners' own (lit[corner]): rgb gets those of
+ * corners 0-2 of a triangle, 1-3 of a quad, whose corner 0 is col0. */
+static void corner_colours(const uint32_t *lit, int tri, uint32_t rgb[3], uint32_t *col0) {
+	if (tri) {
+		rgb[0] = lit[0];
+		rgb[1] = lit[1];
+		rgb[2] = lit[2];
+	} else {
+		*col0 = lit[0];
+		rgb[0] = lit[1];
+		rgb[1] = lit[2];
+		rgb[2] = lit[3];
+	}
+}
+
 /* Packet word indices of the corners' screen words / colours / uvs, per packet type. */
 static const int XY_F3[3] = { 2, 3, 4 }, XY_FT3[3] = { 2, 4, 6 }, XY_G3[3] = { 2, 4, 6 };
 static const int XY_GT3[3] = { 2, 5, 8 }, XY_F4[4] = { 2, 3, 4, 5 }, XY_FT4[4] = { 2, 4, 6, 8 };
@@ -858,8 +891,9 @@ static int draw_face(PP *pp, const uint32_t *face) {
 	PolyState *ps = &pp->ps;
 	uint32_t gff = SCR32(SCR_FACEFLAGS);
 	uint32_t f = (face[FACE_FLAGS] & (uint32_t)((int32_t)gff >> 16)) | (gff & 0xffff);
-	uint32_t vi = face[FACE_VERTS], w1[4], oc, z, c, col0 = 0, len, start, last, xy[4];
-	int i, area, tri = (f & FF_TRIANGLE) != 0, nv = tri ? 3 : 4, gouraud, kind;
+	uint32_t vi = face[FACE_VERTS], w1[4], oc, z, c, col0 = 0, len, start, last, xy[4], sxy[4];
+	uint32_t rgb[3] = { 0, 0, 0 }, lit[4];
+	int i, area, tri = (f & FF_TRIANGLE) != 0, nv = tri ? 3 : 4, gouraud, kind, k;
 	const int *xyw, *colw = COL_G, *uvw = UV_FT;
 	uint32_t *p;
 
@@ -869,18 +903,12 @@ static int draw_face(PP *pp, const uint32_t *face) {
 	for (i = 0; i < 4; i++) {
 		pp->off[i] = (vi >> 8 * i & 0xff) * 8;
 		w1[i] = PV32(pp, pp->off[i], 1);
+		sxy[i] = PV32(pp, pp->off[i], 0);
 	}
 
 	/* the screen winding of corners 0, 1, 2 and of 1, 2, 3 */
-	gte_set(GTE_SXY0, PV32(pp, pp->off[0], 0));
-	gte_set(GTE_SXY1, PV32(pp, pp->off[1], 0));
-	gte_set(GTE_SXY2, PV32(pp, pp->off[2], 0));
-	PC_GteCommand(GTE_CMD_NCLIP);
-	gte_set(GTE_SXYP, PV32(pp, pp->off[3], 0)); /* SXY0-2 now hold corners 1, 2, 3 */
-
-	PKT(ps->pkt)[2] = PV32(pp, pp->off[0], 0);
-	area = gte_get(GTE_MAC0);
-	PC_GteCommand(GTE_CMD_NCLIP);
+	PKT(ps->pkt)[2] = sxy[0];
+	area = pp_nclip(sxy[0], sxy[1], sxy[2]);
 
 	/* outcodes: drop the face if all corners are off one side; the high byte (complements)
 	 * tells near-plane crossing (0x1000/0x4000) and water crossing (0x8000) */
@@ -895,7 +923,7 @@ static int draw_face(PP *pp, const uint32_t *face) {
 
 		area = 0x7fff0000; /* always subdivided */
 	} else {
-		int n1 = area, n2 = gte_get(GTE_MAC0);
+		int n1 = area, n2 = pp_nclip(sxy[1], sxy[2], sxy[3]);
 
 		if (SCR16(SCR_MIRROR)) {
 			n1 = (int)(0u - (uint32_t)n1);
@@ -917,8 +945,6 @@ static int draw_face(PP *pp, const uint32_t *face) {
 
 		area = n1;
 	}
-
-	gte_set(GTE_MAC0, area); /* SubdivTest reads it back */
 
 	if (ps->pkt >= ps->limit)
 		return 0; /* FullPolys */
@@ -942,43 +968,37 @@ static int draw_face(PP *pp, const uint32_t *face) {
 
 	if (pp_fog(ps) > 0 && (int32_t)SCR32(SCR_FADECOLOUR) >= 0) {
 		/* the fade polygon's screen words */
-		SCR32(0x384) = PKT(ps->pkt)[2];
-		SCR32(0x394) = PC_GteGetData(GTE_SXY0);
-		SCR32(0x3a4) = PC_GteGetData(GTE_SXY1);
-		SCR32(0x3b4) = PC_GteGetData(GTE_SXY2);
+		SCR32(0x384) = sxy[0];
+		SCR32(0x394) = sxy[1];
+		SCR32(0x3a4) = sxy[2];
+		SCR32(0x3b4) = sxy[3];
 	}
 
 	f = ps->flags;
+	k = ps->fog;
 
-	/* colours (0x800877c0 ... GetAndTransferTint). Retail pipelines the per-corner commands: each
-	 * DPCL lights the colour and light loaded before it, so the first works on whatever the GTE
-	 * held (its result only shifts through the colour FIFO) and the last follows the loop. */
+	/* colours (0x800877c0 ... GetAndTransferTint): flat, or each corner's for a gouraud face
+	 * (rgb: see corner_colours; a flat face's in rgb[2]). (Retail pipelines the per-corner
+	 * colour commands, so its first one works on what the GTE held, for nothing.) */
 	c = face[FACE_COLOUR];
 #define TABLE(i) pp->colours[c >> 8 * (i) & 0xff]
 	if (!(f & FF_GOURAUD)) {
-		gte_set(GTE_RGBC, c);
+		M3dAsm_ColourCode = c;
 
 		if ((f & (FF_VERTEXLIT | FF_TINTED)) == (FF_VERTEXLIT | FF_TINTED)) {
 			/* each corner lit by its own lighting word: gouraud after all */
-			for (i = 0; i < nv; i++) {
-				PC_GteCommand(GTE_CMD_DPCL);
-				set_light(LIGHT(pp, pp->off[i]));
-			}
+			for (i = 0; i < nv; i++)
+				lit[i] = pp_dpcl(c, LIGHT(pp, pp->off[i]), k);
 
-			if (!tri)
-				col0 = PC_GteGetData(GTE_RGB0);
-
-			PC_GteCommand(GTE_CMD_DPCL);
+			corner_colours(lit, tri, rgb, &col0);
 		} else if (f & FF_VERTEXLIT) {
 			/* lit by the lighting word of the vertex the record names */
-			PC_GteCommand(GTE_CMD_DPCL);
-			set_light(*(uint32_t *)((char *)pp->pv + ((const uint16_t *)face)[6] + 3204));
-			PC_GteCommand(GTE_CMD_DPCL);
+			rgb[2] = pp_dpcl(c, *(uint32_t *)((char *)pp->pv + ((const uint16_t *)face)[6] + 3204),
+			                 k);
 		} else if (f & FF_TINTED) {
-			set_light(SCR32(SCR_TINT));
-			PC_GteCommand(GTE_CMD_DPCL);
+			rgb[2] = pp_dpcl(c, SCR32(SCR_TINT), k);
 		} else {
-			PC_GteCommand(GTE_CMD_DPCS);
+			rgb[2] = pp_dpcs(c, c, k);
 		}
 
 		gouraud = (f & (FF_VERTEXLIT | FF_TINTED)) == (FF_VERTEXLIT | FF_TINTED);
@@ -991,42 +1011,32 @@ static int draw_face(PP *pp, const uint32_t *face) {
 			if (!(f & FF_TINTED))
 				l = *(uint32_t *)((char *)pp->pv + ((const uint16_t *)face)[6] + 3204);
 			else if (!(f & FF_VERTEXLIT))
-				set_light(l = SCR32(SCR_TINT));
+				l = SCR32(SCR_TINT);
 
 			for (i = 0; i < nv; i++) {
-				uint32_t rgbc;
-
-				PC_GteCommand(GTE_CMD_DPCL);
-
-				rgbc = TABLE(i);
-				set_light((f & FF_VERTEXLIT) && (f & FF_TINTED) ? LIGHT(pp, pp->off[i]) : l);
-				gte_set(GTE_RGBC, rgbc);
+				M3dAsm_ColourCode = TABLE(i);
+				lit[i] = pp_dpcl(TABLE(i),
+				                 (f & FF_VERTEXLIT) && (f & FF_TINTED) ? LIGHT(pp, pp->off[i]) : l, k);
 			}
 
-			if (!tri)
-				col0 = PC_GteGetData(GTE_RGB0);
-
-			PC_GteCommand(GTE_CMD_DPCL);
+			corner_colours(lit, tri, rgb, &col0);
 		} else if (tri) {
-			gte_set(GTE_RGB0, TABLE(0));
-			gte_set(GTE_RGB1, TABLE(1));
-			gte_set(GTE_RGB2, TABLE(2));
-			PC_GteCommand(GTE_CMD_DPCT);
-		} else {
-			gte_set(GTE_RGBC, TABLE(0));
-			PC_GteCommand(GTE_CMD_DPCS);
-			gte_set(GTE_RGB0, TABLE(1));
-			gte_set(GTE_RGB1, TABLE(2));
+			/* with the code byte the colour code holds (the last face's) */
+			uint32_t in[3] = { TABLE(0), TABLE(1), TABLE(2) };
 
-			col0 = PC_GteGetData(GTE_RGB2);
-			gte_set(GTE_RGB2, TABLE(3));
-			PC_GteCommand(GTE_CMD_DPCT);
+			geom_dpct(&pc_geom, in, (uint8_t)(M3dAsm_ColourCode >> 24), (int16_t)k, 12, 0, rgb,
+			          0);
+		} else {
+			uint32_t in[3] = { TABLE(1), TABLE(2), TABLE(3) };
+
+			M3dAsm_ColourCode = TABLE(0);
+			col0 = pp_dpcs(TABLE(0), TABLE(0), k);
+			geom_dpct(&pc_geom, in, (uint8_t)(TABLE(0) >> 24), (int16_t)k, 12, 0, rgb, 0);
 		}
 	}
 #undef TABLE
 
-	/* the packet: SXY0-2 hold corners 1-3, RGB0-2 the colours (of corners 0-2 of a gouraud
-	 * triangle, 1-3 of a gouraud quad, whose corner 0 is col0) */
+	/* the packet: corners 1-3 screen words, the colours as above */
 	p = PKT(ps->pkt);
 
 	{
@@ -1051,13 +1061,13 @@ static int draw_face(PP *pp, const uint32_t *face) {
 		kind = (gouraud ? SUB_COL : 0) | (textured ? SUB_UV : 0);
 
 		if (tri) {
-			uint32_t s1 = PC_GteGetData(GTE_SXY0), s2 = PC_GteGetData(GTE_SXY1);
+			uint32_t s1 = sxy[1], s2 = sxy[2];
 
 			switch (kind) {
 				case 0:
 					p[3] = s1;
 					p[4] = s2;
-					pp_code(ps, PC_GteGetData(GTE_RGB2), CODE_F3);
+					pp_code(ps, rgb[2], CODE_F3);
 
 					len = 4;
 					xyw = XY_F3;
@@ -1068,7 +1078,7 @@ static int draw_face(PP *pp, const uint32_t *face) {
 					p[3] = uv0;
 					p[5] = uv1;
 					p[7] = uv23;
-					pp_code(ps, PC_GteGetData(GTE_RGB2), CODE_FT3);
+					pp_code(ps, rgb[2], CODE_FT3);
 
 					len = 7;
 					xyw = XY_FT3;
@@ -1076,10 +1086,10 @@ static int draw_face(PP *pp, const uint32_t *face) {
 				case SUB_COL:
 					p[4] = s1;
 					p[6] = s2;
-					pp_code(ps, PC_GteGetData(GTE_RGB0), CODE_G3);
+					pp_code(ps, rgb[0], CODE_G3);
 
-					p[3] = PC_GteGetData(GTE_RGB1);
-					p[5] = PC_GteGetData(GTE_RGB2);
+					p[3] = rgb[1];
+					p[5] = rgb[2];
 					len = 6;
 					xyw = XY_G3;
 					break;
@@ -1089,10 +1099,10 @@ static int draw_face(PP *pp, const uint32_t *face) {
 					p[3] = uv0;
 					p[6] = uv1;
 					p[9] = uv23;
-					pp_code(ps, PC_GteGetData(GTE_RGB0), CODE_GT3);
+					pp_code(ps, rgb[0], CODE_GT3);
 
-					p[4] = PC_GteGetData(GTE_RGB1);
-					p[7] = PC_GteGetData(GTE_RGB2);
+					p[4] = rgb[1];
+					p[7] = rgb[2];
 					len = 9;
 					xyw = XY_GT3;
 					colw = COL_GT;
@@ -1100,15 +1110,14 @@ static int draw_face(PP *pp, const uint32_t *face) {
 					break;
 			}
 		} else {
-			uint32_t s1 = PC_GteGetData(GTE_SXY0), s2 = PC_GteGetData(GTE_SXY1);
-			uint32_t s3 = PC_GteGetData(GTE_SXY2);
+			uint32_t s1 = sxy[1], s2 = sxy[2], s3 = sxy[3];
 
 			switch (kind) {
 				case 0:
 					p[3] = s1;
 					p[4] = s2;
 					p[5] = s3;
-					pp_code(ps, PC_GteGetData(GTE_RGB2), CODE_F4);
+					pp_code(ps, rgb[2], CODE_F4);
 
 					len = 5;
 					xyw = XY_F4;
@@ -1121,7 +1130,7 @@ static int draw_face(PP *pp, const uint32_t *face) {
 					p[5] = uv1;
 					p[7] = uv23;
 					p[9] = uv23 >> 16;
-					pp_code(ps, PC_GteGetData(GTE_RGB2), CODE_FT4);
+					pp_code(ps, rgb[2], CODE_FT4);
 
 					len = 9;
 					xyw = XY_FT4;
@@ -1132,9 +1141,9 @@ static int draw_face(PP *pp, const uint32_t *face) {
 					p[8] = s3;
 					pp_code(ps, col0, CODE_G4);
 
-					p[3] = PC_GteGetData(GTE_RGB0);
-					p[5] = PC_GteGetData(GTE_RGB1);
-					p[7] = PC_GteGetData(GTE_RGB2);
+					p[3] = rgb[0];
+					p[5] = rgb[1];
+					p[7] = rgb[2];
 					len = 8;
 					xyw = XY_G4;
 					break;
@@ -1148,9 +1157,9 @@ static int draw_face(PP *pp, const uint32_t *face) {
 					p[12] = uv23 >> 16;
 					pp_code(ps, col0, CODE_GT4);
 
-					p[4] = PC_GteGetData(GTE_RGB0);
-					p[7] = PC_GteGetData(GTE_RGB1);
-					p[10] = PC_GteGetData(GTE_RGB2);
+					p[4] = rgb[0];
+					p[7] = rgb[1];
+					p[10] = rgb[2];
 					len = 12;
 					xyw = XY_GT4;
 					colw = COL_GT;
@@ -1163,8 +1172,8 @@ static int draw_face(PP *pp, const uint32_t *face) {
 	/* SubdivTest: big faces become a chain of pieces */
 	start = last = ps->pkt;
 
-	if ((f & FF_SUBDIVIDE) && (int32_t)(2048u - PC_GteGetData(GTE_MAC0)) < 0) {
-		uint32_t size = subdivide(pp, kind, tri, PC_GteGetData(GTE_MAC0), xyw, colw, uvw);
+	if ((f & FF_SUBDIVIDE) && (int32_t)(2048u - (uint32_t)area) < 0) {
+		uint32_t size = subdivide(pp, kind, tri, (uint32_t)area, xyw, colw, uvw);
 
 		if (size == 0)
 			return 1; /* every piece off-screen */
@@ -1195,11 +1204,9 @@ void M3dAsm_ProcessPolys__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, int 
 	pp.pv = ProjectedVertices;
 	pp.colours = pColourTable;
 	pp.a2 = (uint32_t)count;
-	gte_setc(GTE_TRX, 0);
-	gte_setc(GTE_TRY, 0);
-	gte_setc(GTE_TRZ, 0);
-	gte_setc(GTE_DQB, 0x10000000); /* RTPS (subdivision) leaves IR0 = 4096 */
-	gte_setc(GTE_DQA, 0);
+	geom_load_vector(pc_geom.tr, 0, 0, 0);
+	pc_geom.dqb = 0x10000000; /* the subdivision's projections: a depth cue of 4096 */
+	pc_geom.dqa = 0;
 
 	SCR32(SCR_CLIPWRITE) = CLIPPED_FACE_BUFFER;
 	SCR16(SCR_CLIPCOUNT) = 0;

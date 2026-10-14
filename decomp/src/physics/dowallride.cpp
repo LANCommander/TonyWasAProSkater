@@ -11,7 +11,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/colij.h"
@@ -136,10 +138,14 @@ void CBruce::DoWallRidePhysics() {
 					ProjectCVectorToPlane(&mFront, line_info.Normal);
 					M3dUtils_NormaliseVector(&mFront);
 					SetVector(&mUp, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
+#ifdef PC_PORT
+					geom_cross(&mFront, &mUp, &mRight, 12);
+#else
 					    gte_ldopv1(&mFront);
 					gte_ldopv2(&mUp);
 					gte_op12();
 					gte_stlvnl(&mRight);
+#endif
 					RotMatrixFromFRUVectors();
 
 					mSameNormal = 0;
@@ -200,10 +206,14 @@ void CBruce::DoWallRidePhysics() {
 				ProjectCVectorToPlane(&mFront, line_info.Normal);
 				M3dUtils_NormaliseVector(&mFront);
 				SetVector(&mUp, line_info.Normal.vx, line_info.Normal.vy, line_info.Normal.vz)
+#ifdef PC_PORT
+				geom_cross(&mFront, &mUp, &mRight, 12);
+#else
 				    gte_ldopv1(&mFront);
 				gte_ldopv2(&mUp);
 				gte_op12();
 				gte_stlvnl(&mRight);
+#endif
 				RotMatrixFromFRUVectors();
 
 				mSameNormal = 0;

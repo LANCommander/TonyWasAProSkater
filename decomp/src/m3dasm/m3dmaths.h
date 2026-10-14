@@ -1,11 +1,18 @@
 /* Shared declarations for the C interpretations of the M3DMATHS / M3DASM entry points
- * (decomp/src/m3dasm/*.c). Plain C: the game headers (decomp/include/game) are C++. */
+ * (decomp/src/m3dasm/*.c). Plain C: the game headers (decomp/include/game) are C++.
+ *
+ * Retail ran these on the GTE; here they use the port's geometry maths (pc_geom.h), with the same
+ * operations in the same order, and leave the state (pc_geom) as retail left the GTE's control
+ * registers. Results retail left in the GTE's data registers are returned instead where a caller
+ * reads them. */
 #ifndef M3DASM_M3DMATHS_H
 #define M3DASM_M3DMATHS_H
 
+#include <string.h>
 #include <sys/types.h>
 #include <libgte.h>
-#include <inline_c.h>
+
+#include "pc_geom.h"
 
 /* M3D's plain vector/matrix structs (layouts as in decomp/include/game/vector.h and m3d.h) */
 struct SVector {
@@ -22,7 +29,7 @@ struct SMatrix {
 	short t[3];    /* 0x12 */
 };
 
-/* A GTE register word made of two 16-bit halves (VXY, rotation-matrix pairs ...). */
+/* A word made of two 16-bit halves (screen words, packed vertex x/y ...). */
 static __inline__ uint32_t m3d_pack(int lo, int hi) {
 	return (uint32_t)(lo & 0xffff) | ((uint32_t)hi << 16);
 }
@@ -30,56 +37,37 @@ static __inline__ uint32_t m3d_pack(int lo, int hi) {
 /* Several routines store m[2][2] as a whole word: the element plus the two padding bytes that
  * follow it in a MATRIX (offset 0x12). This writes that word. */
 static __inline__ void m3d_store_m22_word(MATRIX *m, uint32_t w) {
-	pcgte_sw(m, 16, w);
+	memcpy((char *)m + 16, &w, 4);
 }
 
-/* Loads a 3x3 matrix of shorts into a GTE control matrix (0: rotation, 8: light, 16: colour),
- * the way ctc2 of the five packed words does. */
-static __inline__ void m3d_load_ctrl_matrix(int base, short m[3][3]) {
-	PC_GteSetCtrl(base + 0, m3d_pack(m[0][0], m[0][1]));
-	PC_GteSetCtrl(base + 1, m3d_pack(m[0][2], m[1][0]));
-	PC_GteSetCtrl(base + 2, m3d_pack(m[1][1], m[1][2]));
-	PC_GteSetCtrl(base + 3, m3d_pack(m[2][0], m[2][1]));
-	PC_GteSetCtrl(base + 4, (uint32_t)(int)m[2][2]);
-}
-
-/* The GTE matrix-times-vector commands these routines use, sf=1 (results >> 12), no translation */
-enum {
-	M3D_RTIR = 0x049e012, /* rotation matrix * IR */
-	M3D_LCIR = 0x04de012, /* colour matrix * IR */
-	M3D_RTV0 = 0x0486012, /* rotation matrix * V0 (V1, V2: + 0x8000, + 0x10000) */
-	M3D_LLV0 = 0x04a6012  /* light matrix * V0 (V1, V2 likewise) */
-};
-
-/* out = M * a, where M is the GTE control matrix the command uses: each column of a goes
- * through IR1..3 and the command; out takes the low 16 bits of MAC1..3. Returns the full MAC3
- * of the last column, which callers store together with m[2][2]'s padding. */
-static __inline__ uint32_t m3d_mul_matrix_ir(uint32_t cmd, short a[3][3], short out[3][3]) {
-	int r, c;
+/* out = M * a (>> 12), each column of a through M; out takes the low 16 bits of the 32-bit sums
+ * (not the saturated values). Returns the last column's full third sum, which callers store
+ * together with m[2][2]'s padding. */
+static __inline__ uint32_t m3d_mul_matrix_ir(const int16_t m[3][3], short a[3][3],
+                                             short out[3][3]) {
+	GeomAcc r;
+	int c;
 
 	for (c = 0; c < 3; c++) {
-		for (r = 0; r < 3; r++)
-			PC_GteSetData(9 + r, (uint32_t)(int)a[r][c]);
-
-		PC_GteCommand(cmd);
-
-		for (r = 0; r < 3; r++)
-			out[r][c] = (short)PC_GteGetData(25 + r);
+		r = geom_mvmva(m, 0, a[0][c], a[1][c], a[2][c], 12, 0, 0);
+		out[0][c] = (short)r.mac[0];
+		out[1][c] = (short)r.mac[1];
+		out[2][c] = (short)r.mac[2];
 	}
 
-	return PC_GteGetData(27);
+	return (uint32_t)r.mac[2];
 }
 
-/* M * (the matrix whose columns are already in V0, V1, V2), cmd = M3D_RTV0 or M3D_LLV0:
- * out takes IR1..3 of each column. */
-static __inline__ void m3d_mul_matrix_v(uint32_t cmd, short out[3][3]) {
-	int r, c;
+/* out = M * a (>> 12), each column of a through M; out takes the saturated 16-bit results. */
+static __inline__ void m3d_mul_matrix_v(const int16_t m[3][3], short a[3][3], short out[3][3]) {
+	GeomAcc r;
+	int c;
 
 	for (c = 0; c < 3; c++) {
-		PC_GteCommand(cmd + 0x8000 * c);
-
-		for (r = 0; r < 3; r++)
-			out[r][c] = (short)PC_GteGetData(9 + r);
+		r = geom_mvmva(m, 0, a[0][c], a[1][c], a[2][c], 12, 0, 0);
+		out[0][c] = r.ir[0];
+		out[1][c] = r.ir[1];
+		out[2][c] = r.ir[2];
 	}
 }
 

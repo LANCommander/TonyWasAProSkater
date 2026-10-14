@@ -2,7 +2,9 @@
 #include "names.h"
 #include <sys/types.h>
 #include <libgte.h>
+#ifndef PC_PORT
 #include <inline_c.h>
+#endif
 
 typedef struct Item {
 	short _0;
@@ -24,7 +26,11 @@ extern void M3dColij_LineToThisItem(Item *, SLineInfo *);
 
 void M3dColij_LineToItem(Item *it, SLineInfo *li) {
 	if (it && li->flag) {
+#ifdef PC_PORT
+		geom_ld_mat(pc_geom.rot, li->mat);
+#else
 		gte_SetRotMatrix(li->mat);
+#endif
 		FUN_8008a658(it, 0, li, li->inq);
 
 		do {

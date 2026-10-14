@@ -49,14 +49,14 @@ TEXT_DATA = [(0x80071FA4, 0x80071FA4 + 148), (0x800DC94C, 0x800DC950)]
 
 # Psy-Q library data the port's own code reads, kept although only library code references it
 PORT_USES = {
-    0x800C9670: "rcossin_tbl (hle_libgte.c)",
+    0x800C9670: "rcossin_tbl (pc_libgte.c)",
     0x800CE490: "constructors-done flag (hle_bios.c)",
-    0x800CE548: "rsqrt table (hle_libgte.c)",
-    0x800CE6D4: "K_COR table (hle_libgte.c)",
-    0x800CE704: "ratan_tbl (hle_libgte.c)",
+    0x800CE548: "rsqrt table (pc_libgte.c)",
+    0x800CE6D4: "K_COR table (pc_libgte.c)",
+    0x800CE704: "ratan_tbl (pc_libgte.c)",
     0x800D0544: "_stacksize (pc_main.c)",
     0x800D0548: "_stacktop (pc_main.c)",
-    0x800D0A9C: "sqrt table (hle_libgte.c)",
+    0x800D0A9C: "sqrt table (pc_libgte.c)",
     0x800D101C: "global constructor table (hle_bios.c)",
 }
 # names and types for the library data that is kept (the decompiled code has no names for it)

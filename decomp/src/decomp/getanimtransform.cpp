@@ -7,7 +7,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/m3d.h"
@@ -15,8 +17,10 @@ extern "C" {
 #include "game/mem.h"
 #include "game/ob.h"
 
+#ifndef PC_PORT
 #define MTC2(n, v) __asm__ volatile("mtc2 %0, $" #n : : "r"(v))
 #define CTC2(n, v) __asm__ volatile("ctc2 %0, $" #n : : "r"(v))
+#endif
 
 extern SPSXRegion PSXRegion[];
 extern SMatrix TweenBuffer[];
@@ -165,6 +169,17 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 					pParentMat = pSuper->mpDecompressedFrame + pRegion->pHierarchy[m];
 					M3dMaths_RotMatrixYXZ((SVECTOR *)pEulerPivot, (MATRIX *)pMat);
 
+#ifdef PC_PORT
+					{
+						/* the pivot through the parent's rotation (>> 12, 16-bit results) */
+						GeomAcc r;
+
+						geom_ld_mat(pc_geom.rot, pParentMat);
+						r = geom_mvmva(pc_geom.rot, 0, pEulerPivot->px, pEulerPivot->py,
+						               pEulerPivot->pz, 12, 0, 0);
+						geom_st_sv(&pMat->t[0], r.ir);
+					}
+#else
 					if (!((int)pEulerPivot & 3)) {
 						SVECTOR vec;
 
@@ -185,6 +200,7 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 					CTC2(4, ((int *)pParentMat)[4]);
 					gte_rtv0();
 					gte_stsv(&pMat->t[0]);
+#endif
 
 					pMat->t[0] += pParentMat->t[0];
 					pMat->t[1] += pParentMat->t[1];

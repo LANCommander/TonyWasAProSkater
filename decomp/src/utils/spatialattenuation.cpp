@@ -7,7 +7,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/vector.h"
@@ -46,14 +48,32 @@ int Utils_CalculateSpatialAttenuation(const CVector &pos, int near, int far) {
 		return 0;
 
 	vol = (((far - d) << 12) - (far - d)) / far;
+#ifdef PC_PORT
+	geom_ld_mat(pc_geom.rot, &MikeCamera[Camera_CurrentMikeCamera].Rot);
+#else
 	gte_SetRotMatrix(&MikeCamera[Camera_CurrentMikeCamera].Rot);
+#endif
 
 	centre.vx = (pos.vx >> 12) - MikeCamera[Camera_CurrentMikeCamera].Pos.vx;
 	centre.vy = (pos.vy >> 12) - MikeCamera[Camera_CurrentMikeCamera].Pos.vy;
 	centre.vz = (pos.vz >> 12) - MikeCamera[Camera_CurrentMikeCamera].Pos.vz;
+#ifdef PC_PORT
+	{
+		/* into camera space: the saturated 16-bit results, as words */
+		int16_t v[3];
+		int32_t w[3];
+		GeomAcc r;
+
+		geom_ld_lv(v, &centre);
+		r = geom_mvmva(pc_geom.rot, 0, v[0], v[1], v[2], 12, 0, 0);
+		geom_load_vector(w, r.ir[0], r.ir[1], r.ir[2]);
+		geom_st_lv(&centre, w);
+	}
+#else
 	gte_ldlvl(&centre);
 	gte_rtir();
 	gte_stlvl(&centre);
+#endif
 
 	if (!(centre.vx | centre.vz))
 		return vol | (vol << 16);

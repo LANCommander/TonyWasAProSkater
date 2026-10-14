@@ -13,7 +13,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/m3d.h"
@@ -205,9 +207,15 @@ void M3d_Render(void *p) {
 	if (!pItem)
 		return;
 
+#ifdef PC_PORT
+	geom_ld_mat(pc_geom.llm, &FrustumNormals.LightMatrix);
+	geom_ld_mat(pc_geom.lcm, &FrustumNormals.ColourMatrix);
+	geom_load_vector(pc_geom.bk, FrustumNormals.BackR >> 1, FrustumNormals.BackG >> 1, 0);
+#else
 	gte_SetLightMatrix(&FrustumNormals.LightMatrix);
 	gte_SetColorMatrix(&FrustumNormals.ColourMatrix);
 	gte_ldbkdir(FrustumNormals.BackR >> 1, FrustumNormals.BackG >> 1, 0);
+#endif
 
 	if (pItem != BaddyList)
 		M3dAsm_BoundingSpherePreprocessing(pItem, Camera_CurrentMikeCamera ? 64 : 1);
@@ -374,19 +382,36 @@ void M3d_Render(void *p) {
 		if (pModel->Flags & 0x200)
 			M3d_WireframeMode = 1;
 
+#ifdef PC_PORT
+		geom_ld_mat(pc_geom.rot, &pCurrentCamera->View);
+		geom_load_vector(pc_geom.tr, 0, 0, 0);
+#else
 		gte_SetRotMatrix(&pCurrentCamera->View);
 
 		{
 			register int zero asm("$0");
 			gte_ldtr(zero, zero, zero);
 		}
+#endif
 
 		PosnRelCam.vx = (pItem->Position.vx >> 12) - pCurrentCamera->Position.vx;
 		PosnRelCam.vy = (pItem->Position.vy >> 12) - pCurrentCamera->Position.vy;
 		PosnRelCam.vz = (pItem->Position.vz >> 12) - pCurrentCamera->Position.vz;
+#ifdef PC_PORT
+		{
+			/* into view space (16 bits per coordinate in) */
+			int16_t v[3];
+			GeomAcc r;
+
+			geom_ld_lv(v, &PosnRelCam);
+			r = geom_mvmva(pc_geom.rot, 0, v[0], v[1], v[2], 12, 0, 0);
+			geom_st_lv(&Position, r.mac);
+		}
+#else
 		gte_ldlv0(&PosnRelCam);
 		gte_rtv0();
 		gte_stlvnl(&Position);
+#endif
 
 #ifdef PC_PORT
 		if (far) {
@@ -481,14 +506,22 @@ void M3d_Render(void *p) {
 				M3dMaths_ScaleMatrix(pItem, &WorldTransform);
 
 			M3dMaths_MulRotMatrix(&WorldTransform, &Transform);
+#ifdef PC_PORT
+			geom_ld_mat(pc_geom.rot, &Transform);
+#else
 			gte_SetRotMatrix(&Transform);
+#endif
 		} else {
 			M3dMaths_SetIdentityRotation(&WorldTransform);
 
 			if (pItem->Flags & 0x200) {
 				M3dMaths_ScaleMatrix(pItem, &WorldTransform);
 				M3dMaths_MulRotMatrix(&WorldTransform, &Transform);
+#ifdef PC_PORT
+				geom_ld_mat(pc_geom.rot, &Transform);
+#else
 				gte_SetRotMatrix(&Transform);
+#endif
 			}
 		}
 
@@ -499,12 +532,24 @@ void M3d_Render(void *p) {
 		} else if ((pModel->Flags & 4) || (pItem->Flags & 0x80)) {
 			if (ANGLES_SET(pItem)) {
 				MulMatrix0((MATRIX *)pItem->pLight, &WorldTransform, &TempMatrix);
+#ifdef PC_PORT
+				geom_ld_mat(pc_geom.llm, &TempMatrix);
+#else
 				gte_SetLightMatrix(&TempMatrix);
+#endif
 			} else {
+#ifdef PC_PORT
+				geom_ld_mat(pc_geom.llm, pItem->pLight);
+#else
 				gte_SetLightMatrix(pItem->pLight);
+#endif
 			}
 
+#ifdef PC_PORT
+			geom_ld_mat(pc_geom.lcm, (char *)pItem->pLight + 20);
+#else
 			gte_SetColorMatrix((char *)pItem->pLight + 20);
+#endif
 			M3dAsm_SetAmbient((int *)((char *)pItem->pLight + 40));
 			M3dAsm_GetDynamicLighting((SVECTOR *)((char *)pModel + (pModel->NumVertices * 8 + 28)),
 			                          pModel->NumNormals);
@@ -554,7 +599,11 @@ void M3d_Render(void *p) {
 				RenderModelNonRotated(pModel, &PosnRelCam);
 			}
 		} else {
+#ifdef PC_PORT
+			geom_ld_lv32(pc_geom.tr, &Position);
+#else
 			gte_SetTransVector(&Position);
+#endif
 
 #ifdef PC_PORT
 			if (far) {

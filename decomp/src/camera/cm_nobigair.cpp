@@ -6,7 +6,9 @@
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
+#ifndef PC_PORT
 	#include <inline_c.h>
+#endif
 }
 
 #include "game/camera.h"
@@ -63,17 +65,25 @@ void CCamera::CM_NoBigAir() {
 	V.vx = -vUp.vx;
 	V.vy = -vUp.vy;
 	V.vz = -vUp.vz;
+#ifdef PC_PORT
+	geom_cross(&V, &N, &U, 0);
+#else
 	gte_ldopv1(&V);
 	gte_ldopv2(&N);
 	gte_op0();
 	gte_stlvnl(&U);
+#endif
 	U.vx >>= 12;
 	U.vy >>= 12;
 	U.vz >>= 12;
+#ifdef PC_PORT
+	geom_cross(&U, &V, &N, 0);
+#else
 	gte_ldopv1(&U);
 	gte_ldopv2(&V);
 	gte_op0();
 	gte_stlvnl(&N);
+#endif
 	N.vx >>= 12;
 	N.vy >>= 12;
 	N.vz >>= 12;

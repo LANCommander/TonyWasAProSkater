@@ -86,23 +86,40 @@ enum {
 #define CODE_SEMITRANS 0x02000000u
 #define CODE_QUAD_BIT  0x08000000u /* F3 <-> F4, G3 <-> G4 ... */
 
-/* GTE data registers and commands beyond vertex.h's */
-enum {
-	GTE_SXY0 = 12,
-	GTE_SXY1 = 13,
-	GTE_SXYP = 15,
-	GTE_RGB0 = 20,
-	GTE_RGB1 = 21,
-	GTE_RGB2 = 22,
-	GTE_MAC0 = 24,
-	GTE_DQA = 27,
-	GTE_DQB = 28
-};
+/* The colour word the face and lighting code last loaded for its colour operations (retail: the
+ * GTE's RGBC register, which outlives the code that loads it). Only its top byte matters later:
+ * the colour operations put it on their results, and the gouraud faces' depth cue of the table
+ * colours takes it from whatever face loaded it last (a subtractive fade polygon leaves 0x02,
+ * which makes the next gouraud triangle's command semi-transparent, as on the PS1).
+ * M3dAsm_GetDynamicLighting loads it too. */
+extern uint32_t M3dAsm_ColourCode;
 
-#define GTE_CMD_NCLIP 0x1400006u
-#define GTE_CMD_DPCS  0x0780010u
-#define GTE_CMD_DPCL  0x0680029u
-#define GTE_CMD_DPCT  0x0f8002au
+/* The depth cue of a colour (r, g, b; code on top) toward the far colour by k (4096 = all far):
+ * the colour word, with code on top. */
+static __inline__ uint32_t pp_dpcs(uint32_t col, uint32_t code, int k) {
+	uint32_t rgb;
+
+	geom_dpcs(&pc_geom, col & 0xffffff, (uint8_t)(code >> 24), (int16_t)k, 12, 0, &rgb, 0);
+	return rgb;
+}
+
+/* The colour col (code on top) lit by a lighting word (r, g, b in 11, 11, 10 bits, 128 = 1.0
+ * each), then depth-cued by k. */
+static __inline__ uint32_t pp_dpcl(uint32_t col, uint32_t light, int k) {
+	int16_t l[3];
+	uint32_t rgb;
+
+	l[0] = (int16_t)(light << 5);
+	l[1] = (int16_t)(light >> 6);
+	l[2] = (int16_t)(light >> 17);
+	geom_dpcl(&pc_geom, col, l, (int16_t)k, 12, 0, &rgb, 0);
+	return rgb;
+}
+
+/* Twice the signed screen area of three screen words. */
+static __inline__ int pp_nclip(uint32_t a, uint32_t b, uint32_t c) {
+	return geom_nclip(a, b, c, 0);
+}
 
 extern uint32_t *pPoly; /* next free word of the packet buffer */
 extern uint8_t *PolyBufferEnd;
@@ -120,6 +137,7 @@ typedef struct PolyState {
 	const uint32_t *face;
 	uint32_t flags; /* the face's flags (after GlobalFaceFlags; fade mode adds 0x1c0) */
 	int zmax;       /* the face's greatest vertex depth */
+	int fog;        /* the face's fog: its colours' depth cue toward the far colour (pp_fog) */
 } PolyState;
 
 static __inline__ void pp_begin(PolyState *ps) {
@@ -134,8 +152,8 @@ static __inline__ void pp_end(PolyState *ps) {
 
 /* The fog of a face whose farthest vertex is at depth zmax: 0 nearer than DpqMin, else the
  * distance beyond it scaled by DpqShift. In fade-to-colour mode a fogged face becomes
- * semi-transparent with blend mode 1 (added onto the fade polygon drawn under it). Loads IR0
- * (the depth-cue weight of the colour commands) and keeps the value in SCR_FOG. */
+ * semi-transparent with blend mode 1 (added onto the fade polygon drawn under it). Sets the
+ * face's fog (16 bits: the depth-cue weight of its colours) and keeps the value in SCR_FOG. */
 static __inline__ int pp_fog(PolyState *ps) {
 	int d = ps->zmax - SCR16S(SCR_DPQMIN), shift = SCR16S(SCR_DPQSHIFT), fog = 0;
 
@@ -146,7 +164,7 @@ static __inline__ int pp_fog(PolyState *ps) {
 		fog = shift < 0 ? d >> (-shift & 31) : (int)((uint32_t)d << (shift & 31));
 	}
 
-	gte_set(GTE_IR0, fog);
+	ps->fog = (int16_t)fog;
 
 	SCR16(SCR_FOG) = (uint16_t)fog;
 	return d;
@@ -183,10 +201,10 @@ static __inline__ uint32_t *pp_ot_entry(PolyState *ps) {
  * the polygon, and leaves two unused words after it. */
 static __inline__ void pp_add_fade_poly(PolyState *ps, uint32_t *ote, uint32_t colour, int fog,
                                         const uint32_t xy[4]) {
-	uint32_t start = ps->pkt, old, *p;
+	uint32_t start = ps->pkt, old, *p, rgb;
 	int len = 0;
 
-	gte_set(GTE_RGBC, colour);
+	M3dAsm_ColourCode = colour;
 
 	if (colour >> 24 & 2) {
 		PKT(start)[1] = 0xe1000240; /* draw mode: blend mode 2 (subtract), dither */
@@ -197,11 +215,9 @@ static __inline__ void pp_add_fade_poly(PolyState *ps, uint32_t *ote, uint32_t c
 		fog = 4096 - fog;
 	}
 
-	gte_set(GTE_IR0, fog);
-
 	old = *ote;
 	*ote = start;
-	PC_GteCommand(GTE_CMD_DPCS);
+	rgb = pp_dpcs(colour, colour, fog);
 
 	p = PKT(ps->pkt);
 	p[2] = xy[0];
@@ -210,10 +226,10 @@ static __inline__ void pp_add_fade_poly(PolyState *ps, uint32_t *ote, uint32_t c
 	p[5] = xy[3]; /* also for a triangle (the word after its packet) */
 
 	if (ps->flags & FF_TRIANGLE) {
-		p[1] = PC_GteGetData(GTE_RGB2) | (uint32_t)CODE_F3 << 24;
+		p[1] = rgb | (uint32_t)CODE_F3 << 24;
 		len += 4;
 	} else {
-		p[1] = PC_GteGetData(GTE_RGB2) | (uint32_t)CODE_F4 << 24;
+		p[1] = rgb | (uint32_t)CODE_F4 << 24;
 		len += 5;
 	}
 
