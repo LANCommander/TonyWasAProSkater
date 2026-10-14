@@ -1,17 +1,11 @@
-"""Link step of build.py: runtime, translated MIPS, generated glue, and the decompiled objects.
+"""Link step of build.py: runtime, generated glue, and the game's objects.
 
 Generated into build/pc/gen/:
-  psx_syms.ld    every `psx_<addr>` symbol the objects use: its place in the native data, else
-                 the absolute address
-  data.s/.bin    the decompiled data (data_image.py), native, in its retail layout
+  psx_syms.ld    every `psx_<addr>` symbol: a function's native code (pcfn_<addr>, or its stub),
+                 a global's place in the native data, else (.bss) its address in PS1 RAM
+  data.s/.bin    the game's data (game/data, data_image.py), native, in its retail layout
   data_table.c   pc_data: where the native data is, by retail address (PC_Data)
-  hle_table.c    pc_hle_funcs: runtime functions that implement a Psy-Q entry point
-  game_table.c   pc_game_funcs: the decompiled functions (pcfn_<addr>)
-  recomp.c       translated MIPS (build.py --mips only; else recomp_none.c: empty tables)
-  image.bin/.s   the data that stays in PS1 RAM (decomp/data/fixed, data_image.py), linked into
-                 thps.exe
-                 (--mips: the retail image, code cleared, embed_image.py)
-  stubs.c        pc_stub_funcs: everything else that is a known function entry
+  stubs.c        pcstub_<addr>: every other known function entry (logs a call)
   thunks.s       virtual-dispatch thunks and destructor-call adapters
   names.c        PC_SymbolName for logs
 """
@@ -164,15 +158,14 @@ def sdl_flags():
     return shlex.split(cflags), shlex.split(libs)
 
 
-def link(ctx, metas, out, toolbin, mips=False, release=False):
+def link(ctx, metas, out, toolbin, release=False):
     gcc = tool("gcc")
     objroot = out
     if release:
         out = os.path.join(out, "release")
     nm = tool("nm")
     gen = os.path.join(out, "gen")
-    # a --mips build's runtime also has the BIOS translated code calls (PC_MIPS, mips_bios.c)
-    rt = os.path.join(out, "runtime_mips" if mips else "runtime")
+    rt = os.path.join(out, "runtime")
     os.makedirs(gen, exist_ok=True)
     os.makedirs(rt, exist_ok=True)
     if WINDOWS:
@@ -189,8 +182,6 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
         # absolute addresses (no PIE), the Windows ABI's small-struct returns (as the game code,
         # build.py), 64-bit file offsets (disc images are bigger than 2 GB)
         rt_flags += ["-fno-pic", "-fno-pie", "-freg-struct-return", "-D_FILE_OFFSET_BITS=64"]
-    if mips:
-        rt_flags += ["-DPC_MIPS=1"]
     img = ctx.image[0x800:]
 
     # ---- 1. runtime -------------------------------------------------------------------------
@@ -221,36 +212,17 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
             continue
         a, n = line.split("\t")[:2]
         psyq.setdefault(n, []).append(int(a, 16))
-    hle = {}  # addr -> symbol
     for s in sorted(defined):
-        m = re.fullmatch(r"hle_([0-9a-f]{8})", s)
-        if m:
-            hle[int(m.group(1), 16)] = s
-            continue
-        if re.fullmatch(r"hleov_([0-9a-f]{8})", s):
-            # the port doesn't replace game functions at their addresses any more
-            raise SystemExit("%s: give the game's code a PC_PORT branch on a native service "
-                             "instead of replacing the function" % s)
-        name = s[4:] if s.startswith("hle_") else s
-        for a in psyq.get(name, []):
-            if s.startswith("hle_") or name in psyq:
-                hle[a] = s
+        if re.fullmatch(r"hle(ov)?_([0-9a-f]{8})", s):
+            # the port doesn't implement or replace functions at retail addresses
+            raise SystemExit("%s: the game's code calls native services directly; nothing "
+                             "replaces a function at its retail address" % s)
     game = {}
     for m in metas:
         for a in m.get("defines", {}):
             game[int(a, 16)] = "pcfn_%08x" % int(a, 16)
 
-    # ---- 3. translate MIPS (build.py --mips only) ---------------------------------------------
-    # A debugging build: every game function is translated too (by its known size), so any of
-    # them can run as retail MIPS instead of C for A/B debugging (THPS_MIPS, see pc_main.c), and
-    # so are the hand-written assembly and library functions, for THPS_SNAP and the tests. Calls
-    # to game functions from translated code go through the runtime table, which honours that
-    # choice. The normal build has no MIPS at all: anything without C is a stub.
-    entries, sizes = {}, {}
-    for a, (size, mangled, _) in ctx.functions.items():
-        if not mangled.startswith("D_"):
-            entries[a] = mangled
-            sizes[a] = size
+    # ---- 3. the Psy-Q library entries the game calls (stubs, names) -------------------------
     lib_entries = {a for a in jal_targets(img) if GAME_END <= a < LIB_END}
     for n, addrs in psyq.items():
         for a in addrs:
@@ -265,68 +237,35 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
     for n, addrs in psyq.items():
         for a in addrs:
             names[a] = n
-    for a in lib_entries:
-        entries.setdefault(a, names.get(a))
-    native = set(hle)
-    ent_file = os.path.join(gen, "recomp_entries.txt")
-    nat_file = os.path.join(gen, "recomp_native.txt")
-    disp_file = os.path.join(gen, "recomp_dispatch.txt")
-    write_if_changed(ent_file, "".join("0x%08x %s%s\n" % (a, entries[a] or "-",
-                                                          " %d" % sizes[a] if a in sizes else "")
-                                       for a in sorted(entries)))
-    write_if_changed(nat_file, "".join("0x%08x\n" % a for a in sorted(native)))
-    write_if_changed(disp_file, "".join("0x%08x\n" % a for a in sorted(game)))
-    nsplit = 8
-    stamp = os.path.join(gen, "recomp.stamp")
-    if not mips:
-        write_if_changed(os.path.join(gen, "recomp_none.c"),
-                         "#include \"pc_runtime.h\"\nconst PcFunc pc_recomp_funcs[] = {{0, 0}};\n"
-                         "const PcFunc pc_recomp_game_funcs[] = {{0, 0}};\n")
-    elif not os.path.exists(stamp) or any(os.path.getmtime(stamp) < os.path.getmtime(p) for p in
-                                          (ent_file, nat_file, disp_file,
-                                           os.path.join(HERE, "mips2c.py"))):
-        r = subprocess.run([sys.executable, os.path.join(HERE, "mips2c.py"), "--exe", EXE,
-                            "--entries", ent_file, "--native", nat_file, "--dispatch", disp_file,
-                            "--split", str(nsplit), "-o", os.path.join(gen, "recomp.c")],
-                           capture_output=True, text=True)
-        sys.stdout.write(r.stdout)
+    # The game's data (game/data; data_image.py checks it against the retail data) is native:
+    # data.s, its globals and .bss in their retail layout with native pointers and string literals.
+    img_bin = os.path.join(gen, "image.bin")
+    data_s = os.path.join(gen, "data.s")
+    r = subprocess.run([sys.executable, os.path.join(HERE, "data_image.py"), img_bin,
+                        "--check", EXE, "--asm", data_s], capture_output=True, text=True)
+    sys.stdout.write(r.stdout)
+    if r.returncode:
         sys.stderr.write(r.stderr)
-        if r.returncode:
-            raise SystemExit("mips2c failed")
-        open(stamp, "w").write("")
-    recomp_addrs = {e for e in entries if e not in native} if mips else set()
+        raise SystemExit("link: game/data doesn't build the retail data (data_image.py)")
+    data = json.load(open(data_s[:-2] + ".json"))
+    if data["fixed"]:
+        raise SystemExit("link: game/data/fixed has globals, but nothing is at a PS1 address any "
+                         "more: make them native data")
 
     # ---- 4. tables, stubs, thunks, names ----------------------------------------------------
-    referenced = set()
+    # every code address the game's code or data names: a function, else a stub (library tables
+    # in the data point at library internals the port doesn't have)
+    referenced = set(data["refs"])
     for m in metas:
         for s in m.get("psx_syms", []):
             referenced.add(int(s[5:13], 16))
     known_fn = set(ctx.functions) | lib_entries | {a for v in psyq.values() for a in v}
     code_refs = {a for a in referenced if TEXT_START <= a < LIB_END}
-    stubs = sorted((known_fn | code_refs) - set(game) - set(hle) - recomp_addrs)
-
-    lines = ['#include "pc_runtime.h"']
-    for a, s in sorted(game.items()):
-        lines.append("void %s(void);" % s)
-    lines.append("const PcFunc pc_game_funcs[] = {")
-    lines += ["\t{0x%08xu, (void *)%s}," % (a, s) for a, s in sorted(game.items())]
-    lines.append("\t{0, 0}\n};")
-    write_if_changed(os.path.join(gen, "game_table.c"), "\n".join(lines) + "\n")
-
-    lines = ['#include "pc_runtime.h"']
-    for s in sorted(set(hle.values())):
-        lines.append("void %s(void);" % s)
-    lines.append("const PcFunc pc_hle_funcs[] = {")
-    lines += ["\t{0x%08xu, (void *)%s}," % (a, s) for a, s in sorted(hle.items())]
-    lines.append("\t{0, 0}\n};")
-    write_if_changed(os.path.join(gen, "hle_table.c"), "\n".join(lines) + "\n")
+    stubs = sorted((known_fn | code_refs) - set(game))
 
     lines = ['#include "pc_runtime.h"']
     for a in stubs:
-        lines.append("static uint32_t stub_%08x(void) { return PC_MissingFunction(0x%08xu); }" % (a, a))
-    lines.append("const PcFunc pc_stub_funcs[] = {")
-    lines += ["\t{0x%08xu, (void *)stub_%08x}," % (a, a) for a in stubs]
-    lines.append("\t{0, 0}\n};")
+        lines.append("uint32_t pcstub_%08x(void) { return PC_MissingFunction(0x%08xu); }" % (a, a))
     write_if_changed(os.path.join(gen, "stubs.c"), "\n".join(lines) + "\n")
 
     allnames = {}
@@ -365,7 +304,7 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
     def jump_to(a):
         if a == unowned:
             return ["\tjmp _pc_delete_unowned"]
-        return ["\tmovl $0x%08x, %%eax" % a, "\tjmp *%eax"]
+        return ["\tjmp _psx_%08x" % a]
 
     asm = ["\t.text"]
     done = set()
@@ -396,16 +335,16 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
                 continue
             done.add(("d", a))
             asm += ["\t.globl _pcdtorcall_%08x" % a, "_pcdtorcall_%08x:" % a,
-                    "\tpushl $0", "\tpushl 8(%esp)", "\tmovl $0x%08x, %%eax" % a,
-                    "\tcall *%eax", "\taddl $8, %esp", "\tret"]
+                    "\tpushl $0", "\tpushl 8(%esp)", "\tcall _psx_%08x" % a,
+                    "\taddl $8, %esp", "\tret"]
         for a in m.get("dtor_calls_d", []):
             if ("dd", a) in done:
                 continue
             done.add(("dd", a))
             asm += ["\t.globl _pcdtorcalld_%08x" % a, "_pcdtorcalld_%08x:" % a,
                     "\tmovl 4(%esp), %eax"] + delete_flag() + [
-                    "\tpushl %edx", "\tpushl %eax", "\tmovl $0x%08x, %%eax" % a,
-                    "\tcall *%eax", "\taddl $8, %esp", "\tret"]
+                    "\tpushl %edx", "\tpushl %eax", "\tcall _psx_%08x" % a,
+                    "\taddl $8, %esp", "\tret"]
         for a in m.get("del_wrappers", []):
             if ("del", a) in done:
                 continue
@@ -471,40 +410,17 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
     asm_text = "\n".join(asm) + "\n"
     if not WINDOWS:
         # the names above are PE's (`_pcvt_...`, `_pc_delete_marked`); ELF has no '_' prefix
-        asm_text = re.sub(r"(?<![\w$.])_(?=pc)", "", asm_text)
+        asm_text = re.sub(r"(?<![\w$.])_(?=pc|psx_)", "", asm_text)
         asm_text += "\t.section .note.GNU-stack,\"\",@progbits\n"
     write_if_changed(os.path.join(gen, "thunks.s"), asm_text)
 
-    # The game's data. The decompiled data (decomp/data; data_image.py checks it against the
-    # retail data) is native: data.s, its globals in their retail layout with native pointers and
-    # string literals. Only decomp/data/fixed stays in PS1 RAM, in the image copied to 0x80010000
-    # at startup (pc_main.c). A --mips build runs translated retail code, which reads all data
-    # from PS1 RAM, so it has no native data and takes the retail image instead, code cleared
-    # (embed_image.py), with what data_image.py leaves out (jump tables, library data).
-    img_bin = os.path.join(gen, "image_retail.bin" if mips else "image.bin")
-    data = {"blocks": [], "fixed": [], "refs": []}
-    data_s = os.path.join(gen, "data.s")
-    if mips:
-        if not os.path.exists(img_bin) or any(os.path.getmtime(img_bin) < os.path.getmtime(p) for p in
-                                              (EXE, os.path.join(HERE, "embed_image.py"),
-                                               os.path.join(ROOT, "decomp", "functions.tsv"))):
-            sys.stdout.write(run([sys.executable, os.path.join(HERE, "embed_image.py"), EXE,
-                                  img_bin]))
-    else:
-        r = subprocess.run([sys.executable, os.path.join(HERE, "data_image.py"), img_bin,
-                            "--check", EXE, "--asm", data_s], capture_output=True, text=True)
-        sys.stdout.write(r.stdout)
-        if r.returncode:
-            sys.stderr.write(r.stderr)
-            raise SystemExit("link: decomp/data doesn't build the retail data (data_image.py)")
-        data = json.load(open(data_s[:-2] + ".json"))
-
-    # psx_<addr>: what the decompiled code (and the data) refers to by retail address. In a block
-    # of native data, that's its place there (a global, or a field or element the code names as
-    # a global of its own); anything else (functions, .bss, fixed data) is in PS1 RAM, at that
-    # address. (The TU metadata spells them as PE does, `_psx_80012345`, `_psx_80012345_a1` for
-    # a second name objcopy needed.)
+    # psx_<addr>: what the game's code (and the data) refers to by retail address. A function is
+    # its native code (or stub); in a block of native data, it's its place there (a global, or a
+    # field or element the code names as a global of its own); anything else (.bss) is in PS1
+    # RAM, at that address. (The TU metadata spells them as PE does, `_psx_80012345`,
+    # `_psx_80012345_a1` for a second name objcopy needed.)
     syms = {"_psx_%08x" % a for a in data["refs"]}
+    syms.update("_psx_%08x" % a for a in list(game) + stubs)
     for m in metas:
         syms.update(m.get("psx_syms", []))
     starts = [b[0] for b in data["blocks"]]
@@ -516,16 +432,27 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
             return None
         return starts[k]
 
-    ld = []
+    ld, dead = [], []
+    stub_set = set(stubs)
     for s in sorted(syms):
         a = int(s[5:13], 16)
         b = native_block(a)
         name = s if WINDOWS else s[1:]
-        if b is None:
+        if a in game or a in stub_set:
+            ld.append("%s = %s%s_%08x;\n" % (name, USCORE, "pcfn" if a in game else "pcstub", a))
+        elif TEXT_START <= a < LIB_END and b is None:
+            raise SystemExit("link: %s is in the retail code but no function" % s)
+        elif b is None:
+            # outside the game's data: a library table's pointer into library data the port
+            # doesn't have, never followed
+            dead.append(a)
             ld.append("%s = 0x%08x;\n" % (name, a))
         else:
             ld.append("%s = %spc_data_%08x + %d;\n" % (name, USCORE, b, a - b))
     write_if_changed(os.path.join(gen, "psx_syms.ld"), "".join(ld))
+    if dead:
+        print("link: %d addresses outside the game's data (never followed): %s" % (
+            len(dead), " ".join("%08x" % a for a in sorted(dead))))
     # PC_Data's table: the blocks, less the fixed data inside them
     ranges = []
     for s, e in data["blocks"]:
@@ -547,31 +474,18 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
     gflags = rt_flags + ["-O1", "-Wno-unused-label", "-Wno-unused-but-set-variable",
                          "-Wno-maybe-uninitialized"]
     jobs = [(os.path.join(gen, n), os.path.join(gen, n[:-2] + ".o"))
-            for n in ["game_table.c", "hle_table.c", "stubs.c", "names.c", "data_table.c"] +
-            (["recomp_%d.c" % k for k in range(nsplit)] if mips else ["recomp_none.c"])]
+            for n in ["stubs.c", "names.c", "data_table.c"]]
     with cf.ThreadPoolExecutor() as ex:
         gen_objs = list(ex.map(lambda j: cc(j[0], j[1], gflags), jobs))
     th_o = os.path.join(gen, "thunks.o")
     run([gcc, "-m32", "-c", os.path.join(gen, "thunks.s"), "-o", th_o])
     gen_objs.append(th_o)
-    if not mips:
-        data_o = os.path.join(gen, "data.o")
-        if not os.path.exists(data_o) or os.path.getmtime(data_o) < max(
-                os.path.getmtime(data_s), os.path.getmtime(data_s[:-2] + ".bin")):
-            run([gcc, "-m32", "-c", data_s, "-o", data_o], cwd=gen)
-        gen_objs.append(data_o)
+    data_o = os.path.join(gen, "data.o")
+    if not os.path.exists(data_o) or os.path.getmtime(data_o) < max(
+            os.path.getmtime(data_s), os.path.getmtime(data_s[:-2] + ".bin")):
+        run([gcc, "-m32", "-c", data_s, "-o", data_o], cwd=gen)
+    gen_objs.append(data_o)
 
-    write_if_changed(os.path.join(gen, "image.s"),
-                     ("\t.section .rdata,\"dr\"\n" if WINDOWS else "\t.section .rodata\n") +
-                     "\t.p2align 4\n\t.globl %spc_image\n%spc_image:\n"
-                     "\t.incbin \"%s\"\n\t.globl %spc_image_end\n%spc_image_end:\n"
-                     % (USCORE, USCORE, os.path.basename(img_bin), USCORE, USCORE) +
-                     ("" if WINDOWS else "\t.section .note.GNU-stack,\"\",@progbits\n"))
-    img_o = os.path.join(gen, "image.o")
-    if not os.path.exists(img_o) or os.path.getmtime(img_o) < max(
-            os.path.getmtime(img_bin), os.path.getmtime(os.path.join(gen, "image.s"))):
-        run([gcc, "-m32", "-c", os.path.join(gen, "image.s"), "-o", img_o], cwd=gen)
-    gen_objs.append(img_o)
 
     if WINDOWS:
         # application icon: SDL2 gives the window the exe's first icon, so this also sets the
@@ -601,7 +515,7 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
                    "-Wl,--disable-dynamicbase", "-Wl,--image-base=0x400000"]
     else:
         # SDL2 and the C library are the system's; OpenGL comes through SDL. Not position
-        # independent: the image sits at its default 0x08048000, far below PS1 RAM
+        # independent: the image sits at its default 0x08048000
         libs = sdl_libs + ["-lm", "-lpthread"]
         ldflags = ["-no-pie", "-Wl,-z,noexecstack"]
     run([gcc, "-m32", "-g", "@" + rsp, "-o", exe] + ldflags +
@@ -613,7 +527,5 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
         run([tool("strip"), "--strip-all", exe])
         run([tool("objcopy"), "--add-gnu-debuglink=thps.debug", exe], cwd=out)
         package(out, toolbin)
-    print("linked %s: %d decompiled, %d HLE, %d translated, %d stubs%s" % (
-        exe, len(game), len(hle), len(recomp_addrs), len(stubs),
-        "" if mips else " (no MIPS: build.py --mips translates the retail code for debugging)"))
+    print("linked %s: %d game functions, %d stubs" % (exe, len(game), len(stubs)))
     return 0

@@ -1,9 +1,9 @@
 /* Clean-room Psy-Q libgpu interface for the PC port.
  *
- * Structure layouts are the PS1 hardware/library layouts (32-bit, little-endian): primitives are
- * GP0 command packets preceded by a one-word DMA tag (bits 0-23 = link to the next packet, bits
- * 24-31 = word count of the packet body). Links hold 24-bit PS1 RAM addresses; the port maps PS1
- * RAM at 0x80000000, so (link | 0x80000000) is a valid native pointer.
+ * Primitives are GP0 command packets (the PS1 GPU's words, which the port's packet walker draws,
+ * pc_draw.h) behind a native tag: the next packet of the ordering table (a pointer) and the number
+ * of command words. On the PS1 the tag was one DMA word with a 24-bit link; here packets and
+ * ordering tables can be anywhere in memory. An ordering-table entry is a tag with no words.
  *
  * Written from the public description of the API and psx-spx. The structures and macros are what
  * the port uses (the game's packets, DRAWENV, DISPENV); the functions the game calls are the
@@ -29,8 +29,18 @@ typedef struct {
     int w, h;
 } RECT32;
 
+/* ---- primitive tags ---- */
+
+typedef struct P_TAG {
+    struct P_TAG *next; /* the next packet; NULL ends the ordering table */
+    u_long len;         /* command words after the tag */
+} P_TAG;
+
+/* A packet's command words (they follow its tag). */
+#define P_WORDS(p) ((u_long *)((P_TAG *)(p) + 1))
+
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_long code[15];
 } DR_ENV;
 
@@ -54,14 +64,6 @@ typedef struct {
     u_char pad0, pad1;
 } DISPENV;
 
-/* ---- primitive tags ---- */
-
-typedef struct {
-    unsigned addr : 24;
-    unsigned len : 8;
-    u_char r0, g0, b0, code;
-} P_TAG;
-
 typedef struct {
     u_char r0, g0, b0, code;
 } P_CODE;
@@ -69,7 +71,7 @@ typedef struct {
 /* ---- polygons ---- */
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     short x1, y1;
@@ -77,7 +79,7 @@ typedef struct {
 } POLY_F3;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     short x1, y1;
@@ -86,7 +88,7 @@ typedef struct {
 } POLY_F4;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char u0, v0; u_short clut;
@@ -97,7 +99,7 @@ typedef struct {
 } POLY_FT3;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char u0, v0; u_short clut;
@@ -110,7 +112,7 @@ typedef struct {
 } POLY_FT4;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char r1, g1, b1, pad1;
@@ -120,7 +122,7 @@ typedef struct {
 } POLY_G3;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char r1, g1, b1, pad1;
@@ -132,7 +134,7 @@ typedef struct {
 } POLY_G4;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char u0, v0; u_short clut;
@@ -145,7 +147,7 @@ typedef struct {
 } POLY_GT3;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char u0, v0; u_short clut;
@@ -163,14 +165,14 @@ typedef struct {
 /* ---- lines (poly-lines end with a 0x55555555 terminator word in `pad`) ---- */
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     short x1, y1;
 } LINE_F2;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char r1, g1, b1, p1;
@@ -178,7 +180,7 @@ typedef struct {
 } LINE_G2;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     short x1, y1;
@@ -187,7 +189,7 @@ typedef struct {
 } LINE_F3;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char r1, g1, b1, p1;
@@ -198,7 +200,7 @@ typedef struct {
 } LINE_G3;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     short x1, y1;
@@ -208,7 +210,7 @@ typedef struct {
 } LINE_F4;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char r1, g1, b1, p1;
@@ -223,7 +225,7 @@ typedef struct {
 /* ---- sprites and tiles ---- */
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char u0, v0; u_short clut;
@@ -231,54 +233,54 @@ typedef struct {
 } SPRT;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char u0, v0; u_short clut;
 } SPRT_16;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     u_char u0, v0; u_short clut;
 } SPRT_8;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
     short w, h;
 } TILE;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
 } TILE_16;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
 } TILE_8;
 
 typedef struct {
-    u_long tag;
+    P_TAG tag;
     u_char r0, g0, b0, code;
     short x0, y0;
 } TILE_1;
 
 /* ---- state-change packets ---- */
 
-typedef struct { u_long tag; u_long code[2]; } DR_MODE;
-typedef struct { u_long tag; u_long code[2]; } DR_TWIN;
-typedef struct { u_long tag; u_long code[2]; } DR_AREA;
-typedef struct { u_long tag; u_long code[2]; } DR_OFFSET;
-typedef struct { u_long tag; u_long code[5]; } DR_MOVE;
-typedef struct { u_long tag; u_long code[3]; u_long p[13]; } DR_LOAD;
-typedef struct { u_long tag; u_long code[1]; } DR_TPAGE;
-typedef struct { u_long tag; u_long code[2]; } DR_STP;
+typedef struct { P_TAG tag; u_long code[2]; } DR_MODE;
+typedef struct { P_TAG tag; u_long code[2]; } DR_TWIN;
+typedef struct { P_TAG tag; u_long code[2]; } DR_AREA;
+typedef struct { P_TAG tag; u_long code[2]; } DR_OFFSET;
+typedef struct { P_TAG tag; u_long code[5]; } DR_MOVE;
+typedef struct { P_TAG tag; u_long code[3]; u_long p[13]; } DR_LOAD;
+typedef struct { P_TAG tag; u_long code[1]; } DR_TPAGE;
+typedef struct { P_TAG tag; u_long code[2]; } DR_STP;
 
 /* ---- TIM descriptor ---- */
 
@@ -365,19 +367,19 @@ typedef struct {
 /* ---- macros: tags and ordering tables ---- */
 
 #define setlen(p, _len)   (((P_TAG *)(p))->len = (u_char)(_len))
-#define setaddr(p, _addr) (((P_TAG *)(p))->addr = (u_long)(_addr))
-#define setcode(p, _code) (((P_TAG *)(p))->code = (u_char)(_code))
+#define setaddr(p, _addr) (((P_TAG *)(p))->next = (P_TAG *)(_addr))
+#define setcode(p, _code) (((u_char *)P_WORDS(p))[3] = (u_char)(_code))
 #define getlen(p)         ((u_char)(((P_TAG *)(p))->len))
-#define getcode(p)        ((u_char)(((P_TAG *)(p))->code))
-#define getaddr(p)        ((u_long)(((P_TAG *)(p))->addr))
+#define getcode(p)        (((u_char *)P_WORDS(p))[3])
+#define getaddr(p)        (((P_TAG *)(p))->next)
 
-#define nextPrim(p)  ((void *)((((P_TAG *)(p))->addr) | 0x80000000))
-#define isendprim(p) ((((P_TAG *)(p))->addr) == 0xffffff)
+#define nextPrim(p)  ((void *)((P_TAG *)(p))->next)
+#define isendprim(p) (((P_TAG *)(p))->next == 0)
 
 #define addPrim(ot, p)        (setaddr(p, getaddr(ot)), setaddr(ot, p))
 #define addPrims(ot, p0, p1)  (setaddr(p1, getaddr(ot)), setaddr(ot, p0))
 #define catPrim(p0, p1)       setaddr(p0, p1)
-#define termPrim(p)           setaddr(p, 0xffffff)
+#define termPrim(p)           setaddr(p, 0)
 
 #define setSemiTrans(p, abe) \
     ((abe) ? setcode(p, getcode(p) | 0x02) : setcode(p, getcode(p) & ~0x02))
@@ -394,11 +396,11 @@ typedef struct {
 #define _get_len(rect) ((((rect)->w * (rect)->h + 1) / 2) + 4)
 
 #define setDrawTPage(p, dfe, dtd, tpage) \
-    (setlen(p, 1), ((u_long *)(p))[1] = _get_mode(dfe, dtd, tpage))
+    (setlen(p, 1), P_WORDS(p)[0] = _get_mode(dfe, dtd, tpage))
 #define setTexWindow(p, tw) \
-    (setlen(p, 2), ((u_long *)(p))[1] = _get_tw(tw), ((u_long *)(p))[2] = 0)
+    (setlen(p, 2), P_WORDS(p)[0] = _get_tw(tw), P_WORDS(p)[1] = 0)
 #define setDrawStp(p, pbw) \
-    (setlen(p, 2), ((u_long *)(p))[1] = 0xe6000000u | ((pbw) ? 1 : 0), ((u_long *)(p))[2] = 0)
+    (setlen(p, 2), P_WORDS(p)[0] = 0xe6000000u | ((pbw) ? 1 : 0), P_WORDS(p)[1] = 0)
 #define setDrawLoad(pt, rect) \
     ((_get_len(rect) <= 16) ? \
         (setlen(pt, _get_len(rect)), (pt)->code[0] = 0xa0000000u, \
@@ -469,10 +471,10 @@ int LoadImage(RECT *rect, u_long *p);
 int StoreImage(RECT *rect, u_long *p);
 int MoveImage(RECT *rect, int x, int y);
 
-u_long *ClearOTag(u_long *ot, int n);
-u_long *ClearOTagR(u_long *ot, int n);
-void DrawOTag(u_long *p);
-void DrawOTagEnv(u_long *p, DRAWENV *env);
+P_TAG *ClearOTag(P_TAG *ot, int n);
+P_TAG *ClearOTagR(P_TAG *ot, int n);
+void DrawOTag(P_TAG *p);
+void DrawOTagEnv(P_TAG *p, DRAWENV *env);
 void DrawPrim(void *p);
 
 void AddPrim(void *ot, void *p);

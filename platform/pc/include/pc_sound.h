@@ -1,7 +1,7 @@
 /* Sound (pc_sound.c): sound banks decoded to PCM, 24 channels with pitch, volume and an envelope,
  * a reverb, the music input, mixed to 44.1 kHz stereo on an SDL audio device.
  *
- * The game's sound code (decomp/src/sfx and friends, PC branches) works in the terms it was
+ * The game's sound code (game/src/sfx and friends) works in the terms it was
  * written in: a bank's samples are found by their offset in the bank's sample data (the VAB's
  * sizes table), sounds play on 24 numbered channels that it allocates itself, and a channel is
  * free again once its envelope level reads 0. Pitches are 0x1000 for a sample's own rate, volumes

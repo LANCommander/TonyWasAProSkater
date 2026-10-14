@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+struct P_TAG; /* libgpu.h */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,7 +24,7 @@ int R3d_Native(void);
 
 /* PC_DrawOT, for each packet before it is drawn: 1 if it was a layer marker
  * (its words are not GPU commands). R3d_ChainEnd at the end of the chain. */
-int R3d_ChainPacket(const uint32_t *p, uint32_t len);
+int R3d_ChainPacket(const struct P_TAG *p);
 void R3d_ChainEnd(void);
 /* THPS_R3D_DUMP: the faces of the layer drawn last, to a text file (debugging). */
 void R3d_DumpLast(const char *path);
@@ -36,12 +38,7 @@ void R3d_DumpLast(const char *path);
 void R3d_FarBegin(const double m[3][3], const double t[3], int fogstart, int fogshift);
 void R3d_FarEnd(void);
 
-/* The renderer's hooks in the game's code (PC_PORT branches in decomp/src/m3dasm and
- * M3d_RenderSetup). R3D_HOOKS leaves them out of test_asm, which checks the M3DASM C against the
- * retail MIPS on its own (build_test_asm.py: PC_TEST_ASM). */
-#if defined(PC_PORT) && !defined(PC_TEST_ASM)
-#define R3D_HOOKS 1
-#endif
+/* The renderer's hooks in the game's code (game/src/m3dasm and M3d_RenderSetup). */
 
 /* The vertex transforms, by the kind of model they project. */
 enum {
@@ -66,7 +63,7 @@ int R3d_Transform(int kind, R3dTransformFn fn, void *v, int n, void *o);
  * faces, 0 if the game's C should (THPS_RENDER3D=psx, no layer, subtractive fade). */
 int R3d_ProcessPolys(int fast, uint32_t *list, int count);
 /* M3d_RenderSetup(camera, viewport, ot), after the game's: a 3D layer starts at ot. */
-void R3d_RenderSetup(const void *viewport, uint32_t *ot);
+void R3d_RenderSetup(const void *viewport, struct P_TAG *ot);
 
 #ifdef __cplusplus
 }

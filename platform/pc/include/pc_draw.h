@@ -1,7 +1,7 @@
 /* The game's drawing (src/pc_draw.c).
  *
  * The game builds its frames as the PS1 had it: primitive packets (POLY_FT4, SPRT, TILE, LINE_*,
- * DR_*: GPU command words after a tag) linked into ordering tables by 24-bit addresses in PS1 RAM.
+ * DR_*: GPU command words after a tag, Psy-Q's libgpu.h P_TAG) linked into ordering tables.
  * Those are its display list; this draws them through OpenGL (pc_gpu_gl.h) onto the screens
  * (pc_screen.h), with the textures of the texture store (pc_texstore.h). The native 3D renderer
  * (pc_render3d.h) draws its layers where they are in the ordering table. */
@@ -17,6 +17,9 @@ extern "C" {
 /* Draw an ordering table (or any chain of packets) from its first entry. The done function
  * (PC_DrawSetDone) runs with the next frame, as drawing on the PS1 finished a while later. */
 void PC_DrawOT(const void *ot);
+/* An ordering-table entry after which a chain is the HUD, panels and text, which the precise
+ * (unrounded) 3D vertices don't apply to: the game's OT and OT2D entries. */
+void PC_DrawMark2D(const void *entry);
 /* Draw one packet now. */
 void PC_DrawPacket(const void *p);
 /* Clear an ordering table of n entries linked from the last to the first (entry 0 ends it). */

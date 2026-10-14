@@ -1,58 +1,48 @@
 # THPS1 native Windows and Linux port (`platform/pc/`)
 
-The native PC port of Tony Hawk's Pro Skater (PS1, `SLUS_008.60`), built on the matching
-decompilation in `decomp/`. Windows (MSYS2 `mingw32` toolchain) and Linux (the system's
-multilib GCC), with SDL2 and OpenGL on both.
+The native PC port of Tony Hawk's Pro Skater (PS1, `SLUS_008.60`). Windows (MSYS2 `mingw32`
+toolchain) and Linux (the system's multilib GCC), with SDL2 and OpenGL on both.
 
-## Architecture: PS1 memory at its original addresses
+The game's code is `game/`: a fork of the matching decompilation (`decomp/`, which stays the
+frozen byte-matching reference), compiled natively, with the PS1's hardware and libraries replaced
+by native services and its memory by native memory. Ports to other platforms start from it.
 
-The decompiled C is written for the PS1: 32-bit pointers, hand-padded structs, globals resolved
-by absolute address, and a data image full of MIPS addresses (vtables, pointer tables, linked
-lists). Instead of rewriting all of that, the port keeps the PS1 address space:
+## Architecture
 
-- The executable is a **32-bit** program (large-address-aware on Windows). At startup it maps PS1
-  main RAM at `0x80000000` (2 MB) and the scratchpad at `0x1f800000` (1 KB). The game's
-  initialised data (`decomp/data`) is native data in the exe, in its retail layout:
-  `tools/data_image.py` writes it as `gen/data.s` (native pointers, string literals) and the code's
-  references by retail address (`psx_<addr>`, `psx_syms.ld`) resolve into it; runtime code that
-  reads a game global by address goes through `PC_Data` (`PSX_DATA_ADDR`). Only
-  `decomp/data/fixed` (vtables, `DoubleBuffer`) is copied to its address in PS1 RAM at startup.
-  The build checks the data against `SLUS_008.60` (`decomp/README.md`, Data), but the port
-  doesn't need `SLUS_008.60` to run. Every pointer in the data is a valid native pointer, and
-  struct layouts are unchanged (int, long and pointers are all 4 bytes).
-- **Globals.** Each decompiled TU is compiled natively, then its symbols are rewritten to the
-  PS1 addresses recorded in its `.syms.json` (`psx_<addr>`). The link resolves those: an
-  initialised global is its place in the native data (`decomp/data`), anything else (`.bss`,
-  the fixed data) its address in PS1 RAM. Data never lives in the TUs' own sections.
-- **Functions.** Every function keeps its PS1 address as its identity. At startup a 5-byte
-  `jmp` to the native code is written over the start of each function's (now unused) MIPS
-  code. So `&Func`, vtable entries and callback tables in the retail data all work as native
-  function pointers.
-- **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` renderer and maths, 0x800858ac-
-  0x8008b900, and a few game helpers) is C interpretations in `decomp/src/m3dasm/` and elsewhere,
-  listed in `decomp/reimpl.tsv` (built like decompiled C); the Psy-Q library code the game uses is
-  the port's own C (`src/pc_libgte.c` for libgte, `src/pc_libgpu.c` for libgpu's helpers). Each is checked
-  against the retail code by a test in `tests/` that runs the original MIPS in a small reference
-  interpreter (`tests/mips_ref.c`); see "Checking C against the retail code" below.
-  `reimpl.tsv` also holds byte-exact C for the few compiler-generated C++ functions a native
-  build can't take from their matching source. No retail code runs in the port: functions with
-  no C are stubs that log a call (none is called in play). For debugging, `build.py --mips`
-  also translates the retail MIPS to C (`tools/mips2c.py`: a register file, memory at the same
-  addresses, GTE instructions on the software GTE, `src/pc_gte.c`), which `THPS_MIPS` and
-  `THPS_SNAP` use.
-- **C++ classes.** To stay byte-exact, the matching decomp wrote many class members as C (raw
-  `this + offset` access, explicit vptr stores and base-class calls). The port's copies are real
-  C++ classes with the same logic (`reimpl.tsv` rows marked `cxx`; `decomp/tools/port_cxx.py`).
-  A native destructor is wrapped at its retail address as the egcs `(this, in_chrg)` destructor:
-  it runs the C++ destructor chain, then frees through the class's `operator delete` when asked.
-  Classes are declared once, in `decomp/include/game/*.h` (complete retail layouts, virtuals in
-  retail vtable order; also compiled by the matching egcs, hence `#pragma interface`). The build
-  inlines those headers before its egcs-ABI pass, drops in-class bodies of virtual functions so
-  calls dispatch through the retail vtable, and compiles with `-funsigned-char` (plain `char` is
-  unsigned on the PS1). `tools/header_check.py`, `tools/layouts.py` and `tools/tu_diff.py` check
-  header layouts and that a refactor doesn't change what a TU links to.
-- **Platform services, not a PS1.** Where the game used the PS1's libraries, the port's goal is
-  that it calls native services directly (`#ifdef PC_PORT` branches in `decomp/src`):
+- **Memory.** Nothing is at a PS1 address. The game's initialised data and `.bss` are native data
+  in the executable (`game/data`; `tools/data_image.py` writes it as `gen/data.s`), in their
+  retail layout, which the code relies on (a struct it names as several globals, a table it
+  indexes from into the next). The build checks the data against `SLUS_008.60`; the game doesn't
+  need it to run. The game's heaps (`Mem_NewX`, `Mem_NewTop`, its own allocator) manage one block
+  it gets from the system (`PC_GameHeap`, 8 MB); the scratchpad is a native buffer
+  (`game/include/game/scratchpad.h`); primitive packets and ordering tables link by native
+  pointers (`include/psyq/libgpu.h`, `P_TAG`), and the display buffers are the native
+  `DoubleBuffer` (`game/include/game/dbuffer.h`). The game's null-pointer reads, which read low
+  RAM on the PS1, are fixed where they happen; any left are redirected to a zero page and logged
+  once (`src/pc_main.c`). The executable is still 32-bit: the game's structures and its files keep
+  4-byte pointers.
+- **Globals and functions by retail address.** Each game TU (`game/tus.tsv`) is compiled natively,
+  then its symbols are renamed to the retail addresses recorded in its `.syms.json`
+  (`psx_<addr>`), so the decompilation's many separate declarations of one global agree. The link
+  resolves those (`gen/psx_syms.ld`): a function to its native code (`pcfn_<addr>`; one with no C,
+  none of which is called in play, to a stub that logs the call), a global to its place in the
+  native data. Runtime code that reads a game global by address goes through `PC_Data`.
+- **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` renderer and maths, and a few game
+  helpers) is C interpretations in `game/src/m3dasm/` and elsewhere (`tus.tsv` kind `asm`); the
+  Psy-Q library code the game uses is the port's own C (`src/pc_libgte.c` for libgte,
+  `src/pc_libgpu.c` for libgpu's helpers). Before the port forked from the decompilation, all of
+  it was checked against the retail code (differential tests running the original MIPS on recorded
+  game states); those tools are in the history.
+- **C++ classes.** The game's classes are real C++ classes declared once, in
+  `game/include/game/*.h` (complete retail layouts, virtuals in retail vtable order). The build
+  keeps the egcs ABI they were written for: it inlines those headers, drops in-class bodies of
+  virtual functions so calls dispatch through the retail vtables (`game/data/*_vtables.cpp`,
+  native data), and wraps each native destructor as the egcs `(this, in_chrg)` destructor, which
+  runs the C++ destructor chain, then frees through the class's `operator delete` when asked. It
+  compiles with `-funsigned-char` (plain `char` is unsigned on the PS1). `tools/layouts.py` and
+  `tools/tu_diff.py` check header layouts and that a refactor doesn't change what a TU links to.
+- **Platform services, not a PS1.** Where the game used the PS1's libraries, it calls native
+  services directly:
   - the C library is the host's (`sprintf`, `strcpy`...; `build.py` `NATIVE_OK`); the game's
     debug `printf` goes to the trace log (`PC_GameDebugf`, `THPS_TRACE=1`, `NATIVE_RENAME`);
   - VSync and the vblank callback are the frame clock (`pc_frame.h`: `PC_FrameWait`,
@@ -70,9 +60,8 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
     hardware (44-bit sums, 16-bit saturation, the UNR divide, the same FLAG word), and a
     `GeomState` for what the game keeps between calls (the current rotation, translation, light
     and colour matrices, screen). libgte is `src/pc_libgte.c` on it (the game's calls go there by
-    address: `build.py` `NATIVE_AT`), and the matching sources' GTE macros and asm have PC_PORT
-    branches on it. M3DMATHS' "last vector" and the colour code the face renderer carries between
-    faces, which retail kept in GTE registers, are explicit (`decomp/src/m3dasm/lastvec.h`,
+    address: `build.py` `NATIVE_AT`), and the game's GTE code calls it. M3DMATHS' "last vector" and the colour code the face renderer carries between
+    faces, which retail kept in GTE registers, are explicit (`game/src/m3dasm/lastvec.h`,
     `processpolys.h`);
   - video pictures (the MDEC's work) are `pc_vdec.h`: the game's run-level data decoded a whole
     frame at a time, into a movie's picture or a texture;
@@ -82,10 +71,7 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
     `pc_texstore.h`, at the places the game's own allocators give them. There is no VRAM; libgpu's
     pure helpers (`SetDefDrawEnv`, `GetTPage` ...) are `src/pc_libgpu.c` (`NATIVE_AT`).
 
-  There's no BIOS, CD, SPU, GTE, GPU or MDEC in the port, and none of Psy-Q's libraries runs at
-  its retail addresses. A `build.py --mips` build adds the BIOS and libgpu that translated retail
-  code calls (`src/mips_bios.c`, `src/mips_gpu.c`, `PC_MIPS`); other Psy-Q functions the port no
-  longer provides run there as translated retail code.
+  There's no BIOS, CD, SPU, GTE, GPU or MDEC in the port, and no retail code.
 
 ## Calling convention
 
@@ -96,9 +82,10 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 
 | path | what |
 |---|---|
+| `../../game/` | the game: `src/` (its code), `include/game/` (its classes and structures), `data/` (its initialised data), `tus.tsv` |
 | `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `sys/types.h`) |
 | `include/pc_*.h` | interfaces between the port's subsystems |
-| `src/` | runtime: boot, memory map, frame clock, input, video, drawing, screens, textures, saves, streams, sound, geometry maths |
+| `src/` | runtime: boot, diagnostics, frame clock, input, video, drawing, screens, textures, saves, streams, sound, geometry maths |
 | `include/pc_platform.h`, `src/pc_platform.c` | what differs between Windows and Linux: paths, folders, files, clock |
 | `tools/` | build driver and code generators (`toolchain.py`: the host's compiler and object format) |
 
@@ -116,7 +103,7 @@ Needs MSYS2 with the `mingw32` (i686) toolchain and SDL2
 
 ```
 python tools/psyq_sigmatch.py          # once: names the Psy-Q library functions (build/psyq_names.tsv)
-python platform/pc/tools/build.py      # -> build/pc/thps.exe (--mips: plus translated retail code, for debugging)
+python platform/pc/tools/build.py      # -> build/pc/thps.exe
 build/pc/thps.exe
 ```
 
@@ -124,10 +111,6 @@ build/pc/thps.exe
 a GUI program (the log goes to `thps.log` in the player's folder when there is no console), its
 debug information split into `thps.debug`; and `thps-windows.zip` with the exe,
 `dist/README.txt`, the repository's LICENSE and the third-party notices.
-
-A `--mips` build runs translated retail code, which also uses what the decompiled data leaves
-out (jump tables, library data), so it embeds the retail image instead (`tools/embed_image.py`:
-`SLUS_008.60` with its code cleared).
 
 The build also runs Ghidra's GNU v2 demangler (`decomp/tools/demangle.py`; it finds it in the
 Ghidra install `GHIDRA_INSTALL_DIR` names, default `D:\Tools\ghidra`, or takes `GNU_DEMANGLER`).
@@ -161,11 +144,9 @@ How the Linux build differs:
   struct returns in registers (the decomp declares some functions both ways; see Calling
   convention). Static constructors (`.init_array`, Windows `.ctors`) are dropped: the game runs
   them from its own table. `data_image.py` reads ELF objects as well as COFF.
-- PS1 RAM is one `memfd` mapped at `0x80000000`, `0xa0000000` and at its KUSEG addresses from
-  `0x10000` (Linux keeps the first 64 KB unmapped, `vm.mmap_min_addr`). Low-memory accesses, the
-  MIPS division results and crash reports come from signal handlers (`SIGSEGV`, `SIGFPE`,
-  `SIGTRAP` for the single step) instead of a vectored exception handler, on the same decoders
-  (`src/pc_main.c`). The hang watchdog asks the main thread for its backtrace with `SIGUSR2`.
+- Low-memory accesses, the MIPS division results and crash reports come from signal handlers
+  (`SIGSEGV`, `SIGFPE`, `SIGTRAP` for the single step) instead of a vectored exception handler, on
+  the same decoders (`src/pc_main.c`). The hang watchdog asks the main thread for its backtrace with `SIGUSR2`.
   `THPS_WATCH` (debug-register watchpoints) is Windows-only: use a gdb watchpoint.
 - Gamepads are SDL game controllers (XInput on Windows), mapped onto the same Xbox-style inputs.
 - The player's folder is `$XDG_DATA_HOME/Neversoft/Tony Hawk's Pro Skater` (default
@@ -196,8 +177,8 @@ and the retail executable's movie table lists the STR files and which are songs.
 their raw 2352-byte sectors (XA audio intact; ffmpeg and jPSXdec play them).
 
 At runtime files are found by name anywhere under `Data/`. The game's CD.WAD loader
-(FileIO_Open/Load/Continue/Sync) reads them through `pc_fileio.h` (its PC_PORT branches: one plain
-file read per load, finished when FileIO_Load returns), and songs and movies stream
+(FileIO_Open/Load/Continue/Sync) reads them through `pc_fileio.h` (one plain file read per load, finished
+when FileIO_Load returns), and songs and movies stream
 from their files (`src/pc_stream.c`). The disc image is read only by the extraction
 (`src/pc_disc.c`). Missing files are extracted again on the next start
 (with the disc image present); the playlist is never overwritten (delete it to get the default
@@ -213,8 +194,8 @@ ISO 9660 area) and go to the same folders; `Manifest.txt`'s first line records t
 models and levels are version 6 `.psx` files: the same format with 16-bit PowerVR textures up to
 256x256 (filtered, tiling, with alpha) and remodelled skaters. They are loaded without their
 texture images, which stay on the PC (`src/pc_dctex.c`) and are drawn by the native 3D renderer;
-see `include/pc_dctex.h`. With these files the game gets 8 MB of RAM (they are bigger than the
-PS1's) and each skater's front-end model is the full one (the Dreamcast has none). Every file is
+see `include/pc_dctex.h`. With these files each skater's front-end model is the full one (the
+Dreamcast has none). Every file is
 extracted unchanged. The images it redrew at a higher resolution are shown at the size the PS1
 layout gives them, with all their pixels (`PC_ImageLayoutSize`): the 640x480 front-end screens
 load as they are instead of line-doubled, and the HORSE loading screen (640x240 on a 512-wide
@@ -232,28 +213,12 @@ at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.c`): each sound
 played in place of a stand-in in the bank's sample data, tuned to the PS1 banks' pitch. The Dreamcast
 logos (Crave, Treyarch, Sofdec) are not played. Needs the OpenGL renderer.
 
-## Checking C against the retail code
+## Checking changes
 
-The C that replaced hand-written assembly and library code is checked against the original MIPS
-on real game states. A `build.py --mips` build records snapshots at function entries
-(`THPS_SNAP=80086f40:8:500,...`: RAM, scratchpad, GTE registers, arguments and the native stack
-the arguments point into; `src/pc_snap.c`). `tools/build_test_asm.py --run` builds
-`build/pc/test_asm.exe` from every `reimpl.tsv` row marked `test_asm` and `src/pc_libgte.c`, and
-replays each snapshot (default: all under `build/pc/snaps`) through the retail MIPS in
-`tests/mips_ref.c` (COP2 on the software GTE, `src/pc_gte.c`) and through the C: both must leave
-the same RAM, scratchpad, native stack and return value, and the C the same geometry state
-(`pc_geom`) as retail left in the GTE's control registers; of the data registers, only what a
-function's callers read (`test_asm: gte_out`, `lastvec`, `colourcode`). Paths the game rarely takes
-are covered by snapshots edited to take them. Exceptions (scratch words only the retail code's
-register saves use, pointers the port keeps in KSEG0) are listed in the sources as `test_asm:`
-comments. `test_asm` builds and runs on Windows only for now.
-
-The geometry maths itself is checked against the software GTE (which follows psx-spx) by
-`tests/test_geom.c`: every operation and variant the game uses, on tens of millions of random
-inputs biased to the edges (saturation, overflow, the divide's limits) and an exhaustive sweep of
-the perspective divide, comparing every result and FLAG bit
-(`gcc -m32 -O2 -DPC_MIPS -Iinclude tests/test_geom.c src/pc_gte.c src/pc_geom.c`). The software
-GTE has its own hand-worked tests (`tests/test_gte.c`).
+The port's changes are checked by running it deterministically (`THPS_DETERMINISTIC=1`, scripted
+input `THPS_INPUT`, screenshots `THPS_SHOT`, `THPS_HEADLESS`) through the levels in both 3D
+renderers, the front end, the movies and a career save, and comparing the frames and the save
+file with an earlier build's: a change to the port's internals should leave them identical.
 
 ## Saves
 
@@ -261,7 +226,7 @@ There's no memory card. Each career and each replay is its own file, named after
 player gives it, in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves` (Linux:
 `~/.local/share/Neversoft/Tony Hawk's Pro Skater/Saves`):
 `Careers\<name>.career` and `Replays\<name>.replay` (`src/pc_saves.c`). The game's save and load
-screens are its own; its card layer (`decomp/src/card`, PC branches) reads and writes these files
+screens are its own; its card layer (`game/src/card`) reads and writes these files
 and is always ready, so there's no card check, formatting, block count or "do not remove" text.
 A file is the game's save data without the PS1 card header (icon, Shift-JIS title), behind a
 16-byte header. The load screens list up to 15 saves of each type, newest first. The career saved
@@ -273,7 +238,7 @@ time the game lists saves (at startup, or on a save or load screen) and renamed 
 
 The game builds its frames as on the PS1: primitive packets (`POLY_FT4`, `SPRT`, `TILE`,
 `LINE_*`, `DR_*`) linked into ordering tables, which are its display list. `src/pc_draw.c` walks
-them (`PC_DrawOT`, from the game's PC branches where it called `DrawOTag`) and draws through
+them (`PC_DrawOT`, where the game called `DrawOTag`) and draws through
 OpenGL 3.3 (`src/pc_gpu_gl.c`): polygons, sprites, lines and fills go to render targets, and a
 shader does the PS1's CLUT texture lookup, texture windows, colour modulation and the four
 semi-transparency modes. There is no VRAM. The textures and CLUTs are in the texture store
@@ -299,7 +264,7 @@ margins exist only in the display surface: in drawing coordinates they lie at x 
 buffer, where the game keeps textures, so only primitives drawn with a drawing area that covers
 the whole screen reach them (`pc_draw.c` widens it, `PC_GlWideClip`, and flags the primitive);
 every other drawing and the CPU's blits see the surface's own area alone. The game's
-side culling widens to match: the frustum's side planes (`M3d_RenderSetup`, PC branch) and the
+side culling widens to match: the frustum's side planes (`M3d_RenderSetup`) and the
 vertex transforms' outcodes, which `pc_render3d.c` works out again against the widened viewport
 (the fast transforms keep theirs inside the screen words, so the face walk tests those itself).
 The HUD and menus keep their 4:3 positions in the middle; full-width flat rectangles and polygons
@@ -325,9 +290,8 @@ fade-to-colour mode of some levels) still go through the retail code and that lo
 (`THPS_RENDER3D=psx THPS_GL_PRECISE=0 THPS_GL_PERSPECTIVE=0`), OpenGL at 1x samples the same
 points the PS1 rasteriser does.
 
-The build compiles every TU in `decomp/matched.tsv` (and the near-miss sources in
-`decomp/nearmiss.tsv`), translates the remaining MIPS with `tools/mips2c.py`, generates the glue in
-`build/pc/gen/` and links. `build/pc/build_report.txt` lists compile errors and unresolved symbols.
+The build compiles every TU in `game/tus.tsv`, generates the glue in `build/pc/gen/` and links.
+`build/pc/build_report.txt` lists compile errors and unresolved symbols.
 
 ## Controls
 
@@ -339,7 +303,7 @@ their own gamepad bindings (`[Skate Gamepad]`/`[Menu Gamepad]` for player 1, `..
 player 2).
 
 **Options > Player 1/2 Controls** is the rebinding screen (it replaces the PS1's face-button
-remap; `decomp/src/front/controlleroptions.cpp`, PC branch). The top row switches between the
+remap; `game/src/front/controlleroptions.cpp`). The top row switches between the
 keyboard and gamepad bindings (player 2: gamepad only), then come Autokick and Vibration, every
 Skate and Menu action with its two bindings, Reset to Default (the device shown) and Back. Left
 and right pick the binding, Accept waits for the new key or button (5 seconds), Delete or X on
@@ -350,11 +314,11 @@ draws its own list over `options.bmp`; it puts that area of the background back 
 (restored any earlier, the background would be shown without its text).
 
 The game reads the actions themselves. Its per-player button block (`SControl`,
-`decomp/include/game/pad.h`) names its buttons after what they do while skating (`Ollie`,
+`game/include/game/pad.h`) names its buttons after what they do while skating (`Ollie`,
 `Grind`...), and the menus read `MenuAccept`, `MenuBack` and `MenuUp`..`MenuRight`. On the PS1
 those menu names are aliases of the pad's own buttons (X, Triangle, the D-pad), so the matching
 build is unchanged; on PC they are separate slots (the ones the PS1 never filled), and
-`Pad_Update` (`decomp/src/unnamed/80070ff4.c`) fills every slot from its action's bindings. So
+`Pad_Update` (`game/src/unnamed/80070ff4.c`) fills every slot from its action's bindings. So
 the same key can do one thing while skating and another in the menus. On PC, the front end's
 "press Start" prompts take Menu Accept, and Pause also resumes from the pause menu.
 
@@ -376,7 +340,7 @@ the same key can do one thing while skating and another in the menus. On PC, the
 The pause-menu cheat codes are entered with the Skate controls (hold SpinLeft). The front end's
 button legend (PS1 symbols for Select, Accept and Back) is part of its background images.
 
-On PC the main menu (`decomp/src/unnamed/8005e754.c`) ends with **QUIT**, which exits the game
+On PC the main menu (`game/src/unnamed/8005e754.c`) ends with **QUIT**, which exits the game
 the same way closing the window does (`PC_RequestQuit`, acted on at the next frame). Its row id
 7 is also the hidden cheat menu's, which is only reached through a menu path, so the menu only
 quits when 7 was picked by hand.
@@ -391,8 +355,8 @@ is drawn at the resolution it is shown at (see Graphics). The window is DPI-awar
 real pixels. Alt+Enter switches between the window and fullscreen; a window resized by hand keeps
 its size.
 
-**Options > Graphics** (`PC_GraphicsOptions` in `decomp/src/front/controlleroptions.cpp`, next to
-the controls screen; the options menu `decomp/src/unnamed/80060274.c` gets the extra row on PC)
+**Options > Graphics** (`PC_GraphicsOptions` in `game/src/front/controlleroptions.cpp`, next to
+the controls screen; the options menu `game/src/unnamed/80060274.c` gets the extra row on PC)
 sets the display mode, the resolution and widescreen: left and right step through the display's
 modes (windowed: those that fit on the desktop). Apply switches the window and asks to keep the change;
 Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go back.
@@ -431,11 +395,8 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_MOVIES=0` | skip every movie |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
 | `THPS_DETERMINISTIC=1` | virtual clock: identical runs every time (use with `THPS_INPUT` for bisecting) |
-| `THPS_MIPS=all,!lo-hi,addr` | `build.py --mips` builds: run those functions (game code and the rewritten assembly) as translated retail MIPS instead of C (A/B debugging) |
-| `THPS_SNAP=addr[:n[:every]],...` / `THPS_SNAPDIR` | `--mips` builds: record the machine state at those functions' entries for the differential tests (`src/pc_snap.c`, below) |
 | `THPS_POKE=addr:value,...` | store those words every frame (`0x800d1708:1` = level select cheat: every level unlocked) |
 | `THPS_WATCH=addr` | hardware write watchpoint on a 4-byte word: logs value, native EIP and callers |
-| `THPS_COUNT=addr,...` | log per-frame call counts of those functions |
 | `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log fills and drawing-environment changes / polygon counts per frame |
 | `THPS_TRACE_CULL`, `THPS_TRACE_RENDER` | frustum-culling and renderer traces |
 | `THPS_AUDIO=0` / `THPS_AUDIO_DUMP=file` | no sound device / also write the mixed output as raw s16le stereo 44.1 kHz |
@@ -459,23 +420,22 @@ decodes them. `src/pc_music.c` picks the next song from
 music, movies and sound effects come from its films and sound banks (see above). The PS1's
 movies play through the game's own movie player (`GameFMV_PlayMovie`): the game decodes each
 frame's bitstream itself (`DecDCTvlc3`), `src/pc_vdec.c` decodes the pictures (the MDEC's inverse
-DCT and colour conversion, a whole frame at once) and the PC branch shows them as a picture of
+DCT and colour conversion, a whole frame at once) and the player shows them as a picture of
 their own (`PC_MovieDecode`/`PC_MovieShow`, `pc_screen.h`); the player's busy-waits wait a frame
 for the stream instead (`PC_MovieWait`). The songs' 96x64 video goes into the texture of the
 levels' TV screens the same way (`PC_VdecToTexture`; the credits screen shows it too). Not done yet: the PS1's exact
-reverb, 64-bit build. Running every game function as translated MIPS
-(`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase (the translation
-also loses level polygons in `THPS_RENDER3D=psx` mode, which the C renderer doesn't).
+reverb, 64-bit build.
 
 Port glue worth knowing about (see the tools for details):
 - C++ follows the egcs ABI where the retail code depends on it: vtable layout, `delete` through
   the virtual destructor with in_chrg 3, constructors returning `this`.
-- File statics in decompiled TUs live at their retail addresses (listed in each `.syms.json`).
-- Hardware behaviour the game relies on is emulated: MIPS division never traps (the fault
-  handler gives the MIPS result), low KUSEG addresses map to RAM, busy-waits let frames happen (`PC_FramePoll`).
+- File statics in the game's TUs keep their retail addresses as names (listed in each
+  `.syms.json`), resolved into the native data.
+- Hardware behaviour the game relies on is kept: MIPS division never traps (the fault handler
+  gives the MIPS result), busy-waits let frames happen (`PC_FramePoll`).
 
-Changes the port needs in `decomp/src` are guarded by `#ifdef PC_PORT` or are honest signatures
-that still compile to the same bytes. `node decomp/tools/check_all.mjs` must stay green.
+The port's game code is `game/`: change it directly (it has no PS1 branches). `decomp/` is the
+matching decompilation, kept byte-exact and not built into the port.
 
 ## License
 

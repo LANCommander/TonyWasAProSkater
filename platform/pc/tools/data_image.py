@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The port's data from the decompiled data (decomp/data/*.cpp): native data in the retail layout
+"""The port's data from the decompiled data (game/data/*.cpp): native data in the retail layout
 (--asm, build/pc/gen/data.s) and the image of what stays in PS1 RAM (build/pc/gen/image.bin).
 
 Each decomp/data file is compiled natively (g++ -m32; PSX_DATA / PSX_FIXED give every global a
@@ -7,7 +7,7 @@ section named after its retail address) and every pointer (an i386 DIR32 relocat
 the PS1 address of its target: a global in these files, else a name from functions.tsv, the TUs'
 .syms.json or data_names.tsv, else a `_<8 hex digits>` suffix; or to a string literal.
 
-  * decomp/data/fixed (PSX_FIXED) is the image: those globals at their addresses, the rest zero;
+  * game/data/fixed (PSX_FIXED) is the image: those globals at their addresses, the rest zero;
     the port copies it to 0x80010000 at startup.
   * The rest is native: --asm writes it as blocks of bytes in their retail layout (the
     decompiled code relies on it), pointers as `psx_<addr> + addend` and the literals after
@@ -19,7 +19,7 @@ the PS1 address of its target: a global in these files, else a name from functio
 --check compares every global, laid out at its retail address, with the retail executable: the
 same bytes, a pointer to a literal where retail points at the same text, and retail text that no
 global holds any more must be a literal in decomp/data or decomp/src. The code (which the port
-never has) and the data decomp/data/omitted.tsv lists are left out. Prints the globals that differ.
+never has) and the data game/data/omitted.tsv lists are left out. Prints the globals that differ.
 """
 import argparse
 import bisect
@@ -34,7 +34,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
-DECOMP = os.path.join(ROOT, "decomp")
+DECOMP = os.path.join(ROOT, "game")  # the port's game code and data
 DATA = os.path.join(DECOMP, "data")
 FIXED = os.path.join(DATA, "fixed")
 sys.path.insert(0, HERE)
@@ -45,6 +45,7 @@ OBJDIR = os.path.join(toolchain.OUT, "dataobj")
 
 BASE = 0x80010000
 END = 0x800DD000  # the retail image's extent (to the end of .bss's page)
+BSS_START, BSS_END = 0x800D21C8, 0x800DC94C
 DATA_START = 0x8009D0E0
 ADDR_SUFFIX = re.compile(r"_([0-9a-fA-F]{8})$")
 
@@ -181,7 +182,7 @@ INCLUDES = ["-DPC_PORT=1", "-I", os.path.join(DECOMP, "include"),
 
 
 def data_sources():
-    """[(source, fixed)]: decomp/data/*.cpp (native globals) and decomp/data/fixed/*.cpp."""
+    """[(source, fixed)]: game/data/*.cpp (native globals) and game/data/fixed/*.cpp."""
     return [(s, False) for s in sorted(glob.glob(os.path.join(DATA, "*.cpp")))] + \
            [(s, True) for s in sorted(glob.glob(os.path.join(FIXED, "*.cpp")))]
 
@@ -340,7 +341,7 @@ def build(objdir):
                         t, tfixed = defined[n]
                         if fixed and not tfixed:
                             raise SystemExit("data_image: %s: fixed data points at %s, which "
-                                             "isn't fixed (decomp/data/fixed)" % (path, n))
+                                             "isn't fixed (game/data/fixed)" % (path, n))
                     else:
                         if names is None:
                             names = name_table()
@@ -396,7 +397,10 @@ def native_blocks(lay):
     decompiled code relies on that layout (a struct the code names as several globals, an index
     from one table into the next), so the port keeps it rather than linking each global alone."""
     blocks = []
-    for g in lay.globals:
+    # the game's .bss is native too: zeros between the data before and after it, as in retail
+    bss = {"addr": BSS_START, "end": BSS_END, "name": "(bss)", "data": bytes(BSS_END - BSS_START),
+           "fixed": False, "ptrs": [], "lits": []}
+    for g in sorted(lay.globals + [bss], key=lambda g: g["addr"]):
         if g["fixed"]:
             continue
         if blocks and g["addr"] - blocks[-1][1] < CHUNK_GAP:
@@ -458,21 +462,32 @@ def native_asm(lay, out_s):
     return [[s, e] for s, e, _ in blocks], sorted(refs)
 
 
+def code_words():
+    """Addresses of every instruction word in the retail image (the port has none of its code):
+    the game functions' whole extent, and everything from the hand-written assembly on through
+    the Psy-Q libraries (no data lives there). Data inside .text (D_ rows) stays."""
+    code = set()
+    for line in open(os.path.join(DECOMP, "functions.tsv"), encoding="utf-8"):
+        p = line.split("\t")
+        if p[0].startswith("0x") and not p[2].startswith("D_"):
+            code.update(range(int(p[0], 16), int(p[0], 16) + int(p[1]), 4))
+    code.update(range(0x800858AC, 0x8009D0E0, 4))
+    return sorted(a for a in code if 0x80010000 <= a < 0x8009D0E0)
+
+
 def retail_reference(exe_path):
     """The retail image as the port should have it: code cleared, the omitted data zeroed."""
-    sys.path.insert(0, HERE)
-    import embed_image  # noqa: E402
     d = open(exe_path, "rb").read()
     base, size = struct.unpack_from("<2I", d, 0x18)
     ref = bytearray(END - BASE)
     ref[:size] = d[0x800:0x800 + size]
-    for a in embed_image.code_words():
+    for a in code_words():
         ref[a - BASE:a - BASE + 4] = bytes(4)
     for line in open(os.path.join(DATA, "omitted.tsv"), encoding="utf-8"):
         if line.startswith("0x"):
             s, e = (int(x, 16) for x in line.split("\t")[:2])
             ref[s - BASE:e - BASE] = bytes(e - s)
-    ref[0x800D21C8 - BASE:0x800DC94C - BASE] = bytes(0x800DC94C - 0x800D21C8)  # .bss
+    ref[BSS_START - BASE:BSS_END - BASE] = bytes(BSS_END - BSS_START)
     return ref
 
 

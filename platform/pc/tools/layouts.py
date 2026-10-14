@@ -200,10 +200,9 @@ def dump_tu(src):
 
 def cxx_tus(only):
     out = []
-    for kind in ("matched.tsv", "nearmiss.tsv", "reimpl.tsv"):
-        for p in build.read_tsv(os.path.join(build.DECOMP, kind)):
-            if p[0].endswith(".cpp") and p[0] not in out and (not only or only in p[0]):
-                out.append(p[0])
+    for p in build.read_tsv(os.path.join(build.GAME, "tus.tsv")):
+        if p[0].endswith(".cpp") and p[0] not in out and (not only or only in p[0]):
+            out.append(p[0])
     return out
 
 

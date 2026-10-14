@@ -11,8 +11,7 @@
  * The tables the library reads (the sine/cosine table, arctangent tables, square-root tables)
  * are in the PS1 image, which stays mapped at its addresses: they are read from there.
  *
- * The original's working values in the GTE's data registers are not kept: no caller reads them
- * (test_asm: gte_out none). */
+ * The original's working values in the GTE's data registers are not kept: no caller reads them. */
 #include <stddef.h>
 #include <sys/types.h>
 #include <stdint.h>

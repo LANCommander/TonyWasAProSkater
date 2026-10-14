@@ -519,12 +519,15 @@ def transform_cxx(src, vtables, tukey="tu"):
                           "\nstatic inline void pc_delete(%s *p) { if (p) pc_vdelete("
                           "static_cast<%s *>(p)->__vptr, %d, static_cast<%s *>(p)); }\n"
                           % (n, r, c.slots.index("~"), r)))
-    # constructors / destructors of polymorphic classes defined in this TU: store the vtable
+    # constructors / destructors of polymorphic classes defined in this TU: store the vtable (the
+    # class's vtable global, by its retail address: psx_<addr>, which the link resolves)
     clean = _strip_comments(src)
+    used_vtables = set()
     for n, c in classes.items():
         if not c.polymorphic or n not in vtables:
             continue
-        store = " this->__vptr = (void *)0x%08x; " % vtables[n]
+        store = " this->__vptr = (void *)psx_%08x; " % vtables[n]
+        used_vtables.add(vtables[n])
         # out-of-line: `Class::Class(...) [: inits] {` and `Class::~Class() {`
         for m in re.finditer(r"\b%s\s*::\s*(~\s*)?%s\s*\(" % (n, n), clean):
             lp = m.end() - 1
@@ -572,6 +575,8 @@ def transform_cxx(src, vtables, tukey="tu"):
                 edits.append((k + 1, store))
     for pos, text in sorted(edits, key=lambda e: -e[0]):
         src = src[:pos] + text + src[pos:]
+    if used_vtables:
+        src = "".join('extern "C" char psx_%08x[];\n' % a for a in sorted(used_vtables)) + src
     # virtual off; pure virtuals become plain declarations (only after `virtual`: a statement like
     # `SCRATCH_S(0x2d4) = 0;` has the same shape)
     src = re.sub(r"\bvirtual\b([^;{}]*\))\s*(const\s*)?=\s*0\s*;",

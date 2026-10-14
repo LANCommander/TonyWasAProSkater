@@ -1,8 +1,8 @@
 /* Native 3D renderer for the world and models; see pc_render3d.h for the outline.
  *
- * Geometry. The retail vertex transforms (M3DASM, as C in decomp/src/m3dasm) keep running: callers use their
+ * Geometry. The retail vertex transforms (M3DASM, as C in game/src/m3dasm) keep running: callers use their
  * results (outcodes, culling), and shadows and collision read the projected-vertex cache they
- * fill. Each one runs through R3d_Transform (its PC_PORT branch) so that its projections also hand
+ * fill. Each one runs through R3d_Transform so that its projections also hand
  * over every vertex unrounded (PC_CaptureBegin); those are stored in a float copy of the cache, slot for slot, following
  * the stitch vertices that skater parts share. Each slot remembers the screen word retail wrote
  * there, so a slot some other code has since overwritten is never used.
@@ -40,6 +40,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <libgpu.h>
+
 #include "pc_dctex.h"
 #include "pc_draw.h"
 #include "pc_gpu_gl.h"
@@ -55,7 +58,9 @@ void PC_RenderTrace(const char *what, uint32_t ret);
 #define M32(a) (*(volatile uint32_t *)PSX_PTR(a))
 #define M16(a) (*(volatile uint16_t *)PSX_PTR(a))
 #define S16(a) (*(volatile int16_t *)PSX_PTR(a))
-#define SCR(o) (0x1f800000u + (uint32_t)(o))
+extern unsigned char Scratchpad[]; /* the game's scratchpad (pc_main.c) */
+extern uint32_t ClippedFaceBuffer[]; /* ProcessPolys' water-clipped faces (game/src/m3dasm) */
+#define SCR(o) ((uint32_t)(uintptr_t)Scratchpad + (uint32_t)(o))
 
 /* game globals */
 #define G_PPOLY        PSX_DATA_ADDR(0x800d1a54u)   /* pPoly */
@@ -409,7 +414,8 @@ typedef struct {
 } Face;
 
 typedef struct {
-    uint32_t gen, ot;
+    uint32_t gen;
+    const P_TAG *ot;    /* the layer's ordering table (4096 entries) */
     int valid, sorted, next;
     float h, ofx, ofy, hither;
     Face *f, *sf;
@@ -423,9 +429,9 @@ static Batch s_b[NBATCH];
 static int s_cur = -1;
 static uint32_t s_gen;
 
-void R3d_RenderSetup(const void *viewport, uint32_t *ot_)
+void R3d_RenderSetup(const void *viewport, P_TAG *ot)
 {
-    uint32_t vp = (uint32_t)(uintptr_t)viewport, ot = (uint32_t)(uintptr_t)ot_;
+    uint32_t vp = (uint32_t)(uintptr_t)viewport;
     if (!s_native)
         return;
     int slot = (s_cur + 1) % NBATCH;
@@ -443,18 +449,20 @@ void R3d_RenderSetup(const void *viewport, uint32_t *ot_)
         b->hither = 1;
     s_cur = slot;
 
-    /* the marker: 3 words after the tag, at the far end of the layer (drawn before its faces) */
-    uint32_t p = M32(G_PPOLY), end = M32(G_POLYBUFEND), head = ot + 4095 * 4;
-    if (((p + 16) & 0xffffff) > (end & 0xffffff)) {
+    /* the marker: a packet of 3 words at the far end of the layer (drawn before its faces), from
+     * the game's packet buffer */
+    P_TAG *m = (P_TAG *)(uintptr_t)M32(G_PPOLY), *head = &ot[4095];
+    uint8_t *end = (uint8_t *)(uintptr_t)M32(G_POLYBUFEND);
+    if ((uint8_t *)(m + 1) + 12 > end) {
         b->valid = 0;
         return;
     }
-    M32(p + 4) = MARKER0;
-    M32(p + 8) = MARKER1;
-    M32(p + 12) = (uint32_t)slot | b->gen << 4;
-    M32(p) = 3u << 24 | (M32(head) & 0xffffff);
-    M32(head) = (M32(head) & 0xff000000u) | (p & 0xffffff);
-    M32(G_PPOLY) = p + 16;
+    P_WORDS(m)[0] = MARKER0;
+    P_WORDS(m)[1] = MARKER1;
+    P_WORDS(m)[2] = (uint32_t)slot | b->gen << 4;
+    m->len = 3;
+    addPrim(head, m);
+    M32(G_PPOLY) = (uint32_t)(uintptr_t)((uint8_t *)(m + 1) + 12);
 }
 
 static PC_GlVert *alloc_verts(Batch *b, int n)
@@ -896,9 +904,9 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
         uint16_t hd = 0;
         int dc = 0;            /* a Dreamcast face: coordinates in uf, vf */
         float uf[4], vf[4];
-        if (tex && (M32(a0 + 16) & 0x80000000u)) {
+        if (tex && (M32(a0 + 16) & PC_DC_FACE_TEX)) {
             dc = 1;
-            tex = dc_face(a0, M32(a0 + 16), f, uvw, &hd, uf, vf);
+            tex = dc_face(a0, (uint32_t)(uintptr_t)PC_DcFaceTex(M32(a0 + 16)), f, uvw, &hd, uf, vf);
         } else if (tex) {
             uvw[0] = M32(a0 + 16);
             uvw[1] = M32(a0 + 20) | (f & 0x180) << 14;
@@ -1042,7 +1050,7 @@ int R3d_ProcessPolys(int fast, uint32_t *list, int count)
         return 0;
     st.calls++;
     Batch *b = s_cur >= 0 ? &s_b[s_cur] : NULL;
-    if (!b || !b->valid || b->ot != M32(G_CURRENT_OT)) {
+    if (!b || !b->valid || (uint32_t)(uintptr_t)b->ot != M32(G_CURRENT_OT)) {
         st.fb_nolayer++;
         return 0;
     }
@@ -1067,7 +1075,7 @@ int R3d_ProcessPolys(int fast, uint32_t *list, int count)
         geom_load_vector(pc_geom.tr, 0, 0, 0);
         pc_geom.dqb = 0x10000000;
         pc_geom.dqa = 0;
-        M32(SCR(964)) = 0x80088790u;
+        M32(SCR(964)) = (uint32_t)(uintptr_t)ClippedFaceBuffer;
         M16(SCR(676)) = 0;
     }
     faces(b, (uint32_t)(uintptr_t)list, count, fast, wp);
@@ -1179,24 +1187,25 @@ static void layer_start(uint32_t id)
     st.layers++;
 }
 
-int R3d_ChainPacket(const uint32_t *p, uint32_t len)
+int R3d_ChainPacket(const P_TAG *p)
 {
+    const u_long *w = P_WORDS(p);
     if (!s_native)
         return 0;
-    if (len == 3 && p[1] == MARKER0 && p[2] == MARKER1) {
-        layer_start(p[3]);
+    if (p->len == 3 && w[0] == MARKER0 && w[1] == MARKER1) {
+        layer_start(w[2]);
         return 1;
     }
     if (!s_layer)
         return 0;
-    uint32_t a = (uint32_t)(uintptr_t)p, ot = s_layer->ot;
-    if (a - ot < 4096 * 4) {
-        s_bucket = (a - ot) >> 2;   /* an entry of the layer: its primitives follow */
+    const P_TAG *ot = s_layer->ot;
+    if (p >= ot && p < ot + 4096) {
+        s_bucket = (uint32_t)(p - ot);   /* an entry of the layer: its primitives follow */
         return 0;
     }
-    if (len == 0) {
+    if (p->len == 0) {
         /* the entries before (OT, OT2D) and after (the other player's layer) end it */
-        if (ot - a <= 8 || a - (ot + 4096 * 4) < 4096 * 4)
+        if ((p < ot && ot - p <= 2) || (p >= ot + 4096 && p < ot + 8192))
             layer_end();
         return 0;
     }

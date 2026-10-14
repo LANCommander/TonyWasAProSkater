@@ -1,8 +1,0 @@
-int DAT_800d2238, DAT_800d223c, DAT_800d2240;
-
-int Rnd(int n) {
-	DAT_800d2238 = DAT_800d2238 * DAT_800d223c + DAT_800d2240;
-	DAT_800d223c = (DAT_800d223c ^ DAT_800d2238) + (DAT_800d2238 >> 4);
-	DAT_800d2240 = DAT_800d2240 - 0x10101010 + (DAT_800d2238 >> 3);
-	return (int)((DAT_800d2238 & 0xffff) * n) >> 16;
-}

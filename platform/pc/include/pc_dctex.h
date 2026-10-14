@@ -11,7 +11,9 @@
  * by checksum, and drawn by OpenGL. The game's texture entry (Texture) for one gets a texture
  * page with colour depth 3, which the PS1 game never uses, and its CLUT field holds the handle;
  * see Spool_LoadTexturesToVRAM and M3dInit_ParsePSX. On the faces of a version 6 model, word 4
- * stays the Texture pointer (PS1 faces have u0v0 | clut << 16 there, never with bit 31 set). */
+ * names the face's Texture entry: PC_DC_FACE_TEX | its index here (PC_DcFaceTexIndex), as a face
+ * word can't hold a native pointer (PS1 faces have u0v0 | clut << 16 there, never with bit 31
+ * set). */
 #ifndef PC_DCTEX_H
 #define PC_DCTEX_H
 
@@ -39,6 +41,12 @@ void PC_HdTexRef(uint16_t handle, int delta);
 
 /* The texture's full-size image as RGBA8 rows (malloc'd), w x h; 0 if there is none. */
 int PC_HdTexDecode(uint16_t handle, int *w, int *h, uint8_t **rgba);
+
+/* A Dreamcast face's word 4: PC_DC_FACE_TEX | the index of its Texture entry. */
+#define PC_DC_FACE_TEX 0x80000000u
+uint32_t PC_DcFaceTexIndex(void *texture);
+/* The Texture entry of a face word made by PC_DcFaceTexIndex. */
+void *PC_DcFaceTex(uint32_t word);
 
 #ifdef __cplusplus
 }

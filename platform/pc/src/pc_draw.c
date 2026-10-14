@@ -552,16 +552,23 @@ static void draw_words(const uint32_t *w, int n)
 /* ---------------------------------------------------------------------------------------------
  * Ordering tables */
 
-/* THPS1's display buffers (DoubleBuffer[2], SDoubleBuffer) end their ordering table with the
- * entries OT (+0x88) and OT2D (+0x84), drawn last: the HUD, panels and text. */
-#define DOUBLEBUFFER     0x800a891cu
-#define DOUBLEBUFFER_SZ  0x80acu
+/* The ordering-table entries drawn last, with the HUD, panels and text: THPS1's display buffers
+ * (SDoubleBuffer) end their ordering table with OT and OT2D (PC_DrawMark2D). */
+static const void *s_2d_entries[8];
 
-static int is_2d_entry(const uint32_t *p)
+void PC_DrawMark2D(const void *entry)
 {
-    uint32_t a = (uint32_t)(uintptr_t)p;
-    for (uint32_t b = DOUBLEBUFFER; b < DOUBLEBUFFER + 2 * DOUBLEBUFFER_SZ; b += DOUBLEBUFFER_SZ)
-        if (a == b + 0x84 || a == b + 0x88)
+    for (int i = 0; i < 8; i++)
+        if (!s_2d_entries[i] || s_2d_entries[i] == entry) {
+            s_2d_entries[i] = entry;
+            return;
+        }
+}
+
+static int is_2d_entry(const P_TAG *p)
+{
+    for (int i = 0; i < 8 && s_2d_entries[i]; i++)
+        if (s_2d_entries[i] == p)
             return 1;
     return 0;
 }
@@ -577,34 +584,30 @@ int PC_DrawState(int *ofs_x, int *ofs_y, int clip[4])
     return PC_GlWideClip(clip);
 }
 
-static void draw_chain(const uint32_t *first)
+static void draw_chain(const P_TAG *first)
 {
     static int warned, warned_len;
-    const uint32_t *p = first, *slow = first;
+    const P_TAG *p = first, *slow = first;
     for (int guard = 0; guard < (1 << 20); guard++) {
-        uint32_t tag = p[0];
-        uint32_t len = tag >> 24;
+        uint32_t len = (uint32_t)p->len;
         if (len > 16 && !warned_len) {
             warned_len = 1;
-            fprintf(stderr, "[draw] packet at %08x has %u words (tag %08x)\n",
-                    (unsigned)(uintptr_t)p, len, tag);
+            fprintf(stderr, "[draw] packet at %p has %u words\n", (const void *)p, len);
         }
         if (len == 0 && is_2d_entry(p))
             s_chain_2d = 1;
         /* the native 3D renderer's layer markers, and where its layers are in the OT */
-        if (!R3d_ChainPacket(p, len))
-            draw_words(p + 1, (int)len);
-        uint32_t next = tag & 0xffffff;
-        if (next & 0x800000)
+        if (!R3d_ChainPacket(p))
+            draw_words((const uint32_t *)P_WORDS(p), (int)len);
+        p = p->next;
+        if (!p)
             return;
-        p = (const uint32_t *)(uintptr_t)(0x80000000u | next);
         if (guard & 1) {
-            slow = (const uint32_t *)(uintptr_t)(0x80000000u | (slow[0] & 0xffffff));
+            slow = slow->next;
             if (slow == p) {
                 if (!warned) {
                     warned = 1;
-                    fprintf(stderr, "[draw] cyclic ordering table at %08x\n",
-                            (unsigned)(uintptr_t)p);
+                    fprintf(stderr, "[draw] cyclic ordering table at %p\n", (const void *)p);
                 }
                 return;
             }
@@ -619,12 +622,10 @@ static void draw_chain(const uint32_t *first)
 /* ---------------------------------------------------------------------------------------------
  * The game's calls (pc_draw.h) */
 
-#define END_LINK 0x00ffffffu
-
 static void (*s_done_cb)(void);
 static int s_done_due;
 
-static void draw_ot(const uint32_t *ot)
+static void draw_ot(const P_TAG *ot)
 {
     draw_chain(ot);
     s_chain_2d = 0;
@@ -636,21 +637,21 @@ static void draw_ot(const uint32_t *ot)
 void PC_DrawOT(const void *ot)
 {
     static int s_in_draw, s_npending;
-    static const uint32_t *s_pending[MAX_PENDING];
+    static const P_TAG *s_pending[MAX_PENDING];
     if (!ot)
         return;
     if (s_in_draw) {
         /* from the done callback: queued, the outer call draws it */
         if (s_npending < MAX_PENDING)
-            s_pending[s_npending++] = (const uint32_t *)ot;
+            s_pending[s_npending++] = (const P_TAG *)ot;
         else
-            draw_ot((const uint32_t *)ot);
+            draw_ot((const P_TAG *)ot);
         return;
     }
     s_in_draw = 1;
-    draw_ot((const uint32_t *)ot);
+    draw_ot((const P_TAG *)ot);
     while (s_npending) {
-        const uint32_t *next = s_pending[0];
+        const P_TAG *next = s_pending[0];
         memmove(&s_pending[0], &s_pending[1], (size_t)(s_npending - 1) * sizeof s_pending[0]);
         s_npending--;
         draw_ot(next);
@@ -665,17 +666,20 @@ void PC_DrawOT(const void *ot)
 
 void PC_DrawPacket(const void *p)
 {
-    const uint32_t *w = (const uint32_t *)p;
-    draw_words(w + 1, (int)(w[0] >> 24));
+    draw_words((const uint32_t *)P_WORDS(p), (int)((const P_TAG *)p)->len);
 }
 
 void PC_DrawClearOTR(void *ot, int n)
 {
-    uint32_t *o = (uint32_t *)ot;
-    for (int i = n - 1; i > 0; i--)
-        o[i] = (uint32_t)(uintptr_t)&o[i - 1] & 0xffffffu;
-    if (n > 0)
-        o[0] = END_LINK;
+    P_TAG *o = (P_TAG *)ot;
+    for (int i = n - 1; i > 0; i--) {
+        o[i].next = &o[i - 1];
+        o[i].len = 0;
+    }
+    if (n > 0) {
+        o[0].next = NULL;
+        o[0].len = 0;
+    }
 }
 
 void PC_DrawSetDone(void (*fn)(void))
@@ -732,7 +736,8 @@ static int env_words(DRAWENV *env)
             c[n++] = ((u_long)(uint16_t)r.h << 16) | (uint16_t)r.w;
         }
     }
-    env->dr_env.tag = (env->dr_env.tag & 0xffffffu) | ((u_long)n << 24) | END_LINK;
+    env->dr_env.tag.next = NULL;
+    env->dr_env.tag.len = (u_long)n;
     return n;
 }
 

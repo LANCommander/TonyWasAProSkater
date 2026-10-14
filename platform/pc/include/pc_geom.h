@@ -2,8 +2,8 @@
  * as plain C functions with explicit inputs and outputs. Results are bit-identical to the
  * hardware's (psx-spx "Geometry Transformation Engine"): 44-bit accumulators checked after every
  * addition, 16-bit intermediate results saturated, the UNR reciprocal for perspective, and the
- * same FLAG word, so gameplay is exactly the PS1's. tests/test_geom.c checks every function
- * against the register-level reference (src/pc_gte.c).
+ * same FLAG word, so gameplay is exactly the PS1's (checked, before the port forked from the
+ * decompilation, against a register-level GTE on 188M random cases).
  *
  * Only what the game keeps between calls is state: GeomState, the current transform, lighting
  * matrices and screen (what libgte's SetRotMatrix, SetGeomScreen ... set). Everything else is a

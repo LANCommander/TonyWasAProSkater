@@ -15,7 +15,6 @@
 #define FRAME_HZ 60
 
 extern volatile uint32_t pc_heartbeat;
-void PC_CountReport(uint32_t frame);
 static void (*s_frameHandler)(void);
 static uint32_t s_frames;
 static int64_t s_freq, s_next;
@@ -58,7 +57,6 @@ static void RunFrame(void) {
         s_inHandler = 0;
     }
     PC_VideoPresent();
-    PC_CountReport(pc_heartbeat);
     pc_heartbeat++;
     PC_PumpEvents();
     DebugHooks();
@@ -100,7 +98,7 @@ static void DebugHooks(void) {
     for (const char *p = pokes; p && *p;) {
         char *e;
         uint32_t a = strtoul(p, &e, 0), v = *e == ':' ? strtoul(e + 1, &e, 0) : 0;
-        if (a >= PSX_RAM_BASE && a < PSX_RAM_BASE + PSX_RAM_MAPPED && !(a & 3))
+        if (!(a & 3) && PC_Data(a))
             *(uint32_t *)PC_Data(a) = v;
         p = strchr(e, ',') ? strchr(e, ',') + 1 : "";
     }

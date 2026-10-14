@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check shared class headers against the layouts the TUs' own local declarations had.
 
-    python platform/pc/tools/header_check.py decomp/include/game/bit.h [...] [--egcs] [--class C]
+    python platform/pc/tools/header_check.py game/include/game/bit.h [...] [--egcs] [--class C]
 
 Compiles a test TU that includes the headers (as the port does: project headers inlined, egcs vptrs
 inserted by portsrc), flattens every class they define (layouts.py), and compares each with every

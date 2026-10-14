@@ -2,7 +2,7 @@
  *
  * On the PS1, FileIO_Init reads the CD.HED directory, FileIO_Open looks a name up in it, and
  * FileIO_Load starts an asynchronous CdRead of the file's sectors that FileIO_Continue/FileIO_Sync
- * drive to completion. In the port FILEIO.CPP's PC_PORT branches call PC_FileOpen for the lookup
+ * drive to completion. In the port FILEIO.CPP calls PC_FileOpen for the lookup
  * and PC_FileRead for the read: a file is the extracted copy under Data/ (pc_assets.c), loaded in
  * one go, so the game's polling loops see a finished read. The PRE archive lookup, the sector
  * rounding and stopping the music stream stay in the game's code; the tail past the file is zeroed

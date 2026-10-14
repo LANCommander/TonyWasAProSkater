@@ -1,5 +1,5 @@
-/* Boot: map PS1 memory at its own addresses, copy in the game's data, point every PS1 function
- * address at its native implementation, then run the game's main(). See platform/pc/README.md. */
+/* Boot: crash and hang diagnostics, the host devices, then the game's main(). See
+ * platform/pc/README.md. */
 #ifdef _WIN32
 #include <windows.h>
 #include <shlobj.h>
@@ -23,25 +23,16 @@
 
 #include "pc_assets.h"
 #include "pc_geom.h"
-#ifdef PC_MIPS
-#include "pc_gte.h"
-#endif
 #include "pc_input.h"
 #include "pc_platform.h"
-#include "pc_recomp.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
 #include "pc_sound.h"
 #include "pc_video.h"
 
-#define EXE_GAME_MAIN 0x80026d44u
-#define EXE_GP 0x800d1080u
-#define EXE_BSS_START 0x800d21c8u
-#define EXE_BSS_END 0x800dc94cu
-#define EXE_STACK_TOP_VAR 0x800d0548u /* the linker's _stacktop / _stacksize words */
-#define EXE_STACK_SIZE_VAR 0x800d0544u
+typedef uint32_t u32;
 
-PcRegs pc_r;
+
 extern volatile uint32_t pc_heartbeat;
 int pc_trace;
 
@@ -101,45 +92,6 @@ void PC_Fatal(const char *fmt, ...) {
     PC_ExitProcess(1);
 }
 
-/* ---- function table ------------------------------------------------------------------------- */
-
-typedef struct {
-    uint32_t addr;
-    void *fn;
-    const char *kind;
-} FnEntry;
-
-static FnEntry *s_fns;
-static int s_nfns;
-
-static int CmpFn(const void *a, const void *b) {
-    uint32_t x = ((const FnEntry *)a)->addr, y = ((const FnEntry *)b)->addr;
-    return x < y ? -1 : x > y;
-}
-
-static void AddTable(const PcFunc *t, const char *kind, int *cap) {
-    for (; t->addr; t++) {
-        if (s_nfns == *cap) {
-            *cap = *cap ? *cap * 2 : 4096;
-            s_fns = realloc(s_fns, sizeof *s_fns * *cap);
-        }
-        s_fns[s_nfns].addr = t->addr;
-        s_fns[s_nfns].fn = t->fn;
-        s_fns[s_nfns].kind = kind;
-        s_nfns++;
-    }
-}
-
-static FnEntry *FindFn(uint32_t addr) {
-    FnEntry key = {addr, 0, 0};
-    return bsearch(&key, s_fns, s_nfns, sizeof *s_fns, CmpFn);
-}
-
-void *PC_NativeOf(uint32_t addr) {
-    FnEntry *e = FindFn(addr);
-    return e ? e->fn : NULL;
-}
-
 extern const char *PC_SymbolName(uint32_t addr); /* generated: names.c */
 
 const char *PC_NameOf(uint32_t addr) {
@@ -151,159 +103,6 @@ const char *PC_NameOf(uint32_t addr) {
     n = (n + 1) & 3;
     snprintf(buf[n], sizeof buf[n], "FUN_%08x", addr);
     return buf[n];
-}
-
-extern const PcFunc pc_recomp_game_funcs[];
-
-/* THPS_MIPS: run game functions from the retail MIPS (translated) instead of the decompiled C,
- * for A/B debugging. A comma list applied left to right: "all", an address, a range "lo-hi", each
- * optionally prefixed with '!' to go back to C. E.g. THPS_MIPS=all,!80080000-80085000. */
-static int MipsSelected(uint32_t addr, const char *spec) {
-    int sel = 0;
-    const char *p = spec;
-    while (*p) {
-        int neg = 0, hit;
-        uint32_t lo, hi;
-        char *e;
-        if (*p == '!') {
-            neg = 1;
-            p++;
-        }
-        if (!strncmp(p, "all", 3)) {
-            hit = 1;
-            p += 3;
-        } else {
-            lo = hi = strtoul(p, &e, 16);
-            p = e;
-            if (*p == '-') {
-                hi = strtoul(p + 1, &e, 16);
-                p = e;
-            }
-            hit = addr >= lo && addr <= hi;
-        }
-        if (hit)
-            sel = !neg;
-        while (*p && *p != ',')
-            p++;
-        if (*p == ',')
-            p++;
-    }
-    return sel;
-}
-
-static void SelectMips(void) {
-    const char *spec = getenv("THPS_MIPS");
-    const PcFunc *t;
-    int n = 0;
-    if (!spec || !*spec)
-        return;
-    for (t = pc_recomp_game_funcs; t->addr; t++) {
-        FnEntry *e;
-        if (!MipsSelected(t->addr, spec) || !(e = FindFn(t->addr)))
-            continue;
-        if (!strcmp(e->kind, "c")) {
-            e->fn = t->fn;
-            e->kind = "mips";
-            n++;
-        }
-    }
-    PC_Log("THPS_MIPS: %d game functions run as translated retail code", n);
-}
-
-/* Later tables take precedence: stubs < translated MIPS < HLE < decompiled C. */
-static void BuildFunctionTable(void) {
-    int cap = 0, i, j;
-    AddTable(pc_stub_funcs, "stub", &cap);
-    AddTable(pc_recomp_funcs, "mips", &cap);
-    AddTable(pc_hle_funcs, "hle", &cap);
-    AddTable(pc_game_funcs, "c", &cap);
-    /* stable sort by address keeping the last (highest-precedence) entry per address */
-    for (i = 1; i < s_nfns; i++) {
-        FnEntry e = s_fns[i];
-        for (j = i - 1; j >= 0 && s_fns[j].addr > e.addr; j--)
-            s_fns[j + 1] = s_fns[j];
-        s_fns[j + 1] = e;
-    }
-    for (i = 0, j = 0; i < s_nfns; i++) {
-        if (j && s_fns[j - 1].addr == s_fns[i].addr)
-            s_fns[j - 1] = s_fns[i];
-        else
-            s_fns[j++] = s_fns[i];
-    }
-    s_nfns = j;
-    SelectMips();
-}
-
-static uint32_t pc_count_addr[32];
-static volatile uint32_t pc_count[32];
-static int pc_ncount;
-
-/* Called once per vblank: print and reset THPS_COUNT counters. */
-void PC_CountReport(uint32_t frame) {
-    char line[1024];
-    int i, n = 0, any = 0;
-    for (i = 0; i < pc_ncount; i++) {
-        n += snprintf(line + n, sizeof line - n, " %s=%u", PC_NameOf(pc_count_addr[i]),
-                      pc_count[i]);
-        any |= pc_count[i] != 0;
-        pc_count[i] = 0;
-    }
-    if (any)
-        PC_Log("count f%u:%s", frame, line);
-}
-
-/* A 5-byte `jmp rel32` over the first bytes of each function's (unused) MIPS code. */
-static void InstallTrampolines(void) {
-    int i, counts[4] = {0};
-    for (i = 0; i < s_nfns; i++) {
-        uint8_t *p = PSX_PTR(s_fns[i].addr);
-        int32_t rel = (int32_t)((uintptr_t)s_fns[i].fn - ((uintptr_t)p + 5));
-        p[0] = 0xe9;
-        memcpy(p + 1, &rel, 4);
-        if (!strcmp(s_fns[i].kind, "c"))
-            counts[0]++;
-        else if (!strcmp(s_fns[i].kind, "hle"))
-            counts[1]++;
-        else if (!strcmp(s_fns[i].kind, "mips"))
-            counts[2]++;
-        else
-            counts[3]++;
-    }
-    {
-        /* THPS_COUNT=addr,addr,...: count calls per frame (PC_CountReport prints them) by
-         * routing those trampolines through `inc [counter]; jmp native` stubs */
-        const char *spec = getenv("THPS_COUNT");
-        static uint8_t *stubs;
-        int k = 0;
-        if (spec && !stubs)
-            stubs = PC_AllocExec(4096);
-        while (spec && *spec && k < 32) {
-            char *e;
-            uint32_t a = strtoul(spec, &e, 16);
-            FnEntry *f = FindFn(a);
-            if (f) {
-                uint8_t *s = stubs + 16 * k, *p = PSX_PTR(a);
-                int32_t rel;
-                pc_count_addr[k] = a;
-                s[0] = 0xff;
-                s[1] = 0x05;
-                *(uint32_t *)(s + 2) = (uint32_t)(uintptr_t)&pc_count[k];
-                s[6] = 0xe9;
-                rel = (int32_t)((uintptr_t)f->fn - ((uintptr_t)s + 11));
-                memcpy(s + 7, &rel, 4);
-                rel = (int32_t)((uintptr_t)s - ((uintptr_t)p + 5));
-                memcpy(p + 1, &rel, 4);
-                k++;
-            }
-            spec = *e == ',' ? e + 1 : e;
-        }
-        pc_ncount = k;
-    }
-#ifdef _WIN32
-    FlushInstructionCache(GetCurrentProcess(), PSX_PTR(PSX_EXE_BASE), PSX_RAM_SIZE - 0x10000);
-#endif
-    PC_Log("functions: %d decompiled C, %d HLE, %d translated MIPS, %d missing (stubs)", counts[0],
-           counts[1], counts[2], counts[3]);
 }
 
 void *PC_Data(uint32_t addr) {
@@ -322,7 +121,7 @@ void *PC_Data(uint32_t addr) {
         else
             return pc_data[m].p + (addr - pc_data[m].start);
     }
-    return PSX_PTR(addr);
+    return NULL;
 }
 
 uint32_t PC_MissingFunction(uint32_t addr) {
@@ -339,74 +138,6 @@ uint32_t PC_MissingFunction(uint32_t addr) {
         PC_Fatal("missing function %08x (%s)", addr, PC_NameOf(addr));
     return 0;
 }
-
-/* ---- translated-MIPS support ---------------------------------------------------------------- */
-
-u32 rc_enter(void (*body)(void), u32 a0, u32 a1, u32 a2, u32 a3, const u32 *stack) {
-    PcRegs save = pc_r;
-    u32 sp = (save.r[29] - 16 - 4 * RC_STACK_ARGS - 32) & ~7u, v0, v1;
-    int i;
-    pc_r.r[29] = sp;
-    pc_r.r[4] = a0;
-    pc_r.r[5] = a1;
-    pc_r.r[6] = a2;
-    pc_r.r[7] = a3;
-    for (i = 0; i < RC_STACK_ARGS; i++)
-        MEM32(sp + 16 + 4 * i) = stack[i];
-    pc_r.r[28] = EXE_GP;
-    pc_r.r[31] = 0xfffffff0u;
-    body();
-    v0 = pc_r.r[2];
-    v1 = pc_r.r[3];
-    pc_r = save;
-    pc_r.r[2] = v0;
-    pc_r.r[3] = v1;
-    return v0;
-}
-
-typedef uint64_t (*NativeFn)(u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32);
-
-static void CallNative(u32 target, int indirect) {
-    u32 sp = pc_r.r[29];
-    void *fn = PC_NativeOf(target);
-    uint64_t r;
-    if (!fn) {
-        PC_Log("%s call to %08x, which is not a known function", indirect ? "indirect" : "direct",
-               target);
-        pc_r.r[2] = 0;
-        return;
-    }
-    r = ((NativeFn)fn)(pc_r.r[4], pc_r.r[5], pc_r.r[6], pc_r.r[7], MEM32(sp + 16), MEM32(sp + 20),
-                       MEM32(sp + 24), MEM32(sp + 28), MEM32(sp + 32), MEM32(sp + 36),
-                       MEM32(sp + 40), MEM32(sp + 44));
-    pc_r.r[2] = (u32)r;
-    pc_r.r[3] = (u32)(r >> 32);
-}
-
-void rc_call_native(u32 target) { CallNative(target, 0); }
-void rc_call_indirect(u32 target) {
-#ifdef PC_MIPS
-    if (target == 0xa0 || target == 0xb0 || target == 0xc0) {
-        /* direct BIOS table call: function number in t1 */
-        pc_r.r[2] = PC_BiosCall(target, pc_r.r[9]);
-        return;
-    }
-#endif
-    CallNative(target, 1);
-}
-
-u32 rc_cop0_read(int reg) {
-    (void)reg;
-    return 0;
-}
-
-void rc_break(u32 pc) { PC_Log("MIPS break at %08x (%s)", pc, PC_NameOf(pc)); }
-
-void rc_bad_jump(u32 pc, u32 target) {
-    PC_Fatal("translated code at %08x jumped to %08x outside its function", pc, target);
-}
-
-void rc_untranslatable(u32 entry) { PC_Fatal("function %08x could not be translated", entry); }
 
 /* ---- C++ delete (see link.py, "destructor thunks") -------------------------------------------- */
 
@@ -432,108 +163,20 @@ void pc_delete_unowned(void *p) {
 
 /* ---- memory map ----------------------------------------------------------------------------- */
 
-uint32_t pc_ram_top = PSX_RAM_BASE + PSX_RAM_SIZE;
+/* The PS1's scratchpad, the 1 KB of fast RAM the game uses as working memory (game/scratchpad.h);
+ * 4 KB, as code that ran past its end on the PS1 reached I/O registers. */
+unsigned char Scratchpad[4096] __attribute__((aligned(64)));
 
-#ifndef _WIN32
-#ifndef MAP_FIXED_NOREPLACE
-#define MAP_FIXED_NOREPLACE 0x100000
-#endif
+#define GAME_HEAP_SIZE (8u << 20)
 
-/* A view of `fd` (or anonymous memory, fd -1) at exactly `addr`, without replacing anything that
- * is there already (kernels before 4.17 take the address as a hint: checked). */
-static int MapAt(uint32_t addr, uint32_t size, int fd, uint32_t off) {
-    void *want = PSX_PTR(addr);
-    void *p = mmap(want, size, PROT_READ | PROT_WRITE | PROT_EXEC,
-                   MAP_FIXED_NOREPLACE | (fd < 0 ? MAP_PRIVATE | MAP_ANONYMOUS : MAP_SHARED), fd,
-                   (off_t)off);
-    if (p == MAP_FAILED)
-        return 0;
-    if (p != want) {
-        munmap(p, size);
-        errno = EEXIST;
-        return 0;
-    }
-    return 1;
+void *PC_GameHeap(uint32_t *size)
+{
+    static void *heap;
+    if (!heap && !(heap = calloc(1, GAME_HEAP_SIZE)))
+        PC_Fatal("cannot allocate the game's %u MB of memory", GAME_HEAP_SIZE >> 20);
+    *size = GAME_HEAP_SIZE;
+    return heap;
 }
-
-static void MapPsxMemory(void) {
-    /* the same layout as on Windows (below): one block of RAM seen at 0x80000000, 0xa0000000 and,
-     * past the first 64 KB (Linux's vm.mmap_min_addr), at its KUSEG address */
-    int fd = (int)syscall(SYS_memfd_create, "psx-ram", 0);
-    if (fd < 0) {
-        char path[] = "/tmp/thps-ram-XXXXXX";
-        fd = mkstemp(path);
-        if (fd >= 0)
-            unlink(path);
-    }
-    if (fd < 0 || ftruncate(fd, PSX_RAM_MAPPED))
-        PC_Fatal("cannot create the PS1 RAM (%s)", strerror(errno));
-    if (!MapAt(PSX_RAM_BASE, PSX_RAM_MAPPED, fd, 0))
-        PC_Fatal("cannot map PS1 RAM at 0x80000000 (%s): the executable must be 32-bit",
-                 strerror(errno));
-    if (!MapAt(0xa0000000u, PSX_RAM_MAPPED, fd, 0))
-        PC_Log("note: no KSEG1 mirror at 0xa0000000 (%s)", strerror(errno));
-    if (!MapAt(0x10000, PSX_RAM_SIZE - 0x10000, fd, 0x10000))
-        PC_Log("note: KUSEG RAM could not be mapped (%s)", strerror(errno));
-    if (!MapAt(PSX_SCRATCH_BASE, 0x10000, -1, 0))
-        PC_Fatal("cannot map the scratchpad at 0x1f800000 (%s)", strerror(errno));
-    close(fd);
-    memset(PSX_PTR(PSX_RAM_BASE), 0, PSX_RAM_MAPPED);
-}
-#else
-static void MapPsxMemory(void) {
-    HANDLE sec = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE, 0,
-                                    PSX_RAM_MAPPED, NULL);
-    void *kseg0, *kseg1, *scratch;
-    if (!sec)
-        PC_Fatal("CreateFileMapping failed (%lu)", GetLastError());
-    /* 8 MB: the PS1's 2 MB, then what the game gets with the Dreamcast data (pc_ram_top). With
-     * the PS1 data nothing above 2 MB is used: the stack top the executable was linked with (an
-     * 8 MB dev-kit address) is moved down by Crt0. */
-    kseg0 = MapViewOfFileEx(sec, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, PSX_RAM_MAPPED,
-                            PSX_PTR(PSX_RAM_BASE));
-    kseg1 = MapViewOfFileEx(sec, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, PSX_RAM_MAPPED,
-                            PSX_PTR(0xa0000000u));
-    {
-        /* KUSEG: the game strips bit 31 off some buffer pointers (primitive buffers), so main RAM
-         * is also needed at 0x00010000-0x001fffff. The first 64 KB can't be mapped on Windows;
-         * accesses there go through the fault handler. */
-        uint32_t a, missing = 0;
-        for (a = 0x10000; a < PSX_RAM_SIZE; a += 0x10000)
-            if (!MapViewOfFileEx(sec, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, a, 0x10000,
-                                 PSX_PTR(a))) {
-                MEMORY_BASIC_INFORMATION mi;
-                if (!missing++ && VirtualQuery(PSX_PTR(a), &mi, sizeof mi))
-                    PC_Log("note: KUSEG %08x busy (state %lx, allocation %p, error %lu)", a,
-                           mi.State, mi.AllocationBase, GetLastError());
-            }
-        if (missing) {
-            PC_Log("note: %u of 31 KUSEG RAM chunks could not be mapped", missing);
-            for (a = 0; pc_trace && a < 0x400000;) {
-                MEMORY_BASIC_INFORMATION mi;
-                if (!VirtualQuery(PSX_PTR(a), &mi, sizeof mi))
-                    break;
-                if (mi.State != MEM_FREE)
-                    PC_Log("  %08x-%08x state %lx type %lx", a, a + (uint32_t)mi.RegionSize,
-                           mi.State, mi.Type);
-                a += (uint32_t)mi.RegionSize;
-            }
-        }
-    }
-    if (kseg0 != PSX_PTR(PSX_RAM_BASE))
-        PC_Fatal("cannot map PS1 RAM at 0x80000000 (%lu): the executable must be 32-bit and "
-                 "large-address-aware",
-                 GetLastError());
-    if (kseg1 != PSX_PTR(0xa0000000u))
-        PC_Log("note: no KSEG1 mirror at 0xa0000000 (%lu)", GetLastError());
-    /* scratchpad (1 KB) and the I/O register page behind it: plain memory */
-    scratch = VirtualAlloc(PSX_PTR(PSX_SCRATCH_BASE), 0x10000, MEM_RESERVE | MEM_COMMIT,
-                           PAGE_READWRITE);
-    if (scratch != PSX_PTR(PSX_SCRATCH_BASE))
-        PC_Fatal("cannot map the scratchpad at 0x1f800000 (%lu)", GetLastError());
-    memset(PSX_PTR(PSX_RAM_BASE), 0, PSX_RAM_MAPPED);
-}
-#endif
 
 const char *PC_DataDir(void) { return s_dataDir; }
 
@@ -591,38 +234,6 @@ const char *PC_UserDir(void) {
 }
 #endif
 
-/* The game's data that stays in PS1 RAM (decomp/data/fixed: vtables, DoubleBuffer; the rest is
- * native data, tools/data_image.py), embedded in thps.exe by the build, goes to its PS1 address.
- * The game directory (PC_DataDir) is the one thps.exe is in. */
-extern const uint8_t pc_image[], pc_image_end[];
-
-static void LoadImage0(void) {
-    PC_ExeDir(s_dataDir, sizeof s_dataDir);
-    memcpy(PSX_PTR(PSX_EXE_BASE), pc_image, (size_t)(pc_image_end - pc_image));
-}
-
-/* What the retail entry point (__SN_ENTRY_POINT) does before main: clear .bss (and, for
- * translated retail code, hand the memory between .bss and the stack to the BIOS heap). */
-static void Crt0(void) {
-    /* the linker's stack top is an 8 MB dev-kit address; on a 2 MB console it is mirrored: the
-     * stack goes at the top of the RAM the game uses */
-    u32 ram = pc_ram_top - PSX_RAM_BASE;
-    u32 stackTop = (((*(u32 *)PC_Data(EXE_STACK_TOP_VAR) - 1) & (ram - 1)) + 1) | 0x80000000u;
-    u32 stackSize = *(u32 *)PC_Data(EXE_STACK_SIZE_VAR);
-    u32 sp = (stackTop - 8) | 0x80000000u;
-    u32 heap = EXE_BSS_END;
-    u32 size = (stackTop - 8) - stackSize - heap;
-    memset(PSX_PTR(EXE_BSS_START), 0, EXE_BSS_END - EXE_BSS_START);
-    pc_r.r[29] = sp;
-    pc_r.r[28] = EXE_GP;
-#ifdef PC_MIPS
-    PC_Log("heap %08x size %08x, PS1 stack %08x", heap + 4, size, sp);
-    PC_HeapInit(heap + 4, size);
-#else
-    (void)size;
-#endif
-}
-
 /* The game's static constructors, once (what libsn's __main does on the PS1): the 19 entries of
  * the retail constructor table. */
 void PC_RunStaticCtors(void) {
@@ -632,7 +243,7 @@ void PC_RunStaticCtors(void) {
         return;
     done = 1;
     for (i = 0; i < 19; i++)
-        ((void (*)(void))PSX_PTR(*(u32 *)PC_Data(0x800d101cu + 4 * i)))();
+        ((void (**)(void))PC_Data(0x800d101cu))[i]();
 }
 
 /* ---- crash diagnostics ---------------------------------------------------------------------- */
@@ -673,11 +284,12 @@ static void CpuOf(ucontext_t *uc, Cpu *cpu) {
 }
 #endif
 
-/* KUSEG: on the PS1, 0x00000000-0x001fffff is main RAM too, so NULL-ish pointers read and write
- * harmless low memory. The first 64 KB can't be mapped (on Windows, nor on Linux by default), so
- * such an access faults here; the fault is redone against the RAM at 0x80000000 by adding
- * 0x80000000 to the instruction's base (or index) register, single-stepping it, and taking the
- * bias back off. Each site is logged once. */
+/* On the PS1, 0x00000000-0x001fffff is main RAM too, so the game's NULL-ish pointers read and
+ * write harmless low memory. Such an access faults here; it is redone against s_lowpage (64 KB,
+ * zero until written) by adding its address to the instruction's base (or index) register,
+ * single-stepping it, and taking the bias back off. Each site is logged once. */
+#define LOW_PAGE 0x10000u
+static uint8_t *s_lowpage;
 static struct {
     int active;
     int reg;
@@ -734,10 +346,10 @@ static int FixLowAccess(Cpu *c, uint32_t addr) {
                                                  (op & 0x38) != 0x38);
     else
         writesReg = op == 0xb6 || op == 0xb7 || op == 0xbe || op == 0xbf || op == 0xaf;
-    if (base >= 0 && *c->r[base] < PSX_RAM_SIZE)
-        s_fix.reg = base, s_fix.bias = 0x80000000u;
-    else if (index >= 0 && *c->r[index] * (uint32_t)scale < PSX_RAM_SIZE)
-        s_fix.reg = index, s_fix.bias = 0x80000000u / (uint32_t)scale;
+    if (base >= 0 && *c->r[base] < LOW_PAGE)
+        s_fix.reg = base, s_fix.bias = (uint32_t)(uintptr_t)s_lowpage;
+    else if (index >= 0 && *c->r[index] * (uint32_t)scale < LOW_PAGE)
+        s_fix.reg = index, s_fix.bias = (uint32_t)(uintptr_t)s_lowpage / (uint32_t)scale;
     else
         return 0;
     br = c->r[s_fix.reg];
@@ -754,8 +366,12 @@ static int FixLowAccess(Cpu *c, uint32_t addr) {
             known |= seen[i] == *c->eip;
         if (!known && nseen < 256) {
             seen[nseen++] = *c->eip;
-            PC_Log("low-memory access at eip=%08x (address %08x) redirected to PS1 RAM", *c->eip,
-                   addr);
+            uint32_t *bp = (uint32_t *)(uintptr_t)*c->r[5];
+            char callers[64] = "";
+            for (i = 0; i < 4 && bp && PC_Readable(bp, 8); i++, bp = (uint32_t *)(uintptr_t)bp[0])
+                snprintf(callers + strlen(callers), sizeof callers - strlen(callers), " %08x", bp[1]);
+            PC_Log("low-memory access at eip=%08x (address %08x) redirected; callers%s", *c->eip,
+                   addr, callers);
         }
     }
     return 1;
@@ -917,7 +533,7 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
         return EXCEPTION_CONTINUE_EXECUTION;
     }
     if (code == EXCEPTION_ACCESS_VIOLATION && r->ExceptionInformation[0] != 8 &&
-        r->ExceptionInformation[1] < PSX_RAM_SIZE && !s_fix.active &&
+        r->ExceptionInformation[1] < LOW_PAGE && !s_fix.active &&
         FixLowAccess(&cpu, (uint32_t)r->ExceptionInformation[1]))
         return EXCEPTION_CONTINUE_EXECUTION;
     if (code != EXCEPTION_ACCESS_VIOLATION && code != EXCEPTION_ILLEGAL_INSTRUCTION &&
@@ -948,7 +564,7 @@ static void CrashSignal(int sig, siginfo_t *si, void *ctx) {
     }
     /* page-fault error code bit 4: instruction fetch */
     if ((sig == SIGSEGV || sig == SIGBUS) && !(uc->uc_mcontext.gregs[REG_ERR] & 0x10) &&
-        (uintptr_t)si->si_addr < PSX_RAM_SIZE && !s_fix.active &&
+        (uintptr_t)si->si_addr < LOW_PAGE && !s_fix.active &&
         FixLowAccess(&cpu, (uint32_t)(uintptr_t)si->si_addr))
         return;
     PC_CrashHook();
@@ -1089,8 +705,6 @@ static void StartWatchdog(void) {
 }
 #endif
 
-void PC_SnapInstall(void); /* pc_snap.c */
-
 /* Bring up the host devices before the game runs: the extracted data (from the disc on first
  * startup), window/GPU, input, sound. */
 static void PlatformInit(void) {
@@ -1106,6 +720,8 @@ static void PlatformInit(void) {
 }
 
 /* ---- entry ---------------------------------------------------------------------------------- */
+
+int psx_80026d44(void); /* the game's main() */
 
 int main(int argc, char **argv) {
     (void)argc;
@@ -1124,17 +740,16 @@ int main(int argc, char **argv) {
     InstallCrashHandler();
 #endif
     StartWatchdog();
-    MapPsxMemory();
-    LoadImage0();
-    BuildFunctionTable();
-    InstallTrampolines();
-    PC_SnapInstall();
+    PC_ExeDir(s_dataDir, sizeof s_dataDir);
+    {
+        /* the low page: aligned to its size, so the index-register bias divides exactly */
+        uint8_t *p = calloc(2, LOW_PAGE);
+        if (!p)
+            PC_Fatal("out of memory");
+        s_lowpage = (uint8_t *)(((uintptr_t)p + LOW_PAGE - 1) & ~(uintptr_t)(LOW_PAGE - 1));
+    }
     PC_GeomReset();
-#ifdef PC_MIPS
-    PC_GteReset();
-#endif
     PlatformInit();
-    Crt0();
     if (getenv("THPS_WATCH")) {
 #ifdef _WIN32
         /* hardware write watchpoint on a 4-byte word (debug register 0) */
@@ -1151,8 +766,8 @@ int main(int argc, char **argv) {
         PC_Log("THPS_WATCH: only on Windows (use a gdb watchpoint)");
 #endif
     }
-    PC_Log("starting game main at %08x", EXE_GAME_MAIN);
-    ((int (*)(void))PSX_PTR(EXE_GAME_MAIN))();
+    PC_Log("starting the game");
+    psx_80026d44();
     PC_Log("game main returned");
     return 0;
 }

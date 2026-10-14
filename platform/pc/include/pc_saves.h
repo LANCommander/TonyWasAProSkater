@@ -1,7 +1,7 @@
 /* Saves on PC (src/pc_saves.c). There's no memory card: every career and every replay is its own
  * file in the player's folder, under the name the player gave it:
  *     Saves\Careers\<name>.career      Saves\Replays\<name>.replay
- * The game's card layer (decomp/src/card, PC branches) reads and writes them through this; the
+ * The game's card layer (game/src/card) reads and writes them through this; the
  * front end's save and load screens stay the game's own.
  *
  * A file is a 16-byte header ("THPS", format version, type, payload size) and the payload: the

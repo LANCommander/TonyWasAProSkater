@@ -280,3 +280,27 @@ bad:
     return NULL;
 #undef NEED
 }
+
+/* The game's Texture entries that Dreamcast faces name (PC_DC_FACE_TEX | index). An entry the game
+ * frees and another takes the place of gets the same index again. */
+#define MAX_FACE_TEX 4096
+static void *s_face_tex[MAX_FACE_TEX];
+static uint32_t s_nface_tex;
+
+uint32_t PC_DcFaceTexIndex(void *texture)
+{
+    uint32_t i;
+    for (i = 0; i < s_nface_tex; i++)
+        if (s_face_tex[i] == texture)
+            return PC_DC_FACE_TEX | i;
+    if (s_nface_tex == MAX_FACE_TEX)
+        PC_Fatal("more than %d Dreamcast texture entries", MAX_FACE_TEX);
+    s_face_tex[s_nface_tex] = texture;
+    return PC_DC_FACE_TEX | s_nface_tex++;
+}
+
+void *PC_DcFaceTex(uint32_t word)
+{
+    uint32_t i = word & ~PC_DC_FACE_TEX;
+    return i < s_nface_tex ? s_face_tex[i] : NULL;
+}

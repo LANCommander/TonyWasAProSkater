@@ -5,7 +5,7 @@
  *
  * What libgpu did with the GPU itself is the port's own: drawing is pc_draw.h (DrawOTag ->
  * PC_DrawOT ...), the screens and the display pc_screen.h, the textures pc_texstore.h; the game
- * calls those from its PC_PORT branches. */
+ * calls those. */
 #include <stdint.h>
 
 #include <sys/types.h>
@@ -25,8 +25,7 @@ static u_long WordArea(uint32_t cmd, int x, int y)
 
 static void TagLen(void *p, int n)
 {
-    u_long *t = (u_long *)p;
-    *t = (*t & 0xffffffu) | ((u_long)n << 24);
+    ((P_TAG *)p)->len = (u_long)n;
 }
 
 DRAWENV *PC_SetDefDrawEnv(DRAWENV *env, int x, int y, int w, int h)

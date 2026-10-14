@@ -7,7 +7,7 @@
  * MDEC). A Dreamcast film (.sfd, pc_sfd.h) streams its ADX audio the same way, kept a little ahead
  * of the mixer; its pictures are pc_movie.c's.
  *
- * The game (decomp/src/gamefmv and friends, PC branches) keeps a stream's id where the PS1 kept
+ * The game (game/src/gamefmv and friends) keeps a stream's id where the PS1 kept
  * the file's position on the disc: the movie table's start sector and GameFMV_StartSector. Ids
  * start at 1; 0 means the file isn't there. */
 #ifndef PC_STREAM_H

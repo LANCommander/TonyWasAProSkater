@@ -3,7 +3,7 @@
  * The keyboard and XInput gamepads are bound to actions (ollie, grind, menu accept...), each with
  * two keyboard and two gamepad bindings kept in Settings.ini in the player's folder (PC_UserDir).
  * The game reads the actions directly: on PC each button slot of its SControl is one action,
- * filled by Pad_Update (decomp/src/unnamed/80070ff4.c) from PC_InputActionDown. The skating and
+ * filled by Pad_Update (game/src/unnamed/80070ff4.c) from PC_InputActionDown. The skating and
  * menu actions are separate slots, so the same key can mean different things in each. */
 #ifndef PC_INPUT_H
 #define PC_INPUT_H

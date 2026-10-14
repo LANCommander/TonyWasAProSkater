@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the native Windows and Linux port of THPS1 (see platform/pc/README.md).
 
-    python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link] [--mips]
+    python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link] [--release]
 
 Pipeline for every decompiled TU (decomp/matched.tsv, plus the near-miss sources for functions
 that aren't byte-exact yet, and decomp/reimpl.tsv: hand-written assembly reimplemented in C):
@@ -32,7 +32,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 PC = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(PC))
-DECOMP = os.path.join(ROOT, "decomp")
+DECOMP = os.path.join(ROOT, "decomp")  # the frozen matching decompilation (its tools only)
+GAME = os.path.join(ROOT, "game")      # the port's game code, data and headers
 sys.path.insert(0, HERE)
 import portsrc  # noqa: E402
 import toolchain  # noqa: E402
@@ -51,7 +52,7 @@ COMMON_FLAGS = [
     # plain char is unsigned in the PS1 ABI (egcs on MIPS): the decompiled code is verified with it
     "-funsigned-char",
     "-I", os.path.join(PC, "include", "psyq"), "-I", os.path.join(PC, "include"),
-    "-I", os.path.join(DECOMP, "include"),
+    "-I", os.path.join(GAME, "include"),
     "-include", os.path.join(PC, "include", "pc_game.h"),
 ]
 if not WINDOWS:
@@ -86,7 +87,7 @@ def read_tsv(path):
 def load_functions():
     """addr -> (size, mangled, demangled) for game functions (decomp/functions.tsv)."""
     fn = {}
-    for p in read_tsv(os.path.join(DECOMP, "functions.tsv")):
+    for p in read_tsv(os.path.join(GAME, "functions.tsv")):
         if not p[0].startswith("0x"):
             continue
         fn[int(p[0], 16)] = (int(p[1]), p[2], p[4] if len(p) > 4 else p[2])
@@ -98,14 +99,10 @@ HEADER_RE = re.compile(r"^/\*\s*(\S+)\s+\((0x[0-9a-fA-F]+)\)(.*?)\*/")
 
 def load_tus():
     tus = {}
-    for kind in ("matched.tsv", "nearmiss.tsv", "reimpl.tsv"):
-        for p in read_tsv(os.path.join(DECOMP, kind)):
-            src = p[0]
-            if src.endswith(".s") or src in tus:
-                continue
-            tus[src] = {"src": src, "addr": int(p[1], 16), "exact": kind == "matched.tsv"}
+    for p in read_tsv(os.path.join(GAME, "tus.tsv")):
+        tus[p[0]] = {"src": p[0], "addr": int(p[1], 16), "kind": p[3]}
     for src, tu in tus.items():
-        path = os.path.join(DECOMP, src)
+        path = os.path.join(GAME, src)
         first = open(path, encoding="utf-8", errors="replace").readline()
         m = HEADER_RE.match(first)
         tu["name"] = m.group(1) if m else None
@@ -116,7 +113,7 @@ def load_tus():
 
 def load_data_names():
     names = {}
-    for p in read_tsv(os.path.join(DECOMP, "data_names.tsv")):
+    for p in read_tsv(os.path.join(GAME, "data_names.tsv")):
         if p[0].startswith("0x"):
             names.setdefault(p[1], int(p[0], 16))
     return names
@@ -168,8 +165,8 @@ class Ctx:
         for a, (sz, mangled, dem) in self.functions.items():
             self.fn_by_name.setdefault(mangled, a)
         # hand-written assembly rewritten in C: callable by its label from other rewrites
-        for p in read_tsv(os.path.join(DECOMP, "reimpl.tsv")):
-            if len(p) > 4 and int(p[1], 16) >= GAME_CODE_END:
+        for p in read_tsv(os.path.join(GAME, "tus.tsv")):
+            if p[3] == "asm" and p[4] and int(p[1], 16) >= GAME_CODE_END:
                 self.fn_by_name.setdefault(p[4], int(p[1], 16))
         self.fn_by_sig = {}
         self.fn_by_qual = {}
@@ -261,7 +258,7 @@ def vtables_of(syms):
 
 
 INCLUDE_RE = re.compile(r'^[ \t]*#[ \t]*include[ \t]+"([^"]+)"[^\n]*$', re.M)
-HEADER_DIR = os.path.join(DECOMP, "include")
+HEADER_DIR = os.path.join(GAME, "include")
 
 
 def expand_includes(text, path, seen=None):
@@ -334,7 +331,7 @@ def tu_paths(tu):
 
 
 def build_tu(ctx, tu, flags_hash):
-    src_path = os.path.join(DECOMP, tu["src"])
+    src_path = os.path.join(GAME, tu["src"])
     base = tu_paths(tu)
     os.makedirs(os.path.dirname(base), exist_ok=True)
     is_cxx = tu["src"].endswith(".cpp")
@@ -660,6 +657,9 @@ class Resolver:
             if sym in self.relocated:
                 renames[sym] = "_psx_%08x" % self.relocated[sym]
                 continue
+            if re.fullmatch(r"psx_[0-9a-f]{8}", name):
+                renames[sym] = "_" + name  # named by retail address already (portsrc: vtables)
+                continue
             if name.startswith("_Z") and self.is_cxx:
                 r = self.resolve_cxx(name, dem.get(name, name), info)
             else:
@@ -765,14 +765,10 @@ def main():
     ap.add_argument("--clean", action="store_true")
     ap.add_argument("--only", default=None)
     ap.add_argument("--no-link", action="store_true")
-    ap.add_argument("--mips", action="store_true",
-                    help="also translate the retail MIPS (THPS_MIPS / THPS_SNAP debugging)")
     ap.add_argument("--release", action="store_true",
                     help="build/pc/release/thps.exe for distribution: no retail data embedded (read "
                          "from the player's disc), no console, debug info in thps.debug")
     a = ap.parse_args()
-    if a.release and a.mips:
-        ap.error("--mips translates the retail code into the exe; it can't be a release build")
     toolchain.add_to_path()
     if a.clean and os.path.isdir(os.path.join(OUT, "obj")):
         shutil.rmtree(os.path.join(OUT, "obj"))
@@ -811,7 +807,7 @@ def main():
     if a.no_link or errs:
         return 1 if errs else 0
     import link  # noqa: E402
-    return link.link(ctx, metas, OUT, TOOLBIN, mips=a.mips, release=a.release)
+    return link.link(ctx, metas, OUT, TOOLBIN, release=a.release)
 
 
 if __name__ == "__main__":

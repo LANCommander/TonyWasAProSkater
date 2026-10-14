@@ -781,7 +781,6 @@ void PC_AssetsInit(void) {
         ExtractDreamcast(e, n);
         WritePlaylist(e, n);
         PC_DiscSetNone(1);
-        pc_ram_top = PSX_RAM_BASE + PSX_RAM_MAPPED;
     } else {
         ExtractStrFiles(e, n);
         ExtractWadFiles();

@@ -2,8 +2,8 @@
  * or exclusive fullscreen in one of the display's modes. With OpenGL the game draws at the
  * window's resolution (pc_gpu_gl.h), so a 1024x768 mode is drawn at 1024x768. The draw distance
  * and fog settings live here too (PC_DrawFarPlane below). Kept in the
- * [Video] section of Settings.ini; Options > Graphics (decomp/src/front/controlleroptions.cpp,
- * PC branch) and Alt+Enter change it. */
+ * [Video] section of Settings.ini; Options > Graphics (game/src/front/controlleroptions.cpp)
+ * and Alt+Enter change it. */
 #ifndef PC_VIDEO_H
 #define PC_VIDEO_H
 
@@ -59,7 +59,7 @@ void PC_VideoResolution(int mode, int i, int *w, int *h);
 /* An SDL_Event from the event pump: Alt+Enter, window resizes. */
 void PC_VideoEvent(const void *sdl_event);
 
-/* Draw distance, for the game's renderer (decomp/src/m3d, PC_PORT). The level's fog runs from
+/* Draw distance, for the game's renderer (game/src/m3d). The level's fog runs from
  * DpqMin to DpqMax, and DpqMax is also the far plane (SViewport.Yon), so the far plane and the
  * fog scale together; the far plane stops at 0x7fff, the most the 16-bit view depths hold.
  * Models switch to their next level of detail, or vanish after the last one, at their own

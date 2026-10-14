@@ -1,9 +1,9 @@
 /* Player input: keyboard and XInput gamepads bound to game actions (see pc_input.h).
  *
  * The game reads the actions themselves: on PC every button slot of its SControl is one action
- * (Ollie, Grind, MenuAccept...), and Pad_Update (decomp/src/unnamed/80070ff4.c) fills each slot
+ * (Ollie, Grind, MenuAccept...), and Pad_Update (game/src/unnamed/80070ff4.c) fills each slot
  * from PC_InputActionDown once per game frame. Skating and the menus read different slots, so
- * their bindings are independent. The controls screen (decomp/src/front/controlleroptions.cpp)
+ * their bindings are independent. The controls screen (game/src/front/controlleroptions.cpp)
  * edits the bindings through the PC_InputBind family. */
 #ifdef _WIN32
 #include <windows.h>

@@ -1,10 +1,10 @@
 /* The soundtrack order comes from Data/Music/Playlist.m3u (written on first startup, see
  * pc_assets.c) instead of the retail rotation through the movie table.
  *
- * GameFMV_SetStartTrack (decomp/src/unnamed/80023168.c) picks what the next StartFMV streams: a
+ * GameFMV_SetStartTrack (game/src/unnamed/80023168.c) picks what the next StartFMV streams: a
  * negative argument is a fixed movie-table entry (~arg; the movies, and the songs the front end
  * previews), anything else means "the next song", which the retail code takes from its CycleTracks
- * cursor. Its PC_PORT branch asks PC_MusicNextSong for the next playlist entry instead. The fixed
+ * cursor. It asks PC_MusicNextSong for the next playlist entry instead. The fixed
  * entries keep using the movie table.
  *
  * A playlist entry is a file of raw STR sectors (relative to Data/Music, or absolute). Files the
@@ -28,7 +28,7 @@
 #define MUSIC_WIDTH 96
 #define MAX_SONGS 256
 
-/* movieDetails entry (decomp/src/unnamed/80023168.c) */
+/* movieDetails entry (game/src/unnamed/80023168.c) */
 typedef struct {
     uint32_t name;
     uint16_t width, height, endFrame, pad;
