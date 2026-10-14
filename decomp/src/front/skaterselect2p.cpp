@@ -30,6 +30,9 @@ extern "C" {
 #include "game/hires.h"
 #include "game/main.h"
 #include "game/ob.h"
+#ifdef PC_PORT
+#include "pc_draw.h"
+#endif
 
 extern SControl Pad[];
 extern SCareer GCareer;
@@ -801,7 +804,11 @@ int Front_SkaterSelect2P(void) {
 				FlickerSync();
 
 				pDoubleBuffer = pDoubleBuffer == DoubleBuffer ? DoubleBuffer + 32940 : DoubleBuffer;
+#ifdef PC_PORT
+				PC_DrawOT((void *)((u_long *)(pDoubleBuffer + 32904)));
+#else
 				DrawOTag((u_long *)(pDoubleBuffer + 32904));
+#endif
 
 				pDoubleBuffer = pDoubleBuffer == DoubleBuffer ? DoubleBuffer + 32940 : DoubleBuffer;
 			}

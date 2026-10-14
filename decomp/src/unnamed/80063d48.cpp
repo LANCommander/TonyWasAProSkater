@@ -7,6 +7,9 @@ extern "C" {
 }
 
 #include "game/shellutils.h"
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 
 void *Mem_NewX(unsigned int, int, int);
 
@@ -16,5 +19,9 @@ EraseSprite::EraseSprite(int x, int y, int w, int h) {
 	mR.w = w;
 	mR.h = h;
 	mData = (ulong *)Mem_NewX(w * h * 2, 1, 1);
+#ifdef PC_PORT
+	PC_ScreenRead(mR.x, mR.y, mR.w, mR.h, mData);
+#else
 	StoreImage(&mR, mData);
+#endif
 }

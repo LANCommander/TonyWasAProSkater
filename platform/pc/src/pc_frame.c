@@ -5,7 +5,8 @@
 #include <string.h>
 
 #include "pc_frame.h"
-#include "pc_gpu.h"
+#include "pc_draw.h"
+#include "pc_video.h"
 #include "pc_platform.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
@@ -50,13 +51,13 @@ static void DebugHooks(void);
 static void RunFrame(void) {
     s_frames++;
     PC_StreamFrame();
-    PC_GpuRunDueCallback();
+    PC_DrawRunDone();
     if (s_frameHandler && !s_inHandler) {
         s_inHandler = 1;
         s_frameHandler();
         s_inHandler = 0;
     }
-    PC_GpuPresent();
+    PC_VideoPresent();
     PC_CountReport(pc_heartbeat);
     pc_heartbeat++;
     PC_PumpEvents();
@@ -110,9 +111,9 @@ static void DebugHooks(void) {
             if (atoi(p) == frames) {
                 const char *dir = getenv("THPS_SHOTDIR") ? getenv("THPS_SHOTDIR") : ".";
                 snprintf(path, sizeof path, "%s/frame%05d.bmp", dir, frames);
-                PC_GpuDumpDisplay(path);
+                PC_VideoDumpDisplay(path);
                 snprintf(path, sizeof path, "%s/vram%05d.bmp", dir, frames);
-                PC_GpuDumpVram(path);
+                PC_VideoDumpSpace(path);
                 if (getenv("THPS_R3D_DUMP")) {
                     snprintf(path, sizeof path, "%s/faces%05d.txt", dir, frames);
                     R3d_DumpLast(path);

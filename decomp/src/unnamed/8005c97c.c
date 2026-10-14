@@ -1,5 +1,8 @@
 /* FrontLoader_LoadSet__Fi (0x8005c97c) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 
 int DAT_800d1cac;
 int DAT_800d1ca8;
@@ -26,7 +29,11 @@ void FrontLoader_LoadSet(int a) {
 			r[1] = 0;
 			r[2] = 512;
 			r[3] = 240;
+#ifdef PC_PORT
+			PC_ScreenFill(r[0], r[1], r[2], r[3], 0);
+#else
 			ClearImage(r, 0, 0, 0);
+#endif
 		}
 	}
 

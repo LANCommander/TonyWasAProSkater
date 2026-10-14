@@ -8,8 +8,8 @@
 
 void PC_Backtrace(const char *why);
 
-/* GameFMV_PlayMovie(int): the PS1's STR movies play through the game's own player (the MDEC is
- * pc_mdec.c), the Dreamcast's films through pc_movie.c. A movie whose file isn't there is
+/* GameFMV_PlayMovie(int): the PS1's STR movies play through the game's own player (its pictures
+ * decoded by pc_vdec.c), the Dreamcast's films through pc_movie.c. A movie whose file isn't there is
  * skipped, which is what happens when the player presses a button through one; THPS_MOVIES=0
  * skips every movie. */
 void hleov_80022c1c(int track) {
@@ -74,15 +74,6 @@ void hleov_8004ce28(int r, int g, int b) {
     }
     PC_Backtrace("Bang");
     PC_Fatal("Bang(%d, %d, %d)", r, g, b);
-}
-
-/* Pause(n): spins until the frame handler (MyVSync) has bumped Vblanks n times. On the PS1 the interrupt
- * runs during the spin; here vblanks only happen when the port polls, so poll while waiting. */
-void hleov_800478f4(int n) {
-    volatile uint32_t *vblanks = PSX_PTR(PSX_DATA_ADDR(0x800d1a20));
-    uint32_t t = *vblanks + (uint32_t)n;
-    while (*vblanks < t)
-        PC_FramePoll();
 }
 
 /* THPS_TRACE_RENDER=1: per-frame counts for the environment renderer (debugging). */

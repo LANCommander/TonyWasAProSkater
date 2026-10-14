@@ -1,5 +1,8 @@
 /* HiRes_DrawOTag__Fv (0x8006b26c) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_draw.h"
+#endif
 
 extern char DoubleBuffer[];
 extern char *pDoubleBuffer;
@@ -23,8 +26,14 @@ void HiRes_DrawOTag(void) {
 	if (pc_hires_before_draw)
 		pc_hires_before_draw();
 #endif
+#ifndef PC_PORT /* PC: no drawing queued to reset */
 	FUN_8008c1a0(1);
+#endif
+#ifdef PC_PORT
+	PC_DrawOT((void *)(pDoubleBuffer + 16524));
+#else
 	DrawOTag(pDoubleBuffer + 16524);
+#endif
 
 	a = DoubleBuffer;
 

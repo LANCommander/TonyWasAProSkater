@@ -1,5 +1,8 @@
 /* Utils_VblankProcessing__Fv (0x8004777c) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_draw.h"
+#endif
 
 typedef struct {
 	unsigned tag;
@@ -50,8 +53,13 @@ void Utils_VblankProcessing(void) {
 		p.y2 = 240;
 		p.y3 = 240;
 		DrawSync(0);
+#ifdef PC_PORT
+		PC_DrawPacket(&m);
+		PC_DrawPacket(&p);
+#else
 		DrawPrim(&m);
 		DrawPrim(&p);
+#endif
 		DrawSync(0);
 	}
 

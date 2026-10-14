@@ -22,6 +22,7 @@ tag_S_Pal *Pal_FindPaletteEntry(uint);
 
 #ifdef PC_PORT
 #include "pc_dctex.h"
+#include "pc_texstore.h"
 #endif
 
 void Spool_LoadTexturesToVRAM(int Region, int defrag) {
@@ -127,7 +128,11 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				rec.y = sy;
 				rec.w = AlignedWidth / 2;
 				rec.h = Height;
+#ifdef PC_PORT
+				PC_TexUpload(rec.x, rec.y, rec.w, rec.h, pTextureData);
+#else
 				LoadImage(&rec, (u_long *)pTextureData);
+#endif
 			}
 
 			if (NumColours == 16) {
@@ -145,7 +150,11 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 				rec.y = sy;
 				rec.w = AlignedWidth / 4;
 				rec.h = Height;
+#ifdef PC_PORT
+				PC_TexUpload(rec.x, rec.y, rec.w, rec.h, pTextureData);
+#else
 				LoadImage(&rec, (u_long *)pTextureData);
+#endif
 			}
 
 			pPal = Pal_FindPaletteEntry(PaletteChecksum);

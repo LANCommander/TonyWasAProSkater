@@ -43,6 +43,7 @@ int DAT_800d1d28;
 #include <stdlib.h>
 #include "game/shellutils.h"
 #include "pc_input.h"
+#include "pc_screen.h"
 
 extern SControl Pad[2];
 extern int DemoTimer;
@@ -112,7 +113,7 @@ static RECT s_area = { 110, 40, 520, 380 };
 static ulong *s_saved;
 
 static void RestoreArea(void) {
-	LoadImage(&s_area, s_saved);
+	PC_ScreenBlit(s_area.x, s_area.y, s_area.w, s_area.h, s_saved);
 }
 
 static void SetColour(int selected, int dim) {
@@ -165,7 +166,7 @@ int Front_ControllerOptions(int a) {
 
 	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
 
-	StoreImage(&s_area, s_saved);
+	PC_ScreenRead(s_area.x, s_area.y, s_area.w, s_area.h, s_saved);
 	DrawSync(0);
 
 	pc_hires_before_draw = RestoreArea;
@@ -409,7 +410,7 @@ int Front_ControllerOptions(int a) {
 	/* leave the options background clean for the options menu */
 	pc_hires_before_draw = 0;
 
-	LoadImage(&s_area, s_saved);
+	PC_ScreenBlit(s_area.x, s_area.y, s_area.w, s_area.h, s_saved);
 	DrawSync(0);
 	free(s_saved);
 	Pad_ClearTriggers(&Pad[0]);
@@ -543,7 +544,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 	s_saved = (ulong *)malloc(s_area.w * s_area.h * 2);
 
-	StoreImage(&s_area, s_saved);
+	PC_ScreenRead(s_area.x, s_area.y, s_area.w, s_area.h, s_saved);
 	DrawSync(0);
 
 	pc_hires_before_draw = RestoreArea;
@@ -750,7 +751,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 	pc_hires_before_draw = 0;
 
-	LoadImage(&s_area, s_saved);
+	PC_ScreenBlit(s_area.x, s_area.y, s_area.w, s_area.h, s_saved);
 	DrawSync(0);
 	free(s_saved);
 	Pad_ClearTriggers(&Pad[0]);

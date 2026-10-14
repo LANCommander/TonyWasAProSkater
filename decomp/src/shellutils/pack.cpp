@@ -7,6 +7,9 @@ extern "C" {
 }
 
 #include "game/shellutils.h"
+#ifdef PC_PORT
+#include "pc_texstore.h"
+#endif
 
 void *Mem_New(uint, int, int);
 void Pack_Pack(int, int, int, int *, int *, int, int, uint);
@@ -55,7 +58,11 @@ int SlicedImage::pack() {
 			sliceTab[k * num_slices_x + j].y = dum2;
 			sliceTab[k * num_slices_x + j].w = slice_width;
 			sliceTab[k * num_slices_x + j].h = slice_height;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 			LoadImage(&r, (u_long *)data);
+#endif
 
 			data += slice_width * slice_height;
 		}
@@ -74,7 +81,11 @@ int SlicedImage::pack() {
 			sliceTab[numy * num_slices_x + j].y = dum2;
 			sliceTab[numy * num_slices_x + j].w = slice_width;
 			sliceTab[numy * num_slices_x + j].h = remy;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 			LoadImage(&r, (u_long *)data);
+#endif
 		}
 
 		data_col += slice_width * height;
@@ -97,7 +108,11 @@ int SlicedImage::pack() {
 			sliceTab[k * num_slices_x + numx].y = dum2;
 			sliceTab[k * num_slices_x + numx].w = remx;
 			sliceTab[k * num_slices_x + numx].h = slice_height;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 			LoadImage(&r, (u_long *)data);
+#endif
 
 			data += remx * slice_height;
 		}
@@ -116,7 +131,11 @@ int SlicedImage::pack() {
 			sliceTab[numy * num_slices_x + numx].y = dum2;
 			sliceTab[numy * num_slices_x + numx].w = remx;
 			sliceTab[numy * num_slices_x + numx].h = remy;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 			LoadImage(&r, (u_long *)data);
+#endif
 		}
 	}
 

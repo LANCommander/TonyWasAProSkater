@@ -2,6 +2,7 @@
 #include "names.h"
 #ifdef PC_PORT
 #include "pc_stream.h"
+#include "pc_texstore.h"
 #endif
 
 typedef struct {
@@ -46,10 +47,10 @@ void GameFMV_StopFMV(void) {
 #endif
 
 		GameFMV_Active = 0;
-		DecDCToutCallback(0);
 #ifdef PC_PORT
 		PC_StreamStop();
 #else
+		DecDCToutCallback(0);
 		StUnSetRing();
 		FUN_800912bc(GameFMV_StartSector, loc);
 		CdControl(22, loc, 0);
@@ -82,7 +83,11 @@ void GameFMV_StopFMV(void) {
 			r.y = GameFMV_StartY;
 			r.w = GameFMV_Width;
 			r.h = GameFMV_Height;
+#ifdef PC_PORT
+			PC_TexFill(r.x, r.y, r.w, r.h, 0x010101);
+#else
 			ClearImage(&r, 1, 1, 1);
+#endif
 		}
 	}
 }

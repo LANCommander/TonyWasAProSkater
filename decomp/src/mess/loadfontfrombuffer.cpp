@@ -8,6 +8,9 @@ extern "C" {
 
 #include "game/font.h"
 #include "game/psyq.h"
+#ifdef PC_PORT
+#include "pc_texstore.h"
+#endif
 
 extern FontInfo Font_table[10];
 
@@ -74,7 +77,11 @@ int Mess_LoadFont(char *filename, char *file_buffer, int char_sep, int shadow_of
 	r.y = cluty;
 	r.w = 16;
 	r.h = 1;
+#ifdef PC_PORT
+	PC_TexUpload(r.x, r.y, r.w, r.h, clut);
+#else
 	LoadImage(&r, (u_long *)clut);
+#endif
 	Mem_Delete(clut);
 
 	Clut = GetClut(clutx, cluty);
@@ -104,7 +111,11 @@ int Mess_LoadFont(char *filename, char *file_buffer, int char_sep, int shadow_of
 			r.y = y;
 			r.w = w;
 			r.h = h;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, db);
+#else
 			LoadImage(&r, (u_long *)db);
+#endif
 			DrawSync(0);
 
 			Font_table[this_font].mChar_table[i].x = x;

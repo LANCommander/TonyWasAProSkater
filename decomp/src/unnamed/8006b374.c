@@ -1,5 +1,8 @@
 /* HiRes_DrawOTagAll__Fv (0x8006b374) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_draw.h"
+#endif
 
 extern char DoubleBuffer[];
 extern char *pDoubleBuffer;
@@ -12,8 +15,14 @@ void PollHost(void);
 void HiRes_DrawOTagAll(void) {
 	char *a;
 
+#ifndef PC_PORT /* PC: no drawing queued to reset */
 	FUN_8008c1a0(1);
+#endif
+#ifdef PC_PORT
+	PC_DrawOT((void *)(pDoubleBuffer + 32904));
+#else
 	DrawOTag(pDoubleBuffer + 32904);
+#endif
 
 	a = DoubleBuffer;
 

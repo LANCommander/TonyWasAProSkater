@@ -1,4 +1,7 @@
 /* FUN_8005dcc4 (0x8005dcc4) */
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 /* Draws the countdown bar started by FUN_8005dc58: elapsed vblanks since the start, capped at the
    total, as a 400x8 bar (dark red, filling) at one of three screen positions; a full blue bar once
    time is up or when no total is set. ClearImage is ClearImage (it returns a value). */
@@ -54,9 +57,17 @@ void FUN_8005dcc4(void) {
 
 	if (DAT_800d1ce0 == 0 || DAT_800d1ce0 < DAT_800d1cdc) {
 		r.w = 400;
+#ifdef PC_PORT
+		PC_ScreenFill(r.x, r.y, r.w, r.h, 0xff0000);
+#else
 		ClearImage(&r, 0, 0, 255);
+#endif
 	} else {
 		r.w = (DAT_800d1cdc * 400) / DAT_800d1ce0;
+#ifdef PC_PORT
+		PC_ScreenFill(r.x, r.y, r.w, r.h, 0x000096);
+#else
 		ClearImage(&r, 150, 0, 0);
+#endif
 	}
 }

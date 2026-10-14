@@ -22,7 +22,6 @@
 #include <SDL2/SDL.h>
 
 #include "pc_assets.h"
-#include "pc_gpu.h"
 #include "pc_geom.h"
 #ifdef PC_MIPS
 #include "pc_gte.h"
@@ -33,6 +32,7 @@
 #include "pc_render3d.h"
 #include "pc_runtime.h"
 #include "pc_sound.h"
+#include "pc_video.h"
 
 #define EXE_GAME_MAIN 0x80026d44u
 #define EXE_GP 0x800d1080u
@@ -1099,7 +1099,7 @@ static void PlatformInit(void) {
     int scale = getenv("THPS_SCALE") ? atoi(getenv("THPS_SCALE")) : 3;
     SDL_SetMainReady();
     PC_AssetsInit();
-    PC_GpuInit(scale > 0 ? scale : 3);
+    PC_VideoInit(scale > 0 ? scale : 3);
     if (PC_AssetsDreamcast() && !R3d_Native())
         PC_Log("note: the Dreamcast models and textures need the native 3D renderer (not "
                "THPS_RENDER3D=psx): they will look wrong");

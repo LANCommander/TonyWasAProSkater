@@ -5,6 +5,8 @@
 #include <libgpu.h>
 #ifdef PC_PORT
 #include "pc_frame.h"
+#include "pc_screen.h"
+#include "pc_draw.h"
 #endif
 
 typedef struct {
@@ -43,21 +45,28 @@ void LoadingScreen_Main(void) {
 	r.y = 0;
 	r.w = 512;
 	r.h = 240;
-	ClearImage(&r, 0, 0, 0);
 #ifdef PC_PORT
+	PC_ScreenFill(r.x, r.y, r.w, r.h, 0);
 	PC_FrameWait(1);
+	PC_ScreenFill(r.x, r.y, r.w, r.h, 0);
 #else
-	VSync(0);
-#endif
 	ClearImage(&r, 0, 0, 0);
+	VSync(0);
+	ClearImage(&r, 0, 0, 0);
+#endif
 
 	dr.dfe = 0;
 	dr.isbg = 0;
 	dr.r0 = 255;
 	dr.g0 = 0;
 	dr.b0 = 0;
+#ifdef PC_PORT
+	PC_DrawSetEnv(&dr);
+	PC_ScreenShow(&de);
+#else
 	FUN_8008c94c(&dr);
 	PutDispEnv(&de);
+#endif
 
 	if (DAT_800d1cf8 < 6) {
 		switch (DAT_800d1cf8) {

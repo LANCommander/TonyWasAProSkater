@@ -1,4 +1,7 @@
 /* DumpAutoTest__Fv (0x800240d8) */
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 int GAutoLevela, GAutoPlayer1a, GAutoPlayer2a, GAutoGamea;
 int GAutoLevel, GAutoPlayer1, GAutoPlayer2, GAutoGame;
 
@@ -10,6 +13,9 @@ int DrawSync(int);
 void *FUN_80092e70(void *, int, int, int, int);
 int FUN_8008c94c(void *);
 int sprintf(char *, char *, ...);
+#ifdef PC_PORT
+int printf(const char *, ...);
+#endif
 int FUN_80091bb0(char *);
 int FUN_80091894(int);
 
@@ -19,6 +25,12 @@ void DumpAutoTest(void) {
 	char buf[200];
 	int id;
 
+#ifdef PC_PORT
+	/* PC: libgpu's debug font isn't drawn; the line goes to the trace log */
+	PC_ScreenEnable(1);
+	sprintf(buf, "L-%d, P1-%d, P2-%d, G-%d", GAutoLevela, GAutoPlayer1a, GAutoPlayer2a, GAutoGamea);
+	printf("%s\n", buf);
+#else
 	FUN_8008c3d0(1);
 	FUN_8008c314(0);
 	FUN_8009153c(0, 0);
@@ -30,6 +42,7 @@ void DumpAutoTest(void) {
 	sprintf(buf, "L-%d, P1-%d, P2-%d, G-%d", GAutoLevela, GAutoPlayer1a, GAutoPlayer2a, GAutoGamea);
 	FUN_80091bb0(buf);
 	FUN_80091894(id);
+#endif
 
 	GAutoLevela = GAutoLevel;
 	GAutoPlayer1a = GAutoPlayer1;

@@ -7,7 +7,14 @@ extern "C" {
 }
 
 #include "game/shellutils.h"
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 
 void EraseSprite::restore(int x, int y) {
+#ifdef PC_PORT
+	PC_ScreenBlit(mR.x, mR.y, mR.w, mR.h, mData);
+#else
 	LoadImage(&mR, mData);
+#endif
 }

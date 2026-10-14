@@ -22,7 +22,9 @@ void strCallback(void) {
 	RECT r;
 	int p;
 
-#ifndef PC_PORT /* PC: no CD interrupt to catch up on */
+#ifdef PC_PORT /* PC: frames are decoded whole (GameFMV_SyncFMV, GameFMV_PlayMovie), no slices */
+	return;
+#else
 	if (GameFMV_Is24Bit && StCdIntrFlag) {
 		FUN_8008f79c();
 

@@ -1,5 +1,8 @@
 /* Db_WaitRender__Fv (0x80048fec) flags=-fstrict-aliasing */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_draw.h"
+#endif
 
 typedef struct {
 	char pad0[0x74];
@@ -31,7 +34,11 @@ void Db_WaitRender(void) {
 		Db_CallBack();
 	}
 
+#ifdef PC_PORT
+	PC_DrawClearOTR((void *)(pDoubleBuffer->OT), Db_OTSize());
+#else
 	FUN_8008c7d4(pDoubleBuffer->OT, Db_OTSize());
+#endif
 
 #ifdef PC_PORT
 	/* the PS1 drew through KUSEG (bit 31 clear); on PC main RAM is only at 0x80000000 */

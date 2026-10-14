@@ -11,6 +11,9 @@ extern "C" {
 #include "game/shellutils.h"
 #include "game/m3d.h"
 #include "game/psyq.h"
+#ifdef PC_PORT
+#include "pc_draw.h"
+#endif
 
 extern SDoubleBuffer *pDoubleBuffer;
 extern char *pPoly;
@@ -116,7 +119,11 @@ void SlicedImage::drawScaled(int x, int y, int w, int h, int otFront, int r, int
 			if (!drawNow)
 				addPrim(ot, p);
 			else
+#ifdef PC_PORT
+				PC_DrawPacket((void *)(p));
+#else
 				DrawPrim(p);
+#endif
 
 			if (ot != &pDoubleBuffer->OT2D)
 				OT_entry--;

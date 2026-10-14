@@ -1,5 +1,8 @@
 /* Load8BitBMP2__FPcPPcPiT2PUs (0x800613cc) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_texstore.h"
+#endif
 
 typedef struct {
 	short x, y, w, h;
@@ -85,7 +88,11 @@ int Load8BitBMP2(char *file, char **out, int *pw, int *ph, unsigned short *pclut
 	rc.y = y;
 	rc.w = 256;
 	rc.h = 1;
+#ifdef PC_PORT
+	PC_TexUpload(rc.x, rc.y, rc.w, rc.h, pal);
+#else
 	LoadImage(&rc, pal);
+#endif
 	DrawSync(0);
 
 	pad = w % 4;

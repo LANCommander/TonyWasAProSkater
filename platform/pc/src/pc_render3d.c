@@ -18,7 +18,7 @@
  * and an HD texture (pc_dctex.h).
  *
  * Drawing. Each M3d_RenderSetup starts a batch and links a marker packet at the far end of its
- * ordering table layer. When PC_GpuDrawChain reaches the marker, the batch's faces are sorted by
+ * ordering table layer. When PC_DrawOT reaches the marker, the batch's faces are sorted by
  * bucket and drawn while the chain walks that layer: before each primitive of bucket b, the faces
  * of buckets >= b, so everything the GPU still draws keeps its place in the PS1's painter order.
  * The faces write a depth buffer; projected primitives in the layer are tested against it.
@@ -41,7 +41,7 @@
 #include <string.h>
 
 #include "pc_dctex.h"
-#include "pc_gpu.h"
+#include "pc_draw.h"
 #include "pc_gpu_gl.h"
 #include "pc_geom.h"
 #include "pc_precise.h"
@@ -447,8 +447,6 @@ typedef struct {
     int nf, capf;
     PC_GlVert *v, *sv;
     int nv, capv;
-    uint32_t pages[256];
-    int npages;
 } Batch;
 
 #define NBATCH 8
@@ -469,7 +467,7 @@ void hleov_800831f8(uint32_t cam, uint32_t vp, uint32_t ot)
     b->ot = ot;
     b->valid = 1;
     b->sorted = 0;
-    b->nf = b->nv = b->npages = 0;
+    b->nf = b->nv = 0;
     b->h = (float)pc_geom.h;
     b->ofx = (float)pc_geom.ofx / 65536.0f;
     b->ofy = (float)pc_geom.ofy / 65536.0f;
@@ -528,16 +526,6 @@ static void add_face(Batch *b, int bucket, int cls, int nv, uint32_t first, uint
     f->zmax = zmax;
     f->hd = hd;
     f->src = s_src;
-}
-
-static void add_page(Batch *b, uint16_t tpage, uint16_t clut)
-{
-    uint32_t key = (uint32_t)(tpage & 0x19f) << 16 | clut;
-    for (int i = b->npages - 1; i >= 0; i--)
-        if (b->pages[i] == key)
-            return;
-    if (b->npages < (int)(sizeof b->pages / sizeof b->pages[0]))
-        b->pages[b->npages++] = key;
 }
 
 /* Faces by bucket, far to near; within a bucket the last added first (the PS1 links each new
@@ -965,7 +953,6 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
             int depth = (tpage >> 7) & 3;
             info |= (uint16_t)((tpage & 15) | ((tpage >> 4) & 1) << 4 | (depth > 2 ? 2 : depth) << 7 |
                                PC_GL_I_TEXTURED);
-            add_page(b, tpage, clut);
         }
         if (semi)
             info |= PC_GL_I_SEMI;
@@ -1147,7 +1134,7 @@ uint32_t hleov_80089ddc(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
 }
 
 /* ---------------------------------------------------------------------------------------------
- * Drawing, while PC_GpuDrawChain walks the ordering table */
+ * Drawing, while PC_DrawOT walks the ordering table */
 
 static Batch *s_layer;
 static uint32_t s_bucket;
@@ -1164,7 +1151,7 @@ static void draw_upto(uint32_t bucket)
     int i = b->next;
     if (i < b->nf && b->sf[i].bucket >= bucket) {
         /* the drawing area and offset as the GPU has them here */
-        int ox, oy, clip[4], wide = PC_GpuDrawState(&ox, &oy, clip);
+        int ox, oy, clip[4], wide = PC_DrawState(&ox, &oy, clip);
         PC_GlLayerArea(ox, oy, clip, wide);
     }
     while (i < b->nf && b->sf[i].bucket >= bucket) {
@@ -1231,11 +1218,9 @@ static void layer_start(uint32_t id)
     s_last_drawn = b;
     if (!b->sorted)
         sort_batch(b);
-    for (int i = 0; i < b->npages; i++)
-        PC_GlLayerSyncTexture((uint16_t)(b->pages[i] >> 16), (uint16_t)b->pages[i]);
     PC_GlLayerParams lp;
     int clip[4];
-    lp.wide = PC_GpuDrawState(&lp.ofs_x, &lp.ofs_y, clip);
+    lp.wide = PC_DrawState(&lp.ofs_x, &lp.ofs_y, clip);
     lp.clip_l = clip[0];
     lp.clip_t = clip[1];
     lp.clip_r = clip[2];

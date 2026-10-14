@@ -1,5 +1,8 @@
 /* FileIO_Continue__Fv (0x8004cc18) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 
 typedef struct {
 	short x, y, w, h;
@@ -82,10 +85,18 @@ void FileIO_Continue(void) {
 
 	if (s0 != 0) {
 		r = DAT_800d1b20[0];
+#ifdef PC_PORT
+		PC_ScreenFill(r.x, r.y, r.w, r.h, 0x0000ff);
+#else
 		ClearImage(&r, 255, 0, 0);
+#endif
 
 		r.y += 256;
+#ifdef PC_PORT
+		PC_ScreenFill(r.x, r.y, r.w, r.h, 0x0000ff);
+#else
 		ClearImage(&r, 255, 0, 0);
+#endif
 	}
 
 	FUN_8005dcc4();

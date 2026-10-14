@@ -1,5 +1,8 @@
 /* FUN_80049474 (0x80049474) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_draw.h"
+#endif
 
 extern char DoubleBuffer[];
 
@@ -16,7 +19,11 @@ void FUN_80049474(void) {
 		a = a + 32940;
 
 	pDoubleBuffer = a;
+#ifdef PC_PORT
+	PC_DrawClearOTR((void *)(pDoubleBuffer + 132), Db_OTSize());
+#else
 	FUN_8008c7d4(pDoubleBuffer + 132, Db_OTSize());
+#endif
 
 #ifdef PC_PORT
 	/* the PS1 drew through KUSEG (bit 31 clear); on PC main RAM is only at 0x80000000 */

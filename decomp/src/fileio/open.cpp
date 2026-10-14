@@ -21,6 +21,9 @@ extern "C" {
 #include "game/debug.h"
 #include "game/pre.h"
 #include "game/psyq.h"
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 
 int CurrentPos;
 int FileOpen;
@@ -84,10 +87,18 @@ int FileIO_Open(const char *filename) {
 			if (*header == 255) {
 				RECT rect = DAT_800d1b20[0];
 
+#ifdef PC_PORT
+				PC_ScreenFill(rect.x, rect.y, rect.w, rect.h, 0xff0000);
+#else
 				ClearImage(&rect, 0, 0, 255);
+#endif
 
 				rect.y += 256;
+#ifdef PC_PORT
+				PC_ScreenFill(rect.x, rect.y, rect.w, rect.h, 0xff0000);
+#else
 				ClearImage(&rect, 0, 0, 255);
+#endif
 			}
 		} else if (!*scan) {
 			if (*header) {
@@ -102,10 +113,18 @@ int FileIO_Open(const char *filename) {
 				if (*header == 255) {
 					RECT rect = DAT_800d1b20[0];
 
+#ifdef PC_PORT
+					PC_ScreenFill(rect.x, rect.y, rect.w, rect.h, 0xff0000);
+#else
 					ClearImage(&rect, 0, 0, 255);
+#endif
 
 					rect.y += 256;
+#ifdef PC_PORT
+					PC_ScreenFill(rect.x, rect.y, rect.w, rect.h, 0xff0000);
+#else
 					ClearImage(&rect, 0, 0, 255);
+#endif
 				}
 			}
 		}

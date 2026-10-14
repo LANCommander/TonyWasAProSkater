@@ -14,10 +14,12 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-#include "pc_gpu.h"
 #include "pc_gpu_gl.h"
 #include "pc_render3d.h"
+#include "pc_draw.h"
 #include "pc_runtime.h"
+#include "pc_screen.h"
+#include "pc_texstore.h"
 #include "pc_settings.h"
 #include "pc_video.h"
 
@@ -29,7 +31,7 @@ static SDL_GLContext s_glctx;
 static int s_headless;
 static int s_video_inited;
 
-int PC_GpuIsHeadless(void)
+int PC_VideoIsHeadless(void)
 {
     return s_headless;
 }
@@ -470,10 +472,11 @@ static int init_gl(int scale)
     return 0;
 }
 
-void PC_GpuInit(int scale)
+void PC_VideoInit(int scale)
 {
     const char *h = getenv("THPS_HEADLESS");
-    PC_GpuReset();
+    PC_DrawReset();
+    PC_ScreenReset();
     s_headless = h && h[0] && h[0] != '0';
     if (s_window)
         return;
@@ -491,7 +494,7 @@ void PC_GpuInit(int scale)
                  "the graphics driver may help.", SDL_GetError());
 }
 
-void PC_GpuShutdown(void)
+void PC_VideoShutdown(void)
 {
     if (s_glctx) {
         PC_GlShutdown();
@@ -509,9 +512,8 @@ void PC_GpuShutdown(void)
 
 extern volatile uint32_t pc_heartbeat;
 
-void PC_GpuPresent(void)
+void PC_VideoPresent(void)
 {
-    PC_GpuVBlank();
 
     {
         static int from = -2, to = -2;
@@ -521,15 +523,17 @@ void PC_GpuPresent(void)
                 from = to = -1;
         }
         if (from >= 0 && (int)pc_heartbeat >= from && (int)pc_heartbeat <= to) {
-            PC_GpuDisplay dd;
-            PC_GpuGetDisplay(&dd);
+            PcDisplay dd;
+            PC_ScreenGetDisplay(&dd);
             fprintf(stderr, "present f%u disp_x=%d disp_y=%d\n", pc_heartbeat, dd.x, dd.y);
         }
     }
 
-    PC_GpuDisplay d;
-    PC_GpuGetDisplay(&d);
-    PC_GlPresent(s_window, d.x, d.y, d.w, d.h, d.rgb24, d.enabled);
+    PcDisplay d;
+    int iw = 0, ih = 0;
+    const uint32_t *image = PC_ScreenImage(&iw, &ih);
+    PC_ScreenGetDisplay(&d);
+    PC_GlPresent(s_window, d.x, d.y, d.w, d.h, d.enabled, image, iw, ih);
 }
 
 /* ---- BMP dumps (24-bit, bottom-up) ---- */
@@ -579,40 +583,66 @@ static int write_bmp(const char *path, const uint32_t *argb, int pitch, int w, i
     return 0;
 }
 
-int PC_GpuDumpVram(const char *path)
+static inline uint32_t c15_to_argb(uint32_t c)
 {
-    const uint16_t *v = PC_GpuVram();
-    PC_GlSyncRead(0, 0, TEX_W, TEX_H);
+    uint32_t r = c & 31, g = (c >> 5) & 31, b = (c >> 10) & 31;
+    r = (r << 3) | (r >> 2);
+    g = (g << 3) | (g >> 2);
+    b = (b << 3) | (b >> 2);
+    return 0xff000000u | (r << 16) | (g << 8) | b;
+}
+
+int PC_VideoDumpSpace(const char *path)
+{
+    uint16_t *v = (uint16_t *)malloc((size_t)TEX_W * TEX_H * 2);
     uint32_t *buf = (uint32_t *)malloc((size_t)TEX_W * TEX_H * sizeof(uint32_t));
-    if (!buf)
+    if (!buf || !v) {
+        free(v);
+        free(buf);
         return -1;
+    }
+    PC_ScreenRead(0, 0, TEX_W, TEX_H, v);
+    /* the screens, and the textures where the texture store holds some (pc_texstore.h) */
+    const uint16_t *tex = PC_TexStoreData();
+    const uint8_t *cell = PC_TexStoreCells();
     for (int i = 0; i < TEX_W * TEX_H; i++) {
-        uint32_t c = v[i], r = c & 31, g = (c >> 5) & 31, b = (c >> 10) & 31;
-        r = (r << 3) | (r >> 2);
-        g = (g << 3) | (g >> 2);
-        b = (b << 3) | (b >> 2);
-        buf[i] = 0xff000000u | (r << 16) | (g << 8) | b;
+        int x = i % TEX_W, y = i / TEX_W;
+        int used = cell[(y / PC_TEX_CELL) * (PC_TEX_W / PC_TEX_CELL) + x / PC_TEX_CELL] & PC_TEX_USED;
+        buf[i] = c15_to_argb(used ? tex[i] : v[i]);
     }
     int rc = write_bmp(path, buf, TEX_W, TEX_W, TEX_H);
     free(buf);
+    free(v);
     return rc;
 }
 
-int PC_GpuDumpDisplay(const char *path)
+int PC_VideoDumpDisplay(const char *path)
 {
-    uint32_t *buf = (uint32_t *)malloc((size_t)TEX_W * TEX_H * sizeof(uint32_t));
-    int w, h;
-    if (!buf)
+    int iw, ih;
+    const uint32_t *image = PC_ScreenImage(&iw, &ih);
+    if (image)
+        return write_bmp(path, image, iw, iw, ih);
+    PcDisplay d;
+    PC_ScreenGetDisplay(&d);
+    int w = d.w < TEX_W ? d.w : TEX_W, h = d.h < TEX_H ? d.h : TEX_H;
+    uint16_t *px = (uint16_t *)malloc((size_t)w * h * 2);
+    uint32_t *buf = (uint32_t *)malloc((size_t)w * h * sizeof(uint32_t));
+    if (!buf || !px) {
+        free(px);
+        free(buf);
         return -1;
-    PC_GpuDisplayToARGB(buf, TEX_W, TEX_W, TEX_H, &w, &h);
-    int rc = write_bmp(path, buf, TEX_W, w, h);
+    }
+    /* the display area at the PS1's resolution */
+    PC_ScreenRead(d.x, d.y, w, h, px);
+    for (int i = 0; i < w * h; i++)
+        buf[i] = c15_to_argb(px[i]);
+    int rc = write_bmp(path, buf, w, w, h);
     free(buf);
+    free(px);
 
     /* and what OpenGL drew, at its internal resolution: <path without .bmp>_gl.bmp */
-    PC_GpuDisplay d;
-    PC_GpuGetDisplay(&d);
     int hw = 0, hh = 0;
-    uint32_t *hi = !d.rgb24 ? PC_GlReadArea(d.x, d.y, w, h, &hw, &hh) : NULL;
+    uint32_t *hi = PC_GlReadArea(d.x, d.y, w, h, &hw, &hh);
     if (hi && hw == w && hh == h) {
         free(hi);
         hi = NULL;

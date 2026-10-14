@@ -33,6 +33,19 @@ typedef struct {
 /* draw_distance: the entire level (beyond the 16-bit view space; native 3D renderer only) */
 #define PC_DISTANCE_FULL 10000
 
+/* Create the window and the renderer (scale = integer window scale of a 320x240 display), and
+ * close them. */
+void PC_VideoInit(int scale);
+void PC_VideoShutdown(void);
+/* Nonzero when THPS_HEADLESS=1 suppressed the window. */
+int PC_VideoIsHeadless(void);
+/* Show the display (or the picture shown instead, pc_screen.h) in the window. Once per frame. */
+void PC_VideoPresent(void);
+/* Debugging: the screens' and textures' space (1024x512 at the PS1's resolution) or the display
+ * area to a .bmp. */
+int PC_VideoDumpSpace(const char *path);
+int PC_VideoDumpDisplay(const char *path);
+
 void PC_VideoGetSettings(PcVideoSettings *s);
 /* Switch the window to s now (Settings.ini is written by PC_VideoSave). */
 void PC_VideoApply(const PcVideoSettings *s);

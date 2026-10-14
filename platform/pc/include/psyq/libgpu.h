@@ -5,7 +5,9 @@
  * 24-31 = word count of the packet body). Links hold 24-bit PS1 RAM addresses; the port maps PS1
  * RAM at 0x80000000, so (link | 0x80000000) is a valid native pointer.
  *
- * Written from the public description of the API and psx-spx; implemented in src/hle_libgpu.c. */
+ * Written from the public description of the API and psx-spx. The structures and macros are what
+ * the port uses (the game's packets, DRAWENV, DISPENV); the functions the game calls are the
+ * port's own: src/pc_libgpu.c, and pc_draw.h / pc_screen.h / pc_texstore.h for the GPU's work. */
 #ifndef PSYQ_LIBGPU_H
 #define PSYQ_LIBGPU_H
 

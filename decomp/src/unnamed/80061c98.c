@@ -1,5 +1,8 @@
 /* FUN_80061c98 (0x80061c98) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_texstore.h"
+#endif
 
 int Mem_NewX(int a, int b, int c);
 void StoreImage(short *r, int b);
@@ -16,7 +19,11 @@ void FUN_80061c98(int a, int b) {
 	r[1] = b;
 	r[2] = 256;
 	r[3] = 1;
+#ifdef PC_PORT
+	PC_TexRead(r[0], r[1], r[2], r[3], (void *)buf);
+#else
 	StoreImage(r, buf);
+#endif
 
 	q = (unsigned short *)buf;
 
@@ -27,6 +34,10 @@ void FUN_80061c98(int a, int b) {
 		q++;
 	}
 
+#ifdef PC_PORT
+	PC_TexUpload(r[0], r[1], r[2], r[3], (void *)buf);
+#else
 	LoadImage(r, buf);
+#endif
 	Mem_Delete(buf);
 }

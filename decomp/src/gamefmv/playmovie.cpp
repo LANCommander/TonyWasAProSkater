@@ -69,6 +69,7 @@ extern "C" {
 
 #ifdef PC_PORT
 #include "pc_movie.h"
+#include "pc_screen.h"
 #endif
 
 void GameFMV_PlayMovie(int track) {
@@ -112,7 +113,12 @@ void GameFMV_PlayMovie(int track) {
 	if (!pRingBuffer)
 		goto InsufficientMemory;
 
+#ifdef PC_PORT
+	/* PC: frames are decoded whole (PC_MovieDecode), no slices */
+	GameFMV_SliceBuffers = 0;
+#else
 	GameFMV_SliceBuffers = 2;
+#endif
 
 	{
 		int i;
@@ -134,10 +140,11 @@ void GameFMV_PlayMovie(int track) {
 		SetDefDispEnv(&disp, 0, 256, 320, 240);
 #ifdef PC_PORT
 		PC_FrameWait(1);
+		PC_ScreenShow(&disp);
 #else
 		VSync(0);
-#endif
 		PutDispEnv(&disp);
+#endif
 
 		atv.val2 = 0;
 		atv.val3 = 0;
@@ -175,18 +182,13 @@ void GameFMV_PlayMovie(int track) {
 
 #ifdef PC_PORT
 	/* a Dreamcast film: its audio streams as an STR's would, the pictures come from
-	   pc_movie.c in 24-bit at (0, 256) */
+	   pc_movie.c */
 	if (PC_MovieOpen()) {
 		SetDefDispEnv(&disp, 0, 256, 480, 240);
 
 		disp.isrgb24 = 1;
 		disp.disp.w = 320;
-#ifdef PC_PORT
 		PC_FrameWait(1);
-#else
-		VSync(0);
-#endif
-		PutDispEnv(&disp);
 
 		while (PC_MovieFrame()) {
 			Pad_Update();
@@ -210,9 +212,24 @@ void GameFMV_PlayMovie(int track) {
 		;
 #endif
 
+#ifdef PC_PORT
+	PC_MovieBegin(GameFMV_Is24Bit);
+#endif
+
 	for (;;) {
+#ifdef PC_PORT
+		/* the whole frame into the movie's screen (pc_movie.h), where strCallback put its slices */
+		PC_MovieDecode(vlcBuffer[currentVlcBuffer], decodeSlice, decodeSlice_2 & 255, GameFMV_EndX,
+		               decodeSlice_6);
+
+		if (decodeSlice_2 < 256)
+			decodeSlice_2 += 256;
+		else
+			decodeSlice_2 -= 256;
+#else
 		DecDCTin(vlcBuffer[currentVlcBuffer], GameFMV_Is24Bit ? 3 : 2);
 		DecDCTout(decodeSliceBuffer[currentDecodeBuffer], decodeSlice_4 * decodeSlice_6 / 2);
+#endif
 
 		{
 			uchar result[8];
@@ -265,10 +282,15 @@ void GameFMV_PlayMovie(int track) {
 
 #ifdef PC_PORT
 		PC_FrameWait(1);
+		PC_MovieShow();
 #else
 		VSync(0);
-#endif
+#ifdef PC_PORT
+		PC_ScreenShow(&disp);
+#else
 		PutDispEnv(&disp);
+#endif
+#endif
 
 		if (GameFMV_RewindSwitch)
 			break;
@@ -296,10 +318,12 @@ end:
 	disp.screen.w = old_screen_w;
 #ifdef PC_PORT
 	PC_FrameWait(1);
+	PC_MovieEnd();
+	PC_ScreenShow(&disp);
 #else
 	VSync(0);
-#endif
 	PutDispEnv(&disp);
+#endif
 
 	atv.val0 = 0;
 	atv.val1 = 0;
@@ -307,7 +331,6 @@ end:
 	atv.val3 = 0;
 #ifdef PC_PORT
 	PC_StreamMix(&atv.val0);
-	DecDCToutCallback(0);
 	PC_StreamStop();
 #else
 	CdMix(&atv);

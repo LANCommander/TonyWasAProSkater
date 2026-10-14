@@ -1,5 +1,9 @@
 /* HiRes_Init__Fi (0x8006b01c) flags=-fstrict-aliasing */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_draw.h"
+#include "pc_screen.h"
+#endif
 
 typedef struct {
 	char p0[0x17];
@@ -38,7 +42,11 @@ void HiRes_Init(int a) {
 	int v;
 	char *s2;
 
+#ifdef PC_PORT
+	PC_ScreenEnable(0);
+#else
 	FUN_8008c3d0(0);
+#endif
 
 	v = Mem_NewX(0x14000, 1, 1);
 	DoubleBuffer.f80a8 = v;
@@ -61,15 +69,24 @@ void HiRes_Init(int a) {
 	DAT_800b09c8.b19 = 0;
 	DAT_800b09c8.b1a = 0;
 	DAT_800b09c8.b1b = 255;
+#ifdef PC_PORT
+	PC_DrawSetEnv(&DoubleBuffer);
+	PC_ScreenShow((void *)(s2));
+#else
 	FUN_8008c94c(&DoubleBuffer);
 	PutDispEnv(s2);
+#endif
 
 	if (a)
 		HiRes_BlankScreen();
 
 	DoubleBuffer.b17 = 0;
 	DoubleBuffer.b18 = 0;
+#ifdef PC_PORT
+	PC_DrawSetEnv(&DoubleBuffer);
+#else
 	FUN_8008c94c(&DoubleBuffer);
+#endif
 
 	pDoubleBuffer = &DoubleBuffer;
 	PolyBufferEnd = -1;

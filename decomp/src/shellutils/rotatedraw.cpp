@@ -10,6 +10,9 @@ extern "C" {
 }
 
 #include "game/shellutils.h"
+#ifdef PC_PORT
+#include "pc_texstore.h"
+#endif
 
 void *Mem_New(uint, int, int);
 void Pack_Pack(int, int, int, int *, int *, int, int, uint);
@@ -61,7 +64,11 @@ void SlicedImage::rotateDraw(int x, int y) {
 		for (k = 0; k < numy; k++) {
 			r.w = slice_width;
 			r.h = slice_height;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 			LoadImage(&r, (u_long *)data);
+#endif
 			DrawSync(0);
 			DrawIt(&r, xt, yt, bpp, clut);
 
@@ -72,7 +79,11 @@ void SlicedImage::rotateDraw(int x, int y) {
 		if (remy > 0) {
 			r.w = slice_width;
 			r.h = remy;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 			LoadImage(&r, (u_long *)data);
+#endif
 			DrawSync(0);
 			DrawIt(&r, xt, yt, bpp, clut);
 		}
@@ -92,7 +103,11 @@ void SlicedImage::rotateDraw(int x, int y) {
 		for (k = 0; k < numy; k++) {
 			r.w = remx;
 			r.h = slice_height;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 			LoadImage(&r, (u_long *)data);
+#endif
 			DrawSync(0);
 			DrawIt(&r, xt, yt, bpp, clut);
 
@@ -103,7 +118,11 @@ void SlicedImage::rotateDraw(int x, int y) {
 		if (remy > 0) {
 			r.w = remx;
 			r.h = remy;
+#ifdef PC_PORT
+			PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 			LoadImage(&r, (u_long *)data);
+#endif
 			DrawSync(0);
 			DrawIt(&r, xt, yt, bpp, clut);
 		}

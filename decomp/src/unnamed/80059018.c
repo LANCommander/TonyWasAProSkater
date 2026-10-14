@@ -16,8 +16,18 @@ void FlickerSync(void) {
 	VSync(0);
 #endif
 
+#ifdef PC_PORT
+	/* the interlace field (libgpu's GetODE): odd and even frames */
+	for (;;) {
+		PC_FramePoll();
+
+		if ((int)(PC_FrameCount() & 1) != DAT_800d1c44)
+			break;
+	}
+#else
 	while (FUN_8008cf04() == DAT_800d1c44)
 		;
+#endif
 
 	DAT_800d1c44 ^= 1;
 }

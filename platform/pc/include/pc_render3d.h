@@ -20,7 +20,7 @@ extern "C" {
 void R3d_Init(int gl);
 int R3d_Native(void);
 
-/* PC_GpuDrawChain, for each packet before its words go to the GPU: 1 if it was a layer marker
+/* PC_DrawOT, for each packet before it is drawn: 1 if it was a layer marker
  * (its words are not GPU commands). R3d_ChainEnd at the end of the chain. */
 int R3d_ChainPacket(const uint32_t *p, uint32_t len);
 void R3d_ChainEnd(void);

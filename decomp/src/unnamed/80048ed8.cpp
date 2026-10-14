@@ -10,6 +10,9 @@ extern "C" {
 
 #include "game/db.h"
 #include "game/m3d.h"
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 
 extern SDoubleBuffer DoubleBuffer[2];
 extern volatile int Vblanks;
@@ -21,7 +24,11 @@ void Db_Vblank() {
 		if (DoubleBuffer[i].FlipNow) {
 			int frames = Vblanks - DoubleBuffer[i].LastVblanks;
 
+#ifdef PC_PORT
+			PC_ScreenShow((void *)(&DoubleBuffer[1 - i].Disp));
+#else
 			PutDispEnv(&DoubleBuffer[1 - i].Disp);
+#endif
 
 			DoubleBuffer[i].FlipNow = 0;
 			DoubleBuffer[i].Visible = 1;

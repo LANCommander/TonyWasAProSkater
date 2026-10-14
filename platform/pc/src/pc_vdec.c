@@ -1,15 +1,4 @@
-/* The MDEC (libpress): decodes the PS1's STR video (full-screen movies, the songs' 96x64 video).
- *
- * The game does the variable-length stage itself (DecDCTvlc3, decomp/src/shatter/decdctvlc3.c):
- * it turns each frame's bitstream into the run-level halfwords the MDEC takes and hands them over
- * with DecDCTin. DecDCTout then asks for so many words of pixels, a column of macroblocks 16
- * pixels wide, and when they are there the DecDCToutCallback (the game's strCallback) uploads
- * them to VRAM with LoadImage and asks for the next column.
- *
- * Here DecDCTout decodes at once. The callback runs after DecDCTout returns, not inside it: the
- * game's callback asks for the next column into the other of its two buffers before it uploads
- * the one just decoded, which works on the PS1 because the next column takes a while; done
- * immediately and recursively, the third column would overwrite the first before its upload.
+/* The PS1's STR video pictures (pc_vdec.h).
  *
  * The decoding follows the MDEC (psx-spx "Macroblock Decoder"): each block is a DC halfword
  * (quantiser scale << 10 | 10-bit DC), then (run << 10 | 10-bit level) halfwords up to an end
@@ -19,12 +8,13 @@
  * so pictures can differ from the hardware's in the last bit, not visibly. */
 #include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "pc_runtime.h"
+#include "pc_texstore.h"
+#include "pc_vdec.h"
 
 #define EOB 0xfe00u
-#define MB_PIXELS 256
 
 /* libpress's quantisation table (the same for luma and chroma), in natural order */
 static const uint8_t kQuant[64] = {
@@ -42,12 +32,8 @@ static const uint8_t kZigzag[64] = {
 };
 
 static struct {
-    uint32_t in, end;       /* run-level halfwords still to decode (PS1 addresses) */
-    int rgb24, stp;         /* output: 24-bit, or 15-bit with the mask bit set */
-    uint32_t callback;      /* DecDCToutCallback */
-    uint8_t mb[MB_PIXELS * 3]; /* a decoded macroblock not fully taken yet */
-    int mbBytes, mbUsed;
-    int pending, dispatching;
+    const uint16_t *in, *end; /* run-level halfwords still to decode */
+    int rgb24;
 } s_mdec;
 
 static float s_cos[8][8]; /* s_cos[x][u] = C(u)/2 cos((2x+1)u pi/16) */
@@ -69,8 +55,7 @@ static uint32_t Next(void) {
     uint32_t h;
     if (s_mdec.in >= s_mdec.end)
         return EOB;
-    h = *(uint16_t *)PSX_PTR(s_mdec.in);
-    s_mdec.in += 2;
+    h = *s_mdec.in++;
     return h;
 }
 
@@ -123,15 +108,15 @@ static int Clamp8(float v) {
     return i < -128 ? 0 : i > 127 ? 255 : i + 128;
 }
 
-/* Decode the next macroblock into s_mdec.mb, as 16 rows of 16 pixels. */
-static void Macroblock(void) {
+/* Decode the next macroblock into out (pitch bytes per row), at most h rows of it. */
+static void Macroblock(uint8_t *out, int pitch, int h) {
     float cr[64], cb[64], y[4][64];
     int i, px, py;
     Block(cr);
     Block(cb);
     for (i = 0; i < 4; i++)
         Block(y[i]);
-    for (py = 0; py < 16; py++)
+    for (py = 0; py < 16 && py < h; py++)
         for (px = 0; px < 16; px++) {
             int c = (py >> 1) * 8 + (px >> 1);
             float l = y[(py >> 3) * 2 + (px >> 3)][(py & 7) * 8 + (px & 7)];
@@ -139,79 +124,39 @@ static void Macroblock(void) {
             int g = Clamp8(l - 0.3437f * cb[c] - 0.7143f * cr[c]);
             int b = Clamp8(l + 1.772f * cb[c]);
             if (s_mdec.rgb24) {
-                uint8_t *o = s_mdec.mb + (py * 16 + px) * 3;
+                uint8_t *o = out + py * pitch + px * 3;
                 o[0] = (uint8_t)r;
                 o[1] = (uint8_t)g;
                 o[2] = (uint8_t)b;
             } else {
-                uint16_t p = (uint16_t)((r >> 3) | (g >> 3) << 5 | (b >> 3) << 10 |
-                                        (s_mdec.stp ? 0x8000 : 0));
-                memcpy(s_mdec.mb + (py * 16 + px) * 2, &p, 2);
+                uint16_t p = (uint16_t)((r >> 3) | (g >> 3) << 5 | (b >> 3) << 10 | 0x8000);
+                memcpy(out + py * pitch + px * 2, &p, 2);
             }
         }
-    s_mdec.mbBytes = s_mdec.rgb24 ? MB_PIXELS * 3 : MB_PIXELS * 2;
-    s_mdec.mbUsed = 0;
 }
 
-void DecDCTReset(int mode) {
-    (void)mode;
+void PC_VdecFrame(const void *runlevel, int fmt, int cols, int h, void *out, int pitch) {
+    const uint32_t *p = (const uint32_t *)runlevel;
+    int bpp = fmt == PC_VDEC_RGB24 ? 3 : 2, c, y;
     InitTables();
-    s_mdec.in = s_mdec.end = 0;
-    s_mdec.mbBytes = s_mdec.mbUsed = 0;
+    s_mdec.in = (const uint16_t *)(p + 1);
+    s_mdec.end = (const uint16_t *)(p + 1 + (p[0] & 0xffff));
+    s_mdec.rgb24 = fmt == PC_VDEC_RGB24;
+    for (c = 0; c < cols; c++)
+        for (y = 0; y < h; y += 16)
+            Macroblock((uint8_t *)out + y * pitch + c * 16 * bpp, pitch, h - y);
 }
 
-/* DecDCTin(buf, mode): buf = the MDEC header word (its low 16 bits: the run-level data's size in
- * words), then the halfwords. mode bit 0: 24-bit output, else 15-bit; bit 1: set the mask bit. */
-void DecDCTin(uint32_t buf, int mode) {
-    InitTables();
-    s_mdec.in = buf + 4;
-    s_mdec.end = buf + 4 + 4 * (*(uint32_t *)PSX_PTR(buf) & 0xffff);
-    s_mdec.rgb24 = mode & 1;
-    s_mdec.stp = (mode & 2) != 0;
-    s_mdec.mbBytes = s_mdec.mbUsed = 0;
-}
-
-int DecDCTinSync(int mode) {
-    (void)mode;
-    return 0;
-}
-
-int DecDCToutSync(int mode) {
-    (void)mode;
-    return 0;
-}
-
-uint32_t DecDCToutCallback(uint32_t func) {
-    uint32_t old = s_mdec.callback;
-    s_mdec.callback = func;
-    return old;
-}
-
-/* DecDCTout(buf, words) at 0x8009033c: the next `words` 32-bit words of pixels into buf. */
-void hle_8009033c(uint32_t buf, int words) {
-    uint8_t *o = PSX_PTR(buf);
-    int left = words * 4;
-    while (left > 0) {
-        int n;
-        if (s_mdec.mbUsed >= s_mdec.mbBytes)
-            Macroblock();
-        n = s_mdec.mbBytes - s_mdec.mbUsed;
-        if (n > left)
-            n = left;
-        memcpy(o, s_mdec.mb + s_mdec.mbUsed, (size_t)n);
-        s_mdec.mbUsed += n;
-        o += n;
-        left -= n;
-    }
-    if (!s_mdec.callback)
+void PC_VdecToTexture(const void *runlevel, int rgb24, int x, int y, int xend, int h) {
+    static uint16_t *buf;
+    static int cap;
+    int colw = rgb24 ? 24 : 16, cols = (xend - x + colw - 1) / colw, w = cols * colw;
+    if (cols <= 0 || h <= 0)
         return;
-    s_mdec.pending++;
-    if (s_mdec.dispatching)
-        return;
-    s_mdec.dispatching = 1;
-    while (s_mdec.pending) {
-        s_mdec.pending--;
-        ((void (*)(void))PSX_PTR(s_mdec.callback))();
+    if (cap < w * h) {
+        cap = w * h;
+        buf = realloc(buf, (size_t)cap * 2);
     }
-    s_mdec.dispatching = 0;
+    PC_VdecFrame(runlevel, rgb24 ? PC_VDEC_RGB24 : PC_VDEC_15STP, cols, h, buf, w * 2);
+    PC_TexUpload(x, y, w, h, buf);
 }

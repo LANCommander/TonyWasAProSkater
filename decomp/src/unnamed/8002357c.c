@@ -2,6 +2,10 @@
 #include "names.h"
 #ifdef PC_PORT
 #include "pc_stream.h"
+#include "pc_vdec.h"
+
+extern short decodeSlice, decodeSlice_2, GameFMV_StartX, GameFMV_EndX;
+extern unsigned char GameFMV_Is24Bit;
 #endif
 
 typedef struct {
@@ -67,11 +71,20 @@ void GameFMV_SyncFMV(int a) {
 			}
 
 			if (sendVLC) {
+#ifdef PC_PORT
+				/* the whole frame into the song's texture, where strCallback put its slices */
+				if (GameFMV_StartX != -1)
+					PC_VdecToTexture((void *)vlcBuffer[currentVlcBuffer], GameFMV_Is24Bit,
+					                 decodeSlice, decodeSlice_2, GameFMV_EndX, decodeSlice_6);
+
+				currentVlcBuffer = 1 - currentVlcBuffer;
+#else
 				DecDCTin(vlcBuffer[currentVlcBuffer], 2);
 
 				w = decodeSlice_4 * decodeSlice_6;
 				currentVlcBuffer = 1 - currentVlcBuffer;
 				DecDCTout(decodeSliceBuffer[currentDecodeBuffer], w / 2);
+#endif
 			}
 
 			sendVLC = strNextVlc(a);

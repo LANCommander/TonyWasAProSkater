@@ -2,6 +2,9 @@
 #include "names.h"
 #ifdef PC_PORT
 #include "pc_frame.h"
+#include "pc_screen.h"
+#include "pc_texstore.h"
+#include "pc_draw.h"
 #endif
 
 typedef struct {
@@ -40,18 +43,29 @@ void FUN_80071d60(void) {
 	FUN_80014d5c(1);
 	Pad_InitAtStart();
 	FUN_800971a4();
+#ifdef PC_PORT
+	PC_DrawReset();
+	PC_ScreenReset();
+#else
 	FUN_8008c1a0(0);
+#endif
+#ifndef PC_PORT /* PC: no libgpu debug level */
 	FUN_8008c314(0);
+#endif
 	FUN_800491a0();
 
 	r = DAT_800d1f8c[0];
-	ClearImage(&r, 0, 0, 0);
 #ifdef PC_PORT
+	/* all of the PS1's VRAM: the screens and the textures */
+	PC_ScreenFill(r.x, r.y, r.w, r.h, 0);
+	PC_TexFill(r.x, r.y, r.w, r.h, 0);
 	PC_SetFrameHandler(FUN_80047870); /* MyVSync: once a frame (pc_frame.h) */
+	PC_ScreenEnable(1);
 #else
+	ClearImage(&r, 0, 0, 0);
 	FUN_80096c14(FUN_80047870);
-#endif
 	FUN_8008c3d0(1);
+#endif
 	FUN_800785cc(0x9f6ad);
 	SFX_InitAtStart();
 	FileIO_Init();

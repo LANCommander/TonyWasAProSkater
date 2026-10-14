@@ -1,5 +1,9 @@
 /* Db_Init__Fv (0x800491e8) flags=-fstructure-noalias */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_screen.h"
+#include "pc_draw.h"
+#endif
 
 typedef struct {
 	short x, y, w, h;
@@ -58,7 +62,11 @@ extern void M3dInit_SetResolution(int, int);
 void Db_Init(void) {
 	R r;
 
+#ifdef PC_PORT
+	PC_ScreenEnable(0);
+#else
 	FUN_8008c3d0(0);
+#endif
 	DrawSync(0);
 
 	Db_SkyColor = 0;
@@ -78,8 +86,13 @@ void Db_Init(void) {
 	SetDefDispEnv(DAT_800b0a24, 0, 0, 512, 240);
 	FUN_80048d00();
 	Db_UpdateSky();
+#ifdef PC_PORT
+	PC_DrawSetEnv(&DoubleBuffer);
+	PC_ScreenShow((void *)((char *)&DoubleBuffer + 92));
+#else
 	FUN_8008c94c(&DoubleBuffer);
 	PutDispEnv((char *)&DoubleBuffer + 92);
+#endif
 
 	DoubleBuffer.f70 = 0;
 	DoubleBuffer.f811c = 0;
@@ -91,17 +104,34 @@ void Db_Init(void) {
 	DoubleBuffer.f8120 = 0;
 	pDoubleBuffer = DAT_800b09c8;
 	pOtherBuffer = (char *)&DoubleBuffer;
+#ifdef PC_PORT
+	PC_DrawClearOTR((void *)((char *)&DoubleBuffer + 132), Db_OTSize());
+	PC_DrawClearOTR((void *)(DAT_800b0a4c), Db_OTSize());
+#else
 	FUN_8008c7d4((char *)&DoubleBuffer + 132, Db_OTSize());
 	FUN_8008c7d4(DAT_800b0a4c, Db_OTSize());
+#endif
 
 	r = DAT_800d1a40[0];
+#ifdef PC_PORT
+	PC_ScreenFill(r.x, r.y, r.w, r.h, 0);
+#else
 	FUN_8008c67c(&r, 0, 0, 0);
+#endif
 	DrawSync(0);
 
 	r.y = 511;
 	r.h = 1;
+#ifdef PC_PORT
+	PC_ScreenFill(r.x, r.y, r.w, r.h, 0);
+#else
 	FUN_8008c67c(&r, 0, 0, 0);
+#endif
 	DrawSync(0);
+#ifdef PC_PORT
+	PC_ScreenEnable(1);
+#else
 	FUN_8008c3d0(1);
+#endif
 	M3dInit_SetResolution(512, 240);
 }

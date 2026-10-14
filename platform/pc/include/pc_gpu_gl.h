@@ -1,13 +1,11 @@
-/* OpenGL 3.3 drawing backend for the PS1 GPU (src/pc_gpu_gl.c).
+/* OpenGL 3.3 drawing backend (src/pc_gpu_gl.c).
  *
- * pc_gpu.c stays the GPU: it parses every GP0/GP1 word, holds the drawing state and owns the CPU
- * copy of VRAM. With this backend active it hands polygons, rectangles, lines and fills here
- * instead of rasterising them, and does VRAM transfers and copies on its own VRAM as before.
- * The backend draws into render targets, sampling textures from a 16-bit copy of the CPU VRAM:
- * the screen buffers (display surfaces, see PC_GlNoteScreen) at the size the picture is shown
- * at, any other VRAM area at the PS1's resolution. Both sides are kept coherent in 16x16 cells:
- * drawing marks cells as newer on the GPU, and pc_gpu.c calls PC_GlSyncRead before it reads VRAM
- * (and PC_GlBeforeWrite/PC_GlWritten around writes), which read drawn pixels back or re-upload. */
+ * pc_draw.c parses the game's primitives and holds the drawing state; it hands polygons,
+ * rectangles, lines and fills here. They are drawn into render targets: the screens (display
+ * surfaces, see PC_GlNoteScreen) at the size their picture is shown at, anything else at the
+ * PS1's resolution. Textures come from the texture store (pc_texstore.h). The screens' pixels
+ * live only in the render targets: the CPU writes them with PC_GlBlit and reads them with
+ * PC_GlRead (at the PS1's resolution). */
 #ifndef PC_GPU_GL_H
 #define PC_GPU_GL_H
 
@@ -59,10 +57,11 @@ void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *
 void PC_GlRect(const PC_GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b,
                int u0, int v0, int flip_x, int flip_y);
 void PC_GlLine(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b);
-/* GP0(02h) / ClearImage: exact rectangle, no drawing area, offset or mask; rgb24 = 0x00BBGGRR. */
+/* A fill command or a screen fill (pc_screen.h): exact rectangle, no drawing area, offset or
+ * mask; rgb24 = 0x00BBGGRR. */
 void PC_GlFill(int x, int y, int w, int h, uint32_t rgb24);
 /* An image (16-bit VRAM pixels, sw x sh) filling the VRAM area x, y, w, h: drawn there from a
- * texture of its own, filtered, so a display surface keeps its resolution (PC_GpuLoadImageHiRes). */
+ * texture of its own, filtered, so a display surface keeps its resolution (PC_ScreenBlitHiRes). */
 void PC_GlHiResImage(int x, int y, int w, int h, const uint16_t *src, int sw, int sh);
 
 /* ---- Native 3D layers (pc_render3d.c) ----
@@ -110,17 +109,19 @@ void PC_GlLayerEnd(void);
 /* An HD texture (pc_dctex.h) is no longer used: its OpenGL texture goes. */
 void PC_GlHdForget(uint16_t handle);
 
-/* Make a texture page / CLUT current before a layer draws with it (tpage, clut: GPU halfwords). */
-void PC_GlLayerSyncTexture(uint16_t tpage, uint16_t clut);
+/* The texture store (pc_texstore.h) is about to change in x, y, w, h: what was drawn before uses
+ * the old texels. */
+void PC_GlTexturesChanging(int x, int y, int w, int h);
 
-/* Coherence with the CPU VRAM (rectangles may wrap at the VRAM edges). */
-void PC_GlSyncRead(int x, int y, int w, int h);      /* CPU VRAM must be current here */
-void PC_GlBeforeWrite(int x, int y, int w, int h);   /* the CPU is about to overwrite this */
-void PC_GlWritten(int x, int y, int w, int h);       /* the CPU has written this */
+/* A screen area's pixels (w x h, 15-bit with the mask bit): written over what was drawn there,
+ * or read as drawn (at the PS1's resolution). Areas are clipped to the screens' space. */
+void PC_GlBlit(int x, int y, int w, int h, const uint16_t *src);
+void PC_GlRead(int x, int y, int w, int h, uint16_t *dst);
 
-/* Draw the display area (VRAM x,y w*h, 24-bit or not) into the current window and swap.
- * enabled = 0 shows black. */
-void PC_GlPresent(void *sdl_window, int x, int y, int w, int h, int rgb24, int enabled);
+/* Draw the display area (VRAM x,y w*h) into the current window and swap; enabled = 0 shows
+ * black. image (iw x ih, 0xAARRGGBB): show that picture at 4:3 instead (pc_screen.h). */
+void PC_GlPresent(void *sdl_window, int x, int y, int w, int h, int enabled,
+                  const uint32_t *image, int iw, int ih);
 
 /* The VRAM area x,y w*h as drawn (from its display surface, else at 1x), as 0xAARRGGBB rows
  * (*out_w x *out_h pixels, top row first) into a malloc'd buffer; NULL on failure. For dumps. */

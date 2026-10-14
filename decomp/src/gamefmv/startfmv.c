@@ -49,6 +49,11 @@ void GameFMV_StartFMV(int a) {
 		t >>= 4;
 		GameFMV_SliceBuffers = t;
 
+#ifdef PC_PORT
+		/* PC: frames are decoded whole (pc_vdec.h), no slices */
+		GameFMV_SliceBuffers = 0;
+#endif
+
 		if (a) {
 			u = t & 255;
 

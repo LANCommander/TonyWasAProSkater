@@ -11,6 +11,9 @@ extern "C" {
 }
 
 #include "game/m3d.h"
+#ifdef PC_PORT
+#include "pc_texstore.h"
+#endif
 
 int Pal16X;
 int Pal16Y;
@@ -77,7 +80,11 @@ tag_S_Pal *Pal_LoadPalette(uint checksum, uint *pData, uchar flags) {
 	}
 
 	rec.w = entries;
+#ifdef PC_PORT
+	PC_TexUpload(rec.x, rec.y, rec.w, rec.h, pData);
+#else
 	LoadImage(&rec, (u_long *)pData);
+#endif
 
 	pNew->InVRAM = 1;
 	return pNew;

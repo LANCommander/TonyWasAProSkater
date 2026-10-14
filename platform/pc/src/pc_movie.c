@@ -4,9 +4,11 @@
  * pictures that are late are dropped. Without audio (or once it has ended) the pictures keep time
  * on the frame clock.
  *
- * The pictures go where the PS1's MDEC put them, as 24-bit pixels at VRAM (0, 256), which the
- * screen shows in 24-bit mode (GameFMV_PlayMovie sets it up). A film smaller than 320x240 is
- * centred; a larger one is cropped. */
+ * The pictures are shown as the PS1's 24-bit movie screen was, 320x240 at 4:3 (pc_screen.h). A
+ * film smaller than that is centred; a larger one is cropped.
+ *
+ * An STR movie's pictures are decoded (pc_vdec.h) into the same screen, where the PS1 put them in
+ * its screen buffer. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,29 +21,67 @@
 #include "pc_movie.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
+#include "pc_screen.h"
 #include "pc_sfd.h"
 #include "pc_stream.h"
+#include "pc_vdec.h"
 
 #define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u)
 #define MOVIE_COUNT 26
 #define GAMEFMV_START_SECTOR PSX_DATA_ADDR(0x800d165cu)
 #define SCREEN_W 320
 #define SCREEN_H 240
-#define SCREEN_Y 256
 #define AUDIO_STALL 30      /* frames without audio progress before the frame clock takes over */
 
-typedef struct {
-    short x, y, w, h;
-} PcRect;
+/* the screen: rows of SCREEN_W * 3 bytes, 24-bit pixels or (s_rgb24 = 0) 15-bit halfwords */
+static uint8_t s_screen[SCREEN_H][SCREEN_W * 3];
+static int s_rgb24;
 
-int LoadImage(PcRect *rect, const void *p);   /* hle_libgpu.c */
+static void ScreenShow(void) {
+    static uint32_t argb[SCREEN_W * SCREEN_H];
+    int x, y;
+    for (y = 0; y < SCREEN_H; y++)
+        for (x = 0; x < SCREEN_W; x++) {
+            const uint8_t *p = s_screen[y];
+            uint32_t c;
+            if (s_rgb24) {
+                c = (uint32_t)p[x * 3] << 16 | (uint32_t)p[x * 3 + 1] << 8 | p[x * 3 + 2];
+            } else {
+                uint32_t h = p[x * 2] | (uint32_t)p[x * 2 + 1] << 8, r = h & 31,
+                         g = (h >> 5) & 31, b = (h >> 10) & 31;
+                c = (r << 3 | r >> 2) << 16 | (g << 3 | g >> 2) << 8 | (b << 3 | b >> 2);
+            }
+            argb[y * SCREEN_W + x] = 0xff000000u | c;
+        }
+    PC_ScreenShowImage(argb, SCREEN_W, SCREEN_H);
+}
+
+void PC_MovieBegin(int rgb24) {
+    memset(s_screen, 0, sizeof s_screen);
+    s_rgb24 = rgb24;
+}
+
+void PC_MovieDecode(const void *runlevel, int x, int y, int xend, int h) {
+    int colw = s_rgb24 ? 24 : 16, cols = (xend - x + colw - 1) / colw;
+    if (x < 0 || y < 0 || (x + cols * colw) * 2 > SCREEN_W * 3 || y + h > SCREEN_H)
+        return;
+    PC_VdecFrame(runlevel, s_rgb24 ? PC_VDEC_RGB24 : PC_VDEC_15STP, cols, h, &s_screen[y][x * 2],
+                 sizeof s_screen[0]);
+}
+
+void PC_MovieShow(void) {
+    ScreenShow();
+}
+
+void PC_MovieEnd(void) {
+    PC_ScreenShowGame();
+}
 
 static PcSfd *s_sfd;
 static plm_buffer_t *s_buf;
 static plm_video_t *s_vid;
 static int s_gotVideo;
 static plm_frame_t *s_next;      /* decoded, not shown yet */
-static uint8_t *s_rgb;           /* the screen's 24-bit pixels */
 static double s_clock, s_audio;
 static int s_stall;
 
@@ -81,7 +121,6 @@ static void LoadVideo(plm_buffer_t *b, void *user) {
 int PC_MovieOpen(void) {
     int id = *(int32_t *)PSX_PTR(GAMEFMV_START_SECTOR); /* the stream (pc_stream.h) */
     const char *path = PC_StreamPath(id);
-    PcRect r = {0, SCREEN_Y, SCREEN_W * 3 / 2, SCREEN_H};
     if (!PC_StreamIsFilm(id) || !(s_sfd = PC_SfdOpen(path)))
         return 0;
     PC_SfdSetAudio(s_sfd, 0);
@@ -92,8 +131,8 @@ int PC_MovieOpen(void) {
     s_next = NULL;
     s_clock = s_audio = 0.0;
     s_stall = 0;
-    s_rgb = calloc(1, SCREEN_W * SCREEN_H * 3);
-    LoadImage(&r, s_rgb);
+    PC_MovieBegin(1);
+    ScreenShow();
     PC_Log("movie %s", path);
     return 1;
 }
@@ -102,7 +141,6 @@ static void Show(plm_frame_t *f) {
     static uint8_t *rgb;
     static int cap;
     int w = (int)f->width, h = (int)f->height, x0 = 0, y0 = 0, sx = 0, sy = 0, cw, ch, y;
-    PcRect r = {0, SCREEN_Y, SCREEN_W * 3 / 2, SCREEN_H};
     if (cap < w * h * 3) {
         cap = w * h * 3;
         rgb = realloc(rgb, (size_t)cap);
@@ -119,9 +157,8 @@ static void Show(plm_frame_t *f) {
     cw = w - sx < SCREEN_W - x0 ? w - sx : SCREEN_W - x0;
     ch = h - sy < SCREEN_H - y0 ? h - sy : SCREEN_H - y0;
     for (y = 0; y < ch; y++)
-        memcpy(s_rgb + ((y0 + y) * SCREEN_W + x0) * 3, rgb + ((sy + y) * w + sx) * 3,
-               (size_t)cw * 3);
-    LoadImage(&r, s_rgb);
+        memcpy(&s_screen[y0 + y][x0 * 3], rgb + ((sy + y) * w + sx) * 3, (size_t)cw * 3);
+    ScreenShow();
 }
 
 int PC_MovieFrame(void) {
@@ -162,6 +199,5 @@ void PC_MovieClose(void) {
     s_buf = NULL;
     PC_SfdClose(s_sfd);
     s_sfd = NULL;
-    free(s_rgb);
-    s_rgb = NULL;
+    PC_MovieEnd();
 }

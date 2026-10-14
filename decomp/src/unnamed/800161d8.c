@@ -1,5 +1,8 @@
 /* Front_DisplayScreen__Fv (0x800161d8) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_screen.h"
+#endif
 
 extern volatile int GameFade;
 
@@ -21,7 +24,11 @@ void Front_DisplayScreen(void) {
 
 	HiRes_BlankScreen();
 	Mess_LoadFont__FPciii("ingame1.fnt", -1, -1, -1);
+#ifdef PC_PORT
+	PC_ScreenEnable(1);
+#else
 	FUN_8008c3d0(1);
+#endif
 
 	i = 0;
 

@@ -6,6 +6,9 @@ extern "C" {
 }
 
 #include "game/types.h"
+#ifdef PC_PORT
+#include "pc_texstore.h"
+#endif
 
 void *Mem_New(unsigned int, int, int);
 void Mem_Delete(void *);
@@ -65,7 +68,11 @@ void DownloadBMP(char *pData, int x, int y, int ClutX, int ClutY) {
 	r.y = ClutY;
 	r.w = 256;
 	r.h = 1;
+#ifdef PC_PORT
+	PC_TexUpload(r.x, r.y, r.w, r.h, colorTab);
+#else
 	LoadImage(&r, (u_long *)colorTab);
+#endif
 	DrawSync(0);
 
 	pad = w % 4;
@@ -107,7 +114,11 @@ void DownloadBMP(char *pData, int x, int y, int ClutX, int ClutY) {
 	r.y = y;
 	r.w = w / 2;
 	r.h = h;
+#ifdef PC_PORT
+	PC_TexUpload(r.x, r.y, r.w, r.h, data);
+#else
 	LoadImage(&r, (u_long *)data);
+#endif
 	DrawSync(0);
 	Mem_Delete(data);
 }

@@ -15,7 +15,7 @@ extern void *pBMR;
 
 #ifdef PC_PORT
 #include "pc_assets.h"
-#include "pc_gpu.h"
+#include "pc_screen.h"
 #endif
 
 void DownloadBMP16(char *pData) {
@@ -142,10 +142,14 @@ void DownloadBMP16(char *pData) {
 	r.h = h;
 #ifdef PC_PORT
 	if (hires)
-		PC_GpuLoadImageHiRes(0, 0, lw, lh, (ushort *)data, w, h);
+		PC_ScreenBlitHiRes(0, 0, lw, lh, data, w, h);
 	else
 #endif
+#ifdef PC_PORT
+		PC_ScreenBlit(r.x, r.y, r.w, r.h, data);
+#else
 		LoadImage(&r, (u_long *)data);
+#endif
 
 	DrawSync(0);
 	Mem_Delete(data);

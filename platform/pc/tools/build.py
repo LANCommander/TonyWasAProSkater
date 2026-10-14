@@ -240,7 +240,10 @@ NATIVE_AT = dict((n, "PC_" + n) for n in (
     "SetRotMatrix", "SetTransMatrix", "SetGeomScreen", "SetGeomOffset", "SetFarColor", "InitGeom",
     "TransposeMatrix", "TransMatrix", "MulMatrix", "MulMatrix0", "ApplyMatrixSV", "ApplyMatrixLV",
     "RotMatrixYXZ", "RotMatrixYXZ_gte", "RotMatrixY", "VectorNormal", "VectorNormalSS",
-    "SquareRoot0", "catan", "ratan2"))
+    "SquareRoot0", "catan", "ratan2",
+    # libgpu's pure helpers (src/pc_libgpu.c)
+    "SetDefDrawEnv", "SetDefDispEnv", "SetDrawArea", "SetDrawTPage", "SetPolyF4", "GetTPage",
+    "GetClut", "DrawSync"))
 
 
 def strip_us(sym):

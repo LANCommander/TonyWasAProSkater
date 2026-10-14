@@ -9,6 +9,9 @@ extern "C" {
 }
 
 #include "game/mem.h"
+#ifdef PC_PORT
+#include "pc_texstore.h"
+#endif
 
 void MakeGreyClut(int x, int y) {
 	unsigned short *buf = (unsigned short *)Mem_NewX(512, 1, 1);
@@ -20,7 +23,11 @@ void MakeGreyClut(int x, int y) {
 	temp.w = 256;
 	temp.h = 1;
 
+#ifdef PC_PORT
+	PC_TexRead(temp.x, temp.y, temp.w, temp.h, buf);
+#else
 	StoreImage(&temp, (u_long *)buf);
+#endif
 
 	buf2 = buf;
 
@@ -34,6 +41,10 @@ void MakeGreyClut(int x, int y) {
 		buf2++;
 	}
 
+#ifdef PC_PORT
+	PC_TexUpload(temp.x, temp.y, temp.w, temp.h, buf);
+#else
 	LoadImage(&temp, (u_long *)buf);
+#endif
 	Mem_Delete(buf);
 }

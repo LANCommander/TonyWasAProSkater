@@ -146,14 +146,15 @@ static const char *gl_draw_fs =
     "    else gl_FragDepth = 0.0;\n"
     "}\n";
 
-/* CPU VRAM (the 16-bit atlas) into the render target, for cells the CPU wrote. */
+/* 16-bit pixels the CPU wrote (PC_GlBlit) into a render target. */
 static const char *gl_copy_fs =
     "#version 330 core\n"
     "uniform usampler2D u_vram;\n"
     "uniform vec4 u_map;\n"                         /* the target's VRAM x, y; pixels per texel */
+    "uniform vec2 u_src;\n"                         /* the pixels' VRAM x, y */
     "out vec4 o_color;\n"
     "void main() {\n"
-    "    ivec2 p = ivec2(floor(gl_FragCoord.xy / u_map.zw)) + ivec2(u_map.xy);\n"
+    "    ivec2 p = ivec2(floor(gl_FragCoord.xy / u_map.zw)) + ivec2(u_map.xy) - ivec2(u_src);\n"
     "    uint t = texelFetch(u_vram, p, 0).r;\n"
     "    o_color = vec4(vec3(float(t & 31u), float((t >> 5) & 31u), float((t >> 10) & 31u)) / 31.0,\n"
     "                   float(t >> 15));\n"

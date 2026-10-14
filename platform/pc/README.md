@@ -31,7 +31,7 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
 - **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` renderer and maths, 0x800858ac-
   0x8008b900, and a few game helpers) is C interpretations in `decomp/src/m3dasm/` and elsewhere,
   listed in `decomp/reimpl.tsv` (built like decompiled C); the Psy-Q library code the game uses is
-  the port's own C (the HLE files below; `src/pc_libgte.c` for libgte). Each is checked
+  the port's own C (`src/pc_libgte.c` for libgte, `src/pc_libgpu.c` for libgpu's helpers). Each is checked
   against the retail code by a test in `tests/` that runs the original MIPS in a small reference
   interpreter (`tests/mips_ref.c`); see "Checking C against the retail code" below.
   `reimpl.tsv` also holds byte-exact C for the few compiler-generated C++ functions a native
@@ -73,13 +73,19 @@ lists). Instead of rewriting all of that, the port keeps the PS1 address space:
     address: `build.py` `NATIVE_AT`), and the matching sources' GTE macros and asm have PC_PORT
     branches on it. M3DMATHS' "last vector" and the colour code the face renderer carries between
     faces, which retail kept in GTE registers, are explicit (`decomp/src/m3dasm/lastvec.h`,
-    `processpolys.h`).
+    `processpolys.h`);
+  - video pictures (the MDEC's work) are `pc_vdec.h`: the game's run-level data decoded a whole
+    frame at a time, into a movie's picture or a texture;
+  - drawing is `pc_draw.h`: the game's primitive packets in its ordering tables (its display
+    list) walked and drawn through OpenGL; the screens and the display are `pc_screen.h` (fills,
+    the CPU's own pixels in and out, what the window shows); the textures and CLUTs are
+    `pc_texstore.h`, at the places the game's own allocators give them. There is no VRAM; libgpu's
+    pure helpers (`SetDefDrawEnv`, `GetTPage` ...) are `src/pc_libgpu.c` (`NATIVE_AT`).
 
-  There's no BIOS, CD, SPU or GTE in the port. The GPU and MDEC are still high-level
-  reimplementations ("HLE") of their Psy-Q entry points (`src/hle_*.c`, `pc_mdec.c`),
-  each on its way to a native subsystem. A `build.py --mips` build adds the BIOS that translated
-  retail code calls (`src/mips_bios.c`, `PC_MIPS`); Psy-Q functions the port no longer provides
-  run there as translated retail code.
+  There's no BIOS, CD, SPU, GTE, GPU or MDEC in the port, and none of Psy-Q's libraries runs at
+  its retail addresses. A `build.py --mips` build adds the BIOS and libgpu that translated retail
+  code calls (`src/mips_bios.c`, `src/mips_gpu.c`, `PC_MIPS`); other Psy-Q functions the port no
+  longer provides run there as translated retail code.
 
 ## Calling convention
 
@@ -92,7 +98,7 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 |---|---|
 | `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `sys/types.h`) |
 | `include/pc_*.h` | interfaces between the port's subsystems |
-| `src/` | runtime: boot, memory map, frame clock, input, video, saves, streams, geometry maths, and the remaining HLE libraries (GPU, MDEC) |
+| `src/` | runtime: boot, memory map, frame clock, input, video, drawing, screens, textures, saves, streams, sound, geometry maths |
 | `include/pc_platform.h`, `src/pc_platform.c` | what differs between Windows and Linux: paths, folders, files, clock |
 | `tools/` | build driver and code generators (`toolchain.py`: the host's compiler and object format) |
 
@@ -212,13 +218,13 @@ extracted unchanged. The images it redrew at a higher resolution are shown at th
 layout gives them, with all their pixels (`PC_ImageLayoutSize`): the 640x480 front-end screens
 load as they are instead of line-doubled, and the HORSE loading screen (640x240 on a 512-wide
 screen) and the pause logo (320x88 for the PS1's 256x44) are drawn scaled into the display
-surfaces (`PC_GpuLoadImageHiRes`, `SlicedImage::drawScaled`).
+surfaces (`PC_ScreenBlitHiRes`, `SlicedImage::drawScaled`).
 
 Its songs and movies are Sofdec films (`.sfd`: MPEG-1 video, CRI ADX audio; `src/pc_sfd.c`
 demultiplexes them and decodes the ADX). They stream like the STR files (`ATVILOGO.STR` is
 `activision.sfd`, `LOGO.STR` `never.sfd`): the 44.1 kHz stereo audio plays through the music input; the playlist lists the `.sfd` songs, and a
 song starts over at the end of its audio as the PS1's does at its end frame. The full-screen
-movies play (`src/pc_movie.c`: pl_mpeg decodes the 320x240 video into the 24-bit movie screen,
+movies play (`src/pc_movie.c`: pl_mpeg decodes the 320x240 video into the movie's picture,
 timed to the audio; any button skips, as on the PS1); the songs' 96x64 thumbnail video is not
 shown. Its sound banks (`.kat`: the same sounds as 8/16-bit PCM at 22 kHz instead of 4-bit ADPCM
 at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.c`): each sound is a PCM sample
@@ -264,30 +270,34 @@ time the game lists saves (at startup, or on a save or load screen) and renamed 
 
 ## Graphics
 
-`src/pc_gpu.c` is the PS1 GPU: it takes the GP0/GP1 words the game sends (ordering tables,
-`LoadImage`, `PutDrawEnv`...) and keeps VRAM. It draws through OpenGL 3.3 (`src/pc_gpu_gl.c`):
-polygons, sprites, lines and fills go to render targets, and a shader does the PS1's CLUT texture lookup,
-texture windows, colour modulation and the four semi-transparency modes. Textures come from a
-16-bit copy of VRAM. VRAM is tracked in 16x16 cells, so the two sides stay in sync when the game
-reads back what it drew (the HUD saves the background under a sprite with `StoreImage`) or draws
-into an area the CPU wrote. There's no dithering: the picture is never reduced to 15 bits for display.
-The screen buffers are drawn at the resolution they are shown at: each VRAM area the game uses as
-a whole screen (a `PutDispEnv` display area, or a screen-sized `PutDrawEnv` drawing area: the two
-512x240 gameplay buffers, the 640x480 front end) gets a *display surface*, a render target the size
-of the window's 4:3 picture area, so in a 1024x768 window both are drawn at 1024x768 (in
-1920x1080, at 1440x1080 with black bars, unless widescreen widens gameplay, below). Everything else in VRAM (textures, CLUTs, off-screen
-drawing) stays at the PS1's resolution. A VRAM pixel belongs to the surface covering it, else to
-the 1x target; drawing goes to every target its area touches, and readbacks scale the surface down.
-`THPS_GL_SCALE=n` draws the surfaces at n times the PS1 resolution instead (1: exactly the PS1's
-pixels, for comparisons).
+The game builds its frames as on the PS1: primitive packets (`POLY_FT4`, `SPRT`, `TILE`,
+`LINE_*`, `DR_*`) linked into ordering tables, which are its display list. `src/pc_draw.c` walks
+them (`PC_DrawOT`, from the game's PC branches where it called `DrawOTag`) and draws through
+OpenGL 3.3 (`src/pc_gpu_gl.c`): polygons, sprites, lines and fills go to render targets, and a
+shader does the PS1's CLUT texture lookup, texture windows, colour modulation and the four
+semi-transparency modes. There is no VRAM. The textures and CLUTs are in the texture store
+(`src/pc_texstore.c`), a 16-bit copy at the coordinates the game's own allocators (Pack, Pal) give
+them, which the game's primitives refer to; the screens' pixels are only in the render targets.
+The game's own reads and writes of a screen (the front end saves the background under a sprite
+and puts it back, the credits and loading screens put up pictures) are `PC_ScreenRead` and
+`PC_ScreenBlit` (`src/pc_screen.c`); reads scale a surface down to the PS1's resolution. There's
+no dithering: the picture is never reduced to 15 bits for display.
+The screens are drawn at the resolution they are shown at: each area the game uses as a whole
+screen (its display area, or a screen-sized drawing area: the two 512x240 gameplay buffers, the
+640x480 front end) gets a *display surface*, a render target the size of the window's 4:3
+picture area, so in a 1024x768 window both are drawn at 1024x768 (in 1920x1080, at 1440x1080
+with black bars, unless widescreen widens gameplay, below). Anything drawn elsewhere stays at the
+PS1's resolution, in a 1x target for the whole 1024x512 space; a pixel belongs to the surface
+covering it, else to that target. `THPS_GL_SCALE=n` draws the surfaces at n times the PS1
+resolution instead (1: exactly the PS1's pixels, for comparisons).
 
 **Widescreen** (Hor+, `[Video] Widescreen = On`, the default): on a window wider than 4:3, the
 gameplay screens (512x240) get margins left and right, `pc_wide_pad` PS1 pixels each (85 at 16:9,
 at most 400), and the view shows that much more of the world at the sides at the same zoom. The
 margins exist only in the display surface: in drawing coordinates they lie at x < 0 and past the
-buffer, where VRAM holds textures, so only primitives drawn with a drawing area that covers the
-whole screen reach them (`pc_gpu.c` widens it, `PC_GlWideClip`, and flags the primitive); every
-other drawing, the uploads and the cell bookkeeping see the surface's VRAM area alone. The game's
+buffer, where the game keeps textures, so only primitives drawn with a drawing area that covers
+the whole screen reach them (`pc_draw.c` widens it, `PC_GlWideClip`, and flags the primitive);
+every other drawing and the CPU's blits see the surface's own area alone. The game's
 side culling widens to match: the frustum's side planes (`M3d_RenderSetup`, PC branch) and the
 vertex transforms' outcodes, which `pc_render3d.c` works out again against the widened viewport
 (the fast transforms keep theirs inside the screen words, so the face walk tests those itself).
@@ -301,11 +311,11 @@ skaters, cars, sky) are drawn natively by `src/pc_render3d.c`: the retail vertex
 run, but their view-space vertices are kept unrounded, and ProcessPolys is replaced by a face walk
 that keeps retail's visibility, colours (the same depth-cued colours) and ordering-table position,
 then draws with a projection, a depth buffer and OpenGL's near-plane clipping instead of
-subdivision. The faces are drawn while the GPU walks the ordering table, so everything still sent
-as GPU packets (particles, shadows, 3D text, the HUD) keeps its place in the PS1's painter order;
+subdivision. The faces are drawn while `pc_draw.c` walks the ordering table, so everything still
+built as packets (particles, shadows, 3D text, the HUD) keeps its place in the PS1's painter order;
 of those, the ones the game projected are depth-tested against the world. Those packets use the
 precise-vertex lookup: every projection (`pc_geom.h`) is also recorded unrounded, with its depth,
-keyed by the screen coordinates the game puts in its GPU packets (`src/pc_precise.c`), and the GPU
+keyed by the screen coordinates the game puts in its packets (`src/pc_precise.c`), and the walker
 looks a polygon's vertices up again and draws it at sub-pixel positions with perspective-correct
 textures (THPS1's polygon subdivision re-projects and nudges vertices, which the lookup allows for,
 see `PC_PrecisePolygon`). Faces the native renderer doesn't handle yet (water clipping and the
@@ -409,9 +419,9 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_R3D_PROBE=f,x,y` | log the 3D faces covering screen point x,y on frame f |
 | `THPS_R3D_RETAILFADE=1` | leave fade-to-colour mode (Downhill Jam, Streets, the front end) to the retail code (A/B; not for Dreamcast models) |
 | `THPS_FILTER=1` | bilinear scaling to the window instead of nearest-neighbour |
-| `THPS_GLSTATS=1` | once a second: draw calls, VRAM readbacks and uploads, and how many polygons had precise vertices |
+| `THPS_GLSTATS=1` | once a second: draw calls, screen readbacks, texture uploads and blits, and how many polygons had precise vertices |
 | `THPS_FRAMES=n` | exit after n frames |
-| `THPS_SHOT=f1,f2` / `THPS_SHOTDIR` | dump the display and VRAM as BMPs at those frames (with OpenGL, also `frameNNNNN_gl.bmp` at the resolution it was drawn at) |
+| `THPS_SHOT=f1,f2` / `THPS_SHOTDIR` | dump the display (at the PS1's resolution, and `frameNNNNN_gl.bmp` at the resolution it was drawn at) and the 1024x512 space (`vramNNNNN.bmp`: the screens, and the texture store where it holds textures) as BMPs at those frames |
 | `THPS_INPUT=frame:mask,...` | scripted pad input for player 1 (PS1 button mask, pressed = 1, held from that frame; X is both Ollie and Menu Accept, Triangle Grind and Menu Back, Start is Pause) |
 | `THPS_KEYS=frame:Key+Key,...` | scripted keyboard (Settings.ini key names, held from that frame; `frame:` releases), read through the bindings |
 | `THPS_NOGAMEPAD=1` | ignore connected gamepads, so scripted runs navigate the menus the same way with or without one |
@@ -425,7 +435,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_POKE=addr:value,...` | store those words every frame (`0x800d1708:1` = level select cheat: every level unlocked) |
 | `THPS_WATCH=addr` | hardware write watchpoint on a 4-byte word: logs value, native EIP and callers |
 | `THPS_COUNT=addr,...` | log per-frame call counts of those functions |
-| `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log VRAM transfers and drawing-environment changes / polygon counts per frame |
+| `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log fills and drawing-environment changes / polygon counts per frame |
 | `THPS_TRACE_PSX`, `THPS_TRACE_CULL`, `THPS_TRACE_RENDER` | spooler, frustum-culling and renderer traces |
 | `THPS_AUDIO=0` / `THPS_AUDIO_DUMP=file` | no sound device / also write the mixed output as raw s16le stereo 44.1 kHz |
 | `THPS_TRACE_SOUND=1` | log sound channel key on/off, bank loads and reverb modes (with `THPS_TRACE=1`) |
@@ -446,11 +456,12 @@ from the extracted files at the rate the drive read them (150 sectors a second) 
 decodes them. `src/pc_music.c` picks the next song from
 `Data/Music/Playlist.m3u` instead of the game's fixed rotation. With the Dreamcast's data the
 music, movies and sound effects come from its films and sound banks (see above). The PS1's
-movies play through the game's own movie player (`GameFMV_PlayMovie`): `src/pc_mdec.c` is the
-MDEC (the game decodes the bitstream itself, `DecDCTvlc3`; this does the inverse DCT and colour
-conversion into the slices the game uploads), and the player's busy-waits wait a frame for the
-stream instead (PC branch, `PC_MovieWait`). The same decoder shows the songs' 96x64 video on
-the levels' TV screens (the credits screen shows them the same way). Not done yet: the PS1's exact
+movies play through the game's own movie player (`GameFMV_PlayMovie`): the game decodes each
+frame's bitstream itself (`DecDCTvlc3`), `src/pc_vdec.c` decodes the pictures (the MDEC's inverse
+DCT and colour conversion, a whole frame at once) and the PC branch shows them as a picture of
+their own (`PC_MovieDecode`/`PC_MovieShow`, `pc_screen.h`); the player's busy-waits wait a frame
+for the stream instead (`PC_MovieWait`). The songs' 96x64 video goes into the texture of the
+levels' TV screens the same way (`PC_VdecToTexture`; the credits screen shows it too). Not done yet: the PS1's exact
 reverb, 64-bit build. Running every game function as translated MIPS
 (`THPS_MIPS=all`) still crashes in the renderer: a translator issue to chase (the translation
 also loses level polygons in `THPS_RENDER3D=psx` mode, which the C renderer doesn't).

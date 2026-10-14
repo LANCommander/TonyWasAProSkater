@@ -1,4 +1,7 @@
 /* DrawIt__FP4RECTiiii (0x800632cc) */
+#ifdef PC_PORT
+#include "pc_draw.h"
+#endif
 /* C++ (SHELLUTILS.CPP). Exact demo twin. Draws a VRAM rectangle at (x, y) as a textured quad
    (16-bit, or 8-bit with a CLUT and doubled width), then waits for the GPU.
    Levers: the demo line table gives one libgpu macro per line (setXYWH/setUVWH); `r->y & 0xff`
@@ -32,6 +35,10 @@ void DrawIt(RECT *r, int x, int y, int bpp, int clut) {
 		apoly->clut = clut;
 	}
 
+#ifdef PC_PORT
+	PC_DrawPacket((void *)(apoly));
+#else
 	DrawPrim(apoly);
+#endif
 	DrawSync(0);
 }

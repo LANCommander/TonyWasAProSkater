@@ -16,6 +16,7 @@ extern void *pBMR;
 #ifdef PC_PORT
 #include "pc_assets.h"
 #include "pc_frame.h"
+#include "pc_screen.h"
 #endif
 
 void DownloadBMP16x2(char *pData) {
@@ -173,7 +174,11 @@ void DownloadBMP16x2(char *pData) {
 	r.w = w;
 	r.h = h;
 	DrawSync(0);
+#ifdef PC_PORT
+	PC_ScreenBlit(r.x, r.y, r.w, r.h, data);
+#else
 	LoadImage(&r, (u_long *)data);
+#endif
 	DrawSync(0);
 #ifdef PC_PORT
 	PC_FrameWait(1);

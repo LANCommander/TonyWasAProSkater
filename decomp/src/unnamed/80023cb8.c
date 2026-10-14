@@ -21,9 +21,9 @@ void strKickCD(void);
 void FUN_8008f3a0(int a, int b);
 
 void strInit(void) {
+#ifndef PC_PORT /* PC: frames are decoded whole (pc_vdec.h), no MDEC; the stream keeps them (pc_stream.h) */
 	FUN_8009028c(0);
 	DecDCToutCallback(FUN_80023d3c);
-#ifndef PC_PORT /* PC: the stream keeps its own frames (pc_stream.h) */
 	FUN_800911cc(pRingBuffer, GameFMV_RingBufferSectors);
 	FUN_800907cc(GameFMV_Is24Bit, 0, -1, 0, 0);
 #endif
