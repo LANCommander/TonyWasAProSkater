@@ -8,6 +8,11 @@ void FileIO_Continue(void);
 void FUN_8005dcc4(void);
 
 void FileIO_Sync(void) {
+#ifdef PC_PORT
+	/* loads finish inside FileIO_Load (pc_fileio.h) */
+	Loading = 0;
+	LoadFromPRE = 0;
+#else
 	if (LoadFromPRE) {
 		Loading = 0;
 		LoadFromPRE = 0;
@@ -20,4 +25,5 @@ void FileIO_Sync(void) {
 	}
 
 	FileIO_Continue();
+#endif
 }

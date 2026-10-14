@@ -77,6 +77,11 @@ void GameFMV_PlayMovie(int track) {
 	short old_screen_w;
 	CdlATV atv;
 
+#ifdef PC_PORT
+	if (!PC_MoviePlays(track))
+		return;
+#endif
+
 	if (GameFMV_Active)
 		return;
 

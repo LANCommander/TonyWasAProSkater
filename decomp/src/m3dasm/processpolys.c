@@ -1194,6 +1194,12 @@ void M3dAsm_ProcessPolys__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, int 
 	const uint32_t *face = faces;
 	int n = count;
 
+#ifdef R3D_HOOKS
+	/* the native renderer draws the faces (pc_render3d.h) */
+	if (R3d_ProcessPolys(0, faces, count))
+		return;
+#endif
+
 	(void)normals;
 
 	if (count == 0)

@@ -1,5 +1,8 @@
 /* GameFMV_SetStartTrack__Fi (0x80023168) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_stream.h"
+#endif
 
 typedef struct {
 	int w0;
@@ -26,6 +29,12 @@ int GameFMV_StartSector;
 void GameFMV_SetStartTrack(int a) {
 	if (GameFMV_Active)
 		return;
+
+#ifdef PC_PORT
+	/* the next song is the next entry of Data/Music/Playlist.m3u when there is one */
+	if (a >= 0 && PC_MusicNextSong())
+		return;
+#endif
 
 	if (a < 0) {
 		a = ~a;

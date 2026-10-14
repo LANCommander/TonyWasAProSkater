@@ -141,7 +141,6 @@ void *PC_NativeOf(uint32_t addr) {
 }
 
 extern const char *PC_SymbolName(uint32_t addr); /* generated: names.c */
-extern const PcFunc pc_override_funcs[];
 
 const char *PC_NameOf(uint32_t addr) {
     static char buf[4][64];
@@ -218,7 +217,6 @@ static void BuildFunctionTable(void) {
     AddTable(pc_recomp_funcs, "mips", &cap);
     AddTable(pc_hle_funcs, "hle", &cap);
     AddTable(pc_game_funcs, "c", &cap);
-    AddTable(pc_override_funcs, "hle", &cap);
     /* stable sort by address keeping the last (highest-precedence) entry per address */
     for (i = 1; i < s_nfns; i++) {
         FnEntry e = s_fns[i];

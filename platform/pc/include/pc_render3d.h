@@ -36,6 +36,38 @@ void R3d_DumpLast(const char *path);
 void R3d_FarBegin(const double m[3][3], const double t[3], int fogstart, int fogshift);
 void R3d_FarEnd(void);
 
+/* The renderer's hooks in the game's code (PC_PORT branches in decomp/src/m3dasm and
+ * M3d_RenderSetup). R3D_HOOKS leaves them out of test_asm, which checks the M3DASM C against the
+ * retail MIPS on its own (build_test_asm.py: PC_TEST_ASM). */
+#if defined(PC_PORT) && !defined(PC_TEST_ASM)
+#define R3D_HOOKS 1
+#endif
+
+/* The vertex transforms, by the kind of model they project. */
+enum {
+    R3D_T_ITEM,        /* M3dAsm_TransformAndOutcodeItemVertices */
+    R3D_T_SUPER,       /* ...SuperVertices */
+    R3D_T_SUPER_DW,    /* ...SuperVerticesDewibbled */
+    R3D_T_SFAST,       /* ...SuperVerticesFast */
+    R3D_T_SFAST_DW,    /* ...SuperVerticesFastDewibbled */
+    R3D_T_FAST,        /* ...VerticesFast */
+    R3D_T_BLOCK,       /* ...BlockVertices */
+    R3D_T_BG,          /* ...BackgroundVertices */
+    R3D_T_COUNT
+};
+/* A transform's C (verts, count, the offset vector of FAST and BLOCK); returns the AND of the
+ * outcodes. */
+typedef int (*R3dTransformFn)(void *v, int n, void *o);
+/* Runs transform fn of that kind (the entire level's far path instead, see R3d_FarBegin), keeping
+ * its vertices unrounded; the result's outcodes against a widened viewport. */
+int R3d_Transform(int kind, R3dTransformFn fn, void *v, int n, void *o);
+
+/* ProcessPolys (fast = 0) and ProcessPolysFast (fast = 1): 1 if the native renderer drew the
+ * faces, 0 if the game's C should (THPS_RENDER3D=psx, no layer, subtractive fade). */
+int R3d_ProcessPolys(int fast, uint32_t *list, int count);
+/* M3d_RenderSetup(camera, viewport, ot), after the game's: a 3D layer starts at ot. */
+void R3d_RenderSetup(const void *viewport, uint32_t *ot);
+
 #ifdef __cplusplus
 }
 #endif

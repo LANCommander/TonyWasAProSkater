@@ -2,12 +2,12 @@
  *
  * Geometry. The retail vertex transforms (M3DASM, as C in decomp/src/m3dasm) keep running: callers use their
  * results (outcodes, culling), and shadows and collision read the projected-vertex cache they
- * fill. Each one is wrapped so that its projections also hand over every vertex unrounded
- * (PC_CaptureBegin); those are stored in a float copy of the cache, slot for slot, following
+ * fill. Each one runs through R3d_Transform (its PC_PORT branch) so that its projections also hand
+ * over every vertex unrounded (PC_CaptureBegin); those are stored in a float copy of the cache, slot for slot, following
  * the stitch vertices that skater parts share. Each slot remembers the screen word retail wrote
  * there, so a slot some other code has since overwritten is never used.
  *
- * Faces. ProcessPolys and ProcessPolysFast are replaced. The face walk keeps retail's decisions
+ * Faces. ProcessPolys and ProcessPolysFast hand their faces to R3d_ProcessPolys. The face walk keeps retail's decisions
  * (which faces are visible, their colours: the same colour maths with the same fog value,
  * the same ordering-table bucket) and drops what only the PS1 needed: screen-space subdivision,
  * near-plane clipping by subdivision (OpenGL clips), packets. Faces crossing the water surface of
@@ -17,7 +17,7 @@
  * whose packets are drawn as before. Dreamcast (version 6) faces keep 16-bit texture coordinates
  * and an HD texture (pc_dctex.h).
  *
- * Drawing. Each M3d_RenderSetup starts a batch and links a marker packet at the far end of its
+ * Drawing. Each M3d_RenderSetup starts a batch (R3d_RenderSetup) and links a marker packet at the far end of its
  * ordering table layer. When PC_DrawOT reaches the marker, the batch's faces are sorted by
  * bucket and drawn while the chain walks that layer: before each primitive of bucket b, the faces
  * of buckets >= b, so everything the GPU still draws keeps its place in the PS1's painter order.
@@ -50,9 +50,6 @@
 
 extern volatile uint32_t pc_heartbeat;
 
-typedef uint32_t (*Fn12)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,
-                         uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
-Fn12 PC_Impl(uint32_t addr); /* pc_overrides.c */
 void PC_RenderTrace(const char *what, uint32_t ret);
 
 #define M32(a) (*(volatile uint32_t *)PSX_PTR(a))
@@ -132,7 +129,11 @@ static void set_shadow(uint32_t a, float x, float y, float z)
     }
 }
 
-enum { T_ITEM, T_SUPER, T_SUPER_DW, T_SFAST, T_SFAST_DW, T_FAST, T_BLOCK, T_BG, T_COUNT };
+enum {
+    T_ITEM = R3D_T_ITEM, T_SUPER = R3D_T_SUPER, T_SUPER_DW = R3D_T_SUPER_DW, T_SFAST = R3D_T_SFAST,
+    T_SFAST_DW = R3D_T_SFAST_DW, T_FAST = R3D_T_FAST, T_BLOCK = R3D_T_BLOCK, T_BG = R3D_T_BG,
+    T_COUNT = R3D_T_COUNT
+};
 static const char *const s_kind_name[T_COUNT] = { "item", "super", "super-dw", "superfast",
                                                   "superfast-dw", "fast", "block", "bg" };
 static int s_last_kind = -1;   /* the transform the next ProcessPolys draws from */
@@ -301,28 +302,25 @@ static uint32_t far_transform(uint32_t a0, int n)
     return all;
 }
 
-/* Run a retail vertex transform and keep its vertices unrounded. a0 = vertices, a1 = count. */
-static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uint32_t a2,
-                          uint32_t a3)
+/* Run a vertex transform and keep its vertices unrounded. */
+static uint32_t transform(int kind, R3dTransformFn fn, void *verts, int count, void *o)
 {
-    static Fn12 fn[T_COUNT];
-    if (!fn[kind])
-        fn[kind] = PC_Impl(addr);
+    uint32_t a0 = (uint32_t)(uintptr_t)verts;
     if (!s_native)
-        return fn[kind](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
+        return (uint32_t)fn(verts, count, o);
     if (s_far.on && kind == T_ITEM)
-        return far_transform(a0, (int)a1);
+        return far_transform(a0, count);
 
     uint32_t pv = M32(G_PROJECTED), rot = M32(G_ROTATED), pool = M32(G_FREESTITCH);
     int fast = kind == T_SFAST || kind == T_SFAST_DW || kind == T_FAST;
     int super = kind == T_SUPER || kind == T_SUPER_DW || kind == T_SFAST || kind == T_SFAST_DW;
     float sc = (kind == T_SUPER_DW || kind == T_SFAST_DW) ? 1.0f / 16 : 1.0f;
     uint32_t out = fast ? SCR(0) : pv;
-    int n = (int)a1;
+    int n = count;
 
     PC_CaptureBegin(s_cap, (int)(sizeof s_cap / sizeof s_cap[0]));
     PC_PreciseZScale(sc);   /* for primitives retail still draws from these */
-    uint32_t r = fn[kind](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
+    uint32_t r = (uint32_t)fn(verts, count, o);
     PC_PreciseZScale(1);
     int nc = PC_CaptureEnd();
     s_pv_base = pv;
@@ -390,41 +388,12 @@ static uint32_t transform(uint32_t addr, int kind, uint32_t a0, uint32_t a1, uin
     return r;
 }
 
-/* TransformAndOutcode...: item, super (+ dewibbled), super fast (+ dewibbled), fast, block,
- * background */
-uint32_t hleov_80085d28(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
+int R3d_Transform(int kind, R3dTransformFn fn, void *v, int n, void *o)
 {
-    uint32_t r = transform(0x80085d28, T_ITEM, a0, a1, a2, a3);
-    PC_RenderTrace("T", r);
-    return r;
-}
-uint32_t hleov_80085e98(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return transform(0x80085e98, T_SUPER, a0, a1, a2, a3);
-}
-uint32_t hleov_800860cc(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return transform(0x800860cc, T_SUPER_DW, a0, a1, a2, a3);
-}
-uint32_t hleov_800862d4(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return transform(0x800862d4, T_SFAST, a0, a1, a2, a3);
-}
-uint32_t hleov_80086404(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return transform(0x80086404, T_SFAST_DW, a0, a1, a2, a3);
-}
-uint32_t hleov_80089790(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return transform(0x80089790, T_FAST, a0, a1, a2, a3);
-}
-uint32_t hleov_80086d2c(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return transform(0x80086d2c, T_BLOCK, a0, a1, a2, a3);
-}
-uint32_t hleov_80086590(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return transform(0x80086590, T_BG, a0, a1, a2, a3);
+    uint32_t r = transform(kind, fn, v, n, o);
+    if (kind == T_ITEM)
+        PC_RenderTrace("T", r);
+    return (int)r;
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -454,11 +423,9 @@ static Batch s_b[NBATCH];
 static int s_cur = -1;
 static uint32_t s_gen;
 
-/* M3d_RenderSetup(camera, viewport, ot): the start of a 3D layer. */
-void hleov_800831f8(uint32_t cam, uint32_t vp, uint32_t ot)
+void R3d_RenderSetup(const void *viewport, uint32_t *ot_)
 {
-    extern void pcfn_800831f8(uint32_t, uint32_t, uint32_t);
-    pcfn_800831f8(cam, vp, ot);
+    uint32_t vp = (uint32_t)(uintptr_t)viewport, ot = (uint32_t)(uintptr_t)ot_;
     if (!s_native)
         return;
     int slot = (s_cur + 1) % NBATCH;
@@ -1067,21 +1034,17 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
     }
 }
 
-/* ProcessPolys(faces, normals, count) and ProcessPolysFast */
-static uint32_t process(uint32_t addr, int fast, uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
+int R3d_ProcessPolys(int fast, uint32_t *list, int count)
 {
-    static Fn12 fn[2];
-    if (!fn[fast])
-        fn[fast] = PC_Impl(addr);
     if (!fast)
         PC_RenderTrace("P", 0);
     if (!s_native)
-        return fn[fast](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
+        return 0;
     st.calls++;
     Batch *b = s_cur >= 0 ? &s_b[s_cur] : NULL;
     if (!b || !b->valid || b->ot != M32(G_CURRENT_OT)) {
         st.fb_nolayer++;
-        return fn[fast](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
+        return 0;
     }
     Water water, *wp = NULL;
     if (!fast && M32(G_TESTTHEWATER)) {
@@ -1097,7 +1060,7 @@ static uint32_t process(uint32_t addr, int fast, uint32_t a0, uint32_t a1, uint3
         (s_retailfade || (M32(SCR(S_FADECOLOUR)) & 0x02000000u))) {
         /* fade-to-colour with a subtractive polygon: retail's code */
         st.fb_fade++;
-        return fn[fast](a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
+        return 0;
     }
     if (!fast) {
         /* what retail leaves behind */
@@ -1107,30 +1070,8 @@ static uint32_t process(uint32_t addr, int fast, uint32_t a0, uint32_t a1, uint3
         M32(SCR(964)) = 0x80088790u;
         M16(SCR(676)) = 0;
     }
-    faces(b, a0, (int)a2, fast, wp);
-    return 0;
-}
-
-uint32_t hleov_80086f40(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return process(0x80086f40, 0, a0, a1, a2, a3);
-}
-
-uint32_t hleov_800898ac(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    return process(0x800898ac, 1, a0, a1, a2, a3);
-}
-
-/* CompactOTagR(ot, n): relinks the ordering table around its empty entries, which would hide
- * where each bucket starts; the native layers need every entry visited. */
-uint32_t hleov_80089ddc(uint32_t a0, uint32_t a1, uint32_t a2, uint32_t a3)
-{
-    static Fn12 f;
-    if (!f)
-        f = PC_Impl(0x80089ddc);
-    if (s_native)
-        return 0;
-    return f(a0, a1, a2, a3, 0, 0, 0, 0, 0, 0, 0, 0);
+    faces(b, (uint32_t)(uintptr_t)list, count, fast, wp);
+    return 1;
 }
 
 /* ---------------------------------------------------------------------------------------------

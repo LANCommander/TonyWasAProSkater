@@ -2,6 +2,9 @@
 /* Not byte-matching by design: listed in reimpl.tsv, verified against the retail MIPS by
  * platform/pc/tests/test_asm.c. */
 #include <stdint.h>
+#ifdef PC_PORT
+#include "pc_render3d.h"
+#endif
 
 /* An ordering-table link: a PS1 pointer's low 24 bits. (Retail also writes through such
  * stripped pointers, the KUSEG mirror of the same RAM; here the table's own pointers are used.) */
@@ -18,6 +21,12 @@ void CompactOTagR(uint32_t *ot, int n) {
 	uint32_t *link = &ot[n - 1]; /* the entry whose link is being extended */
 	int skipping = 1;            /* inside a run of empty entries that starts at *link */
 	int i;
+
+#ifdef R3D_HOOKS
+	/* the native renderer's layers find each bucket by walking every entry */
+	if (R3d_Native())
+		return;
+#endif
 
 	for (i = n - 1; i > 0; i--) {
 		int empty = ot[i] == ot_link(&ot[i - 1]);

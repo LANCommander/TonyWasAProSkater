@@ -22,7 +22,7 @@ extern "C" {
 #include "game/pre.h"
 #include "game/psyq.h"
 #ifdef PC_PORT
-#include "pc_screen.h"
+#include "pc_fileio.h"
 #endif
 
 int CurrentPos;
@@ -62,6 +62,12 @@ int FileIO_Open(const char *filename) {
 
 	Debug_String(filename, 323, "fileio.cpp");
 
+#ifdef PC_PORT
+	/* the file under Data/ (pc_fileio.h), not the CD directory's entry */
+	Opening = filename;
+	Start = 0;
+	len = PC_FileOpen(filename);
+#else
 	header = (char *)Directory;
 	Opening = filename;
 	scan = (char *)filename;
@@ -87,18 +93,10 @@ int FileIO_Open(const char *filename) {
 			if (*header == 255) {
 				RECT rect = DAT_800d1b20[0];
 
-#ifdef PC_PORT
-				PC_ScreenFill(rect.x, rect.y, rect.w, rect.h, 0xff0000);
-#else
 				ClearImage(&rect, 0, 0, 255);
-#endif
 
 				rect.y += 256;
-#ifdef PC_PORT
-				PC_ScreenFill(rect.x, rect.y, rect.w, rect.h, 0xff0000);
-#else
 				ClearImage(&rect, 0, 0, 255);
-#endif
 			}
 		} else if (!*scan) {
 			if (*header) {
@@ -113,18 +111,10 @@ int FileIO_Open(const char *filename) {
 				if (*header == 255) {
 					RECT rect = DAT_800d1b20[0];
 
-#ifdef PC_PORT
-					PC_ScreenFill(rect.x, rect.y, rect.w, rect.h, 0xff0000);
-#else
 					ClearImage(&rect, 0, 0, 255);
-#endif
 
 					rect.y += 256;
-#ifdef PC_PORT
-					PC_ScreenFill(rect.x, rect.y, rect.w, rect.h, 0xff0000);
-#else
 					ClearImage(&rect, 0, 0, 255);
-#endif
 				}
 			}
 		}
@@ -133,6 +123,7 @@ int FileIO_Open(const char *filename) {
 	header = (char *)(((int)header + 4) & ~3);
 	Start = ((int *)header)[0];
 	len = ((int *)header)[1];
+#endif
 
 	{
 		int sectors = (len + 2047) / 2048;

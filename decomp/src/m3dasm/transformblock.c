@@ -88,7 +88,7 @@ static int always_facing(const SVECTOR *v, int n, struct SProjectedVertex *pv,
  * (any error in its FLAG) gets outcode bit 0x40 and loses its four screen bits. The vertices from
  * the first one flagged always-facing on are billboards (always_facing). Returns the AND of the
  * outcodes (0xff for no vertices). */
-int M3dAsm_TransformAndOutcodeBlockVertices__FP7SVECTORiP6VECTOR(SVECTOR *v, int n, VECTOR *o) {
+static int transform_vertices(SVECTOR *v, int n, VECTOR *o) {
 	struct ClipBounds b;
 	struct SProjectedVertex *pv;
 	struct SRotatedVertex *rv;
@@ -128,4 +128,13 @@ int M3dAsm_TransformAndOutcodeBlockVertices__FP7SVECTORiP6VECTOR(SVECTOR *v, int
 
 	SCR_PROJECTED_END = pv;
 	return (int)all;
+}
+
+int M3dAsm_TransformAndOutcodeBlockVertices__FP7SVECTORiP6VECTOR(SVECTOR *v, int n, VECTOR *o) {
+#ifdef R3D_HOOKS
+	/* the native renderer keeps the vertices unrounded (pc_render3d.h) */
+	return R3d_Transform(R3D_T_BLOCK, (R3dTransformFn)transform_vertices, v, n, o);
+#else
+	return transform_vertices(v, n, o);
+#endif
 }

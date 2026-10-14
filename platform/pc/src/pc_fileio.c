@@ -1,15 +1,12 @@
-/* The game's file loader (FILEIO.CPP) reading from Data/ instead of CD.WAD.
+/* The game's files (pc_fileio.h), read from Data/ instead of CD.WAD.
  *
- * On the PS1, FileIO_Init reads the CD.HED directory, FileIO_Open looks a name up in it (or in
- * the loaded PRE archive, SpoolerBlocksFileIO), and FileIO_Load starts an asynchronous CdRead
- * of the file's sectors that FileIO_Continue/FileIO_Sync drive to completion. Here a file is the
- * extracted copy under Data/ (pc_assets.c), loaded in one go: by the time FileIO_Load returns
- * the data is in place and Loading is 0, so the game's polling loops see a finished read.
- *
- * Kept from the original: the PRE archive lookup, the sizes the game allocates by (rounded up to
- * whole sectors; the tail past the file is zeroed instead of holding the next WAD file), and
- * FileIO_Load stopping the music stream first (the game frees the stream's buffers there before
- * allocating for the load).
+ * On the PS1, FileIO_Init reads the CD.HED directory, FileIO_Open looks a name up in it, and
+ * FileIO_Load starts an asynchronous CdRead of the file's sectors that FileIO_Continue/FileIO_Sync
+ * drive to completion. In the port FILEIO.CPP's PC_PORT branches call PC_FileOpen for the lookup
+ * and PC_FileRead for the read: a file is the extracted copy under Data/ (pc_assets.c), loaded in
+ * one go, so the game's polling loops see a finished read. The PRE archive lookup, the sector
+ * rounding and stopping the music stream stay in the game's code; the tail past the file is zeroed
+ * instead of holding the next WAD file.
  *
  * Dreamcast model/level files (version 6 .psx) are loaded without their texture images, which
  * stay on the PC side (pc_dctex.h): the game allocates and receives the smaller image. The
@@ -23,31 +20,9 @@
 #include "pc_assets.h"
 #include "pc_dcsound.h"
 #include "pc_dctex.h"
+#include "pc_fileio.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
-
-#define VAR(type, addr) (*(type *)PSX_PTR(PSX_DATA_ADDR(addr)))
-#define Loading VAR(int32_t, 0x800d1afc)
-#define LastLoading VAR(int32_t, 0x800d1b34)
-#define WadStart VAR(int32_t, 0x800d2258)
-#define ReadSyncFailures VAR(int32_t, 0x800d1b0c)
-#define CurrentPos VAR(int32_t, 0x800d1af8)
-#define FileOpen VAR(int32_t, 0x800d1b04)
-#define SpoolerBlocksFileIO VAR(uint32_t, 0x800d1b10)
-#define LoadFromPRE VAR(int32_t, 0x800d1b14)
-#define ThePREFile VAR(uint32_t, 0x800d1b18)
-#define ThePREFileSize VAR(int32_t, 0x800d1b1c)
-#define Opening VAR(uint32_t, 0x800d1b30)
-#define FileSize VAR(int32_t, 0x800d224c)
-#define NumSectors VAR(int32_t, 0x800d2264)
-#define Start VAR(int32_t, 0x800d2268)
-#define Dest VAR(uint32_t, 0x800d2260)
-#define Redbook_XACheckSectorOnVSync VAR(int32_t, 0x800d1698)
-#define Redbook_XAModeSet VAR(int32_t, 0x800d16a0)
-#define DAT_800d169c VAR(int32_t, 0x800d169c)
-
-#define PREManager_getFile 0x800663d8u /* char *PREManager::getFile(char *, int *) */
-#define GameFMV_StopFMV 0x800233d0u
 
 static char s_path[260];
 static char s_name[64];    /* as the game asked for it */
@@ -147,24 +122,7 @@ static void ConvertDcFile(void) {
     free(data);
 }
 
-void hleov_8004c74c(void) { /* FileIO_Init */
-    Loading = 0;
-    WadStart = 0;
-    ReadSyncFailures = 0;
-}
-
-int hleov_8004c8a4(const char *name) { /* FileIO_Open */
-    CurrentPos = 0;
-    LoadFromPRE = 0;
-    if (SpoolerBlocksFileIO) {
-        uint32_t (*getFile)(uint32_t, const char *, int32_t *) = PSX_PTR(PREManager_getFile);
-        ThePREFile = getFile(SpoolerBlocksFileIO, name, &ThePREFileSize);
-        if (ThePREFile) {
-            LoadFromPRE = 1;
-            FileOpen = 1;
-            return ThePREFileSize;
-        }
-    }
+int PC_FileOpen(const char *name) {
     snprintf(s_name, sizeof s_name, "%s", name);
     if (!PC_AssetsFind(name, s_path, sizeof s_path)) {
         size_t n = strlen(name);
@@ -187,50 +145,23 @@ int hleov_8004c8a4(const char *name) { /* FileIO_Open */
         fclose(f);
         ConvertDcFile();
     }
-    Opening = (uint32_t)(uintptr_t)name;
-    Start = 0;
-    NumSectors = (s_size + 2047) / 2048;
-    FileSize = NumSectors * 2048;
-    FileOpen = 1;
     PC_Trace("FileIO_Open(%s) -> %s, %d bytes", name, s_path, s_size);
-    return FileSize;
+    return s_size;
 }
 
-void hleov_8004cb10(uint32_t dest) { /* FileIO_Load */
+void PC_FileRead(void *dest, int size) {
     FILE *f;
-    if (SpoolerBlocksFileIO && LoadFromPRE) {
-        memcpy(PSX_PTR(dest), PSX_PTR(ThePREFile), (size_t)ThePREFileSize);
-        FileOpen = 0;
-        return;
-    }
-    ((void (*)(void))PSX_PTR(GameFMV_StopFMV))();
-    Dest = dest;
-    Redbook_XACheckSectorOnVSync = 0;
-    DAT_800d169c = 1;
-    Redbook_XAModeSet = 0;
     if (s_image) {
-        memcpy(PSX_PTR(dest), s_image, (size_t)s_size);
+        memcpy(dest, s_image, (size_t)s_size);
         free(s_image);
         s_image = NULL;
     } else {
         f = fopen(s_path, "rb");
-        if (!f || fread(PSX_PTR(dest), 1, (size_t)s_size, f) != (size_t)s_size)
+        if (!f || fread(dest, 1, (size_t)s_size, f) != (size_t)s_size)
             PC_Fatal("cannot read %s", s_path);
         fclose(f);
-        MarkLayoutSize(PSX_PTR(dest), s_size);
+        MarkLayoutSize(dest, s_size);
     }
-    memset((uint8_t *)PSX_PTR(dest) + s_size, 0, (size_t)(FileSize - s_size));
-    CurrentPos = FileSize;
-    Loading = 0;
-    FileOpen = 0;
-}
-
-void hleov_8004cc18(void) { /* FileIO_Continue: loads finish inside FileIO_Load */
-    LastLoading = Loading;
-    Loading = 0;
-}
-
-void hleov_8004cdd0(void) { /* FileIO_Sync */
-    Loading = 0;
-    LoadFromPRE = 0;
+    if (size > s_size)
+        memset((uint8_t *)dest + s_size, 0, (size_t)(size - s_size));
 }

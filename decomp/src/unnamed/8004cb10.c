@@ -1,5 +1,8 @@
 /* FileIO_Load__FPv (0x8004cb10) */
 #include "names.h"
+#ifdef PC_PORT
+#include "pc_fileio.h"
+#endif
 
 typedef struct {
 	int a, b;
@@ -24,6 +27,9 @@ int WadStart;
 char FileStart[8];
 int Loading;
 int CurrentPos;
+#ifdef PC_PORT
+extern int FileSize;
+#endif
 
 void Mem_Copy(void *a, void *b, int c);
 void printf(char *a, int b, int c);
@@ -50,6 +56,17 @@ void FileIO_Load(char *p) {
 	GameFMV_StopFMV();
 
 	Dest = (int)p;
+#ifdef PC_PORT
+	/* the whole file at once (pc_fileio.h): the load is over when this returns */
+	PC_FileRead(p, FileSize);
+
+	Redbook_XACheckSectorOnVSync = 0;
+	DAT_800d169c = 1;
+	Redbook_XAModeSet = 0;
+	CurrentPos = FileSize;
+	Loading = 0;
+	FileOpen = 0;
+#else
 	FUN_800912bc(Start / 2048 + WadStart, FileStart);
 
 	Loading = 1;
@@ -58,4 +75,5 @@ void FileIO_Load(char *p) {
 	Redbook_XAModeSet = 0;
 	CurrentPos = 0;
 	FileIO_Continue();
+#endif
 }

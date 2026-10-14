@@ -85,15 +85,19 @@ static plm_frame_t *s_next;      /* decoded, not shown yet */
 static double s_clock, s_audio;
 static int s_stall;
 
-int PC_MovieAvailable(int track) {
+int PC_MoviePlays(int track) {
+    const char *e = getenv("THPS_MOVIES");
     const uint8_t *d;
     uint32_t name;
     char path[260];
-    if (track >= 0 || ~track >= MOVIE_COUNT)
-        return 0;
-    d = PSX_PTR(MOVIE_DETAILS + (uint32_t)~track * 32);
-    memcpy(&name, d, 4);
-    return name && PC_AssetsFindFilm(PSX_PTR(name), path, sizeof path);
+    if ((!e || atoi(e) != 0) && track < 0 && ~track < MOVIE_COUNT) {
+        d = PSX_PTR(MOVIE_DETAILS + (uint32_t)~track * 32);
+        memcpy(&name, d, 4);
+        if (name && PC_AssetsFindFilm(PSX_PTR(name), path, sizeof path))
+            return 1;
+    }
+    PC_Log("movie %d skipped", track);
+    return 0;
 }
 
 int PC_MovieWait(void) {

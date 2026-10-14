@@ -20,6 +20,7 @@
 #include <libgte.h>
 
 #include "pc_geom.h"
+#include "pc_render3d.h"
 
 /* The projection of the transforms: (rot * v + tr) >> 12, perspective, lm off. */
 static __inline__ GeomProj vtx_project(int x, int y, int z) {

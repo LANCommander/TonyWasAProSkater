@@ -8,7 +8,7 @@
  * the screen position, depth and outcode go to ProjectedVertices and the view-space x, y to
  * RotatedVertices. Returns the AND of all the outcodes (0xff for no vertices), so the caller can
  * skip a model that is wholly off one side of the view. */
-int M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi(SVECTOR *v, int n) {
+static int transform_vertices(SVECTOR *v, int n) {
 	struct ClipBounds b;
 	struct SProjectedVertex *pv;
 	struct SRotatedVertex *rv;
@@ -38,4 +38,13 @@ int M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi(SVECTOR *v, int n) {
 
 	SCR_PROJECTED_END = pv;
 	return (int)all;
+}
+
+int M3dAsm_TransformAndOutcodeItemVertices__FP7SVECTORi(SVECTOR *v, int n) {
+#ifdef R3D_HOOKS
+	/* the native renderer keeps the vertices unrounded (pc_render3d.h) */
+	return R3d_Transform(R3D_T_ITEM, (R3dTransformFn)transform_vertices, v, n, 0);
+#else
+	return transform_vertices(v, n);
+#endif
 }

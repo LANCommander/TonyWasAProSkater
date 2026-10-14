@@ -222,16 +222,15 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
         a, n = line.split("\t")[:2]
         psyq.setdefault(n, []).append(int(a, 16))
     hle = {}  # addr -> symbol
-    override = {}
     for s in sorted(defined):
         m = re.fullmatch(r"hle_([0-9a-f]{8})", s)
         if m:
             hle[int(m.group(1), 16)] = s
             continue
-        m = re.fullmatch(r"hleov_([0-9a-f]{8})", s)
-        if m:
-            override[int(m.group(1), 16)] = s
-            continue
+        if re.fullmatch(r"hleov_([0-9a-f]{8})", s):
+            # the port doesn't replace game functions at their addresses any more
+            raise SystemExit("%s: give the game's code a PC_PORT branch on a native service "
+                             "instead of replacing the function" % s)
         name = s[4:] if s.startswith("hle_") else s
         for a in psyq.get(name, []):
             if s.startswith("hle_") or name in psyq:
@@ -268,7 +267,7 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
             names[a] = n
     for a in lib_entries:
         entries.setdefault(a, names.get(a))
-    native = set(hle) - set(override)  # overridden functions stay translated (wrappers call them)
+    native = set(hle)
     ent_file = os.path.join(gen, "recomp_entries.txt")
     nat_file = os.path.join(gen, "recomp_native.txt")
     disp_file = os.path.join(gen, "recomp_dispatch.txt")
@@ -276,7 +275,7 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
                                                           " %d" % sizes[a] if a in sizes else "")
                                        for a in sorted(entries)))
     write_if_changed(nat_file, "".join("0x%08x\n" % a for a in sorted(native)))
-    write_if_changed(disp_file, "".join("0x%08x\n" % a for a in sorted(set(game) | set(override))))
+    write_if_changed(disp_file, "".join("0x%08x\n" % a for a in sorted(game)))
     nsplit = 8
     stamp = os.path.join(gen, "recomp.stamp")
     if not mips:
@@ -304,7 +303,7 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
             referenced.add(int(s[5:13], 16))
     known_fn = set(ctx.functions) | lib_entries | {a for v in psyq.values() for a in v}
     code_refs = {a for a in referenced if TEXT_START <= a < LIB_END}
-    stubs = sorted((known_fn | code_refs) - set(game) - set(hle) - set(override) - recomp_addrs)
+    stubs = sorted((known_fn | code_refs) - set(game) - set(hle) - recomp_addrs)
 
     lines = ['#include "pc_runtime.h"']
     for a, s in sorted(game.items()):
@@ -315,16 +314,10 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
     write_if_changed(os.path.join(gen, "game_table.c"), "\n".join(lines) + "\n")
 
     lines = ['#include "pc_runtime.h"']
-    allh = dict(hle)
-    allh.update(override)
-    for s in sorted(set(allh.values())):
+    for s in sorted(set(hle.values())):
         lines.append("void %s(void);" % s)
     lines.append("const PcFunc pc_hle_funcs[] = {")
-    lines += ["\t{0x%08xu, (void *)%s}," % (a, s) for a, s in sorted(allh.items())]
-    lines.append("\t{0, 0}\n};")
-    # overrides beat decompiled C: the runtime adds them last (see pc_main.c)
-    lines.append("const PcFunc pc_override_funcs[] = {")
-    lines += ["\t{0x%08xu, (void *)%s}," % (a, s) for a, s in sorted(override.items())]
+    lines += ["\t{0x%08xu, (void *)%s}," % (a, s) for a, s in sorted(hle.items())]
     lines.append("\t{0, 0}\n};")
     write_if_changed(os.path.join(gen, "hle_table.c"), "\n".join(lines) + "\n")
 
@@ -621,6 +614,6 @@ def link(ctx, metas, out, toolbin, mips=False, release=False):
         run([tool("objcopy"), "--add-gnu-debuglink=thps.debug", exe], cwd=out)
         package(out, toolbin)
     print("linked %s: %d decompiled, %d HLE, %d translated, %d stubs%s" % (
-        exe, len(game), len(allh), len(recomp_addrs), len(stubs),
+        exe, len(game), len(hle), len(recomp_addrs), len(stubs),
         "" if mips else " (no MIPS: build.py --mips translates the retail code for debugging)"))
     return 0

@@ -182,7 +182,8 @@ def main():
              "-DPC_PORT=1", "-I", os.path.join(PC, "include", "psyq"), "-I",
              os.path.join(PC, "include"), "-I", os.path.join(DECOMP, "include")]
     exe = out + ".exe"
-    cmd = [gcc] + flags + ["-DMREF_GTE", "-DPC_MIPS=1", "-I", out, "-I", os.path.join(PC, "tests"),
+    # PC_TEST_ASM: without the native renderer's hooks (pc_render3d.h, R3D_HOOKS)
+    cmd = [gcc] + flags + ["-DMREF_GTE", "-DPC_MIPS=1", "-DPC_TEST_ASM=1", "-I", out, "-I", os.path.join(PC, "tests"),
                            os.path.join(PC, "tests", "test_asm.c"),
                            os.path.join(PC, "tests", "mips_ref.c"),
                            os.path.join(PC, "src", "pc_gte.c"),

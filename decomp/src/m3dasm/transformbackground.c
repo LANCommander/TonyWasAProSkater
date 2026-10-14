@@ -9,7 +9,7 @@
  * rotation applies and the sky stays put around the viewer. Each vertex gets its screen position
  * and outcode in ProjectedVertices, with the depth forced to 0x7fff (furthest) and no far-plane
  * test; nothing goes to RotatedVertices. Returns the AND of the outcodes (0xff for none). */
-int M3dAsm_TransformAndOutcodeBackgroundVertices__FP7SVECTORi(SVECTOR *v, int n) {
+static int transform_vertices(SVECTOR *v, int n) {
 	struct ClipBounds b;
 	struct SProjectedVertex *pv;
 	uint32_t all = 0xffff;
@@ -35,4 +35,13 @@ int M3dAsm_TransformAndOutcodeBackgroundVertices__FP7SVECTORi(SVECTOR *v, int n)
 	}
 
 	return (int)all;
+}
+
+int M3dAsm_TransformAndOutcodeBackgroundVertices__FP7SVECTORi(SVECTOR *v, int n) {
+#ifdef R3D_HOOKS
+	/* the native renderer keeps the vertices unrounded (pc_render3d.h) */
+	return R3d_Transform(R3D_T_BG, (R3dTransformFn)transform_vertices, v, n, 0);
+#else
+	return transform_vertices(v, n);
+#endif
 }

@@ -60,6 +60,9 @@ void PC_StreamFrame(void);
 /* The soundtrack (pc_music.c): a film's audio ran out, so the song starts over, as a PS1 song does
  * at its end frame. */
 void PC_MusicStreamEnded(void);
+/* GameFMV_SetStartTrack's "next song" (pc_music.c): sets the GameFMV_* track globals up for the next
+ * playable entry of Data/Music/Playlist.m3u. 0 when there is none: the game takes its own next. */
+int PC_MusicNextSong(void);
 
 #ifdef __cplusplus
 }

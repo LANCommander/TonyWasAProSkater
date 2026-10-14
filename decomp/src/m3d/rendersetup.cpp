@@ -41,6 +41,7 @@ int RefMapClut, RefMapTpage, RefMapU0V0;
 SVECTOR WaterNormal;
 
 #ifdef PC_PORT
+#include "pc_render3d.h"
 #include "pc_video.h"
 
 /* Widescreen (platform/pc, pc_gpu_gl.h): a full-width view takes in pc_wide_pad more columns on
@@ -195,4 +196,7 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, uint *ot) {
 	WaterNormal.vy = -pCurrentCamera->Transform.m[1][1];
 	WaterNormal.vz = -pCurrentCamera->Transform.m[1][2];
 	WaterNormal.pad = (CurrentWaterLevel >> 12) - pCurrentCamera->Position.vy;
+#ifdef PC_PORT
+	R3d_RenderSetup(pVP, ot); /* the native renderer's 3D layer */
+#endif
 }

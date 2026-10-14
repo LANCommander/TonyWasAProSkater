@@ -14,7 +14,7 @@ static GeomProj project_offset_vertex(const SVECTOR *v, const VECTOR *o) {
  * cleared) into the scratchpad's fast cache: screen word with clip flags (vtx_fast_word) and
  * depth. Returns the AND of the screen words (-1 for no vertices). (The retail loop is
  * software-pipelined and also projects the word pair just past the last vertex, for nothing.) */
-int M3dAsm_TransformAndOutcodeVerticesFast__FP7SVECTORiP6VECTOR(SVECTOR *v, int n, VECTOR *o) {
+static int transform_vertices(SVECTOR *v, int n, VECTOR *o) {
 	struct SViewport *vp;
 	struct SFastVertex *out = FAST_CACHE;
 	uint32_t xRyB, all = 0xffffffffu;
@@ -40,4 +40,13 @@ int M3dAsm_TransformAndOutcodeVerticesFast__FP7SVECTORiP6VECTOR(SVECTOR *v, int 
 	}
 
 	return (int)all;
+}
+
+int M3dAsm_TransformAndOutcodeVerticesFast__FP7SVECTORiP6VECTOR(SVECTOR *v, int n, VECTOR *o) {
+#ifdef R3D_HOOKS
+	/* the native renderer keeps the vertices unrounded (pc_render3d.h) */
+	return R3d_Transform(R3D_T_FAST, (R3dTransformFn)transform_vertices, v, n, o);
+#else
+	return transform_vertices(v, n, o);
+#endif
 }

@@ -15,9 +15,10 @@
 extern "C" {
 #endif
 
-/* 1 if movie-table entry `track` (GameFMV_PlayMovie's argument: ~entry) has its file here (an STR
- * or a Dreamcast film). */
-int PC_MovieAvailable(int track);
+/* 1 if GameFMV_PlayMovie(track) should play movie-table entry ~track: its file is here (an STR or
+ * a Dreamcast film) and THPS_MOVIES isn't 0. Otherwise the movie is skipped, as when the player
+ * presses a button through one. */
+int PC_MoviePlays(int track);
 
 /* An STR movie (the game's own player): wait a frame for the stream to deliver the next video
  * frame. 0 once the stream has stopped with no frame left to come. */

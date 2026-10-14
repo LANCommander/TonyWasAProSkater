@@ -1,10 +1,11 @@
 /* The soundtrack order comes from Data/Music/Playlist.m3u (written on first startup, see
  * pc_assets.c) instead of the retail rotation through the movie table.
  *
- * FUN_80023168 (GameFMV_SetStartTrack) picks what the next StartFMV streams: a negative argument
- * is a fixed movie-table entry (~arg; the movies, and the songs the front end previews), anything
- * else means "the next song", which the retail code takes from its CycleTracks cursor. Here the
- * next song is the next playlist entry instead. The fixed entries keep using the movie table.
+ * GameFMV_SetStartTrack (decomp/src/unnamed/80023168.c) picks what the next StartFMV streams: a
+ * negative argument is a fixed movie-table entry (~arg; the movies, and the songs the front end
+ * previews), anything else means "the next song", which the retail code takes from its CycleTracks
+ * cursor. Its PC_PORT branch asks PC_MusicNextSong for the next playlist entry instead. The fixed
+ * entries keep using the movie table.
  *
  * A playlist entry is a file of raw STR sectors (relative to Data/Music, or absolute). Files the
  * movie table knows take its settings (video size, end frame, volume); any other file plays with
@@ -107,9 +108,10 @@ static int FindEntry(const char *song) {
     return -1;
 }
 
-/* Set up the next playable playlist entry; 0 if there is none. */
-static int NextSong(void) {
+int PC_MusicNextSong(void) {
     int tries, i;
+    if (!s_loaded)
+        LoadPlaylist();
     for (tries = 0; tries < s_nsongs; tries++) {
         const char *song = s_songs[s_next];
         char path[MAX_PATH];
@@ -159,14 +161,4 @@ static int NextSong(void) {
 void PC_MusicStreamEnded(void) {
     if (GameFMV_Active && !GameFMV_IsMovie)
         GameFMV_RewindSwitch = 1;
-}
-
-void hleov_80023168(int track) {
-    extern void pcfn_80023168(int);
-    if (GameFMV_Active)
-        return;
-    if (!s_loaded)
-        LoadPlaylist();
-    if (track < 0 || !NextSong())
-        pcfn_80023168(track);
 }

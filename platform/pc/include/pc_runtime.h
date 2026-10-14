@@ -59,6 +59,9 @@ void PC_Log(const char *fmt, ...);
 void PC_Trace(const char *fmt, ...);
 extern int pc_trace;
 void PC_Fatal(const char *fmt, ...);
+/* Bang(r, g, b), the game's fatal-error handler, which on the PS1 fills the screen with a colour and
+ * spins: reports which heap ran out (and its free list) and exits instead of hanging silently. */
+void PC_Bang(int r, int g, int b) __attribute__((noreturn));
 
 /* Called by generated stubs for functions with no implementation yet. Returns 0. */
 uint32_t PC_MissingFunction(uint32_t addr);

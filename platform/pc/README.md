@@ -195,8 +195,9 @@ The game's own indexes say what to extract: `CD.HED` lists the files packed in `
 and the retail executable's movie table lists the STR files and which are songs. STR files keep
 their raw 2352-byte sectors (XA audio intact; ffmpeg and jPSXdec play them).
 
-At runtime files are found by name anywhere under `Data/`. `src/pc_fileio.c` replaces the game's
-CD.WAD loader (FileIO_Open/Load/Continue/Sync) with plain file reads, and songs and movies stream
+At runtime files are found by name anywhere under `Data/`. The game's CD.WAD loader
+(FileIO_Open/Load/Continue/Sync) reads them through `pc_fileio.h` (its PC_PORT branches: one plain
+file read per load, finished when FileIO_Load returns), and songs and movies stream
 from their files (`src/pc_stream.c`). The disc image is read only by the extraction
 (`src/pc_disc.c`). Missing files are extracted again on the next start
 (with the disc image present); the playlist is never overwritten (delete it to get the default
@@ -436,7 +437,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_WATCH=addr` | hardware write watchpoint on a 4-byte word: logs value, native EIP and callers |
 | `THPS_COUNT=addr,...` | log per-frame call counts of those functions |
 | `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log fills and drawing-environment changes / polygon counts per frame |
-| `THPS_TRACE_PSX`, `THPS_TRACE_CULL`, `THPS_TRACE_RENDER` | spooler, frustum-culling and renderer traces |
+| `THPS_TRACE_CULL`, `THPS_TRACE_RENDER` | frustum-culling and renderer traces |
 | `THPS_AUDIO=0` / `THPS_AUDIO_DUMP=file` | no sound device / also write the mixed output as raw s16le stereo 44.1 kHz |
 | `THPS_TRACE_SOUND=1` | log sound channel key on/off, bank loads and reverb modes (with `THPS_TRACE=1`) |
 
