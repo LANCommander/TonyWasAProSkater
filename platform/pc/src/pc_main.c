@@ -22,6 +22,7 @@
 #include <SDL2/SDL.h>
 
 #include "pc_assets.h"
+#include "pc_dcsound.h"
 #include "pc_gamedata.h"
 #include "pc_geom.h"
 #include "pc_input.h"
@@ -792,9 +793,12 @@ static void PlatformInit(void) {
     SDL_SetMainReady();
     PC_AssetsInit();
     PC_VideoInit(scale > 0 ? scale : 3);
-    if (PC_AssetsDreamcast() && !R3d_Native())
-        PC_Log("note: the Dreamcast models and textures need the native 3D renderer (not "
-               "THPS_RENDER3D=psx): they will look wrong");
+    if (PC_AssetsDreamcast()) {
+        PC_DcSoundTable();
+        if (!R3d_Native())
+            PC_Log("note: the Dreamcast models and textures need the native 3D renderer (not "
+                   "THPS_RENDER3D=psx): they will look wrong");
+    }
     PC_InputInit();
     PC_SoundInit();
 }

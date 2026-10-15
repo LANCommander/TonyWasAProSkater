@@ -46,6 +46,12 @@ typedef struct {
 #define GAME_SKATERS 11
 extern GameStats Stats[GAME_SKATERS];
 
+/* the sound effects (SFX_PlayX, game/data/unnamed.cpp): per id the VAB voice word (bit 31 loops,
+ * bit 30 the level's bank, program in bits 16-22, a mask of its tones in the low half), then
+ * note << 16 | volume percent */
+#define GAME_SFX_COUNT 175
+extern int32_t DAT_800b8a9c[GAME_SFX_COUNT * 2];
+
 /* the game's static constructors (retail's __CTOR_LIST__): GAME_CTORS of them, then teardowns */
 #define GAME_CTORS 19
 extern void (*GameCtorList[25])(void);
