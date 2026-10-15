@@ -34,6 +34,9 @@ OUT = os.environ.get("THPS_BUILD_DIR") or os.path.join(
 USCORE = "_" if WINDOWS and not X64 else ""
 # the compiler flag for the word size
 MFLAG = "-m64" if X64 else "-m32"
+# THPS_ASAN=1: AddressSanitizer on the game code, its data and the runtime (Linux; a separate
+# THPS_BUILD_DIR): reads past a global's end, use after free...
+SANITIZE = ["-fsanitize=address", "-fsanitize-recover=address"] if os.environ.get("THPS_ASAN") else []
 PTR = 8 if X64 else 4
 
 

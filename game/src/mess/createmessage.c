@@ -16,7 +16,8 @@ extern Message *pMessages;
 
 extern Message *Mem_NewX(int, int, int);
 
-void CreateMessage(void) {
+/* the new message, first in the list (Mess_Message uses it) */
+Message *CreateMessage(void) {
 	Message *m = Mem_NewX(sizeof(Message), 0, 1);
 	Message *h = pMessages;
 
@@ -26,4 +27,6 @@ void CreateMessage(void) {
 
 	if (h)
 		h->prev = m;
+
+	return m;
 }

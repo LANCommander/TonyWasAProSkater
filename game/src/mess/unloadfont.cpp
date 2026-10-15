@@ -36,7 +36,9 @@ void Mess_UnloadFont(void) {
 				Num_fonts = m;
 				n = m;
 
-				if (Font_table[i - 2].mChar_table)
+				/* (with no fonts left retail looked at the word before the table; either way it
+				   returns next time round) */
+				if (i < 2 || Font_table[i - 2].mChar_table)
 					return;
 			}
 		}

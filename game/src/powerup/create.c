@@ -5,9 +5,12 @@
 void *__nw__5CItemUi(unsigned);
 void *CPowerUp_ctor(void *, unsigned short, void *, void *, unsigned, int);
 
-void PowerUp_Create(unsigned short type, void *pos, unsigned a, int b, void *v) {
+/* the new power-up (0 if there was no memory) */
+void *PowerUp_Create(unsigned short type, void *pos, unsigned a, int b, void *v) {
 	void *p = __nw__5CItemUi(SIZEOF_CPOWERUP);
 
 	if (p)
 		CPowerUp_ctor(p, type, pos, v, a, b);
+
+	return p;
 }

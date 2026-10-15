@@ -107,6 +107,11 @@ python platform/pc/tools/build.py      # -> build/pc/thps.exe
 build/pc/thps.exe
 ```
 
+On Windows, `build-pc.bat` and `build-linux.bat` in the repository root wrap this:
+`build-pc.bat [debug|release] [x86|x64] [build.py options]`, and the same for `build-linux.bat`,
+which builds in Docker (`platform/pc/docker/Dockerfile`, image `thps-linux-build`; Docker Desktop
+must be running) with Ghidra's Linux demangler from `GHIDRA_INSTALL_DIR`.
+
 `build.py --release` makes the distributable build in `build/pc/release/`: `thps.exe` linked as
 a GUI program (the log goes to `thps.log` in the player's folder when there is no console), its
 debug information split into `thps.debug`; and `thps-windows.zip` with the exe,
@@ -127,6 +132,12 @@ disagree.
 ```
 THPS_ARCH=x64 python platform/pc/tools/build.py   # -> build/pc64/thps.exe
 ```
+
+`THPS_ASAN=1` (Linux, with its own `THPS_BUILD_DIR`) builds the game code, its data and the runtime
+with AddressSanitizer, which reports a read or write past a global's end (the decompiled code's
+views of the data are its own declarations, so the compiler can't check them) and use after free.
+Run it with `ASAN_OPTIONS=halt_on_error=0:handle_segv=0:allow_user_segv_handler=1:detect_leaks=0`:
+the port's own fault handlers stay in charge.
 
 ### Linux
 

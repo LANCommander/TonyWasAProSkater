@@ -37,7 +37,7 @@ GAME = os.path.join(ROOT, "game")      # the port's game code, data and headers
 sys.path.insert(0, HERE)
 import portsrc  # noqa: E402
 import toolchain  # noqa: E402
-from toolchain import MFLAG, OUT, TOOLBIN, USCORE, WINDOWS, X64, tool  # noqa: E402,F401
+from toolchain import MFLAG, OUT, SANITIZE, TOOLBIN, USCORE, WINDOWS, X64, tool  # noqa: E402,F401
 
 GAME_CODE_END = 0x800858AC
 CODE_END = 0x8009D0E0  # hand-written assembly rewritten in C (reimpl.tsv) lies past the game code
@@ -54,7 +54,7 @@ COMMON_FLAGS = [
     "-I", os.path.join(PC, "include", "psyq"), "-I", os.path.join(PC, "include"),
     "-I", os.path.join(GAME, "include"),
     "-include", os.path.join(PC, "include", "pc_game.h"),
-]
+] + SANITIZE
 if not X64:
     # i386: cdecl for C++ members too (no thiscall: C code calls them with `this` first), 8-byte
     # aligned doubles as everywhere else
@@ -177,7 +177,7 @@ DATA_DIR = os.path.join(GAME, "data")
 DATA_FLAGS = [MFLAG, "-std=gnu++98", "-O1", "-g", "-fno-common", "-fno-exceptions", "-fno-rtti",
               "-w", "-funsigned-char", "-DPC_PORT=1", "-DGAME_DATA_TU", "-I", DATA_DIR,
               "-I", os.path.join(GAME, "include"), "-I", os.path.join(PC, "include", "psyq"),
-              "-I", os.path.join(PC, "include")] + ([] if WINDOWS else ["-fno-pic"])
+              "-I", os.path.join(PC, "include")] + ([] if WINDOWS else ["-fno-pic"]) + SANITIZE
 
 
 def nm_symbols(obj):

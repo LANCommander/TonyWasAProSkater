@@ -102,7 +102,7 @@ void Front_Display() {
 	CBruce *pMan;
 	static char Score1[20];
 	static char Score2[20];
-	static char Tapes[5];
+	static char Tapes[12]; /* "%d of %d": 5 bytes was too small for "5 of 5" */
 	static char Tricks[8];
 	static char Bails[8];
 	static char BestCombo[40];

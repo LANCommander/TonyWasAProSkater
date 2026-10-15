@@ -22,10 +22,14 @@ Texture *NextTexture(void) {
 	}
 
 	do {
-		pCurrentTex = t = TextureChecksumHashTable[++HashIndex];
-
-		if (HashIndex >= 512)
+		/* (retail read the entry past the table's end before this test; the value was never used:
+		   GotoStartOfTextureList sets both again) */
+		if (++HashIndex >= 512) {
+			pCurrentTex = 0;
 			return 0;
+		}
+
+		pCurrentTex = t = TextureChecksumHashTable[HashIndex];
 	} while (!t);
 
 	goto again;

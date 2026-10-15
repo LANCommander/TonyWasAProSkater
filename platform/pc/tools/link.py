@@ -21,7 +21,7 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from toolchain import EXE_NAME, MFLAG, USCORE, WINDOWS, X64, tool  # noqa: E402
+from toolchain import EXE_NAME, MFLAG, SANITIZE, USCORE, WINDOWS, X64, tool  # noqa: E402
 PC = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(PC))
 
@@ -295,7 +295,7 @@ def link(ctx, metas, out, toolbin, release=False):
         sdl_libs = []
     else:
         sdl_cflags, sdl_libs = sdl_flags()
-    rt_flags = [MFLAG, "-O2", "-g", "-std=gnu11", "-fno-strict-aliasing", "-fwrapv",
+    rt_flags = SANITIZE + [MFLAG, "-O2", "-g", "-std=gnu11", "-fno-strict-aliasing", "-fwrapv",
                 "-fno-omit-frame-pointer", "-Wall", "-Wno-unused-function",
                 "-Wno-unused-variable", "-Werror=implicit-function-declaration", "-I" + os.path.join(PC, "include"),
                 "-I" + os.path.join(PC, "include", "psyq")] + sdl_cflags
@@ -588,7 +588,7 @@ def link(ctx, metas, out, toolbin, release=False):
         # independent: the image sits at its default 0x08048000
         libs = sdl_libs + ["-lm", "-lpthread"]
         ldflags = ["-no-pie", "-Wl,-z,noexecstack"]
-    run([gcc, MFLAG, "-g", "@" + rsp, "-o", exe] + ldflags +
+    run([gcc, MFLAG, "-g", "@" + rsp, "-o", exe] + SANITIZE + ldflags +
         ["-Wl," + os.path.join(gen, "psx_syms.ld").replace("\\", "/")] + libs)
     if release:
         # the debug info goes to thps.debug (for symbolize.py; not shipped)

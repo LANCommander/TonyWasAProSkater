@@ -5,8 +5,10 @@ extern int TotSlots;
 
 void *Mem_NewX(int a, int b, int c);
 
-void Pack_GetSlot(void) {
-	Mem_NewX(20, 0, 1);
+/* a new TSPack (its callers use what Mem_NewX returns, which retail's v0 still held) */
+void *Pack_GetSlot(void) {
+	void *p = Mem_NewX(20, 0, 1);
 
 	TotSlots = TotSlots + 1;
+	return p;
 }
