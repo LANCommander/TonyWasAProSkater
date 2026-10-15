@@ -1,4 +1,4 @@
-/* The game window (src/pc_video.c): windowed, borderless fullscreen at the desktop's resolution,
+/* The game window (src/pc_video.cpp): windowed, borderless fullscreen at the desktop's resolution,
  * or exclusive fullscreen in one of the display's modes. With OpenGL the game draws at the
  * window's resolution (pc_gpu_gl.h), so a 1024x768 mode is drawn at 1024x768. The draw distance
  * and fog settings live here too (PC_DrawFarPlane below). Kept in the
@@ -33,19 +33,6 @@ typedef struct {
 /* draw_distance: the entire level (beyond the 16-bit view space; native 3D renderer only) */
 #define PC_DISTANCE_FULL 10000
 
-/* Create the window and the renderer (scale = integer window scale of a 320x240 display), and
- * close them. */
-void PC_VideoInit(int scale);
-void PC_VideoShutdown(void);
-/* Nonzero when THPS_HEADLESS=1 suppressed the window. */
-int PC_VideoIsHeadless(void);
-/* Show the display (or the picture shown instead, pc_screen.h) in the window. Once per frame. */
-void PC_VideoPresent(void);
-/* Debugging: the screens' and textures' space (1024x512 at the PS1's resolution) or the display
- * area to a .bmp. */
-int PC_VideoDumpSpace(const char *path);
-int PC_VideoDumpDisplay(const char *path);
-
 void PC_VideoGetSettings(PcVideoSettings *s);
 /* Switch the window to s now (Settings.ini is written by PC_VideoSave). */
 void PC_VideoApply(const PcVideoSettings *s);
@@ -55,9 +42,6 @@ int PC_VideoSave(void);
  * on the desktop, plus the current window size), or just the desktop's for borderless. */
 int PC_VideoResolutionCount(int mode);
 void PC_VideoResolution(int mode, int i, int *w, int *h);
-
-/* An SDL_Event from the event pump: Alt+Enter, window resizes. */
-void PC_VideoEvent(const void *sdl_event);
 
 /* Draw distance, for the game's renderer (game/src/m3d). The level's fog runs from
  * DpqMin to DpqMax, and DpqMax is also the far plane (SViewport.Yon), so the far plane and the

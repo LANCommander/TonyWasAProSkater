@@ -10,7 +10,8 @@ notices follow.
                         Khronos API data under
                         Apache-2.0
   MinGW-w64 runtime     ZPL-2.1 and others      https://www.mingw-w64.org
-  GCC runtime (libgcc)  GPL-3.0 with the GCC Runtime Library Exception (no notice required)
+  GCC runtime (libgcc,  GPL-3.0 with the GCC Runtime Library Exception (no notice required)
+  libstdc++)
 
 
 ------------------------------------------------------------------------------------------------

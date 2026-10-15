@@ -25,6 +25,10 @@ from toolchain import EXE_NAME, MFLAG, SANITIZE, USCORE, WINDOWS, X64, tool  # n
 PC = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(PC))
 
+# the runtime's C++: no exceptions or RTTI (as the game's code); -Wno-missing-field-initializers
+# for the `= {0}` zero-initialisers
+CXX_RT_FLAGS = ["-std=gnu++20", "-fno-exceptions", "-fno-rtti", "-Wno-missing-field-initializers"]
+
 GAME_END = 0x800858AC
 LIB_END = 0x8009D0E0  # first byte of .rodata after the Psy-Q libraries
 TEXT_START = 0x80010000
@@ -66,7 +70,8 @@ thps has these libraries built into it. Their copyright and license notices foll
   glad (OpenGL loader)  CC0-1.0 / WTFPL, with   https://github.com/Dav1dde/glad
                         Khronos API data under
                         Apache-2.0
-  GCC runtime (libgcc)  GPL-3.0 with the GCC Runtime Library Exception (no notice required)
+  GCC runtime (libgcc,  GPL-3.0 with the GCC Runtime Library Exception (no notice required)
+  libstdc++)
 
 It also uses the system's SDL 2 (zlib license, https://libsdl.org), C library and OpenGL
 driver, which are not part of this download.
@@ -281,6 +286,7 @@ def data_names(ctx, gen):
 
 def link(ctx, metas, out, toolbin, release=False):
     gcc = tool("gcc")
+    gxx = tool("g++")
     objroot = out
     if release:
         out = os.path.join(out, "release")
@@ -295,9 +301,9 @@ def link(ctx, metas, out, toolbin, release=False):
         sdl_libs = []
     else:
         sdl_cflags, sdl_libs = sdl_flags()
-    rt_flags = SANITIZE + [MFLAG, "-O2", "-g", "-std=gnu11", "-fno-strict-aliasing", "-fwrapv",
+    rt_flags = SANITIZE + [MFLAG, "-O2", "-g", "-fno-strict-aliasing", "-fwrapv",
                 "-fno-omit-frame-pointer", "-Wall", "-Wno-unused-function",
-                "-Wno-unused-variable", "-Werror=implicit-function-declaration", "-I" + os.path.join(PC, "include"),
+                "-Wno-unused-variable", "-I" + os.path.join(PC, "include"),
                 "-I" + os.path.join(PC, "include", "psyq")] + sdl_cflags
     if not WINDOWS:
         # absolute addresses (no PIE), the Windows ABI's small-struct returns (as the game code,
@@ -307,19 +313,25 @@ def link(ctx, metas, out, toolbin, release=False):
     img = ctx.image[0x800:]
 
     # ---- 1. runtime -------------------------------------------------------------------------
-    srcs = sorted(glob.glob(os.path.join(PC, "src", "*.c")))
+    # the runtime is C++ (glad's generated loader stays C)
+    srcs = sorted(glob.glob(os.path.join(PC, "src", "*.c")) +
+                  glob.glob(os.path.join(PC, "src", "*.cpp")))
+    hdrs = glob.glob(os.path.join(PC, "include", "**", "*.h"), recursive=True)
 
     def cc(src, obj, flags):
         if os.path.exists(obj) and os.path.getmtime(obj) >= os.path.getmtime(src) and \
-                all(os.path.getmtime(obj) >= os.path.getmtime(h)
-                    for h in glob.glob(os.path.join(PC, "include", "**", "*.h"), recursive=True)):
+                all(os.path.getmtime(obj) >= os.path.getmtime(h) for h in hdrs):
             return obj
-        run([gcc] + flags + ["-c", src, "-o", obj])
+        if src.endswith(".cpp"):
+            run([gxx] + flags + CXX_RT_FLAGS + ["-c", src, "-o", obj])
+        else:
+            run([gcc] + flags + ["-std=gnu11", "-Werror=implicit-function-declaration", "-c", src,
+                 "-o", obj])
         return obj
 
     with cf.ThreadPoolExecutor() as ex:
-        rt_objs = list(ex.map(lambda s: cc(s, os.path.join(rt, os.path.basename(s)[:-2] + ".o"),
-                                           rt_flags), srcs))
+        rt_objs = list(ex.map(lambda s: cc(s, os.path.join(rt, os.path.splitext(
+            os.path.basename(s))[0] + ".o"), rt_flags), srcs))
     defined = set()
     for o in rt_objs:
         for line in run([nm, "-g", "--defined-only", o]).splitlines():
@@ -587,8 +599,9 @@ def link(ctx, metas, out, toolbin, release=False):
         # SDL2 and the C library are the system's; OpenGL comes through SDL. Not position
         # independent: the image sits at its default 0x08048000
         libs = sdl_libs + ["-lm", "-lpthread"]
-        ldflags = ["-no-pie", "-Wl,-z,noexecstack"]
-    run([gcc, MFLAG, "-g", "@" + rsp, "-o", exe] + SANITIZE + ldflags +
+        # the runtime's C++ library is linked in (no libstdc++ version to match on the player's system)
+        ldflags = ["-no-pie", "-Wl,-z,noexecstack", "-static-libstdc++", "-static-libgcc"]
+    run([gxx, MFLAG, "-g", "@" + rsp, "-o", exe] + SANITIZE + ldflags +
         ["-Wl," + os.path.join(gen, "psx_syms.ld").replace("\\", "/")] + libs)
     if release:
         # the debug info goes to thps.debug (for symbolize.py; not shipped)

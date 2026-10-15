@@ -25,31 +25,13 @@
 extern "C" {
 #endif
 
-/* Extract whatever is missing from Data/. Needs the retail executable loaded (its movie table
- * lists the files) and, if anything is missing, the disc image. */
-void PC_AssetsInit(void);
-
-/* 1 if Data/ holds the Dreamcast version's files (extracted from its disc; pc_assets.c). */
-int PC_AssetsDreamcast(void);
-
 /* An image the Dreamcast redrew larger (name, its size w x h): 1 and the size the PS1 game lays
  * it out at, in VRAM pixels (the front-end screens, line-doubled on the PS1: 640x480). Loaders
  * show it at that size with all its pixels: the screens load without line-doubling, others are
  * drawn scaled (PC_ScreenBlitHiRes, Sprite). 0 for any other image or the PS1's data. */
 int PC_ImageLayoutSize(const char *name, int w, int h, int *lw, int *lh);
-/* The same for a loaded .bmp (FileIO marks it in memory; pc_fileio.c). */
+/* The same for a loaded .bmp (FileIO marks it in memory; pc_fileio.cpp). */
 int PC_BmpLayoutSize(const void *bmp, int *lw, int *lh);
-
-/* `rel` ("Music\\Playlist.m3u") under the Data directory (THPS_DATA_DIR, else Data next to
- * thps.exe). */
-void PC_AssetsPath(char *out, int n, const char *rel);
-
-/* The file under Data/ with this name, in any folder ("\\SUICIDE.STR;1", "skware.psx"): 1 and
- * its path, or 0. */
-int PC_AssetsFind(const char *discName, char *path, int n);
-/* The same for a movie or song ("\\HAWK.STR;1"): the STR, else the Dreamcast's film of it
- * ("hawk.sfd"; ATVILOGO is activision.sfd, LOGO never.sfd, BURNQUIS burnquist.sfd). */
-int PC_AssetsFindFilm(const char *discName, char *path, int n);
 
 #ifdef __cplusplus
 }

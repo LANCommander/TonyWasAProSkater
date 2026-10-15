@@ -1,8 +1,8 @@
-/* The screens (src/pc_screen.c): what the game draws on and what the window shows.
+/* The screens (src/pc_screen.cpp): what the game draws on and what the window shows.
  *
  * The game's screens are areas in the PS1's 1024x512 frame-buffer space, where its drawing
  * environments and display put them (two 512x240 buffers in play, one 640x480 interlaced in the
- * front end); their pixels are in the renderer's render targets (pc_gpu_gl.h). The CPU's own
+ * front end); their pixels are in the renderer's render targets (pc/gl_gpu.h). The CPU's own
  * writes and reads of them, 15-bit pixels with the mask bit, go through here. */
 #ifndef PC_SCREEN_H
 #define PC_SCREEN_H
@@ -30,20 +30,6 @@ void PC_ScreenShow(const void *dispenv);
 void PC_ScreenEnable(int on);
 /* The display at power-on: off. */
 void PC_ScreenReset(void);
-typedef struct {
-    int x, y;         /* the screen area shown */
-    int w, h;         /* its size in pixels (h 480 interlaced) */
-    int interlaced;
-    int enabled;
-} PcDisplay;
-void PC_ScreenGetDisplay(PcDisplay *d);
-
-/* Show a picture (w x h, 0xAARRGGBB rows, copied) at 4:3 instead of the game's screen, from the
- * next presented frame until PC_ScreenShowGame: full-screen movies. */
-void PC_ScreenShowImage(const uint32_t *argb, int w, int h);
-void PC_ScreenShowGame(void);
-/* The picture being shown (NULL: the game's screen). */
-const uint32_t *PC_ScreenImage(int *w, int *h);
 
 #ifdef __cplusplus
 }

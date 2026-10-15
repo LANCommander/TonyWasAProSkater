@@ -365,14 +365,14 @@ NATIVE_OK = re.compile(r"^(__alloca|___chkstk.*|__[a-z]*div[sd]i3|__[a-z]*mod[sd
 # game never allocates from) does nothing
 NATIVE_RENAME = {"printf": "PC_GameDebugf", "puts": "PC_GameDebugPuts",
                  "__builtin_delete": "pc_delete_unowned"}
-# The same, by address only: libgte is src/pc_libgte.c (PC_<name>). Not by name: decompiled
+# The same, by address only: libgte is src/pc_libgte.cpp (PC_<name>). Not by name: decompiled
 # sources call the game's own M3dMaths_SquareRoot0 (0x8008b5dc) `SquareRoot0` too.
 NATIVE_AT = dict((n, "PC_" + n) for n in (
     "SetRotMatrix", "SetTransMatrix", "SetGeomScreen", "SetGeomOffset", "SetFarColor", "InitGeom",
     "TransposeMatrix", "TransMatrix", "MulMatrix", "MulMatrix0", "ApplyMatrixSV", "ApplyMatrixLV",
     "RotMatrixYXZ", "RotMatrixYXZ_gte", "RotMatrixY", "VectorNormal", "VectorNormalSS",
     "SquareRoot0", "catan", "ratan2",
-    # libgpu's pure helpers (src/pc_libgpu.c)
+    # libgpu's pure helpers (src/pc_libgpu.cpp)
     "SetDefDrawEnv", "SetDefDispEnv", "SetDrawArea", "SetDrawTPage", "SetPolyF4", "GetTPage",
     "GetClut", "DrawSync"))
 

@@ -19,7 +19,7 @@ by native services and its memory by native memory. Ports to other platforms sta
   pointers (`include/psyq/libgpu.h`, `P_TAG`), and the display buffers are the native
   `DoubleBuffer` (`game/include/game/dbuffer.h`). The game's null-pointer reads, which read low
   RAM on the PS1, are fixed where they happen; any left are redirected to a zero page and logged
-  once (`src/pc_main.c`). The executable is 32- or 64-bit (below).
+  once (`src/pc_main.cpp`). The executable is 32- or 64-bit (below).
 - **One file per retail module.** `game/src/<module>.cpp` holds the functions of one of
   Neversoft's source files (`baddy.cpp` = BADDY.CPP: CBaddy and CScriptOnlyBaddy), in retail
   address order; THPS1-only modules the demo doesn't have get their own (`frontend.cpp`,
@@ -32,12 +32,12 @@ by native services and its memory by native memory. Ports to other platforms sta
   `.syms.json` (`psx_<addr>`), as are the data's pointers to functions, so the decompilation's
   many names for one function agree. The link resolves those (`gen/psx_syms.ld`) to the function's native code
   (`pcfn_<addr>`; one with no C, none of which is called in play, to a stub that logs the call).
-  Runtime code reads the game's globals by name (`include/pc_gamedata.h`).
+  Runtime code reads the game's globals by name (`include/pc/game_data.h`).
 - **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` renderer and maths, and a few game
   helpers) is C interpretations, one file per original `.s` (`game/src/m3dasm/m3dasm.c`,
   `m3dmaths.c`, `game/src/fixedmath.c`, `mdecdecode.c`); the
-  Psy-Q library code the game uses is the port's own C (`src/pc_libgte.c` for libgte,
-  `src/pc_libgpu.c` for libgpu's helpers). Before the port forked from the decompilation, all of
+  Psy-Q library code the game uses is the port's own (`src/pc_libgte.cpp` for libgte,
+  `src/pc_libgpu.cpp` for libgpu's helpers). Before the port forked from the decompilation, all of
   it was checked against the retail code (differential tests running the original MIPS on recorded
   game states); those tools are in the history.
 - **C++ classes.** The game's classes are real C++ classes declared once, in
@@ -66,7 +66,7 @@ by native services and its memory by native memory. Ports to other platforms sta
     outputs (projection, matrix times vector, cross product, depth cue ...), bit-identical to the
     hardware (44-bit sums, 16-bit saturation, the UNR divide, the same FLAG word), and a
     `GeomState` for what the game keeps between calls (the current rotation, translation, light
-    and colour matrices, screen). libgte is `src/pc_libgte.c` on it (the game's calls go there by
+    and colour matrices, screen). libgte is `src/pc_libgte.cpp` on it (the game's calls go there by
     address: `build.py` `NATIVE_AT`), and the game's GTE code calls it. M3DMATHS' "last vector" and the colour code the face renderer carries between
     faces, which retail kept in GTE registers, are explicit (`game/src/m3dasm/lastvec.h`,
     `processpolys.h`);
@@ -76,9 +76,27 @@ by native services and its memory by native memory. Ports to other platforms sta
     list) walked and drawn through OpenGL; the screens and the display are `pc_screen.h` (fills,
     the CPU's own pixels in and out, what the window shows); the textures and CLUTs are
     `pc_texstore.h`, at the places the game's own allocators give them. There is no VRAM; libgpu's
-    pure helpers (`SetDefDrawEnv`, `GetTPage` ...) are `src/pc_libgpu.c` (`NATIVE_AT`).
+    pure helpers (`SetDefDrawEnv`, `GetTPage` ...) are `src/pc_libgpu.cpp` (`NATIVE_AT`).
 
   There's no BIOS, CD, SPU, GTE, GPU or MDEC in the port, and no retail code.
+
+## The runtime
+
+The runtime (`src/`) is C++ (`-std=gnu++20`, no exceptions or RTTI), in namespace `pc`. Each
+subsystem is a class declared in `include/pc/<name>.h`, with one instance defined in its source
+file (constant-initialised, so there is no static-initialisation order): `FrameClock` (the frame
+clock), `Video` (the window), `GlGpu` (the OpenGL backend), `OtDrawer` (the ordering-table walk),
+`Renderer3D` and `PreciseVertices` (the native 3D renderer), `Screens`, `TextureStore`, `Sound`,
+`Streamer`, `Playlist`, `MoviePlayer`, `VideoDecoder`, `Input`, `Saves`, `Assets`, `DiscImage`,
+`FileIo`, `DcTextures`, `DcSound`, `Settings`, and `Runtime`/`Diagnostics` (boot, the game's heap,
+fault handling); handles are classes of their own (`SfdFilm`, `GdRom`, `XaDecoder`,
+`os::DirList`). The runtime calls its subsystems through these classes.
+
+The game reaches the runtime only through the C interface in `include/pc_*.h` (`extern "C"`:
+the game's code, its C files and the build's symbol renaming name these functions by their C
+names), whose functions forward to the classes; each source file ends with its share of them.
+`pc_geom.h` (the GTE maths) and the Psy-Q replacements (`src/pc_libgte.cpp`, `pc_libgpu.cpp`)
+are C interfaces by nature and stay plain functions.
 
 ## Calling convention
 
@@ -91,9 +109,10 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 |---|---|
 | `../../game/` | the game: `src/` (its code, a file per module), `include/game/` (its classes and structures), `data/` (its initialised data), `functions.tsv` (every retail function) |
 | `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `sys/types.h`) |
-| `include/pc_*.h` | interfaces between the port's subsystems |
-| `src/` | runtime: boot, diagnostics, frame clock, input, video, drawing, screens, textures, saves, streams, sound, geometry maths |
-| `include/pc_platform.h`, `src/pc_platform.c` | what differs between Windows and Linux: paths, folders, files, clock |
+| `include/pc_*.h` | the runtime's C interface to the game (what the game's code calls) |
+| `include/pc/*.h` | the runtime's classes (below) |
+| `src/` | runtime (C++): boot, diagnostics, frame clock, input, video, drawing, screens, textures, saves, streams, sound, geometry maths |
+| `include/pc/platform.h`, `src/pc_platform.cpp` | what differs between Windows and Linux: paths, folders, files, clock (`pc::os`) |
 | `tools/` | build driver and code generators (`toolchain.py`: the host's compiler and object format) |
 
 ## Building
@@ -179,7 +198,7 @@ How the Linux build differs:
   them from its own table.
 - Low-memory accesses, the MIPS division results and crash reports come from signal handlers
   (`SIGSEGV`, `SIGFPE`, `SIGTRAP` for the single step) instead of a vectored exception handler, on
-  the same decoders (`src/pc_main.c`). The hang watchdog asks the main thread for its backtrace with `SIGUSR2`.
+  the same decoders (`src/pc_main.cpp`). The hang watchdog asks the main thread for its backtrace with `SIGUSR2`.
   `THPS_WATCH` (debug-register watchpoints) is Windows-only: use a gdb watchpoint.
 - Gamepads are SDL game controllers only (no XInput), mapped onto the same Xbox-style inputs.
 - The player's folder is `$XDG_DATA_HOME/Neversoft/Tony Hawk's Pro Skater` (default
@@ -188,7 +207,7 @@ How the Linux build differs:
   systems unchanged.
 
 On the first startup the port extracts the game data from the disc image into `Data/` next to
-`thps.exe` (`src/pc_assets.c`) and from then on reads only those files: after that the disc image
+`thps.exe` (`src/pc_assets.cpp`) and from then on reads only those files: after that the disc image
 is not needed (it is only opened again if something is missing).
 
 | path | what |
@@ -212,8 +231,8 @@ their raw 2352-byte sectors (XA audio intact; ffmpeg and jPSXdec play them).
 At runtime files are found by name anywhere under `Data/`. The game's CD.WAD loader
 (FileIO_Open/Load/Continue/Sync) reads them through `pc_fileio.h` (one plain file read per load, finished
 when FileIO_Load returns), and songs and movies stream
-from their files (`src/pc_stream.c`). The disc image is read only by the extraction
-(`src/pc_disc.c`). Missing files are extracted again on the next start
+from their files (`src/pc_stream.cpp`). The disc image is read only by the extraction
+(`src/pc_disc.cpp`). Missing files are extracted again on the next start
 (with the disc image present); the playlist is never overwritten (delete it to get the default
 back). Playlist entries are relative to `Data/Music` or absolute; an STR the game doesn't know
 plays with its first song's settings.
@@ -222,11 +241,11 @@ plays with its first song's settings.
 
 The first extraction can come from the **Dreamcast** disc instead (Treyarch's port; a `.gdi`
 dump with its track files next to `thps.exe`, or `THPS_DISC=<file>.gdi`; a PS1 image is used
-first if both are there). Its files are loose on the disc (`src/pc_gdrom.c` reads the GD-ROM's
+first if both are there). Its files are loose on the disc (`src/pc_gdrom.cpp` reads the GD-ROM's
 ISO 9660 area) and go to the same folders; `Manifest.txt`'s first line records the source. The
 models and levels are version 6 `.psx` files: the same format with 16-bit PowerVR textures up to
 256x256 (filtered, tiling, with alpha) and remodelled skaters. They are loaded without their
-texture images, which stay on the PC (`src/pc_dctex.c`) and are drawn by the native 3D renderer;
+texture images, which stay on the PC (`src/pc_dctex.cpp`) and are drawn by the native 3D renderer;
 see `include/pc_dctex.h`. With these files each skater's front-end model is the full one (the
 Dreamcast has none). Every file is
 extracted unchanged. The images it redrew at a higher resolution are shown at the size the PS1
@@ -235,14 +254,14 @@ load as they are instead of line-doubled, and the HORSE loading screen (640x240 
 screen) and the pause logo (320x88 for the PS1's 256x44) are drawn scaled into the display
 surfaces (`PC_ScreenBlitHiRes`, `SlicedImage::drawScaled`).
 
-Its songs and movies are Sofdec films (`.sfd`: MPEG-1 video, CRI ADX audio; `src/pc_sfd.c`
+Its songs and movies are Sofdec films (`.sfd`: MPEG-1 video, CRI ADX audio; `src/pc_sfd.cpp`
 demultiplexes them and decodes the ADX). They stream like the STR files (`ATVILOGO.STR` is
 `activision.sfd`, `LOGO.STR` `never.sfd`): the 44.1 kHz stereo audio plays through the music input; the playlist lists the `.sfd` songs, and a
 song starts over at the end of its audio as the PS1's does at its end frame. The full-screen
-movies play (`src/pc_movie.c`: pl_mpeg decodes the 320x240 video into the movie's picture,
+movies play (`src/pc_movie.cpp`: pl_mpeg decodes the 320x240 video into the movie's picture,
 timed to the audio; any button skips, as on the PS1); the songs' 96x64 thumbnail video is not
 shown. Its sound banks (`.kat`: the same sounds as 8/16-bit PCM at 22 kHz instead of 4-bit ADPCM
-at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.c`): each sound is a PCM sample
+at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.cpp`): each sound is a PCM sample
 played in place of a stand-in in the bank's sample data, tuned to the PS1 banks' pitch. The Dreamcast
 logos (Crave, Treyarch, Sofdec) are not played. Needs the OpenGL renderer.
 
@@ -258,7 +277,7 @@ file with an earlier build's: a change to the port's internals should leave them
 There's no memory card. Each career and each replay is its own file, named after the name the
 player gives it, in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves` (Linux:
 `~/.local/share/Neversoft/Tony Hawk's Pro Skater/Saves`):
-`Careers\<name>.career` and `Replays\<name>.replay` (`src/pc_saves.c`). The game's save and load
+`Careers\<name>.career` and `Replays\<name>.replay` (`src/pc_saves.cpp`). The game's save and load
 screens are its own; its card layer (`game/src/card`) reads and writes these files
 and is always ready, so there's no card check, formatting, block count or "do not remove" text.
 A file is the game's save data without the PS1 card header (icon, Shift-JIS title), behind a
@@ -270,16 +289,16 @@ time the game lists saves (at startup, or on a save or load screen) and renamed 
 ## Graphics
 
 The game builds its frames as on the PS1: primitive packets (`POLY_FT4`, `SPRT`, `TILE`,
-`LINE_*`, `DR_*`) linked into ordering tables, which are its display list. `src/pc_draw.c` walks
+`LINE_*`, `DR_*`) linked into ordering tables, which are its display list. `src/pc_draw.cpp` walks
 them (`PC_DrawOT`, where the game called `DrawOTag`) and draws through
-OpenGL 3.3 (`src/pc_gpu_gl.c`): polygons, sprites, lines and fills go to render targets, and a
+OpenGL 3.3 (`src/pc_gpu_gl.cpp`): polygons, sprites, lines and fills go to render targets, and a
 shader does the PS1's CLUT texture lookup, texture windows, colour modulation and the four
 semi-transparency modes. There is no VRAM. The textures and CLUTs are in the texture store
-(`src/pc_texstore.c`), a 16-bit copy at the coordinates the game's own allocators (Pack, Pal) give
+(`src/pc_texstore.cpp`), a 16-bit copy at the coordinates the game's own allocators (Pack, Pal) give
 them, which the game's primitives refer to; the screens' pixels are only in the render targets.
 The game's own reads and writes of a screen (the front end saves the background under a sprite
 and puts it back, the credits and loading screens put up pictures) are `PC_ScreenRead` and
-`PC_ScreenBlit` (`src/pc_screen.c`); reads scale a surface down to the PS1's resolution. There's
+`PC_ScreenBlit` (`src/pc_screen.cpp`); reads scale a surface down to the PS1's resolution. There's
 no dithering: the picture is never reduced to 15 bits for display.
 The screens are drawn at the resolution they are shown at: each area the game uses as a whole
 screen (its display area, or a screen-sized drawing area: the two 512x240 gameplay buffers, the
@@ -295,10 +314,10 @@ gameplay screens (512x240) get margins left and right, `pc_wide_pad` PS1 pixels 
 at most 400), and the view shows that much more of the world at the sides at the same zoom. The
 margins exist only in the display surface: in drawing coordinates they lie at x < 0 and past the
 buffer, where the game keeps textures, so only primitives drawn with a drawing area that covers
-the whole screen reach them (`pc_draw.c` widens it, `PC_GlWideClip`, and flags the primitive);
+the whole screen reach them (`pc_draw.cpp` widens it, `GlGpu::WideClip`, and flags the primitive);
 every other drawing and the CPU's blits see the surface's own area alone. The game's
 side culling widens to match: the frustum's side planes (`M3d_RenderSetup`) and the
-vertex transforms' outcodes, which `pc_render3d.c` works out again against the widened viewport
+vertex transforms' outcodes, which `pc_render3d.cpp` works out again against the widened viewport
 (the fast transforms keep theirs inside the screen words, so the face walk tests those itself).
 The HUD and menus keep their 4:3 positions in the middle; full-width flat rectangles and polygons
 (the screen clear, the pause menu's dimming, fades) are stretched over the margins. Needs the
@@ -306,15 +325,15 @@ native 3D renderer; split screen, the front end and movies stay 4:3.
 The PS1 rounds every projected vertex to a whole pixel, has no perspective-correct texturing and
 no depth buffer, which is where its wobbling geometry, seams and warping textures come from. With
 OpenGL, the world and models (everything THPS1's hand-written M3DASM renderer draws: level,
-skaters, cars, sky) are drawn natively by `src/pc_render3d.c`: the retail vertex transforms still
+skaters, cars, sky) are drawn natively by `src/pc_render3d.cpp`: the retail vertex transforms still
 run, but their view-space vertices are kept unrounded, and ProcessPolys is replaced by a face walk
 that keeps retail's visibility, colours (the same depth-cued colours) and ordering-table position,
 then draws with a projection, a depth buffer and OpenGL's near-plane clipping instead of
-subdivision. The faces are drawn while `pc_draw.c` walks the ordering table, so everything still
+subdivision. The faces are drawn while `pc_draw.cpp` walks the ordering table, so everything still
 built as packets (particles, shadows, 3D text, the HUD) keeps its place in the PS1's painter order;
 of those, the ones the game projected are depth-tested against the world. Those packets use the
 precise-vertex lookup: every projection (`pc_geom.h`) is also recorded unrounded, with its depth,
-keyed by the screen coordinates the game puts in its packets (`src/pc_precise.c`), and the walker
+keyed by the screen coordinates the game puts in its packets (`src/pc_precise.cpp`), and the walker
 looks a polygon's vertices up again and draws it at sub-pixel positions with perspective-correct
 textures (THPS1's polygon subdivision re-projects and nudges vertices, which the lookup allows for,
 see `PC_PrecisePolygon`). Faces the native renderer doesn't handle yet (water clipping and the
@@ -329,7 +348,7 @@ and unresolved symbols.
 
 ## Controls
 
-Keys and gamepad buttons are bound to game actions (`src/pc_input.c`). Each action takes two keys
+Keys and gamepad buttons are bound to game actions (`src/pc_input.cpp`). Each action takes two keys
 and two gamepad buttons, kept in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Settings.ini`
 (Linux: `~/.local/share/Neversoft/Tony Hawk's Pro Skater/Settings.ini`)
 (written with the defaults on the first startup). The keyboard plays player 1; each player has
@@ -389,7 +408,7 @@ quits when 7 was picked by hand.
 The window is windowed, borderless (fullscreen at the desktop's resolution) or fullscreen (the
 display switches to the chosen mode, at 60 Hz when the monitor has it), kept in the `[Video]`
 section of `Settings.ini` (`Mode`, `WindowSize`, `FullscreenResolution`, `Widescreen`;
-`src/pc_video.c`). The game
+`src/pc_video.cpp`). The game
 is drawn at the resolution it is shown at (see Graphics). The window is DPI-aware, so sizes are
 real pixels. Alt+Enter switches between the window and fullscreen; a window resized by hand keeps
 its size.
@@ -449,16 +468,16 @@ than they really take (harmless on MIPS, where the value stays in its register; 
 ## Status
 
 Boots through the front end (menus, skater/board/level select with 3D models) into a level, and
-the game plays with full 3D rendering. Sound effects and music play: `src/pc_sound.c` decodes the sound
+the game plays with full 3D rendering. Sound effects and music play: `src/pc_sound.cpp` decodes the sound
 banks to PCM, plays them on 24 channels with the PS1's ADSR envelopes and gains, adds a reverb in
 the PS1 modes' spirit (Freeverb-style rooms and halls, feedback echoes: not the SPU's algorithm)
-and the music, and mixes it to an SDL audio device. The songs are XA audio inside the soundtrack STR files; `src/pc_stream.c` streams them
-from the extracted files at the rate the drive read them (150 sectors a second) and `src/pc_xa.c`
-decodes them. `src/pc_music.c` picks the next song from
+and the music, and mixes it to an SDL audio device. The songs are XA audio inside the soundtrack STR files; `src/pc_stream.cpp` streams them
+from the extracted files at the rate the drive read them (150 sectors a second) and `src/pc_xa.cpp`
+decodes them. `src/pc_music.cpp` picks the next song from
 `Data/Music/Playlist.m3u` instead of the game's fixed rotation. With the Dreamcast's data the
 music, movies and sound effects come from its films and sound banks (see above). The PS1's
 movies play through the game's own movie player (`GameFMV_PlayMovie`): the game decodes each
-frame's bitstream itself (`DecDCTvlc3`), `src/pc_vdec.c` decodes the pictures (the MDEC's inverse
+frame's bitstream itself (`DecDCTvlc3`), `src/pc_vdec.cpp` decodes the pictures (the MDEC's inverse
 DCT and colour conversion, a whole frame at once) and the player shows them as a picture of
 their own (`PC_MovieDecode`/`PC_MovieShow`, `pc_screen.h`); the player's busy-waits wait a frame
 for the stream instead (`PC_MovieWait`). The songs' 96x64 video goes into the texture of the

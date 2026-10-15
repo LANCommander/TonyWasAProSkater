@@ -65,15 +65,15 @@ The player extracts from either the PS1 or the Dreamcast disc on first startup; 
 into the same `Data/` folders (`platform/pc/README.md`, "The Dreamcast version's data"). How the
 version 6 files are handled (`platform/pc/include/pc_dctex.h`):
 
-- **Loading** (`pc_fileio.c`, `pc_dctex.c`): FileIO strips the PowerVR images from a version 6
+- **Loading** (`pc_fileio.cpp`, `pc_dctex.cpp`): FileIO strips the PowerVR images from a version 6
   file and registers them by checksum; the game gets the rest (texture records keep their 28-byte
   headers). `Spool_LoadTexturesToVRAM` gives a 65536-colour texture an entry with colour depth 3
   in its tpage (never produced by the PS1 game) and the registry handle as its CLUT; no VRAM or
   palette. `Spool_RemoveUnusedTextures` releases the handle (the OpenGL texture goes).
 - **Faces**: `M3dInit_ParsePSX` leaves a version 6 face's word 4 as its `Texture` pointer (bit 31
   set; PS1 faces have `u0v0 | clut << 16` there) and its 16-bit coordinates alone. The native
-  renderer (`pc_render3d.c`, `dc_face`) reads them, relative to corner 0 so wrapped values don't
-  tear a face; `pc_gpu_gl.c` binds the handle's texture (decoded on first use, mipmapped,
+  renderer (`pc_render3d.cpp`, `dc_face`) reads them, relative to corner 0 so wrapped values don't
+  tear a face; `pc_gpu_gl.cpp` binds the handle's texture (decoded on first use, mipmapped,
   `GL_REPEAT`) on unit 1, and the shader samples it with its alpha on top of the PS1's
   semi-transparency. Draws split per texture.
 - **Other readers**: shatter uses the `Texture` pointer (shards are GPU packets with the depth-3
@@ -104,7 +104,7 @@ the water surfaces and shatterable glass on DC data.
 
 ### 2. Music and movies: done (2026-10-12)
 
-- **Container** (`src/pc_sfd.c`, `include/pc_sfd.h`): `.SFD` = MPEG-1 program stream; video
+- **Container** (`src/pc_sfd.cpp`, `include/pc/sfd.h`): `.SFD` = MPEG-1 program stream; video
   `0xE0` (MPEG-1), audio `0xC0` carrying **ADX** (standard type 3, 18-byte frames, 4-bit; songs
   44.1 kHz stereo, movies 44.1 kHz stereo or 22.05 kHz mono; `ATVILOGO.SFD` is a bare
   640x288 video stream, unused). Songs are 125 s, like the PS1's. The decoded Goldfinger track
@@ -113,14 +113,14 @@ the water surfaces and shatterable glass on DC data.
   seek/rewind.
 - **Music**: a movie-table name finds the film of an STR when there's no STR
   (`PC_StreamFind` → `PC_AssetsFindFilm`: same name, except ATVILOGO → `activision`, LOGO →
-  `never`, BURNQUIS → `burnquist`), and it streams like an STR (`src/pc_stream.c`): ~12k frames
+  `never`, BURNQUIS → `burnquist`), and it streams like an STR (`src/pc_stream.cpp`): ~12k frames
   of decoded ADX stay queued in the music input instead of sectors being paced; pause/resume
   carry on where it was. The game's mix/MusicScale/pause/skip paths are unchanged. There is no STR video for the game's frame
   counter, so at the end of a song's audio the stream stops and `PC_MusicStreamEnded` sets
   `GameFMV_RewindSwitch` (what `strNext` does at the end frame): the pump's `strKickCD`
   restarts it, gaplessly (verified with a truncated song). With DC data `Playlist.m3u` lists the
   `.sfd` songs; playlist entries can mix `.STR` and `.sfd`.
-- **Movies** (`src/pc_movie.c`, PC branch in `decomp/src/gamefmv/playmovie.cpp`): the override
+- **Movies** (`src/pc_movie.cpp`, PC branch in `decomp/src/gamefmv/playmovie.cpp`): the override
   runs `GameFMV_PlayMovie` when the entry has a film (`PC_MovieAvailable`); the retail setup
   (buffers, CdMix from MIDILEVEL, `strInit` → the film's audio streams as above) runs, then the
   loop is replaced: pl_mpeg (`include/pl_mpeg/pl_mpeg.h`, MIT) decodes the video from our
@@ -141,12 +141,12 @@ slot; a few PS1 tones have no entry and stay silent). Compared with the PS1 VABs
 - **Pitch**: the DC sample count over the PS1's, times the PS1 tone's playback rate at note 60
   (from its centre note/fine tune), over the KAT rate, is 0.94-0.95 for nearly every sound across
   banks, rates (8000/11025/22050) and centre notes: the PS1 plays them one semitone below the
-  KAT rate. The port plays them at `rate * 2^(-1/12)` (`PCM_TUNE` in `pc_sound.c`), so they sound as on
+  KAT rate. The port plays them at `rate * 2^(-1/12)` (`PCM_TUNE` in `pc_sound.cpp`), so they sound as on
   the PS1 (outliers are the sounds the DC re-cut).
 - **Loudness**: median RMS ratio DC/PS1 0.96: mixed at unity.
 - **Tone attributes**: `playSFX` only reads centre/fine, ADSR and the sample index from the VAB.
 
-`src/pc_dcsound.c` builds a VAB from the `.kat` when the game asks for the `.vab`: centre note
+`src/pc_dcsound.cpp` builds a VAB from the `.kat` when the game asks for the `.vab`: centre note
 60, the PS1 banks' usual ADSR (looped `a9ff/5fcc`, one-shots `80ff/1fc0`), and per sound a
 32-byte stand-in sample (`DCPC` + id in a near-silent ADPCM block, then an end block). The
 samples go to the sound's PCM registry (`PC_SoundPcmAdd`, once per bank); a channel keyed on at a

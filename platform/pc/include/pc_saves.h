@@ -1,4 +1,4 @@
-/* Saves on PC (src/pc_saves.c). There's no memory card: every career and every replay is its own
+/* Saves on PC (src/pc_saves.cpp). There's no memory card: every career and every replay is its own
  * file in the player's folder, under the name the player gave it:
  *     Saves\Careers\<name>.career      Saves\Replays\<name>.replay
  * The game's card layer (game/src/card) reads and writes them through this; the

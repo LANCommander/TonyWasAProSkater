@@ -2,9 +2,9 @@
  * through the game's own code (GameFMV_PlayMovie): it decodes each frame's bitstream and has the
  * picture decoded here (PC_MovieDecode, pc_vdec.h) and shown (PC_MovieShow).
  *
- * The Dreamcast version's films (src/pc_movie.c): GameFMV_PlayMovie
+ * The Dreamcast version's films (src/pc_movie.cpp): GameFMV_PlayMovie
  * (GameFMV_PlayMovie, game/src/gamefmv.cpp) sets up the screen and starts the film's
- * stream as for an STR, whose audio pc_stream.c plays; the pictures come from here instead of
+ * stream as for an STR, whose audio pc_stream.cpp plays; the pictures come from here instead of
  * the MDEC, timed to that audio. */
 #ifndef PC_MOVIE_H
 #define PC_MOVIE_H

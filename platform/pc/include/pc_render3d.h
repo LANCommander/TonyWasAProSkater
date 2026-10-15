@@ -1,4 +1,4 @@
-/* Native 3D renderer for the world and models (src/pc_render3d.c).
+/* Native 3D renderer for the world and models (src/pc_render3d.cpp).
  *
  * THPS1 draws its 3D with hand-written assembly (M3DASM): vertex transforms that project through
  * the GTE into a cache, then ProcessPolys, which lights, culls and subdivides each face and links
@@ -19,15 +19,7 @@ extern "C" {
 #endif
 
 /* After the OpenGL backend started: gl = 1 enables the native renderer (unless THPS_RENDER3D=psx). */
-void R3d_Init(int gl);
 int R3d_Native(void);
-
-/* PC_DrawOT, for each packet before it is drawn: 1 if it was a layer marker
- * (its words are not GPU commands). R3d_ChainEnd at the end of the chain. */
-int R3d_ChainPacket(const struct P_TAG *p);
-void R3d_ChainEnd(void);
-/* THPS_R3D_DUMP: the faces of the layer drawn last, to a text file (debugging). */
-void R3d_DumpLast(const char *path);
 
 /* Drawing the entire level (Options > Graphics > Draw Distance, pc_video.h; M3d_Render): the PS1
  * transforms work in 16-bit view space, so items beyond it are drawn from here. Between these,

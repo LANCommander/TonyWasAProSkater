@@ -1,4 +1,4 @@
-/* The texture store (src/pc_texstore.c): the game's textures and CLUTs.
+/* The texture store (src/pc_texstore.cpp): the game's textures and CLUTs.
  *
  * The game places its textures and colour tables itself (the Pack allocator, Pal's CLUT slots) at
  * PS1 VRAM coordinates, and its primitives refer to them by those (texture page, CLUT, u, v). The
@@ -19,16 +19,6 @@ void PC_TexUpload(int x, int y, int w, int h, const void *src);
 void PC_TexRead(int x, int y, int w, int h, void *dst);
 /* Fill with one colour, rgb = 0x00BBGGRR (8 bits each, as ClearImage). */
 void PC_TexFill(int x, int y, int w, int h, uint32_t rgb);
-
-/* ---- for the renderer ---- */
-#define PC_TEX_W 1024
-#define PC_TEX_H 512
-#define PC_TEX_CELL 16
-#define PC_TEX_DIRTY 1   /* changed since the renderer's upload */
-#define PC_TEX_USED 2    /* ever written */
-/* The texels (PC_TEX_W x PC_TEX_H), and a byte of PC_TEX_* bits per 16x16 cell, row by row. */
-const uint16_t *PC_TexStoreData(void);
-uint8_t *PC_TexStoreCells(void);
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,4 @@
-/* The game's files, read from Data/ instead of CD.WAD (pc_fileio.c).
+/* The game's files, read from Data/ instead of CD.WAD (pc_fileio.cpp).
  *
  * FILEIO.CPP keeps its own state (the PRE archive lookup, FileSize, NumSectors, Loading ...) and
  * calls these where it searched the CD directory and read sectors: a load is finished by the time

@@ -1,4 +1,5 @@
-/* The port's runtime: the game's memory and data, logging, diagnostics. */
+/* The port's runtime: the game's memory and data, logging, diagnostics (the C interface of
+ * pc/runtime.h). */
 #ifndef PC_RUNTIME_H
 #define PC_RUNTIME_H
 
@@ -30,24 +31,11 @@ void PC_Bang(int r, int g, int b) __attribute__((noreturn));
 /* Called by generated stubs for functions with no implementation yet. Returns 0. */
 uint32_t PC_MissingFunction(uint32_t addr);
 
-/* Name of a PS1 code address, for logs ("FUN_8002ab20", "DrawOTag", ...). */
-const char *PC_NameOf(uint32_t addr);
-
-/* Directory holding the disc image / game files, and the executable path. */
-const char *PC_DataDir(void);
-/* The player's folder, Saved Games\Neversoft\Tony Hawk's Pro Skater (Linux:
- * $XDG_DATA_HOME/Neversoft/Tony Hawk's Pro Skater, default ~/.local/share/...; created if missing):
- * Settings.ini and the Saves folder. */
-const char *PC_UserDir(void);
-
 /* Called by the hi-res front end's frame end (FUN_8006b26c) between its wait for the next field
  * and DrawOTag: a screen that puts back part of its background itself does it here, so the
  * background and the frame's text are shown together. */
 extern void (*pc_hires_before_draw)(void);
 
-/* Per-frame hooks (pc_frame.c). */
-void PC_PumpEvents(void);
-int PC_QuitRequested(void);
 void PC_RequestQuit(void);
 
 #ifdef __cplusplus

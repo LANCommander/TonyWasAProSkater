@@ -1,5 +1,6 @@
-/* Sound (pc_sound.c): sound banks decoded to PCM, 24 channels with pitch, volume and an envelope,
- * a reverb, the music input, mixed to 44.1 kHz stereo on an SDL audio device.
+/* Sound (pc_sound.cpp; the class is pc/sound.h): sound banks decoded to PCM, 24 channels with
+ * pitch, volume and an envelope, a reverb, the music input, mixed to 44.1 kHz stereo on an SDL
+ * audio device.
  *
  * The game's sound code (game/src/sfx and friends) works in the terms it was
  * written in: a bank's samples are found by their offset in the bank's sample data (the VAB's
@@ -15,12 +16,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define PC_SOUND_CHANNELS 24
-
-/* Open the audio device and start the mixer. THPS_AUDIO=0 mixes but plays nothing;
- * THPS_AUDIO_DUMP=path also writes the mixed output as raw 44.1 kHz s16le stereo. */
-void PC_SoundInit(void);
 
 /* ---- banks ---- */
 
@@ -56,29 +51,6 @@ void PC_SoundLevels(int sfxL, int sfxR, int musicL, int musicR);
 int PC_SoundReverbMode(int mode);
 void PC_SoundReverbDepth(int left, int right);
 void PC_SoundReverbChannels(int on, uint32_t channels);
-
-/* ---- the music (pc_stream.c) ---- */
-
-/* Queue stereo PCM at `rate` Hz; the mixer resamples it. Flush drops what is queued. */
-void PC_SoundMusicQueue(const int16_t *stereo, int frames, int rate);
-void PC_SoundMusicFlush(void);
-/* Frames queued and not yet played; frames played so far (a clock for what has been heard). */
-unsigned PC_SoundMusicQueued(void);
-uint64_t PC_SoundMusicConsumed(void);
-/* Levels: left to left, left to right, right to right, right to left; 0x80 = 100%. */
-void PC_SoundMusicMix(const uint8_t levels[4]);
-void PC_SoundMusicMute(int mute);
-
-/* ---- the Dreamcast's sound banks (pc_dcsound.c) ---- */
-
-/* A PCM sample, played at `rate` x PC_SOUND_PCM_TUNE at pitch 0x1000 (pc_sound.c). loop: repeat
- * [loopStart, loopEnd) after the end (loopEnd 0 = the end). Returns its id, or -1 if full. Its
- * stand-in (PC_SOUND_PCM_STUB bytes) goes in a bank's data where the sample would be. */
-#define PC_SOUND_PCM_STUB 32
-int PC_SoundPcmAdd(const int16_t *pcm, uint32_t frames, int rate, int loop, uint32_t loopStart,
-                   uint32_t loopEnd);
-void PC_SoundPcmStub(int id, uint8_t out[PC_SOUND_PCM_STUB]);
-int PC_SoundPcmLooped(int id);
 
 #ifdef __cplusplus
 }

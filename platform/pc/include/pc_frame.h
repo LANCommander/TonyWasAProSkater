@@ -1,7 +1,8 @@
-/* The frame clock (pc_frame.c): 60 frames a second, as the game was written for (NTSC). Each
- * frame polls input, advances streaming, runs the game's frame handler and presents. Frames only
- * happen when the game waits for one or polls (the port has no interrupts), so code that spins
- * on state a frame updates must call PC_FramePoll. */
+/* The frame clock (pc_frame.cpp; the class is pc::FrameClock, pc/frame_clock.h): 60 frames a
+ * second, as the game was written for (NTSC). Each frame polls input, advances streaming, runs
+ * the game's frame handler and presents. Frames only happen when the game waits for one or
+ * polls (the port has no interrupts), so code that spins on state a frame updates must call
+ * PC_FramePoll. */
 #ifndef PC_FRAME_H
 #define PC_FRAME_H
 
