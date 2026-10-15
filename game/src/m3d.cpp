@@ -287,6 +287,20 @@ void M3d_RenderCleanup(void) {
 	pPoly = (u_char *)(p + 1);
 }
 
+/* Drawing the entire level: lifts (1) the hide flags level items have from a script's
+   SETVISIBILITYINBOX for this M3d_Render, or puts them back (0) */
+static void LiftBoxHidden(Item *pItem, int lift) {
+	for (; pItem; pItem = pItem->NextItem) {
+		if (lift) {
+			pItem->BoxLifted = pItem->Flags & pItem->BoxHidden;
+			pItem->Flags &= ~pItem->BoxLifted;
+		} else {
+			pItem->Flags |= pItem->BoxLifted;
+			pItem->BoxLifted = 0;
+		}
+	}
+}
+
 /* 1: such an item, in view (rel: its position relative to the camera); -1: out of view or hidden
    (skip: the hiding flags BoundingSpherePreprocessing was given); 0: an ordinary item. */
 static int FarItem(Item *pItem, int skip, int *rel) {
@@ -415,14 +429,15 @@ void M3d_Render(void *p) {
 		M3dAsm_BoundingSpherePreprocessing(pItem, Camera_CurrentMikeCamera ? 64 : 1);
 	else
 		M3dAsm_BoundingSpherePreprocessing(pItem, 1);
-	/* the entire level: also the level geometry its scripts hide (Downhill Jam shows each section
-	   of the course only as the skater nears it), and none of it dropped beyond its last level of
-	   detail */
+	/* the entire level: also the level geometry its scripts hide by box (Downhill Jam shows each
+	   section of the course only as the skater nears it), and none of it dropped beyond its last
+	   level of detail. What they hide as game state (the Jam's water bursts until their valves are
+	   hit), kill or shatter stays hidden (Item::BoxHidden) */
 	keepAll = full && pItem == EnviroList;
 
 	if (keepAll) {
-		farSkip = 0;
-		M3dAsm_BoundingSpherePreprocessing(pItem, 0);
+		LiftBoxHidden(pItem, 1);
+		M3dAsm_BoundingSpherePreprocessing(pItem, farSkip);
 	}
 
 	if (pItem == EnviroList) {
@@ -772,6 +787,9 @@ void M3d_Render(void *p) {
 	next:
 		pItem = pItem->NextItem;
 	}
+
+	if (keepAll)
+		LiftBoxHidden((Item *)p, 0);
 }
 
 /* M3d_RenderBackground__FPv (0x800844b4) */

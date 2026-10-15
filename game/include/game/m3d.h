@@ -197,7 +197,10 @@ struct Item {
 	Item *NextItem;  /* 0x1c */
 	uint RGB;        /* 0x20 */
 	SVector Scale;   /* 0x24 */
-	char pad2a[0x2c - 0x2a];
+	/* the port's (level items only): the hide flags (1, 0x40) a script's SETVISIBILITYINBOX set,
+	   which drawing the entire level ignores (M3d_Render), and the ones it lifted for a frame */
+	uchar BoxHidden; /* 0x2a */
+	uchar BoxLifted; /* 0x2b */
 	int SemiTrans;            /* 0x2c: CItem::mTRN */
 	Item *PreviousItem;       /* 0x30 */
 	uint StoredRGB;           /* 0x34 */

@@ -470,6 +470,7 @@ int Shatter_Item(Item *it, int a, int b) {
 
 	if (b && res) {
 		it->Flags |= 1;
+		it->BoxHidden = 0; /* broken: gone even when drawing the entire level */
 	}
 
 	return res;

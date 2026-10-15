@@ -692,8 +692,12 @@ void SendVisibleFromNode(int node, int visible) {
 
 					pItem = Spool_FindEnviroItem(*(uint *)pVisNode);
 
-					if (pItem)
+					if (pItem) {
 						pItem->Flags = (pItem->Flags & ClearFlags) | SetFlags;
+						/* game state (Downhill Jam's water bursts): hidden even when drawing the
+						   entire level, unlike a SETVISIBILITYINBOX's (Item::BoxHidden) */
+						pItem->BoxHidden &= ~(SetFlags | ~ClearFlags);
+					}
 
 					break;
 				}
@@ -762,8 +766,10 @@ void SendKillFromNode(int Node, int How) {
 
 				if (How == 1)
 					Exp_HitEnvItem(pItem, 0, 0xffff);
-				else
+				else {
 					pItem->Flags |= 0x41;
+					pItem->BoxHidden = 0;
+				}
 
 				break;
 			}

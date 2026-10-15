@@ -48,6 +48,9 @@ extern int DAT_800d1a18;
 #define INSIDE(v, w, u)  (v >= t8 && t5 >= v && w >= t6 && t3 >= w && u >= t7 && t4 >= u)
 #define OUTSIDE(v, w, u) ((v < t8 || t5 < v) && (w < t6 || t3 < w) && (u < t7 || t4 < u))
 #define SET(o)           o->mFlags = (o->mFlags & t2) | t1
+/* a level item: also notes the hide flags the box newly sets (Item::BoxHidden), the ones drawing
+   the entire level ignores; hidden already (game state: Downhill Jam's water bursts) stays so */
+#define SET_ENV(o)       (((Item *)(o))->BoxHidden = (((Item *)(o))->BoxHidden & t2) | (t1 & ~((Item *)(o))->Flags), SET(o))
 
 /* Rnd's state */
 extern int RandSeed, RandMul, RandAdd;
@@ -491,10 +494,10 @@ void Utils_SetVisibilityInBox(const CVector &a, const CVector &b, bool arg2, boo
 
 				if (arg3) {
 					if (INSIDE(x, z, y))
-						SET(o);
+						SET_ENV(o);
 				} else {
 					if (OUTSIDE(x, z, y))
-						SET(o);
+						SET_ENV(o);
 				}
 			}
 
