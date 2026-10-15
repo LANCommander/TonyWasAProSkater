@@ -174,7 +174,7 @@ How the Linux build differs:
   (`SIGSEGV`, `SIGFPE`, `SIGTRAP` for the single step) instead of a vectored exception handler, on
   the same decoders (`src/pc_main.c`). The hang watchdog asks the main thread for its backtrace with `SIGUSR2`.
   `THPS_WATCH` (debug-register watchpoints) is Windows-only: use a gdb watchpoint.
-- Gamepads are SDL game controllers (XInput on Windows), mapped onto the same Xbox-style inputs.
+- Gamepads are SDL game controllers only (no XInput), mapped onto the same Xbox-style inputs.
 - The player's folder is `$XDG_DATA_HOME/Neversoft/Tony Hawk's Pro Skater` (default
   `~/.local/share/...`); the log stays on stderr. Paths in `Data/Manifest.txt` and the code keep
   backslashes; `PC_AssetsPath` turns them into slashes, so a `Data` folder moves between the
@@ -328,6 +328,11 @@ and two gamepad buttons, kept in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk'
 their own gamepad bindings (`[Skate Gamepad]`/`[Menu Gamepad]` for player 1, `... Gamepad 2` for
 player 2).
 
+Gamepads are read through XInput (Windows) and SDL's game controllers, into the same Xbox-style
+inputs: SDL takes the pads XInput doesn't read (DualShock, DualSense, Switch, generic USB pads) and
+skips the ones it does, so no pad counts twice. Other pads' buttons are named after the Xbox one in
+the same place (A = Cross). The players get the first two connected, XInput's before SDL's.
+
 **Options > Player 1/2 Controls** is the rebinding screen (it replaces the PS1's face-button
 remap; `game/src/front/controlleroptions.cpp`). The top row switches between the
 keyboard and gamepad bindings (player 2: gamepad only), then come Autokick and Vibration, every
@@ -348,7 +353,7 @@ build is unchanged; on PC they are separate slots (the ones the PS1 never filled
 the same key can do one thing while skating and another in the menus. On PC, the front end's
 "press Start" prompts take Menu Accept, and Pause also resumes from the pause menu.
 
-| action | keyboard | gamepad (XInput) | PS1 button |
+| action | keyboard | gamepad (Xbox names) | PS1 button |
 |---|---|---|---|
 | Up / Down / Left / Right | W A S D, arrows | D-pad, left stick | D-pad |
 | Ollie | Space, Keypad 2 | A | X |

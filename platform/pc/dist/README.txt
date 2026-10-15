@@ -36,7 +36,8 @@ THPS_DISC=<path to .bin or .gdi> picks a disc image anywhere else.
 Controls
 --------
 
-Keyboard and XInput gamepads. Rebind them in Options > Player 1/2 Controls.
+Keyboard and gamepads (XInput, and any controller SDL knows). Rebind them in Options > Player
+1/2 Controls. Gamepad buttons are named as on an Xbox controller.
 
   Move                       W A S D / arrows          D-pad, left stick
   Ollie                      Space                     A

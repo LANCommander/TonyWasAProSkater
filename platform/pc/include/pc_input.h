@@ -1,6 +1,6 @@
 /* Player input as game actions (pc_input.c).
  *
- * The keyboard and XInput gamepads are bound to actions (ollie, grind, menu accept...), each with
+ * The keyboard and gamepads (XInput, and SDL's game controllers) are bound to actions (ollie, grind, menu accept...), each with
  * two keyboard and two gamepad bindings kept in Settings.ini in the player's folder (PC_UserDir).
  * The game reads the actions directly: on PC each button slot of its SControl is one action,
  * filled by Pad_Update (game/src/unnamed/80070ff4.c) from PC_InputActionDown. The skating and
@@ -43,7 +43,7 @@ typedef enum {
 /* Which set an action belongs to (its Settings.ini sections). */
 typedef enum { PC_SET_SKATE, PC_SET_MENU } PcActionSet;
 
-/* Gamepad inputs (XInput), sticks and triggers as buttons. */
+/* Gamepad inputs (an Xbox pad's; other pads' by position), sticks and triggers as buttons. */
 typedef enum {
     PC_PAD_A,
     PC_PAD_B,

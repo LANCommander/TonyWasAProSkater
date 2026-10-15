@@ -1,4 +1,4 @@
-/* Player input: keyboard and XInput gamepads bound to game actions (see pc_input.h).
+/* Player input: keyboard and gamepads (XInput and SDL) bound to game actions (see pc_input.h).
  *
  * The game reads the actions themselves: on PC every button slot of its SControl is one action
  * (Ollie, Grind, MenuAccept...), and Pad_Update (game/src/unnamed/80070ff4.c) fills each slot
@@ -10,7 +10,7 @@
 #include <xinput.h>
 #else
 #include <stdint.h>
-/* No XInput: SDL's game controllers, read into XInput's state (LoadXInput below) */
+/* No XInput: only SDL's game controllers, read into XInput's state (SdlGetState below) */
 typedef uint32_t DWORD;
 typedef uint16_t WORD;
 typedef struct {
@@ -275,8 +275,9 @@ void PC_InputWriteSettings(FILE *f) {
           "; comma. Leave a slot empty (or write None) to unbind it.\n"
           "; Keys are SDL key names: letters and digits, Space, Return, Escape, Backspace, Tab,\n"
           "; Left Shift, Right Ctrl, Up, Down, Left, Right, Keypad 2, Comma, ...\n"
-          "; Gamepad (XInput) buttons: A B X Y LB RB LT RT Back Start LS RS, DPadUp DPadDown\n"
-          "; DPadLeft DPadRight, and the sticks: LSUp LSDown LSLeft LSRight RSUp RSDown RSLeft RSRight.\n"
+          "; Gamepad buttons: A B X Y LB RB LT RT Back Start LS RS, DPadUp DPadDown DPadLeft\n"
+          "; DPadRight, and the sticks: LSUp LSDown LSLeft LSRight RSUp RSDown RSLeft RSRight. These are\n"
+          "; the Xbox names; on other gamepads they are the buttons in the same place (A = Cross).\n"
           "; The keyboard plays player 1. [... Gamepad] is the first gamepad (player 1),\n"
           "; [... Gamepad 2] the second (player 2).\n"
           ";\n"
@@ -334,13 +335,16 @@ int PC_InputSettingsLine(const char *section, const char *key, char *value) {
 
 /* ---- devices ---------------------------------------------------------------------------------- */
 
-typedef DWORD(WINAPI *XInputGetStateFn)(DWORD, XINPUT_STATE *);
-static XInputGetStateFn s_xinputGetState;
-/* Rumble: low-frequency (large) and high-frequency (small) motor speeds, 0..65535 */
-typedef void (*RumbleFn)(DWORD slot, WORD low, WORD high);
-static RumbleFn s_rumble;
-
+/* Gamepad slots: on Windows XInput's four pads come first, then SDL's game controllers (the
+ * gamepads XInput doesn't read: DualShock, Switch, generic USB pads...); elsewhere SDL's only.
+ * Both are read into XInput's state. */
+#ifdef _WIN32
 #define XI_SLOTS 4
+#else
+#define XI_SLOTS 0
+#endif
+#define SDL_SLOTS 4
+#define PAD_SLOTS (XI_SLOTS + SDL_SLOTS)
 #define STICK_THRESHOLD 16000
 
 static struct {
@@ -348,7 +352,7 @@ static struct {
     int retry;        /* polls until an empty slot is tried again */
     uint32_t down;    /* PcPadInput bits */
     uint32_t pressed; /* went down this update */
-} s_xi[XI_SLOTS];
+} s_xi[PAD_SLOTS];
 static int s_playerSlot[2] = {-1, -1};
 
 static uint8_t s_keyDown[SDL_NUM_SCANCODES];
@@ -358,11 +362,31 @@ static uint16_t s_scripted;                     /* THPS_INPUT's PS1 buttons */
 static int s_init;
 static int s_quit;
 
-#ifndef _WIN32
-/* Slot i is the i-th game controller opened, as XInput numbers its pads. */
-static SDL_GameController *s_gc[XI_SLOTS];
+#ifdef _WIN32
+typedef DWORD(WINAPI *XInputGetStateFn)(DWORD, XINPUT_STATE *);
+typedef DWORD(WINAPI *XInputSetStateFn)(DWORD, XINPUT_VIBRATION *);
+static XInputGetStateFn s_xinputGetState;
+static XInputSetStateFn s_xinputSetState;
+#endif
 
-static DWORD SdlGetState(DWORD slot, XINPUT_STATE *st) {
+/* SDL slot i is the i-th game controller opened. */
+static int s_sdl;
+static SDL_GameController *s_gc[SDL_SLOTS];
+
+/* Whether SDL's device i is one XInput reads already: SDL marks its XInput devices' GUIDs with an
+ * 'x', and its other drivers (HIDAPI) may have an Xbox pad too. */
+static int ReadByXInput(int i) {
+#ifdef _WIN32
+    SDL_GameControllerType t = SDL_GameControllerTypeForIndex(i);
+    return s_xinputGetState && (SDL_JoystickGetDeviceGUID(i).data[14] == 'x' ||
+                                t == SDL_CONTROLLER_TYPE_XBOX360 || t == SDL_CONTROLLER_TYPE_XBOXONE);
+#else
+    (void)i;
+    return 0;
+#endif
+}
+
+static DWORD SdlGetState(int slot, XINPUT_STATE *st) {
     static const struct {
         SDL_GameControllerButton b;
         WORD bit;
@@ -392,12 +416,12 @@ static DWORD SdlGetState(DWORD slot, XINPUT_STATE *st) {
     for (i = 0; !gc && i < SDL_NumJoysticks(); i++) {
         SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(i);
         int k, taken = 0;
-        if (!SDL_IsGameController(i))
+        if (!SDL_IsGameController(i) || ReadByXInput(i))
             continue;
-        for (k = 0; k < XI_SLOTS; k++)
+        for (k = 0; k < SDL_SLOTS; k++)
             taken |= s_gc[k] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(s_gc[k])) == id;
-        if (!taken)
-            gc = s_gc[slot] = SDL_GameControllerOpen(i);
+        if (!taken && (gc = s_gc[slot] = SDL_GameControllerOpen(i)) != NULL)
+            PC_Log("gamepad %d: %s", XI_SLOTS + slot, SDL_GameControllerName(gc));
     }
     if (!gc)
         return 1;
@@ -415,32 +439,32 @@ static DWORD SdlGetState(DWORD slot, XINPUT_STATE *st) {
     return ERROR_SUCCESS;
 }
 
-static void SdlRumble(DWORD slot, WORD low, WORD high) {
-    if (s_gc[slot])
-        SDL_GameControllerRumble(s_gc[slot], low, high, 1000); /* renewed while it lasts */
+static DWORD GetState(int slot, XINPUT_STATE *st) {
+#ifdef _WIN32
+    if (slot < XI_SLOTS)
+        return s_xinputGetState ? s_xinputGetState((DWORD)slot, st) : 1;
+#endif
+    return s_sdl ? SdlGetState(slot - XI_SLOTS, st) : 1;
 }
 
-static void LoadXInput(void) {
-    if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == 0) {
-        s_xinputGetState = SdlGetState;
-        s_rumble = SdlRumble;
-        PC_Log("gamepads: SDL game controllers");
-    } else {
-        PC_Log("gamepads: not available (%s)", SDL_GetError());
+/* low-frequency (large) and high-frequency (small) motor speeds, 0..65535 */
+static void Rumble(int slot, WORD low, WORD high) {
+#ifdef _WIN32
+    if (slot < XI_SLOTS) {
+        XINPUT_VIBRATION v;
+        v.wLeftMotorSpeed = low;
+        v.wRightMotorSpeed = high;
+        if (s_xinputSetState)
+            s_xinputSetState((DWORD)slot, &v);
+        return;
     }
-}
-#else
-typedef DWORD(WINAPI *XInputSetStateFn)(DWORD, XINPUT_VIBRATION *);
-static XInputSetStateFn s_xinputSetState;
-
-static void XiRumble(DWORD slot, WORD low, WORD high) {
-    XINPUT_VIBRATION v;
-    v.wLeftMotorSpeed = low;
-    v.wRightMotorSpeed = high;
-    s_xinputSetState(slot, &v);
+#endif
+    if (s_gc[slot - XI_SLOTS])
+        SDL_GameControllerRumble(s_gc[slot - XI_SLOTS], low, high, 1000); /* renewed while it lasts */
 }
 
-static void LoadXInput(void) {
+static void LoadGamepads(void) {
+#ifdef _WIN32
     static const char *const dlls[] = {"xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll"};
     int i;
     for (i = 0; i < 3 && !s_xinputGetState; i++) {
@@ -448,16 +472,19 @@ static void LoadXInput(void) {
         if (m) {
             s_xinputGetState = (XInputGetStateFn)(void (*)(void))GetProcAddress(m, "XInputGetState");
             s_xinputSetState = (XInputSetStateFn)(void (*)(void))GetProcAddress(m, "XInputSetState");
-            if (s_xinputSetState)
-                s_rumble = XiRumble;
             if (s_xinputGetState)
                 PC_Log("gamepads: %s", dlls[i]);
         }
     }
     if (!s_xinputGetState)
         PC_Log("gamepads: XInput not available");
-}
 #endif
+    s_sdl = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == 0;
+    if (s_sdl)
+        PC_Log("gamepads: SDL game controllers");
+    else
+        PC_Log("gamepads: SDL game controllers not available (%s)", SDL_GetError());
+}
 
 static uint32_t XInputMask(const XINPUT_GAMEPAD *g) {
     static const struct {
@@ -507,19 +534,19 @@ static uint32_t XInputMask(const XINPUT_GAMEPAD *g) {
     return m;
 }
 
-/* Polling an empty XInput slot is slow, so empty slots are only tried every 120 polls. */
+/* Polling an empty XInput slot is slow, so empty XInput slots are only tried every 120 polls. */
 static void PollGamepads(void) {
     static int ignore = -1;   /* THPS_NOGAMEPAD=1: none (scripted test runs) */
     int i, p = 0;
     if (ignore < 0)
         ignore = getenv("THPS_NOGAMEPAD") && atoi(getenv("THPS_NOGAMEPAD")) != 0;
-    for (i = 0; i < XI_SLOTS; i++) {
+    for (i = 0; i < PAD_SLOTS; i++) {
         XINPUT_STATE st;
         uint32_t was = s_xi[i].down;
         s_xi[i].pressed = 0;
-        if (!s_xinputGetState || ignore || (!s_xi[i].connected && s_xi[i].retry-- > 0))
+        if (ignore || (!s_xi[i].connected && s_xi[i].retry-- > 0))
             continue;
-        if (s_xinputGetState(i, &st) == ERROR_SUCCESS) {
+        if (GetState(i, &st) == ERROR_SUCCESS) {
             if (!s_xi[i].connected)
                 PC_Log("gamepad %d connected", i);
             s_xi[i].connected = 1;
@@ -529,12 +556,12 @@ static void PollGamepads(void) {
             if (s_xi[i].connected)
                 PC_Log("gamepad %d disconnected", i);
             s_xi[i].connected = 0;
-            s_xi[i].retry = 120;
+            s_xi[i].retry = i < XI_SLOTS ? 120 : 0;
             s_xi[i].down = 0;
         }
     }
     s_playerSlot[0] = s_playerSlot[1] = -1;
-    for (i = 0; i < XI_SLOTS && p < 2; i++)
+    for (i = 0; i < PAD_SLOTS && p < 2; i++)
         if (s_xi[i].connected)
             s_playerSlot[p++] = i;
 }
@@ -630,7 +657,7 @@ void PC_InputInit(void) {
     s_init = 1;
     SDL_InitSubSystem(SDL_INIT_EVENTS);
     PC_SettingsLoad();
-    LoadXInput();
+    LoadGamepads();
     PollGamepads();
 }
 
@@ -689,7 +716,7 @@ void PC_InputRumble(int player, int small, int large) {
     static int s_last[2][2] = {{-1, -1}, {-1, -1}};
     static uint32_t s_renewed[2];
     int slot;
-    if (player < 0 || player > 1 || !s_rumble || (slot = s_playerSlot[player]) < 0)
+    if (player < 0 || player > 1 || (slot = s_playerSlot[player]) < 0)
         return;
     small = small ? 0xffff : 0; /* the DualShock's small motor is on or off */
     large = large * 0x101;
@@ -700,7 +727,7 @@ void PC_InputRumble(int player, int small, int large) {
     s_last[player][0] = small;
     s_last[player][1] = large;
     s_renewed[player] = PC_FrameCount();
-    s_rumble((DWORD)slot, (WORD)large, (WORD)small);
+    Rumble(slot, (WORD)large, (WORD)small);
 }
 
 int PC_InputPlayerConnected(int player) { return player == 0 || s_playerSlot[player] >= 0; }
