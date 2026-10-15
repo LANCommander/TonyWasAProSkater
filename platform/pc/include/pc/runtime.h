@@ -93,6 +93,8 @@ private:
 
     /* the low page (64 KB, zero until written), and the access being single-stepped against it */
     uint8_t *m_lowPage = nullptr;
+    /* THPS_LOWMEM_FATAL=1: report a low-memory access as a crash instead of redirecting it */
+    bool m_lowFatal = false;
     struct {
         int active;
         int reg;

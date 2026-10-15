@@ -471,8 +471,14 @@ void *WatchdogThread(void *arg) {
 /* On the PS1, 0x00000000-0x001fffff is Runtime::Main RAM too, so the game's NULL-ish pointers read and
  * write harmless low memory. Such an access faults here; it is redone against the low page
  * (64 KB, zero until written) by adding its address to the instruction's base (or index)
- * register, single-stepping it, and taking the bias back off. Each site is logged once. */
+ * register, single-stepping it, and taking the bias back off. Each site is logged once.
+ * THPS_LOWMEM_FATAL=1 leaves it a crash, to find the sites still relying on this. */
 bool Diagnostics::FixLowAccess(CpuState &c, uintptr_t addr, void *wctx) {
+    if (m_lowFatal) {
+        PC_Log("low-memory access at ip=%08llx (address %08llx): fatal (THPS_LOWMEM_FATAL)",
+               (unsigned long long)*c.ip, (unsigned long long)addr);
+        return false;
+    }
     Prefixes x = ReadPrefixes((const uint8_t *)*c.ip);
     const uint8_t *p = x.p;
     uint8_t op;
@@ -539,6 +545,7 @@ void Diagnostics::AllocLowPage() {
     uint8_t *p = (uint8_t *)calloc(2, LOW_PAGE);
     if (!p)
         PC_Fatal("out of memory");
+    m_lowFatal = getenv("THPS_LOWMEM_FATAL") && atoi(getenv("THPS_LOWMEM_FATAL"));
     m_lowPage = (uint8_t *)(((uintptr_t)p + LOW_PAGE - 1) & ~(uintptr_t)(LOW_PAGE - 1));
 }
 

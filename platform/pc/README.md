@@ -452,6 +452,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_FAST=1` | don't throttle to 60 Hz |
 | `THPS_MOVIES=0` | skip every movie |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
+| `THPS_LOWMEM_FATAL=1` | crash (with the usual report) on an access near address 0 instead of redirecting it to the zeroed low page: finds null dereferences the PS1 tolerated |
 | `THPS_DETERMINISTIC=1` | virtual clock: identical runs every time (use with `THPS_INPUT` for bisecting) |
 | `THPS_POKE=name[+offset]:value,...` | store those words every frame into globals of `game/data` (`Cheat_LevelSelect:1` = level select cheat: every level unlocked; `GCareer+0x82c:4` = the last level played) |
 | `THPS_WATCH=addr` | hardware write watchpoint on a 4-byte word: logs value, native EIP and callers |
