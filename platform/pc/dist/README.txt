@@ -38,6 +38,8 @@ Controls
 
 Keyboard and gamepads (XInput, and any controller SDL knows). Rebind them in Options > Player
 1/2 Controls. Gamepad buttons are named as on an Xbox controller.
+A pad the game doesn't recognise can be added with a gamecontrollerdb.txt next to the
+game or Settings.ini (https://github.com/mdqinc/SDL_GameControllerDB).
 
   Move                       W A S D / arrows          D-pad, left stick
   Ollie                      Space                     A

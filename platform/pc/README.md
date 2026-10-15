@@ -359,6 +359,11 @@ Gamepads are read through XInput (Windows) and SDL's game controllers, into the 
 inputs: SDL takes the pads XInput doesn't read (DualShock, DualSense, Switch, generic USB pads) and
 skips the ones it does, so no pad counts twice. Other pads' buttons are named after the Xbox one in
 the same place (A = Cross). The players get the first two connected, XInput's before SDL's.
+SDL only opens pads it has a mapping for; `Input::AddMappings` adds the ones its database lacks
+(the PlayStation Classic pad, 054c:0cda), then loads any `gamecontrollerdb.txt` from beside the
+exe and then from beside Settings.ini, whose lines win for the same pad (SDL_GameControllerDB
+format; `SDL_GAMECONTROLLERCONFIG` works too). An unmapped pad is logged with its GUID when it is
+plugged in.
 
 **Options > Player 1/2 Controls** is the rebinding screen (it replaces the PS1's face-button
 remap; `Front_ControllerOptions` in `game/src/frontend.cpp`). The top row switches between the

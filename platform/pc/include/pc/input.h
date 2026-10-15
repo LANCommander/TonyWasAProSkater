@@ -122,6 +122,9 @@ class Input {
     uint32_t GetState(int slot, _XINPUT_STATE *st);
     void RumbleSlot(int slot, uint16_t low, uint16_t high);
     void LoadGamepads();
+    void AddMappings();
+    void AddMappingsFrom(const char *dir);
+    void DeviceAdded(int i);
     void PollGamepads();
     void ScriptedKeys(uint8_t *down);
     uint16_t ScriptedButtons();

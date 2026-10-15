@@ -53,6 +53,8 @@ typedef struct _XINPUT_STATE {
 #include "pc_runtime.h"
 #include "pc_video.h"
 #include "pc/input.h"
+#include "pc/platform.h"
+#include "pc/runtime.h"
 #include "pc/settings.h"
 #include "pc/video.h"
 
@@ -515,6 +517,58 @@ void Input::LoadGamepads() {
         PC_Log("gamepads: SDL game controllers");
     else
         PC_Log("gamepads: SDL game controllers not available (%s)", SDL_GetError());
+    if (m_sdl)
+        AddMappings();
+}
+
+/* Pads SDL's own database leaves out. The PlayStation Classic's pad (054c:0cda) is a plain HID
+ * joystick: 10 buttons, and its D-pad as the two axes. SDL ignores the CRC in a mapping's GUID
+ * (bytes 2-3), so one line covers every name the pad reports. */
+void Input::AddMappings() {
+    static const char *const maps[] = {
+#if defined(_WIN32)
+        "030000004c050000da0c000000000000,PlayStation Classic Controller,"
+#elif defined(__APPLE__)
+        "030000004c050000da0c000000010000,PlayStation Classic Controller,"
+#else
+        "030000004c050000da0c000011010000,PlayStation Classic Controller,"
+#endif
+        "a:b2,b:b1,x:b3,y:b0,back:b8,start:b9,leftshoulder:b6,rightshoulder:b7,lefttrigger:b4,"
+        "righttrigger:b5,dpup:-a1,dpdown:+a1,dpleft:-a0,dpright:+a0",
+    };
+    char *base = SDL_GetBasePath();
+    for (const char *m : maps)
+        if (SDL_GameControllerAddMapping(m) < 0)
+            PC_Log("gamepads: bad mapping (%s)", SDL_GetError());
+    /* more pads: a gamecontrollerdb.txt (github.com/mdqinc/SDL_GameControllerDB) by the exe, then
+     * one by Settings.ini, whose lines replace the exe one's for the same pad */
+    if (base) {
+        AddMappingsFrom(base);
+        SDL_free(base);
+    }
+    AddMappingsFrom(g_runtime.UserDir());
+}
+
+void Input::AddMappingsFrom(const char *dir) {
+    char path[1024];
+    int n;
+    size_t len = strlen(dir);
+    snprintf(path, sizeof path, "%s%sgamecontrollerdb.txt", dir,
+             len && (dir[len - 1] == '/' || dir[len - 1] == '\\') ? "" : PC_SEP);
+    n = SDL_GameControllerAddMappingsFromFile(path);
+    if (n >= 0)
+        PC_Log("gamepads: %d mappings from %s", n, path);
+}
+
+/* A pad SDL has no mapping for is never opened: say so, so it isn't silently ignored. */
+void Input::DeviceAdded(int i) {
+    char guid[33];
+    if (SDL_IsGameController(i))
+        return;
+    SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), guid, sizeof guid);
+    PC_Log("gamepads: \"%s\" (%04x:%04x, GUID %s) is not a known controller; add a mapping for it "
+           "to gamecontrollerdb.txt", SDL_JoystickNameForIndex(i), SDL_JoystickGetDeviceVendor(i),
+           SDL_JoystickGetDeviceProduct(i), guid);
 }
 
 /* Polling an empty XInput slot is slow, so empty XInput slots are only tried every 120 polls. */
@@ -646,6 +700,8 @@ void Input::PumpEvents() {
     while (SDL_PollEvent(&e)) {
         if (e.type == SDL_QUIT)
             m_quit = true;
+        if (e.type == SDL_JOYDEVICEADDED)
+            DeviceAdded(e.jdevice.which);
         g_video.Event(&e);
     }
 }
