@@ -3,7 +3,7 @@
    random push along the face normal and upwards (sometimes doubled); never downwards. */
 #include "game/bit.h"
 
-CSVector *pNormal;
+extern CSVector *pNormal;
 
 extern CVector DAT_800d2574; /* centre of the face being shattered */
 

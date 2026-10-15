@@ -1,8 +1,8 @@
 /* Mess_SetScale__Fi (0x8001d25c) */
 #include "names.h"
 
-unsigned char NewFont;
-short Scale;
+extern unsigned char NewFont;
+extern short Scale;
 
 extern void Mess_SetFontScale(unsigned);
 

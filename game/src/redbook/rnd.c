@@ -1,5 +1,5 @@
 /* Redbook_Rnd__Fi (0x8004794c) */
-int DAT_800d2238, DAT_800d223c, DAT_800d2240;
+extern int DAT_800d2238, DAT_800d223c, DAT_800d2240;
 
 int Redbook_Rnd(int n) {
 	int r;

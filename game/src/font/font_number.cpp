@@ -1,9 +1,9 @@
 /* Font_Number__FUsUsiUcUcUcUc (0x8004c20c) flags=-fstructure-noalias */
 #include "game/font.h"
 
-SString *BufferPos;
-uint CodeVal;
-char *pNumberStrings;
+extern SString *BufferPos;
+extern uint CodeVal;
+extern char *pNumberStrings;
 
 void WriteNumber(int);
 

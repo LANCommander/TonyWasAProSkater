@@ -6,8 +6,7 @@
 #include "game/psyq.h"
 #include "game/video.h"
 
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 
 unsigned short CalcChecksum(ulong *, ulong);
 void Video_SetHeader(SVideoHead *, int);
@@ -32,11 +31,11 @@ int Card_WriteReplayToDisk(EFileType FileType, char *FName) {
 
 	switch (FileType) {
 		case 1:
-			pHeaderBuf = GVInfo1.pBlockStart;
+			pHeaderBuf = GVInfo1[0].pBlockStart;
 			HeaderSize = 640;
 			pDataBuf = pHeaderBuf + 160;
 			DataSize = 23936;
-			pHeaderBuf2 = GVInfo2.pBlockStart;
+			pHeaderBuf2 = GVInfo1[1].pBlockStart;
 			pDataBuf2 = pHeaderBuf2 + 160;
 			DataSize2 = 23936;
 			break;

@@ -21,8 +21,8 @@ typedef struct P {
 	short pad3;
 } P;
 
-int DAT_800d2274, DAT_800d2278, DAT_800d227c, DAT_800d226c, DAT_800d2270;
-P *DAT_800d2280;
+extern int DAT_800d2274, DAT_800d2278, DAT_800d227c, DAT_800d226c, DAT_800d2270;
+extern P *DAT_800d2280;
 
 extern int GameFMV_RewindSwitch;
 extern short GameFMV_StartX, GameFMV_StartY, GameFMV_EndX;

@@ -16,8 +16,8 @@ struct SCareerRecord {
 	uchar Flags[14];
 };
 
-extern SCareerRecord GCareer_c[];
-extern char *GameText_180[];
+extern SCareer GCareer;
+extern char *GameText[];
 
 void Mess_DeleteAll();
 void Mess_SetScale(int);
@@ -60,7 +60,7 @@ void Competition_EndGameDisplay() {
 			int i;
 
 			for (i = 0; i < 10; i++) {
-				short f = GCareer_c[GSkater->mSkaterIndex].Flags[i];
+				short f = ((SCareerRecord *)GCareer.CharacterProgress[0].Tapes)[GSkater->mSkaterIndex].Flags[i];
 
 				if (f & 0x20)
 					m[n++] = (EMedalType)5;
@@ -95,6 +95,6 @@ void Competition_EndGameDisplay() {
 		}
 
 		if (Done && !pComp->mFading)
-			Front_PrintCentredPrompt(GameText_180[0]);
+			Front_PrintCentredPrompt(GameText[96]);
 	}
 }

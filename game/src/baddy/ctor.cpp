@@ -3,7 +3,7 @@
    script/collision defaults. */
 #include "game/baddy.h"
 
-int NumBaddies;
+extern int NumBaddies;
 
 CBaddy::CBaddy() {
 	NumBaddies++;

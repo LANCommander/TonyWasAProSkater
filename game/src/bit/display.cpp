@@ -27,17 +27,17 @@ extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 extern SSinCos rcossin_tbl[];
 
-CSpecialDisplay *SpecialDisplayList;
-CGlow *GlowList;
-CGPolyLine *GPolyLineList;
-CPolyLine *PolyLineList;
-CFlatBit *FlatBitList;
-CGlassBit *GlassList;
-CGLine *GLineList;
-CQuadBit *QuadBitList;
-CChunkBit *ChunkBitList;
-CPixel *PixelList;
-CLinked2EndedBit *Linked2EndedBitList;
+extern CSpecialDisplay *SpecialDisplayList;
+extern CGlow *GlowList;
+extern CGPolyLine *GPolyLineList;
+extern CPolyLine *PolyLineList;
+extern CFlatBit *FlatBitList;
+extern CGlassBit *GlassList;
+extern CGLine *GLineList;
+extern CQuadBit *QuadBitList;
+extern CChunkBit *ChunkBitList;
+extern CPixel *PixelList;
+extern CLinked2EndedBit *Linked2EndedBitList;
 extern DR_TPAGE StoredTPagePrim; /* bit/init.c */
 
 int M3dAsm_ClipLine(SClipLineBuf *);

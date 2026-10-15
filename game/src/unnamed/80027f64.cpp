@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). A bit that is moved but never drawn, linked into NonRenderedBitList. */
 #include "game/bit.h"
 
-CNonRenderedBit *NonRenderedBitList;
+extern CNonRenderedBit *NonRenderedBitList;
 
 CNonRenderedBit::CNonRenderedBit() {
 	AttachTo(&NonRenderedBitList);

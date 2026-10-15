@@ -6,7 +6,7 @@
 
 extern SControl Pad[];
 
-int DAT_800d1d9c;
+extern int DAT_800d1d9c;
 
 PadBuffer::PadBuffer(int pad) {
 	entries = 0;

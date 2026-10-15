@@ -12,7 +12,7 @@ struct N {
 	struct N *next;
 };
 
-struct N *DAT_800d1a80;
+extern struct N *DAT_800d1a80;
 struct N *Mem_NewX(int a, int b, int c);
 
 struct N *NewPaletteEntry(int p) {

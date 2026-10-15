@@ -1,19 +1,19 @@
 /* Bit_DeleteAll__Fv (0x80027b28) */
 #include "names.h"
 
-void *NonRenderedBitList;
-void *FlatBitList;
-void *Linked2EndedBitList;
-void *PixelList;
-void *PolyLineList;
-void *GPolyLineList;
-void *QuadBitList;
-void *GenPolyList;
-void *ChunkBitList;
-void *GlowList;
-void *GlassList;
-void *GLineList;
-void *SpecialDisplayList;
+extern void *NonRenderedBitList;
+extern void *FlatBitList;
+extern void *Linked2EndedBitList;
+extern void *PixelList;
+extern void *PolyLineList;
+extern void *GPolyLineList;
+extern void *QuadBitList;
+extern void *GenPolyList;
+extern void *ChunkBitList;
+extern void *GlowList;
+extern void *GlassList;
+extern void *GLineList;
+extern void *SpecialDisplayList;
 
 void DeleteBitList(void *);
 

@@ -7,7 +7,7 @@ struct T {
 
 extern int Loading;
 
-int SpoolPos;
+extern int SpoolPos;
 
 extern struct T SpoolQ[];
 

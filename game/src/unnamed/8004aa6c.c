@@ -1,11 +1,11 @@
 /* Pal_Init__Fv (0x8004aa6c) */
 #include "names.h"
 
-void *DAT_800d1a80;
-char Pal256X[4];
-char Pal256Y[4];
-char Pal16X[4];
-char Pal16Y[4];
+extern void *DAT_800d1a80;
+extern char Pal256X[4];
+extern char Pal256Y[4];
+extern char Pal16X[4];
+extern char Pal16Y[4];
 
 extern char Free16Slots[];
 extern char Free256Slots[];

@@ -11,11 +11,11 @@
 extern SQueue SpoolQ[];
 extern SPSXRegion PSXRegion[];
 
-int SpoolPos;
-int DAT_800d1f08;
-int EnvRegions[2];
-int OtherEnvIndex;
-uint *EnvModelChecksums[2];
+extern int SpoolPos;
+extern int DAT_800d1f08;
+extern int EnvRegions[2];
+extern int OtherEnvIndex;
+extern uint *EnvModelChecksums[2];
 
 extern int Loading;
 

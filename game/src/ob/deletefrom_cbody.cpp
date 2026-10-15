@@ -3,7 +3,7 @@
    suspended and the list is another one). */
 #include "game/ob.h"
 
-CBody *SuspendedList;
+extern CBody *SuspendedList;
 
 void CBody::DeleteFrom(CBody **pp_list) {
 	if ((mCBodyFlags & 1) && pp_list != &SuspendedList)

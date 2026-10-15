@@ -3,25 +3,24 @@
 
     python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link] [--release]
 
-Pipeline for every decompiled TU (decomp/matched.tsv, plus the near-miss sources for functions
-that aren't byte-exact yet, and decomp/reimpl.tsv: hand-written assembly reimplemented in C):
+The game's data (game/data: ordinary C++ globals) is compiled first; its references to functions
+are renamed to `psx_<addr>` as the code's are (below). Then, for every game TU (game/tus.tsv):
 
   1. source transforms (portsrc.py): inline GTE asm -> software GTE calls; for C++, the egcs
-     virtual-function ABI on top of non-virtual native classes;
-  2. compile to assembly (i686 GCC, cdecl everywhere: -mabi=sysv);
-  3. definitions of globals that live in the PS1 image lose their labels, so every access becomes
-     an external reference;
-  4. assemble, then rename symbols: every reference resolves to `psx_<addr>` (an absolute symbol at
-     the retail address, from the TU's .syms.json), and the TU's own function becomes
-     `pcfn_<addr>`.
+     virtual-function ABI on top of non-virtual native classes (vtables: game/data by name,
+     game/vtables.tsv);
+  2. compile to assembly (cdecl everywhere on i386: -mabi=sysv);
+  3. assemble, then rename the function symbols: a call resolves to `psx_<addr>` (the function's
+     retail address, from functions.tsv or the TU's .syms.json), and the TU's own function becomes
+     `pcfn_<addr>`. Globals keep their C names: game/data defines them.
 
-Then it generates the glue (linker script of absolute symbols, the function table the runtime
-turns into trampolines, virtual-dispatch thunks, stubs for anything not implemented yet) and links
-everything with the runtime into build/pc/thps.exe (Linux: build/pc-linux/thps; see toolchain.py).
+Then it generates the glue (linker script naming every `psx_<addr>` function's code, virtual-
+dispatch thunks, stubs for anything not implemented yet) and links everything with the runtime
+into build/pc/thps.exe (Linux: build/pc-linux/thps; see toolchain.py).
 """
 import argparse
-import bisect
 import concurrent.futures as cf
+import glob
 import hashlib
 import json
 import os
@@ -122,12 +121,12 @@ def load_tus():
     return tus
 
 
-def load_data_names():
-    names = {}
-    for p in read_tsv(os.path.join(GAME, "data_names.tsv")):
-        if p[0].startswith("0x"):
-            names.setdefault(p[1], int(p[0], 16))
-    return names
+def load_vtable_overrides():
+    """{tu src: {class: vtable}} (game/vtables.tsv)."""
+    out = {}
+    for p in read_tsv(os.path.join(GAME, "vtables.tsv")):
+        out.setdefault(p[0], {})[p[1]] = p[2]
+    return out
 
 
 # --------------------------------------------------------------------------------------------
@@ -169,6 +168,93 @@ def qual_name(d):
 
 
 # --------------------------------------------------------------------------------------------
+# the game's data
+
+
+DATA_DIR = os.path.join(GAME, "data")
+# C++ (as Neversoft's sources were), for the game's struct types (game/include, with full debug
+# types: GAME_DATA_TU); C++98: no narrowing errors in the word tables
+DATA_FLAGS = [MFLAG, "-std=gnu++98", "-O1", "-g", "-fno-common", "-fno-exceptions", "-fno-rtti",
+              "-w", "-funsigned-char", "-DPC_PORT=1", "-DGAME_DATA_TU", "-I", DATA_DIR,
+              "-I", os.path.join(GAME, "include"), "-I", os.path.join(PC, "include", "psyq"),
+              "-I", os.path.join(PC, "include")] + ([] if WINDOWS else ["-fno-pic"])
+
+
+def nm_symbols(obj):
+    """([defined global names], [undefined names]) of an object, as the assembler spells them."""
+    rc, so, se = run([tool("nm"), obj])
+    if rc:
+        raise SystemExit("nm %s: %s" % (obj, se))
+    defined, undefined = [], []
+    for line in so.splitlines():
+        p = line.split()
+        if len(p) == 2 and p[0] == "U":
+            undefined.append(p[1])
+        elif len(p) == 3 and p[1] in "DBRCVW":
+            defined.append(p[2])
+    return defined, undefined
+
+
+def build_data(ctx):
+    """Compile game/data/*.cpp into OUT/dataobj: ordinary globals, linked by their C names. A pointer
+    to a function becomes `psx_<addr>`, as the TUs' calls do. Returns {objs, defined (C names),
+    psx_syms (as PE spells them: `_psx_80012345`)}."""
+    # (not OUT/data: on Windows that is the game's Data folder)
+    out = os.path.join(OUT, "dataobj")
+    os.makedirs(out, exist_ok=True)
+    srcs = sorted(glob.glob(os.path.join(DATA_DIR, "*.cpp")))
+    hdrs = glob.glob(os.path.join(DATA_DIR, "*.h")) + \
+        glob.glob(os.path.join(GAME, "include", "**", "*.h"), recursive=True)
+    newest = max([os.path.getmtime(h) for h in hdrs] + [os.path.getmtime(__file__)])
+
+    def cc(src):
+        raw = os.path.join(out, os.path.basename(src)[:-4] + ".raw.o")
+        if not (os.path.exists(raw) and os.path.getmtime(raw) >= max(os.path.getmtime(src),
+                                                                      newest)):
+            rc, so, se = run([tool("g++")] + DATA_FLAGS + ["-c", src, "-o", raw])
+            if rc:
+                raise SystemExit("game/data: %s\n%s" % (src, se[-4000:]))
+        return raw, nm_symbols(raw)
+
+    with cf.ThreadPoolExecutor() as ex:
+        raws = list(ex.map(cc, srcs))
+    unprefix = (lambda s: s[len(USCORE):] if USCORE and s.startswith(USCORE) else s)
+    defined = set()
+    for raw, (d, u) in raws:
+        for s in d:
+            n = unprefix(s)
+            if n in defined:
+                raise SystemExit("game/data: %s defined twice" % n)
+            defined.add(n)
+    psx = set()
+
+    def rename(item):
+        raw, (d, u) = item
+        renames = {}
+        for s in u:
+            n = unprefix(s)
+            if n in defined:
+                continue
+            a = ctx.func_addr(n)
+            if a is not None:
+                r = ctx.native_at.get("_psx_%08x" % a, "_psx_%08x" % a)
+                renames[s] = USCORE + r[1:]
+                if r.startswith("_psx_"):
+                    psx.add("_psx_%08x" % a)
+        obj = raw[:-6] + ".o"
+        rn = raw[:-6] + ".rename"
+        open(rn, "w").write("".join("%s %s\n" % kv for kv in renames.items()))
+        rc, so, se = run([tool("objcopy"), "--redefine-syms=" + rn, raw, obj])
+        if rc:
+            raise SystemExit("objcopy %s: %s" % (raw, se))
+        return obj
+
+    with cf.ThreadPoolExecutor() as ex:
+        objs = list(ex.map(rename, raws))
+    return {"objs": objs, "defined": defined, "psx_syms": sorted(psx)}
+
+
+# --------------------------------------------------------------------------------------------
 # per-TU build
 
 
@@ -189,21 +275,15 @@ class Ctx:
         for a, (sz, mangled, dem) in self.functions.items():
             self.fn_by_sig.setdefault(norm_sig(dem), []).append(a)
             self.fn_by_qual.setdefault(qual_name(dem), []).append(a)
-        self.data_names = load_data_names()
         self.tus = load_tus()
-        # global name -> address, from every TU's syms.json (names with one address only)
+        # function name -> address, from every TU's syms.json (names with one address only)
         seen = {}
         for tu in self.tus.values():
             for k, v in tu["syms"].items():
-                if k.startswith(".") or k == "gp":
+                if k.startswith(".") or k == "gp" or int(v, 16) >= CODE_END:
                     continue
                 seen.setdefault(k, set()).add(int(v, 16))
         self.global_syms = {k: next(iter(v)) for k, v in seen.items() if len(v) == 1}
-        # every class's retail vtable known anywhere (a class used by several TUs has one vtable;
-        # names with two addresses, i.e. two classes of one name, are left to each TU's syms.json)
-        vt = {k: "0x%08x" % v for k, v in self.data_names.items()}
-        vt.update({k: "0x%08x" % v for k, v in self.global_syms.items()})
-        self.vtables = vtables_of(vt)
         allnames = set()
         for tu in self.tus.values():
             allnames.update(k for k in tu["syms"] if not k.startswith("."))
@@ -214,13 +294,6 @@ class Ctx:
         off = 0x800D101C - 0x80010000 + 0x800
         self.static_ctors = [int.from_bytes(img[off + 4 * i:off + 4 * i + 4], "little")
                              for i in range(19)]
-        # where game/data's globals and .bss are (the TUs' definitions there are dropped)
-        import data_image  # noqa: E402
-        lay = data_image.build(data_image.OBJDIR)
-        cover = sorted([g["addr"], g["end"]] for g in lay.globals if not g["fixed"])
-        cover.append([data_image.BSS_START, data_image.BSS_END])
-        self.cover = sorted(cover)
-        self.cover_starts = [c[0] for c in self.cover]
         self.psyq = {}
         self.native_at = {}
         p = os.path.join(ROOT, "build", "psyq_names.tsv")
@@ -230,11 +303,25 @@ class Ctx:
                 t = NATIVE_RENAME.get(q[1]) or NATIVE_AT.get(q[1])
                 if t:  # every copy of a function linked more than once
                     self.native_at["_psx_%08x" % int(q[0], 16)] = "_" + t
+        # the game's data, compiled: the globals the TUs reach by name
+        self.data = build_data(self)
+        self.data_defined = self.data["defined"]
+        # every class's vtable: game/data's __vt_<len><class>, or the TU's own (vtables.tsv)
+        self.vtables = {}
+        for n in self.data_defined:
+            m = re.match(r"^__vt_(\d+)(\w+)$", n)
+            if m and len(m.group(2)) == int(m.group(1)):
+                self.vtables[m.group(2)] = n
+        self.vtable_overrides = load_vtable_overrides()
 
-    def covered(self, addr):
-        """Whether a global of game/data (or .bss) holds the retail address."""
-        k = bisect.bisect_right(self.cover_starts, addr) - 1
-        return k >= 0 and addr < self.cover[k][1]
+    def func_addr(self, name):
+        """The retail address of a function the data names (functions.tsv, the TUs' syms.json, the
+        Psy-Q names, or a FUN_<addr>-style suffix), else None."""
+        a = self.fn_by_name.get(name, self.global_syms.get(name, self.psyq.get(name)))
+        if a is None:
+            m = re.search(r"_([0-9a-f]{8})$", name)
+            a = int(m.group(1), 16) if m else None
+        return a if a is not None and a < CODE_END else None
 
 
 BUILTIN_CXX = {
@@ -273,16 +360,6 @@ NATIVE_AT = dict((n, "PC_" + n) for n in (
 
 def strip_us(sym):
     return sym[1:] if sym.startswith("_") else sym
-
-
-def vtables_of(syms):
-    """{class: addr} from a TU's syms.json vtable keys (_vt.5CItem / __vt_5CItem)."""
-    out = {}
-    for k, v in syms.items():
-        m = re.match(r"^(?:_vt\.|__vt_)(\d+)(\w+)$", k)
-        if m and len(m.group(2)) == int(m.group(1)):
-            out[m.group(2)] = int(v, 16)
-    return out
 
 
 INCLUDE_RE = re.compile(r'^[ \t]*#[ \t]*include[ \t]+"([^"]+)"[^\n]*$', re.M)
@@ -367,8 +444,10 @@ def build_tu(ctx, tu, flags_hash):
     meta_path = base + ".json"
     text, headers = expand_includes(open(src_path, encoding="utf-8", errors="replace").read(),
                                     src_path)
-    stamp = hashlib.sha1((text +
-                          json.dumps(tu["syms"], sort_keys=True) + flags_hash).encode()).hexdigest()
+    vtables = dict(ctx.vtables)
+    vtables.update(ctx.vtable_overrides.get(tu["src"], {}))
+    stamp = hashlib.sha1((text + json.dumps(tu["syms"], sort_keys=True) +
+                          json.dumps(vtables, sort_keys=True) + flags_hash).encode()).hexdigest()
     if os.path.exists(obj) and os.path.exists(meta_path):
         meta = json.load(open(meta_path))
         if meta.get("stamp") == stamp:
@@ -376,11 +455,8 @@ def build_tu(ctx, tu, flags_hash):
     meta = {"src": tu["src"], "stamp": stamp, "errors": [], "warnings": [], "headers": headers}
     try:
         text = portsrc.fix_cast_lvalues(portsrc.translate_asm(text))
-        text = portsrc.unstatic_shared(text, tu["syms"])
         classes = {}
         if is_cxx:
-            vtables = dict(ctx.vtables)
-            vtables.update(vtables_of(tu["syms"]))
             text, classes = portsrc.transform_cxx(text, vtables, tukey(tu))
             text = portsrc.mark_deletes(text)
     except Exception as e:  # noqa: BLE001
@@ -406,8 +482,6 @@ def build_tu(ctx, tu, flags_hash):
         asm_text = caller_pops_sret(asm_text)
     # --- symbol resolution ----------------------------------------------------------------
     res = Resolver(ctx, tu, is_cxx, classes)
-    asm_text, relocated = relocate_data_defs(asm_text, res)
-    meta["relocated"] = relocated
     asm2 = base + ".fix.s"
     open(asm2, "w", encoding="utf-8").write(asm_text)
     rc, so, se = run([tool("as"), "--64" if X64 else "--32", asm2, "-o", base + ".raw.o"])
@@ -498,79 +572,10 @@ def caller_pops_sret(asm):
     return "\n".join(out)
 
 
-DATA_SECT_RE = re.compile(r"^\s*\.(data|bss|section\s+\.(?:rdata|data|bss)\S*)", re.M)
-
-
-def relocate_data_defs(asm, res):
-    """Drop the definition of every global data symbol that lives in the PS1 image, so references to
-    it become external (resolved to the retail address at link time). A definition at an address
-    no global of game/data (nor .bss) holds stays: the TU's object is the storage (res.kept)."""
-    relocated = []
-    kept = []
-
-    def drop(sym, addr):
-        if res.ctx.covered(addr):
-            relocated.append((sym, addr))
-            return True
-        kept.append((sym, addr))
-        return False
-
-    globls = set(re.findall(r"^\s*\.globl\s+(\S+)", asm, re.M))
-    # ELF spells a file-static .bss variable `.local x` + `.comm x,...` (COFF: `.lcomm x,...`)
-    locals_ = set(re.findall(r"^\s*\.local\s+(\S+)", asm, re.M))
-    out_lines = []
-    lines = asm.split("\n")
-    section = ".text"
-    for line in lines:
-        s = line.strip()
-        m = re.match(r"\.(text|data|bss)\b", s)
-        if m:
-            section = "." + m.group(1)
-        m = re.match(r"\.section\s+([^,\s]+)", s)
-        if m:
-            section = m.group(1)
-        m = re.match(r"\.comm\s+([^,\s]+)\s*,", s)
-        if m:
-            sym = m.group(1)
-            addr = res.static_addr(sym) if sym in locals_ else res.data_addr(strip_us(sym))
-            if addr is not None and drop(sym, addr):
-                continue
-        # file statics (`static int x;`): the matching build placed them at retail addresses too,
-        # listed in the TU's own .syms.json (never resolved through the global maps)
-        m = re.match(r"\.lcomm\s+([^,\s]+)\s*,", s)
-        if m:
-            sym = m.group(1)
-            addr = res.static_addr(sym)
-            if addr is not None and drop(sym, addr):
-                continue
-        m = re.match(r"^([^\s:]+):$", s)
-        if m and not section.startswith(".text"):
-            sym = m.group(1)
-            if sym in globls:
-                addr = res.data_addr(strip_us(sym), cxx_sym=sym)
-            else:
-                addr = res.static_addr(sym)
-            if addr is not None and drop(sym, addr):
-                out_lines.append(line.replace(sym + ":", sym + "$pcdead:"))
-                continue
-        out_lines.append(line)
-    rel = {s for s, _ in relocated}
-    # and the directives about a dropped definition (ELF: .local/.type/.size; references to it
-    # become external)
-    sym_dir = re.compile(r"^\s*\.(?:globl|local|type|size)\s+([^,\s]+)")
-    out = "\n".join(l for l in out_lines if not sym_dir.match(l) or
-                    sym_dir.match(l).group(1) not in rel)
-    res.relocated = dict(relocated)
-    res.kept = dict(kept)
-    return out, relocated
-
-
 class Resolver:
     def __init__(self, ctx, tu, is_cxx, classes):
         self.ctx, self.tu, self.is_cxx, self.classes = ctx, tu, is_cxx, classes
         self.syms = {k: int(v, 16) for k, v in tu["syms"].items()}
-        self.relocated = {}
-        self.kept = {}
         self.syms_by_sig = {}
         self.syms_by_qual = {}
         for k, a in self.syms.items():
@@ -595,25 +600,14 @@ class Resolver:
             name = q.replace("::", "_")
         if name in self.ctx.global_syms:
             return self.ctx.global_syms[name]
-        if name in self.ctx.data_names:
-            return self.ctx.data_names[name]
         return None
-
-    def static_addr(self, sym):
-        """Retail address of a file-static data symbol, from this TU's .syms.json only. C statics
-        are `_name`, C++ namespace-scope statics `__ZL<len><name>`."""
-        name = strip_us(sym)
-        m = re.match(r"_ZL(\d+)(\w+)$", name)
-        if m and len(m.group(2)) == int(m.group(1)):
-            name = m.group(2)
-        return self.syms.get(name)
 
     def func_addr_c(self, name):
         if name in self.syms:
             return self.syms[name]
         if name in self.ctx.fn_by_name:
             return self.ctx.fn_by_name[name]
-        return None
+        return self.ctx.global_syms.get(name)  # (a library function another TU names)
 
     def plan(self, defined, undefined):
         """Return ({old: new}, info) for objcopy."""
@@ -686,12 +680,6 @@ class Resolver:
             if len(loose) == 1:
                 renames[loose[0]] = "_pcfn_%08x" % primary
                 info["defines"][hex(primary)] = strip_us(loose[0])
-        # data this TU's object holds (relocate_data_defs: no game/data global there): named by its
-        # retail address, for the other TUs' references
-        for sym, a in self.kept.items():
-            renames[sym] = "_psx_%08x" % a
-            info["globalize"].append("_psx_%08x" % a)
-            info.setdefault("kept", []).append(a)
         # ---- references
         for sym in undefined:
             name = strip_us(sym)
@@ -700,24 +688,21 @@ class Resolver:
             if name in NATIVE_RENAME:
                 renames[sym] = "_" + NATIVE_RENAME[name]
                 continue
-            if sym in self.relocated:
-                renames[sym] = "_psx_%08x" % self.relocated[sym]
-                continue
-            if re.fullmatch(r"psx_[0-9a-f]{8}", name):
-                renames[sym] = "_" + name  # named by retail address already (portsrc: vtables)
-                continue
+            if name in self.ctx.data_defined:
+                continue  # a global of game/data: linked by its name
             if name.startswith("_Z") and self.is_cxx:
                 r = self.resolve_cxx(name, dem.get(name, name), info)
             else:
                 a = self.func_addr_c(name)
-                if a is None:
-                    a = self.data_addr(name)
                 r = None if a is None else "_psx_%08x" % a
-            if r is None:
+            if r is not None and r.startswith("_psx_") and int(r[5:13], 16) >= CODE_END:
+                r = None  # data: by name (a global another TU defines)
+            elif r is None and self.data_addr(name) is None:
                 info["unresolved"].append(name)
-            else:
-                # a call by address (FUN_<addr>) to one of NATIVE_RENAME's functions
-                renames[sym] = self.ctx.native_at.get(r, r)
+            if r is None:
+                continue
+            # (a call by address, FUN_<addr>, to one of NATIVE_RENAME's functions: that one)
+            renames[sym] = self.ctx.native_at.get(r, r)
         return renames, info
 
     def class_delete_addr(self, cls):
@@ -827,7 +812,8 @@ def main():
                          for h in sorted(os.listdir(os.path.join(PC, "include")))
                          if h.endswith(".h"))
     flags_hash = hashlib.sha1((json.dumps(COMMON_FLAGS + C_FLAGS + CXX_FLAGS) +
-                              json.dumps(ctx.cover) +
+                              json.dumps(sorted(ctx.data_defined)) +
+                              open(os.path.join(GAME, "vtables.tsv")).read() +
                               open(os.path.join(HERE, "portsrc.py")).read() +
                               open(__file__).read() + pc_headers).encode()).hexdigest()
     metas = []

@@ -1,7 +1,7 @@
 /* Mess_GetFontScale__Fv (0x8001f22c) */
 
-unsigned char NewFont;
-int Current_font;
+extern unsigned char NewFont;
+extern int Current_font;
 
 #include "game/font.h"
 

@@ -4,8 +4,8 @@
 
 extern char DAT_800b9014[];
 
-char *pSFXVABHeader;
-int DAT_800d1a94;
+extern char *pSFXVABHeader;
+extern int DAT_800d1a94;
 
 void FUN_80093854(int a, char *b);
 void SFX_SetReverbType(unsigned char a);

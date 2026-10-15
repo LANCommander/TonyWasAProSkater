@@ -22,7 +22,7 @@ typedef struct {
 	unsigned short ar, dr, sr, rr, sl, adsr1, adsr2;
 } VATTR;
 
-int SFXPaused;
+extern int SFXPaused;
 
 extern void FUN_80094f70(VATTR *);
 

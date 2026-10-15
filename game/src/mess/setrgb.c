@@ -1,4 +1,4 @@
-unsigned FlagsBGR;
+extern unsigned FlagsBGR;
 
 void f(unsigned r, unsigned g, unsigned b, int flag) {
 	unsigned rr = r & 0xff, gg = g & 0xff, bb = b & 0xff;

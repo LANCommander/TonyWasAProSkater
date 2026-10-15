@@ -2,7 +2,7 @@
 /* C++: the skater's S-K-A-T-E letters are CBruce::mPanel.SKATE (game/bruce.h, game/panel.h). */
 #include "game/bruce.h"
 
-int SKATE_Display;
+extern int SKATE_Display;
 
 extern CBruce *MechList;
 

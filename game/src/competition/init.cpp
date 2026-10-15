@@ -3,7 +3,7 @@
 
 extern int Vblanks, SelectedSkater, GLevel;
 
-short HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
+extern short HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
 
 void Redbook_InitialRand(int);
 int Redbook_Rnd(int);

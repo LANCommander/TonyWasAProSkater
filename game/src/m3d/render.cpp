@@ -53,21 +53,20 @@ extern "C" {
 	extern Item *BaddyList;
 	extern int Camera_CurrentMikeCamera;
 	extern Item *EnviroList;
-	extern int EnvRegions;
-	extern int EnvRegions_4;
+	extern int EnvRegions[2];
 	extern Item *MechList;
 	extern int CurrentWaterLevel;
 	extern int CurrentWaterLevel2;
 	extern int GLevel;
 }
 
-ushort DpqMin, DpqShift, M3d_OTPushback, M3d_OTPushback2;
-int RefMapClut, RefMapTpage, M3d_FadeColour;
-int TestTheWater, Fast, WaterClipValue, M3d_WireframeMode, DpqMax;
-short WaterNormal_6;
-SCamera *pCurrentCamera;
-SViewport *pCurrentViewport;
-void *pColourTable;
+extern ushort DpqMin, DpqShift, M3d_OTPushback, M3d_OTPushback2;
+extern int RefMapClut, RefMapTpage, M3d_FadeColour;
+extern int TestTheWater, Fast, WaterClipValue, M3d_WireframeMode, DpqMax;
+extern short WaterNormal[4];
+extern SCamera *pCurrentCamera;
+extern SViewport *pCurrentViewport;
+extern void *pColourTable;
 
 void M3d_PreprocessWibblyTextures(int);
 void RenderSuperItem(Item *);
@@ -215,8 +214,8 @@ void M3d_Render(void *p) {
 	}
 
 	if (pItem == EnviroList) {
-		M3d_PreprocessWibblyTextures(EnvRegions);
-		M3d_PreprocessWibblyTextures(EnvRegions_4);
+		M3d_PreprocessWibblyTextures(EnvRegions[0]);
+		M3d_PreprocessWibblyTextures(EnvRegions[1]);
 		if (full)
 			MeasureLevel(pItem);
 	}
@@ -295,9 +294,9 @@ void M3d_Render(void *p) {
 
 		if (pItem->Flags & 2) {
 			if (pItem == MechList)
-				WaterNormal_6 = (CurrentWaterLevel >> 12) - pCurrentCamera->Position.vy;
+				WaterNormal[3] = (CurrentWaterLevel >> 12) - pCurrentCamera->Position.vy;
 			else
-				WaterNormal_6 = (CurrentWaterLevel2 >> 12) - pCurrentCamera->Position.vy;
+				WaterNormal[3] = (CurrentWaterLevel2 >> 12) - pCurrentCamera->Position.vy;
 
 			RenderSuperItem(pItem);
 

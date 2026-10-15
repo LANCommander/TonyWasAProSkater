@@ -9,8 +9,8 @@ typedef struct N {
 	int e;
 } N;
 
-int DAT_800d2304[2];
-int DAT_800d231c[2];
+extern int DAT_800d2304[2];
+extern int DAT_800d231c[2];
 
 extern int DAT_800d3758[];
 extern N *Pack_pFree;

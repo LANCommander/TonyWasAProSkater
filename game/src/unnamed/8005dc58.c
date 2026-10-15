@@ -1,9 +1,9 @@
 /* FUN_8005dc58 (0x8005dc58) */
-int DAT_800d1ce4;
-int DAT_800d1ce8;
-int DAT_800d1cdc;
-int DAT_800d1ce0;
-int DAT_800d1cd8;
+extern int DAT_800d1ce4;
+extern int DAT_800d1ce8;
+extern int DAT_800d1cdc;
+extern int DAT_800d1ce0;
+extern int DAT_800d1cd8;
 
 extern int Vblanks;
 

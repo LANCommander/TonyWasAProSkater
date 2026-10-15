@@ -7,12 +7,12 @@
 extern SControl Pad[2];
 extern SPresetCamera Presets[5];
 
-int camDist;
-int camPitch;
-int camYOffset;
-int Camera_Preset;
-int NumCameras;
-CBody *CameraList;
+extern int camDist;
+extern int camPitch;
+extern int camYOffset;
+extern int Camera_Preset;
+extern int NumCameras;
+extern CBody *CameraList;
 
 CCamera::CCamera(CBody *tripod, ushort mike_index)
     : mMikeIndex(mike_index), mTripod(tripod), mCalcTripod(1), new_focus(0), mFocus(tripod),

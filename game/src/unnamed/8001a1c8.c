@@ -1,10 +1,10 @@
 /* Front_SwitchOnEndHeat__Fv (0x8001a1c8) */
 #include "game/padbuttons.h"
+#include "game/classsizes.h"
 #include "names.h"
 
-extern int GVInfo1[];
-extern int GVInfo2[];
-extern char *GameText_1b8[];
+extern int GVInfo1[]; /* SVideoInfo[2] */
+extern char *GameText[];
 extern char Pad[];
 /* the fields of a CItem (game/ob.h) up to the one this reads */
 struct Item {
@@ -19,12 +19,12 @@ struct Item {
 extern struct Item *MechList;
 extern int DAT_800d1e48;
 
-int DAT_800d1524;
-int DAT_800d1528;
-int DAT_800d152c;
-int Status;
-int GamePaused;
-char *pYesNoMenu;
+extern int DAT_800d1524;
+extern int DAT_800d1528;
+extern int DAT_800d152c;
+extern int Status;
+extern int GamePaused;
+extern char *pYesNoMenu;
 
 void Video_Stop(struct Item *b);
 void Pad_ClearTriggers(char *p);
@@ -46,7 +46,7 @@ void Front_SwitchOnEndHeat(void) {
 	if (GVInfo1[0])
 		Video_Stop(MechList);
 
-	if (s && GVInfo2[0])
+	if (s && GVInfo1[SIZEOF_SVIDEOINFO / 4])
 		Video_Stop(s);
 
 	Status = 19;
@@ -54,7 +54,7 @@ void Front_SwitchOnEndHeat(void) {
 	Pad_ClearTriggers(Pad + PAD_SIZE);
 
 	GamePaused = 1;
-	CMenu_SetLine(pYesNoMenu, CMenu_FindEntry(pYesNoMenu, GameText_1b8[0]));
+	CMenu_SetLine(pYesNoMenu, CMenu_FindEntry(pYesNoMenu, GameText[110]));
 	Mess_DeleteAll();
 	Pad_ActuatorOff(0, 0);
 	Pad_ActuatorOff(0, 1);

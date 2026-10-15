@@ -17,7 +17,7 @@ extern "C" {
 extern SStats Stats[];
 extern SCareer GCareer;
 
-int Cheat_StatsOverride;
+extern int Cheat_StatsOverride;
 
 extern int Cheat_Fire;
 extern int GGame;

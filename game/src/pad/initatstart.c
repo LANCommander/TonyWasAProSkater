@@ -14,7 +14,7 @@ typedef struct {
 extern SControl Pad[];
 extern char controllers[];
 
-int Pad_IdleTime, ControlSystemInitialised;
+extern int Pad_IdleTime, ControlSystemInitialised;
 
 extern void Pad_ClearAll(void);
 extern void FUN_80096304(char *, char *);

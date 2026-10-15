@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). Unlinks the bit from ChunkBitList; CBit's destructor does the rest. */
 #include "game/bit.h"
 
-char ChunkBitList[8];
+extern char ChunkBitList[8];
 
 CChunkBit::~CChunkBit() {
 	DeleteFrom(ChunkBitList);

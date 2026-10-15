@@ -18,12 +18,12 @@ extern int DAT_800d33c4[3];          /* pictures per column */
 extern char DAT_800d33d4[3][15][16]; /* picture file names */
 extern SlicedImage *DAT_800d36a4[3][15];
 
-SlicedImage *DAT_800d22dc; /* "locked" picture */
-int DAT_800d22e0;
-char *DAT_800d22e4;
-uchar DAT_800d22e8;
-int DAT_800d22ec;
-int DAT_800d22f0; /* skater */
+extern SlicedImage *DAT_800d22dc; /* "locked" picture */
+extern int DAT_800d22e0;
+extern char *DAT_800d22e4;
+extern uchar DAT_800d22e8;
+extern int DAT_800d22ec;
+extern int DAT_800d22f0; /* skater */
 
 int Load8BitBMP2(char *, char **, int *, int *, ushort *);
 

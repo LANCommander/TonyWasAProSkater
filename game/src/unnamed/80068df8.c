@@ -1,8 +1,8 @@
 /* HasSoundCmd__Fv (0x80068df8) */
 #include "names.h"
 
-int FirstEntry;
-int LastEntry;
+extern int FirstEntry;
+extern int LastEntry;
 
 int HasSoundCmd(void) {
 	return FirstEntry != LastEntry;

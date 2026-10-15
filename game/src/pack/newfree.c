@@ -6,7 +6,7 @@ typedef struct TSPack {
 	struct TSPack *next;
 } TSPack;
 
-TSPack *Pack_pFree;
+extern TSPack *Pack_pFree;
 
 TSPack *Pack_New(TSPack **);
 

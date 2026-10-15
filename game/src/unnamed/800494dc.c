@@ -6,7 +6,7 @@
 
 extern void *pBMR;
 
-int DAT_800d1a38;
+extern int DAT_800d1a38;
 
 int Db_OTSize(void);
 void CompactOTagR(P_TAG *ot, int n);

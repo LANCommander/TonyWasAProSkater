@@ -5,7 +5,7 @@
 
 extern char Pad[];
 
-int DAT_800d1b98[1];
+extern int DAT_800d1b98[1];
 
 void Mess_SetTextJustify(int);
 int Mess_TextHeightAboveBaseline(char *);

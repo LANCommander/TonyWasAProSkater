@@ -13,13 +13,13 @@ extern "C" {
 #include "game/m3d.h"
 #include "pc_texstore.h"
 
-int GameFMV_Active;
-short GameFMV_StartX;
-short GameFMV_StartY;
-short GameFMV_EndX;
-ushort GameFMV_Width;
-ushort GameFMV_Height;
-uchar GameFMV_Is24Bit;
+extern int GameFMV_Active;
+extern short GameFMV_StartX;
+extern short GameFMV_StartY;
+extern short GameFMV_EndX;
+extern ushort GameFMV_Width;
+extern ushort GameFMV_Height;
+extern uchar GameFMV_Is24Bit;
 
 extern int GGame;
 

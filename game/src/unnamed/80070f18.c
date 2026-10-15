@@ -3,7 +3,7 @@
 
 /* Maps a raw analog axis reading to -127..127 given its calibrated min/max and centre, with a
    dead zone of 32 either side of the centre. Movement outside it marks the pad active. */
-int Pad_IdleTime;
+extern int Pad_IdleTime;
 
 void ResetMainDemoTimer(void);
 

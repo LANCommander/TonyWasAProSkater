@@ -40,11 +40,11 @@ extern char *MechList;
 extern int DAT_800d3758[];
 extern int DAT_800d3788[];
 
-static int DAT_800d2304[2];
-static int DAT_800d231c[2];
-static int DAT_800d2300;
-static int DAT_800d22fc;
-static int DAT_800d2314;
+extern int DAT_800d2304[2];
+extern int DAT_800d231c[2];
+extern int DAT_800d2300;
+extern int DAT_800d22fc;
+extern int DAT_800d2314;
 
 extern int DAT_800d1cb8;
 extern int SelectedSkater2;
@@ -53,9 +53,9 @@ extern int Loading;
 extern int GHeadPart;
 extern int GHeadUp;
 
-int DAT_800d1c1c = 32;
-int DAT_800d1c20 = 0;
-int DAT_800d1c24 = 0;
+extern int DAT_800d1c1c;
+extern int DAT_800d1c20;
+extern int DAT_800d1c24;
 
 typedef char SLabel7[7] __attribute__((aligned(4)));
 

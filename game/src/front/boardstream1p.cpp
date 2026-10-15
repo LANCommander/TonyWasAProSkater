@@ -16,11 +16,11 @@ extern int DAT_800d33c4[3];          /* pictures per column (8 decks, 3 trucks, 
 extern char DAT_800d33d4[3][15][16]; /* picture file names */
 extern SlicedImage *DAT_800d36a4[3][15];
 
-int DAT_800d22d8;   /* entry being loaded */
-int DAT_800d22e0;   /* column being loaded */
-char *DAT_800d22e4; /* load buffer */
-uchar DAT_800d22e8;
-int DAT_800d22ec; /* all pictures loaded */
+extern int DAT_800d22d8;   /* entry being loaded */
+extern int DAT_800d22e0;   /* column being loaded */
+extern char *DAT_800d22e4; /* load buffer */
+extern uchar DAT_800d22e8;
+extern int DAT_800d22ec; /* all pictures loaded */
 
 int Load8BitBMP2(char *, char **, int *, int *, ushort *);
 

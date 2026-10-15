@@ -13,15 +13,14 @@ typedef struct {
 extern FE movieDetails[];
 extern unsigned int *decodeSliceBuffer[];
 
-int GameFMV_Active, GameFMV_IsMovie, currentDecodeBuffer, currentVlcBuffer, sendVLC,
-    alreadyHandledPause, GameFMV_RewindSwitch;
-unsigned int *vlcBuffer[2];
-int GameFMV_VLCBufferSize, GameFMV_RingBufferSectors;
-unsigned int *pRingBuffer;
-unsigned char GameFMV_Is24Bit, GameFMV_SliceBuffers;
-unsigned short GameFMV_StartX, GameFMV_StartY, GameFMV_Width, GameFMV_Height, decodeSlice,
-    decodeSlice_2, decodeSlice_4, decodeSlice_6;
-unsigned char GameFMV_CurrentTrack;
+extern int GameFMV_Active, GameFMV_IsMovie, currentDecodeBuffer, currentVlcBuffer, sendVLC, alreadyHandledPause, GameFMV_RewindSwitch;
+extern unsigned int *vlcBuffer[2];
+extern int GameFMV_VLCBufferSize, GameFMV_RingBufferSectors;
+extern unsigned int *pRingBuffer;
+extern unsigned char GameFMV_Is24Bit, GameFMV_SliceBuffers;
+extern unsigned short GameFMV_StartX, GameFMV_StartY, GameFMV_Width, GameFMV_Height;
+extern unsigned short decodeSlice[4]; /* RECT */
+extern unsigned char GameFMV_CurrentTrack;
 
 void *Mem_NewX(unsigned int, int, int);
 void DecDCTvlcBuild3(void);
@@ -33,15 +32,15 @@ void GameFMV_StartFMV(int a) {
 	unsigned t, u;
 
 	if (GameFMV_Active == 0 && movieDetails[GameFMV_CurrentTrack].p != 0) {
-		decodeSlice = GameFMV_StartX;
-		decodeSlice_2 = GameFMV_StartY;
-		decodeSlice_4 = GameFMV_Is24Bit ? 24 : 16;
+		decodeSlice[0] = GameFMV_StartX;
+		decodeSlice[1] = GameFMV_StartY;
+		decodeSlice[2] = GameFMV_Is24Bit ? 24 : 16;
 		alreadyHandledPause = 0;
 		GameFMV_IsMovie = 0;
 		currentDecodeBuffer = 0;
 		currentVlcBuffer = 0;
 		sendVLC = 0;
-		decodeSlice_6 = GameFMV_Height;
+		decodeSlice[3] = GameFMV_Height;
 
 		if (a) {
 			for (i = 0; i < 2; i++)

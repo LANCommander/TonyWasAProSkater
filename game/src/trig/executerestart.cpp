@@ -10,9 +10,9 @@ extern CBruce *MechList;
 extern int GNumberOfPlayers;
 extern int GGame;
 
-int RestartNode;
-short **OffsetList;
-int NumNodes;
+extern int RestartNode;
+extern short **OffsetList;
+extern int NumNodes;
 
 CSVector *Trig_GetPosition(CVector &, int);
 void FudgeAngles(CBruce *);

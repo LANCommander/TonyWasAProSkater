@@ -5,8 +5,8 @@ typedef struct {
 	int x, y, z;
 } V;
 
-int RestartNode, NumNodes;
-short **OffsetList;
+extern int RestartNode, NumNodes;
+extern short **OffsetList;
 
 char *Trig_GetPosition(V *v, int n);
 int Utils_CompareStrings__FPCcT0Ui(const char *a, const char *b, unsigned n);

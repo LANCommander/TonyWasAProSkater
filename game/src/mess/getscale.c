@@ -1,8 +1,8 @@
 /* Mess_GetScale__Fv (0x8001d290) */
 #include "names.h"
 
-unsigned char NewFont;
-unsigned short Scale;
+extern unsigned char NewFont;
+extern unsigned short Scale;
 
 extern int Mess_GetFontScale(void);
 

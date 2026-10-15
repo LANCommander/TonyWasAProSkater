@@ -3,7 +3,7 @@
 
 extern void *BaddyList, *EnvironmentalObjectList;
 
-short **OffsetList;
+extern short **OffsetList;
 
 void SendSuspend(void **pp, int node);
 void SendUnSuspend(int node);

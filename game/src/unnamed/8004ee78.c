@@ -17,7 +17,7 @@ struct O {
 	struct O *next2;
 };
 
-struct O *TrickObList;
+extern struct O *TrickObList;
 
 void TrickOb_DeleteAll(void) {
 	struct O *p = TrickObList;

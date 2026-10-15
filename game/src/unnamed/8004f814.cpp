@@ -2,7 +2,7 @@
 /* C++ (RAIL.CPP). Unlinks the rail from RailList. */
 #include "game/trickob.h"
 
-CRail *RailList;
+extern CRail *RailList;
 
 CRail::~CRail() {
 	if (RailList == this)

@@ -1,5 +1,5 @@
 /* allocateVoice__Fv (0x8004bef4) */
-unsigned voicefree_flag;
+extern unsigned voicefree_flag;
 
 int allocateVoice(void) {
 	int i;

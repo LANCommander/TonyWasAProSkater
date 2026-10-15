@@ -10,7 +10,7 @@ extern char FUN_800447ec[];
 extern char dtor_5CBody[] PSX_NAME("_._5CBody");
 extern char dtor_6CSuper[] PSX_NAME("_._6CSuper");
 
-PSX_DATA(0x800a0574) PsxVtEntry __vt_6CSuper[8] = {
+PsxVtEntry __vt_6CSuper[8] = {
 	{0, 0, 0},
 	{0, 0, dtor_6CSuper},
 	{0, 0, Die__5CBody},
@@ -21,7 +21,7 @@ PSX_DATA(0x800a0574) PsxVtEntry __vt_6CSuper[8] = {
 	{0, 0, FUN_800447d4},
 };
 
-PSX_DATA(0x800a05b4) PsxVtEntry __vt_5CBody[8] = {
+PsxVtEntry __vt_5CBody[8] = {
 	{0, 0, 0},
 	{0, 0, dtor_5CBody},
 	{0, 0, Die__5CBody},

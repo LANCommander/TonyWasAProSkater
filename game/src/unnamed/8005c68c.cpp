@@ -5,10 +5,10 @@
 
 extern SControl Pad[2]; /* Pad */
 
-int DAT_800d2348;      /* quit countdown */
-unsigned DAT_800d1ca4; /* looping sound */
-short DAT_800d1ca0;
-int DAT_800d1cb8;
+extern int DAT_800d2348;      /* quit countdown */
+extern unsigned DAT_800d1ca4; /* looping sound */
+extern short DAT_800d1ca0;
+extern int DAT_800d1cb8;
 
 void SFX_Stop(unsigned);
 

@@ -2,8 +2,8 @@
 #include "names.h"
 #include "pc_stream.h"
 
-int currentVlcBuffer;
-unsigned int *vlcBuffer[2];
+extern int currentVlcBuffer;
+extern unsigned int *vlcBuffer[2];
 
 unsigned int *strNext(void);
 int DecDCTvlc3(unsigned int *, unsigned int *);

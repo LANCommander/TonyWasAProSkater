@@ -3,7 +3,7 @@
 
 extern void *BaddyList, *EnvironmentalObjectList;
 
-short **OffsetList;
+extern short **OffsetList;
 
 void SendSignalToNode(void *b, int node);
 

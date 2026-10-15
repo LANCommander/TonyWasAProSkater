@@ -2,9 +2,9 @@
 #include "names.h"
 #include "pc_sound.h"
 
-int keyon_queue, keyoff_queue, reverb_queue;
-unsigned char reverb_changed;
-unsigned voicefree_flag, nko_flag, loop_flag, voiceon_flag, exp_flag;
+extern int keyon_queue, keyoff_queue, reverb_queue;
+extern unsigned char reverb_changed;
+extern unsigned voicefree_flag, nko_flag, loop_flag, voiceon_flag, exp_flag;
 
 void FUN_800947e4(int, int);
 void FUN_80094c74(int, int);

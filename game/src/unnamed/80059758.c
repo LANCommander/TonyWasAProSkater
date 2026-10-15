@@ -1,9 +1,9 @@
 /* Front_FreeSkaterPack__Fv (0x80059758) */
 #include "names.h"
 
-void *DAT_800d1c80;
-short DAT_800d1c94;
-short DAT_800d1c98;
+extern void *DAT_800d1c80;
+extern short DAT_800d1c94;
+extern short DAT_800d1c98;
 
 void Front_SelectSkaterPack(int a);
 void Mem_Delete(void *a);

@@ -5,7 +5,7 @@ struct L {
 	struct L *next;
 };
 
-struct L *TrickObList;
+extern struct L *TrickObList;
 
 extern char __vt_8CTrickOb[];
 extern char DAT_800a1330[];

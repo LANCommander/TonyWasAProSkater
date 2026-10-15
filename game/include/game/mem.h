@@ -2,7 +2,7 @@
 #ifndef GAME_MEM_H
 #define GAME_MEM_H
 
-#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
+#ifndef GAME_DATA_TU /* (the data files: full debug types) */
 #pragma interface /* see class.h */
 #endif
 
@@ -34,7 +34,6 @@ extern int LowMemory;
 extern uint CriticalBigHeapUsage;
 extern uint UniqueIndentifier;
 extern int Used[2]; /* bytes in use per heap (headers included) */
-extern uint Used_4; /* = Used[1], named by the code on its own */
 extern SBlockHeader *FirstFreeBlock[2];
 extern char *DAT_800d1b40; /* the scratch heap (-2): its bottom */
 extern char *DAT_800d1b44; /* and top */

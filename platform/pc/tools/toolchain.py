@@ -2,7 +2,7 @@
 
 THPS_ARCH: x86 (32-bit, the default) or x64 (64-bit).
 THPS_MINGW: the MinGW bin folder (Windows; default C:\\msys64\\mingw32\\bin, x64:
-C:\\msys64\\ucrt64\\bin). THPS_MINGW32: the 32-bit one, which x64 builds use too (data_image.py).
+C:\\msys64\\ucrt64\\bin). THPS_MINGW32: the 32-bit one, which the 64-bit checks use too (ptr64_check.py).
 THPS_TOOLBIN: a folder with gcc, g++, as, nm, objcopy... (other systems; default: PATH).
 THPS_BUILD_DIR: where builds go (default build/pc on Windows, build/pc-linux elsewhere, with a
 `64` suffix for x64, so every combination can be built from one checkout).
@@ -19,8 +19,8 @@ if ARCH not in ("x86", "x64"):
     raise SystemExit("THPS_ARCH must be x86 or x64")
 X64 = ARCH == "x64"
 if WINDOWS:
-    # the 32-bit toolchain too: the x64 build checks the decompiled data in its retail (32-bit)
-    # layout (data_image.py)
+    # the 32-bit toolchain too: the 64-bit checks compare with the 32-bit objects (ptr64_check.py,
+    # tu_equiv.py)
     TOOLBIN32 = os.environ.get("THPS_MINGW32", r"C:\msys64\mingw32\bin")
     TOOLBIN64 = os.environ.get("THPS_MINGW64", r"C:\msys64\ucrt64\bin")
     TOOLBIN = os.environ.get("THPS_MINGW", TOOLBIN64 if X64 else TOOLBIN32)

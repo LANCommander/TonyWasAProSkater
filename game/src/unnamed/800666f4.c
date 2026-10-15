@@ -1,14 +1,14 @@
 /* LevelSelect_StartPicLoad__Fi (0x800666f4) */
 #include "names.h"
 
-int DAT_800d2374;
-int DAT_800d2380;
-int DAT_800d2388;
-int DAT_800d2378;
-int DAT_800d238c;
-int DAT_800d2390;
-int DAT_800d237c;
-int DAT_800d2384;
+extern int DAT_800d2374;
+extern int DAT_800d2380;
+extern int DAT_800d2388;
+extern int DAT_800d2378;
+extern int DAT_800d238c;
+extern int DAT_800d2390;
+extern int DAT_800d237c;
+extern int DAT_800d2384;
 
 extern void *DAT_800bf2f0[]; /* SlicedImage *[10] */
 extern void *DAT_800d3810[];

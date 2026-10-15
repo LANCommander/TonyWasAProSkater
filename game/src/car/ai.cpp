@@ -6,7 +6,7 @@
 extern int XFrames;
 extern int SFXLEVEL;
 
-int CarVol;
+extern int CarVol;
 
 unsigned short *Trig_GetLinksPointer(int);
 void *Trig_GetPosition(CVector &, int); /* returns the node data past the position */

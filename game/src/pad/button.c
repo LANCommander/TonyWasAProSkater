@@ -6,7 +6,7 @@ typedef struct {
 	int held, released, count;
 } SButton;
 
-int Pad_IdleTime;
+extern int Pad_IdleTime;
 
 extern void ResetMainDemoTimer(void);
 

@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). Unlinks the bit from FlatBitList; CFT4Bit's destructor does the rest. */
 #include "game/bit.h"
 
-CFlatBit *FlatBitList;
+extern CFlatBit *FlatBitList;
 
 CFlatBit::~CFlatBit() {
 	DeleteFrom(&FlatBitList);

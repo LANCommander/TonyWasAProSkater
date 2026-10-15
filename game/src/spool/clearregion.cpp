@@ -8,7 +8,7 @@
 
 extern SPSXRegion PSXRegion[];
 
-int EnvRegions[2];
+extern int EnvRegions[2];
 
 void DecrementTextureUsage(int);
 int Spool_GetEnvIndex(int);

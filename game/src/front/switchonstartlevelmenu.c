@@ -1,7 +1,7 @@
 /* Front_SwitchOnStartLevelMenu__Fv (0x8001a5b8) */
 #include "names.h"
 
-int Status;
+extern int Status;
 
 void CommonSwitchOnMenuCode(void);
 

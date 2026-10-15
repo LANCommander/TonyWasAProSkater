@@ -21,8 +21,8 @@ typedef struct {
 	char x, y, z;
 } CV;
 
-SV LandShakeSpeed, SmallShakeAmp, MediumShakeAmp, BigShakeAmp;
-CV LandShakeDecay;
+extern SV LandShakeSpeed, SmallShakeAmp, MediumShakeAmp, BigShakeAmp;
+extern CV LandShakeDecay;
 
 static inline void VI(V *p, int x, int y, int z) {
 	p->x = x;

@@ -1,9 +1,9 @@
 /* Trig_DeleteTrigFile__Fv (0x80044ea8) */
 #include "names.h"
 
-void *TrigFile;
-short **OffsetList;
-int NumCheatRestarts, NumHorseRestarts;
+extern void *TrigFile;
+extern short **OffsetList;
+extern int NumCheatRestarts, NumHorseRestarts;
 
 void Mem_Delete(void *p);
 

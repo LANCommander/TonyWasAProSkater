@@ -4,7 +4,7 @@
    30-59 frame hold before it starts to fade. */
 #include "game/bit.h"
 
-CGlassBit *GlassList;
+extern CGlassBit *GlassList;
 
 int Redbook_Rnd(int);
 

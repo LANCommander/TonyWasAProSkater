@@ -13,10 +13,10 @@ extern int GHeadPart;
 extern CBruce *MechList[2];
 extern SCamera MikeCamera[];
 
-short DAT_800d2294[3];
-int DAT_800d2284, DAT_800d2288, DAT_800d228c, DAT_800d1ba8;
-CBruce *DAT_800d229c;
-SViewport *DAT_800d22a0;
+extern short DAT_800d2294[3];
+extern int DAT_800d2284, DAT_800d2288, DAT_800d228c, DAT_800d1ba8;
+extern CBruce *DAT_800d229c;
+extern SViewport *DAT_800d22a0;
 
 void FileIO_Continue();
 extern "C" CBruce *FUN_800506d0(int);

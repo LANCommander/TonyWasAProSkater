@@ -36,9 +36,9 @@ extern int TimeScaleSquared;
 extern CVector ZeroVector;
 extern SPSXRegion PSXRegion[];
 
-int Face_Air;
-int Face_Skateable;
-int Face_Visible;
+extern int Face_Air;
+extern int Face_Skateable;
+extern int Face_Visible;
 
 short PingPong(int, int, int);
 void ProjectCVectorToPlane(CVector *, SVECTOR);

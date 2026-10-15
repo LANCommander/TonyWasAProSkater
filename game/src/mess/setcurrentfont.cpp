@@ -1,7 +1,7 @@
 /* Mess_SetCurrentFont__FPc (0x8001f144) */
 
-int Num_fonts;
-int Current_font;
+extern int Num_fonts;
+extern int Current_font;
 
 #include "game/font.h"
 

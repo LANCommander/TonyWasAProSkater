@@ -25,12 +25,12 @@ typedef struct {
 struct VerticalMenu;
 
 extern L3 DAT_800a1d7c;
-extern int GPreferences_4[];
+extern int GPreferences[];
 extern int XALEVEL;
 extern short GameFMV_StartX;
 
-O *DAT_800d1d5c;
-O *DAT_800d1d60;
+extern O *DAT_800d1d5c;
+extern O *DAT_800d1d60;
 
 static inline void VI(V *p, int x, int y, int z) {
 	p->x = x;
@@ -104,7 +104,7 @@ int FUN_8005fd50(int a) {
 		FrontLoader_Defragment();
 		DownloadBMP16x2(FrontLoader_TakeFile("options.bmp"));
 
-		XALEVEL = GPreferences_4[0] * 1365;
+		XALEVEL = GPreferences[1] * 1365;
 	}
 
 	if (DAT_800d1d60)

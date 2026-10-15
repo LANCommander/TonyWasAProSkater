@@ -3,7 +3,7 @@
 
 struct SAnimFrame;
 
-struct SAnimFrame *DAT_800d1e4c;
+extern struct SAnimFrame *DAT_800d1e4c;
 
 struct SAnimFrame *Spool_FindAnim(char *p);
 

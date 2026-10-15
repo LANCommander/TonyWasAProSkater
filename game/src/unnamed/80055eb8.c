@@ -11,18 +11,17 @@ typedef struct {
 extern SCareer GCareer;
 extern int DAT_800d3788[11];
 
-int DAT_800d231c;
-int DAT_800d2320;
-int DAT_800d230c;
-int DAT_800d2310;
-int DAT_800d2314;
+extern int DAT_800d231c[2];
+extern int DAT_800d230c;
+extern int DAT_800d2310;
+extern int DAT_800d2314;
 
 void Front_InitSkaterSpool2P(void) {
 	int i;
 	unsigned char hi, lo;
 
-	DAT_800d231c = 0;
-	DAT_800d2320 = 0;
+	DAT_800d231c[0] = 0;
+	DAT_800d231c[1] = 0;
 
 	for (i = 0; i < 11; i++)
 		DAT_800d3788[i] = 0;

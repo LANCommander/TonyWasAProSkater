@@ -5,8 +5,8 @@
 
 extern FontInfo Font_table[];
 
-int Current_font;
-uchar NewFont;
+extern int Current_font;
+extern uchar NewFont;
 
 extern "C" int FUN_8001d340(const uchar *);
 int GetCharIndex(char);

@@ -10,8 +10,8 @@ extern int Loading;
 extern int DAT_800d2c1c[];
 extern O *DAT_800d31cc[][3][15];
 
-void *DAT_800d22c0[2];
-O *DAT_800d22b0;
+extern void *DAT_800d22c0[2];
+extern O *DAT_800d22b0;
 
 void FileIO_Sync(void);
 void Mem_Delete(void *);

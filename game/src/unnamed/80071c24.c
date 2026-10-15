@@ -5,8 +5,8 @@ typedef struct {
 	int x, y, z;
 } V;
 
-extern short DAT_800a679e[];
-extern char LastGameState_d[];
+extern unsigned short ApocalypseViewport[10]; /* SViewport */
+extern char LastGameState[];
 extern int TTime, CurrentWaterDamage, SuspendDistance;
 extern int CurrentWaterLevel, CurrentWaterLevel2;
 
@@ -47,7 +47,7 @@ void Init_Cleanup(int a) {
 	FUN_8004b8e8();
 	FUN_8004ba34();
 
-	DAT_800a679e[0] = 256;
+	ApocalypseViewport[7] = 256;
 	GameFMV_StopFMV();
 	Init_KillAll();
 	FUN_800448b8();
@@ -62,7 +62,7 @@ void Init_Cleanup(int a) {
 		Trig_DeleteTrigFile();
 		Pack_DefragmentFully();
 
-		LastGameState_d[0] = 0;
+		LastGameState[13] = 0;
 	} else {
 		Spool_ClearEnvironmentRegions();
 	}

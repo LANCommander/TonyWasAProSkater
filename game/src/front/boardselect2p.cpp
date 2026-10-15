@@ -28,20 +28,20 @@ extern int SelectedSkater2;
 extern PREManager *SpoolerBlocksFileIO;
 
 /* per-player screen layout (player 0, player 1) */
-int DAT_800d1bac[2] = { 0, 368 };   /* text bar x */
-int DAT_800d1bb4[2] = { 368, 272 }; /* text bar width */
-int DAT_800d1bbc[2] = { 92, 374 };  /* text slide target x */
-int DAT_800d1bc4[2] = { 188, 460 }; /* stat rows x */
-int DAT_800d1bcc[2] = { 135, 423 }; /* deck column x */
-int DAT_800d1bd4[2] = { 172, 460 };
-int DAT_800d1bdc[2] = { 199, 487 }; /* trucks column x */
-int DAT_800d1be4[2] = { 236, 524 }; /* "board chosen" x */
-int DAT_800d1bec[2] = { 265, 553 }; /* wheels column x */
-int DAT_800d1bf4[2] = { 294, 582 };
-static SlicedImage *DAT_800d22b0;
-static uchar DAT_800d22c8;
-static int DAT_800d22cc;
-static int DAT_800d22d0[2];
+extern int DAT_800d1bac[2];   /* text bar x */
+extern int DAT_800d1bb4[2]; /* text bar width */
+extern int DAT_800d1bbc[2];  /* text slide target x */
+extern int DAT_800d1bc4[2]; /* stat rows x */
+extern int DAT_800d1bcc[2]; /* deck column x */
+extern int DAT_800d1bd4[2];
+extern int DAT_800d1bdc[2]; /* trucks column x */
+extern int DAT_800d1be4[2]; /* "board chosen" x */
+extern int DAT_800d1bec[2]; /* wheels column x */
+extern int DAT_800d1bf4[2];
+extern SlicedImage *DAT_800d22b0;
+extern uchar DAT_800d22c8;
+extern int DAT_800d22cc;
+extern int DAT_800d22d0[2];
 
 /* word-aligned label buffers (copied with lw/lh/lb) */
 typedef char SLabel6[6] __attribute__((aligned(4)));

@@ -1,8 +1,8 @@
 /* LevelSelect_Run__Fi (0x8006658c) */
 #include "names.h"
 
-int DAT_800d2368;
-int DAT_800d1dc4;
+extern int DAT_800d2368;
+extern int DAT_800d1dc4;
 
 void Mess_SetCurrentFont(char *p);
 void Mess_SetRGB(unsigned char r, unsigned char g, unsigned char b, int a);

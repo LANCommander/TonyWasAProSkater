@@ -13,9 +13,9 @@ struct O {
 	struct VT *vt;
 };
 
-struct O *Tri1;
-struct O *Tri2;
-struct O *pVertMenu;
+extern struct O *Tri1;
+extern struct O *Tri2;
+extern struct O *pVertMenu;
 
 void Front_FreeMemCardMenus(void) {
 	struct O *o = Tri1;

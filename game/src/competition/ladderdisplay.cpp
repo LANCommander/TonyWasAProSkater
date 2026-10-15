@@ -8,7 +8,7 @@
 #include "game/career.h"
 
 extern SStats Stats[];
-extern char *GameText_180[];
+extern char *GameText[];
 
 void Mess_DeleteAll();
 void Mess_SetScale(int);
@@ -179,5 +179,5 @@ void Competition_LadderDisplay() {
 	Mess_SetScale(256);
 
 	if (pComp->mLadderFullyDisplayed)
-		Front_PrintCentredPrompt(GameText_180[0]);
+		Front_PrintCentredPrompt(GameText[96]);
 }

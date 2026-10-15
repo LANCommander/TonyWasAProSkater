@@ -4,7 +4,7 @@
 
 extern volatile unsigned char Pad[];
 
-int GNumberOfPlayers;
+extern int GNumberOfPlayers;
 
 void FUN_80092044(void);
 void PC_RunStaticCtors(void);

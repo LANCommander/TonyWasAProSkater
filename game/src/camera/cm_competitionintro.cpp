@@ -22,8 +22,8 @@ extern CBruce *GSkater;
 extern CBruce *MechList;
 extern int GLevel;
 
-int Camera_CamDist;
-CBody *CameraList;
+extern int Camera_CamDist;
+extern CBody *CameraList;
 
 void Ob_AI(CBody **);
 void QToM(const CQuat &, MATRIX &);

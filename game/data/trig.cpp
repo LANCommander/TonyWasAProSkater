@@ -1,6 +1,5 @@
-/* Decompiled data: the retail executable's initialised globals that src/trig/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/trig/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 
 struct CBody;
@@ -12,7 +11,7 @@ extern char D_800a0820[];
 extern char D_800a097c[];
 
 /* SGapTrick[166] (THPS2 demo: SGapTrick[304]) */
-PSX_DATA(0x800a8258) SGapTrick GapTricks[166] = {
+SGapTrick GapTricks[166] = {
 	{0, 250, "[WIMPY GAP]"},
 	{1, 500, "[GAP]"},
 	{2, 1000, "[PHAT GAP]"},
@@ -182,54 +181,54 @@ PSX_DATA(0x800a8258) SGapTrick GapTricks[166] = {
 };
 
 /* THPS2 demo: char*[20] */
-PSX_DATA(0x800a8788) char *CheatRestarts[20];
+char *CheatRestarts[20];
 
 /* THPS2 demo: char*[20] */
-PSX_DATA(0x800a87d8) char *HorseRestarts[20];
+char *HorseRestarts[20];
 
 /* THPS2 demo: char*[40] */
-PSX_DATA(0x800a8828) char *MenuFilenamePointers[40];
+char *MenuFilenamePointers[40];
 
 /* THPS2 demo: CBody* */
-PSX_DATA(0x800d1998) CBody *BaddyList;
+CBody *BaddyList;
 
 /* THPS2 demo: CBruce* */
-PSX_DATA(0x800d199c) CBruce *pCurrentPlayer;
+CBruce *pCurrentPlayer;
 
 /* THPS2 demo: CBody* */
-PSX_DATA(0x800d19b0) CBody *EnvironmentalObjectList;
+CBody *EnvironmentalObjectList;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d19d8) int NumCheatRestarts[1];
+int NumCheatRestarts[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d19dc) int NumHorseRestarts[1];
+int NumHorseRestarts[1];
 
 /* THPS2 demo: ushort* */
-PSX_DATA(0x800d19e0) void *TrigFile;
+void *TrigFile;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d19e4) int RestartNode[1] = {
+int RestartNode[1] = {
 	0xffff,
 };
 
 /* THPS2 demo: short** */
-PSX_DATA(0x800d19e8) void *OffsetList;
+void *OffsetList;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d19ec) int NumNodes[1];
+int NumNodes[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d19f4) int NumTrigMenuEntries[1];
+int NumTrigMenuEntries[1];
 
 /* THPS2 demo: SCommandPoint* */
-PSX_DATA(0x800d19f8) STrig *CommandPoints;
+STrig *CommandPoints;
 
 /* THPS2 demo: uint* */
-PSX_DATA(0x800d1a0c) void *pPSXDualBuffer;
+void *pPSXDualBuffer;
 
-PSX_DATA(0x800d1a10) int DAT_800d1a10[1] = {
+int DAT_800d1a10[1] = {
 	0xffff0003,
 };
 
-PSX_DATA(0x800d1f14) int DAT_800d1f14[1];
+int DAT_800d1f14[1];

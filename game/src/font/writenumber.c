@@ -1,7 +1,7 @@
 /* WriteNumber__Fi (0x8004c070) */
 #include "names.h"
 
-char *pNumberStrings;
+extern char *pNumberStrings;
 
 void WriteNumber(int n) {
 	int started = 0;

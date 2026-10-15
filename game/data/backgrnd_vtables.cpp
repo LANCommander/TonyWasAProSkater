@@ -9,7 +9,7 @@ extern char FUN_800447dc[];
 extern char FUN_800447e4[];
 extern char dtor_11CBackground[] PSX_NAME("_._11CBackground");
 
-PSX_DATA(0x800a3494) PsxVtEntry __vt_11CBackground[8] = {
+PsxVtEntry __vt_11CBackground[8] = {
 	{0, 0, 0},
 	{0, 0, dtor_11CBackground},
 	{0, 0, Die__5CBody},

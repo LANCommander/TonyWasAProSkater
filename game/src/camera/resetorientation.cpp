@@ -2,7 +2,7 @@
 #include "game/camera.h"
 #include "game/bruce.h"
 
-unsigned int Camera_CurrentMikeCamera;
+extern unsigned int Camera_CurrentMikeCamera;
 
 void CCamera::ResetOrientation() {
 	VECTOR vtemp1, vtemp2;

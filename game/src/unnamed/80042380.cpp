@@ -4,7 +4,7 @@
    the panel's two FallingTextEffects before CSuper's destructor. */
 #include "game/bruce.h"
 
-extern "C" char DAT_800a0534[];
+extern "C" char __vt_6CBruce[];
 
 extern CBruce *MechList[2];
 extern int NumMechs;
@@ -18,7 +18,7 @@ extern "C" void dt_6CSuper(CSuper *p, int a);
 extern "C" void __dl__5CItemPv(void *p);
 
 extern "C" void FUN_80042380(CBruce *p, int f) {
-	p->__vptr = DAT_800a0534;
+	p->__vptr = __vt_6CBruce;
 
 	if (p->mGrindSnd) {
 		SFX_Stop(p->mGrindSnd);

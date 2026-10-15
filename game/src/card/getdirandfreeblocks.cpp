@@ -27,8 +27,8 @@ extern "C" {
 int Utils_CompareStrings(const char *, const char *, unsigned int);
 
 extern int FileType[];
-extern char CARD_FNAME_5[];
-extern char CARD_VNAME_5[];
+extern char CARD_FNAME[];
+extern char CARD_VNAME[];
 /* the directory, 40 bytes an entry (in the port PC_SaveListDir fills it with the saves' names;
    firstfile and nextfile, the PS1 card's, are stubs that find nothing) */
 extern char SLOT_DIR[][40];
@@ -51,9 +51,9 @@ int Card_GetDirAndFreeBlocks(int cnct, int slot) {
 		do {
 			size += d->size;
 
-			if (Utils_CompareStrings(d->name, CARD_FNAME_5, 17))
+			if (Utils_CompareStrings(d->name, CARD_FNAME + 5, 17))
 				FileType[i] = 0;
-			else if (Utils_CompareStrings(d->name, CARD_VNAME_5, 17))
+			else if (Utils_CompareStrings(d->name, CARD_VNAME + 5, 17))
 				FileType[i] = 1;
 
 			i++;

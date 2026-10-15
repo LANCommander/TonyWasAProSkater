@@ -2,9 +2,9 @@
 #include "names.h"
 #include "game/padbuttons.h"
 
-int CursorPos;
-int SizeUp;
-int GSaveAction;
+extern int CursorPos;
+extern int SizeUp;
+extern int GSaveAction;
 
 extern char Pad[];
 extern char SaveGameName[];

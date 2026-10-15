@@ -22,8 +22,8 @@ extern char Pad[];
 extern int DemoTimer;
 extern int DAT_800d1cb8;
 
-O *DAT_800d2358, *DAT_800d235c;
-int DAT_800d1d28;
+extern O *DAT_800d2358, *DAT_800d235c;
+extern int DAT_800d1d28;
 
 void Front_ControllerOptionsHandler(O *);
 void PollHost(void);

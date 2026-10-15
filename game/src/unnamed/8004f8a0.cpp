@@ -6,7 +6,7 @@
 
 extern CBruce *MechList;
 
-CRail *RailList;
+extern CRail *RailList;
 
 ushort *Trig_GetLinksPointer(int);
 void Trig_GetPosition(CVector &, int);

@@ -1,5 +1,5 @@
-unsigned char g;
+extern unsigned char TextJustification;
 
 void f(unsigned char v) {
-	g = v;
+	TextJustification = v;
 }

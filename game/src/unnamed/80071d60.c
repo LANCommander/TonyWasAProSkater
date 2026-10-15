@@ -12,7 +12,7 @@ typedef struct {
 extern char Vertices[];
 extern char *ProjectedVertices;
 extern char *RotatedVertices;
-extern R DAT_800d1f8c[];
+extern R DAT_800d1f8c;
 
 void FUN_80047870(void);
 int FUN_80096b84(void);
@@ -42,7 +42,7 @@ void FUN_80071d60(void) {
 	PC_ScreenReset();
 	FUN_800491a0();
 
-	r = DAT_800d1f8c[0];
+	r = DAT_800d1f8c;
 	/* all of the PS1's VRAM: the screens and the textures */
 	PC_ScreenFill(r.x, r.y, r.w, r.h, 0);
 	PC_TexFill(r.x, r.y, r.w, r.h, 0);

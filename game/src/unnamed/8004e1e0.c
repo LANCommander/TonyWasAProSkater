@@ -4,7 +4,7 @@ extern int camPitch;
 extern int camYOffset;
 extern char *pCurrentViewport;
 
-int CamPtIndex;
+extern int CamPtIndex;
 
 void FUN_8004e1e0(void) {
 	char *p = pCurrentViewport;

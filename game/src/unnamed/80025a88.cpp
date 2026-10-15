@@ -10,12 +10,12 @@ extern uchar GBoardStats[];
 extern uchar DAT_800a8245[];
 extern int SelectedSkater;
 
-int GGame;
-int SelectedSkater2;
-int GNumberOfPlayers;
-int GHorsePlayer;
-CBruce *GSkater;
-CBruce *DAT_800d17cc;
+extern int GGame;
+extern int SelectedSkater2;
+extern int GNumberOfPlayers;
+extern int GHorsePlayer;
+extern CBruce *GSkater;
+extern CBruce *DAT_800d17cc;
 
 extern int GVideoReplay;
 extern int GLevel;

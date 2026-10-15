@@ -8,11 +8,11 @@ struct TSPack;
 extern struct TSPack *Pack_pFree;
 extern struct TSPack *Pack_pFull;
 
-int DAT_800d1dc8;
-struct TSPack *DAT_800d23a8;
-struct TSPack *DAT_800d23ac;
-struct TSPack *DAT_800d2398[2];
-struct TSPack *DAT_800d23a0[2];
+extern int DAT_800d1dc8;
+extern struct TSPack *DAT_800d23a8;
+extern struct TSPack *DAT_800d23ac;
+extern struct TSPack *DAT_800d2398[2];
+extern struct TSPack *DAT_800d23a0[2];
 
 void LevelSelect_SelectPackSlot(int n) {
 	if (DAT_800d1dc8 == -1) {

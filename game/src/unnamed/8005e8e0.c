@@ -17,7 +17,7 @@ typedef struct {
 extern Q GameText;
 extern int GHasCareerLoaded;
 
-int DAT_800d1d80;
+extern int DAT_800d1d80;
 
 int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);
 void FUN_8005e4ec(char **, int, int);

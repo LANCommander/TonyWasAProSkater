@@ -1,4 +1,4 @@
-unsigned nko_flag, loop_flag, voiceon_flag, keyon_queue, keyoff_queue;
+extern unsigned nko_flag, loop_flag, voiceon_flag, keyon_queue, keyoff_queue;
 
 void SFX_Stop(unsigned m) {
 	unsigned inv = ~m;

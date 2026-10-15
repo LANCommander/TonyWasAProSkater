@@ -5,7 +5,7 @@
 
 extern CBruce *pCurrentPlayer;
 
-CBody *BaddyList;
+extern CBody *BaddyList;
 
 CScriptOnlyBaddy::CScriptOnlyBaddy(short *p_info, int node) {
 	mpCreatedByPlayer = pCurrentPlayer;

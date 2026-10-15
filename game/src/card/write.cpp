@@ -12,13 +12,12 @@ extern SCareer GCareer;
    (pc_saves.c), so it has none of the art */
 static char NoIcon[128];
 
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern int GSaveAction;
 
-int CardStatus;
-int CardStatusTemp;
-unsigned short TimeStamp;
+extern int CardStatus;
+extern int CardStatusTemp;
+extern unsigned short TimeStamp;
 
 int SyncToGoodState(void);
 void _clear_event(void);
@@ -66,7 +65,7 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 
 			FName = CARD_FNAME;
 			DataSize = 2560;
-			pHeaderBuf = GVInfo1.pBlockStart;
+			pHeaderBuf = GVInfo1[0].pBlockStart;
 			HeaderSize = 640;
 			/* retail saves 2560 bytes from GCareer: SCareer and the start of the globals after
 			   it (AnimNames: pointers, native in the port). The port saves zeros after SCareer;
@@ -88,13 +87,13 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 			break;
 		case 1:
 			FName = CARD_VNAME;
-			pHeaderBuf = GVInfo1.pBlockStart;
+			pHeaderBuf = GVInfo1[0].pBlockStart;
 			HeaderSize = 640;
 			pDataBuf = pHeaderBuf + 160;
 			DataSize = 23936;
 			pClut = NoIcon;
 			pIcon = NoIcon;
-			pHeaderBuf2 = GVInfo2.pBlockStart;
+			pHeaderBuf2 = GVInfo1[1].pBlockStart;
 			HeaderSize2 = 640;
 			pDataBuf2 = pHeaderBuf2 + 160;
 			DataSize2 = 23936;

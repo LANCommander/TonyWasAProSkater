@@ -2,7 +2,7 @@
 /* C++ (BADDY.CPP). Stops the baddy's looping sound; CSuper's destructor does the rest. */
 #include "game/baddy.h"
 
-int NumBaddies;
+extern int NumBaddies;
 
 void SFX_Stop(uint);
 

@@ -1,6 +1,5 @@
-/* Decompiled data: the retail executable's initialised globals that src/unnamed/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/unnamed/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 #include "game/m3d.h"
 #include "game/mem.h"
@@ -23,8 +22,6 @@ struct Sprite;
 #include "game/panel.h"
 #include "game/shellutils.h"
 
-extern char D_800a3d64[];
-extern char D_800dc950[];
 extern char Delay[];
 extern char FUN_8001d21c[];
 extern char FUN_8001f274[];
@@ -46,31 +43,31 @@ extern int D_800d15d4[];
 extern int D_800d15d8[];
 extern int D_800d15dc[];
 
-PSX_DATA(0x8009e31c) int DAT_8009e31c[34] = {
+int DAT_8009e31c[34] = {
 	0, 0x6c756b73, 0x745f, 0x5f655200, 0x72617453, 0x63535f74, 0x6c6f6f68, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0x10000, 0, 0, 0, 0, 0, 0, 0, 0, 100, 3, 5, 1, 0x2000, 48, 180, 0x2080401, 0x2080401,
 };
 
-PSX_DATA(0x8009e548) PsxVtEntry DAT_8009e548[2] = {
+PsxVtEntry DAT_8009e548[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8001d21c},
 };
 
-PSX_DATA(0x8009ef94) PsxVtEntry DAT_8009ef94[2] = {
+PsxVtEntry DAT_8009ef94[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8001f274},
 };
 
-PSX_DATA(0x8009efa4) PsxVtEntry DAT_8009efa4[2] = {
+PsxVtEntry DAT_8009efa4[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8001f2dc},
 };
 
-PSX_DATA(0x8009f440) int D_8009f440[4] = {
+int D_8009f440[4] = {
 	0x6c623157, 0x31306575, 0x706d622e,
 };
 
-PSX_DATA(0x8009f530) char *DAT_8009f530[15] = {
+char *DAT_8009f530[15] = {
 	(char *)D_8009f440,
 	"W1blue02.bmp",
 	"W1blue03.bmp",
@@ -88,69 +85,69 @@ PSX_DATA(0x8009f530) char *DAT_8009f530[15] = {
 	"W1yell01.bmp",
 };
 
-PSX_DATA(0x800a0000) unsigned char DAT_800a0000[1] = {
+unsigned char DAT_800a0000[1] = {
 	0x18,
 };
 
-PSX_DATA(0x800a0001) unsigned char DAT_800a0001[1] = {
+unsigned char DAT_800a0001[1] = {
 	0x84,
 };
 
-PSX_DATA(0x800a0002) unsigned char DAT_800a0002[1] = {
+unsigned char DAT_800a0002[1] = {
 	0x03,
 };
 
-PSX_DATA(0x800a0003) unsigned char DAT_800a0003[1] = {
+unsigned char DAT_800a0003[1] = {
 	0x80,
 };
 
-PSX_DATA(0x800a0004) unsigned char DAT_800a0004[1] = {
+unsigned char DAT_800a0004[1] = {
 	0xd0,
 };
 
-PSX_DATA(0x800a0005) unsigned char DAT_800a0005[3] = {
+unsigned char DAT_800a0005[3] = {
 	0x84, 0x03, 0x80,
 };
 
-PSX_DATA(0x800a0050) int DAT_800a0050[2] = {
+int DAT_800a0050[2] = {
 	0x80038430,
 };
 
-PSX_DATA(0x800a00d0) int DAT_800a00d0[2] = {
+int DAT_800a00d0[2] = {
 	0x8003aa48,
 };
 
-PSX_DATA(0x800a0820) short D_800a0820[3] = {
+short D_800a0820[3] = {
 	0x525b, 0x4f4f, 0x2046,
 };
 
-PSX_DATA(0x800a0826) unsigned char DAT_800a0826[1] = {
+unsigned char DAT_800a0826[1] = {
 	0x32,
 };
 
-PSX_DATA(0x800a0827) unsigned char DAT_800a0827[13] = {
+unsigned char DAT_800a0827[13] = {
 	0x20, 0x52, 0x4f, 0x4f, 0x46, 0x20, 0x47, 0x41, 0x50, 0x5d,
 };
 
-PSX_DATA(0x800a097c) int D_800a097c[2] = {
+int D_800a097c[2] = {
 	0x494f475b, 0x4420474e,
 };
 
-PSX_DATA(0x800a0984) int DAT_800a0984[3] = {
+int DAT_800a0984[3] = {
 	0x204e574f, 0x5d504147,
 };
 
-PSX_DATA(0x800a1330) PsxVtEntry DAT_800a1330[2] = {
+PsxVtEntry DAT_800a1330[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8004f544},
 };
 
-PSX_DATA(0x800a1b94) PsxVtEntry DAT_800a1b94[2] = {
+PsxVtEntry DAT_800a1b94[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8005de48},
 };
 
-PSX_DATA(0x800a1c44) char *DAT_800a1c44[6] = {
+char *DAT_800a1c44[6] = {
 	"CAREER MODE",
 	"2 PLAYERS",
 	"SINGLE SESSION",
@@ -159,25 +156,25 @@ PSX_DATA(0x800a1c44) char *DAT_800a1c44[6] = {
 	"VIEW VIDEOS",
 };
 
-PSX_DATA(0x800a1c84) char *DAT_800a1c84[3] = {
+char *DAT_800a1c84[3] = {
 	"CONTINUE GAME",
 	"NEW GAME",
 	"LOAD GAME",
 };
 
-PSX_DATA(0x800a1cac) char *DAT_800a1cac[3] = {
+char *DAT_800a1cac[3] = {
 	"GRAFFITI",
 	"TRICK ATTACK",
 	"HORSE",
 };
 
-PSX_DATA(0x800a1d7c) char *DAT_800a1d7c[3] = {
+char *DAT_800a1d7c[3] = {
 	"SFX LEVEL",
 	"MUSIC LEVEL",
 	"BACK TO OPTIONS",
 };
 
-PSX_DATA(0x800a1df8) char *DAT_800a1df8[7] = {
+char *DAT_800a1df8[7] = {
 	"PLAYER 1 CONTROLS",
 	"PLAYER 2 CONTROLS",
 	"SOUND LEVELS",
@@ -187,7 +184,7 @@ PSX_DATA(0x800a1df8) char *DAT_800a1df8[7] = {
 	"BACK TO MAIN",
 };
 
-PSX_DATA(0x800a1e4c) char *DAT_800a1e4c[5] = {
+char *DAT_800a1e4c[5] = {
 	"LOAD REPLAY",
 	"CINEMATICS",
 	"411VM",
@@ -195,7 +192,7 @@ PSX_DATA(0x800a1e4c) char *DAT_800a1e4c[5] = {
 	"GAME CREDITS",
 };
 
-PSX_DATA(0x800a1eb4) char *DAT_800a1eb4[7] = {
+char *DAT_800a1eb4[7] = {
 	"INTRO",
 	"TONY HAWK",
 	"BOB BURNQUIST",
@@ -205,7 +202,7 @@ PSX_DATA(0x800a1eb4) char *DAT_800a1eb4[7] = {
 	"MORE CINEMATICS",
 };
 
-PSX_DATA(0x800a1f34) char *DAT_800a1f34[7] = {
+char *DAT_800a1f34[7] = {
 	"PREVIOUS CINEMATICS",
 	"KAREEM CAMPBELL",
 	"ANDREW REYNOLDS",
@@ -215,59 +212,59 @@ PSX_DATA(0x800a1f34) char *DAT_800a1f34[7] = {
 	"BAILS",
 };
 
-PSX_DATA(0x800a1fd0) int DAT_800a1fd0[8] = {
+int DAT_800a1fd0[8] = {
 	0x67827382, 0x72826f82, 0x62824081, 0x71826082, 0x64826482, 0x40817182, 0x40815b81,
 };
 
-PSX_DATA(0x800a1ff0) int DAT_800a1ff0[7] = {
+int DAT_800a1ff0[7] = {
 	0x67827382, 0x72826f82, 0x75824081, 0x63826882, 0x6e826482, 0x5b814081, 0x4081,
 };
 
-PSX_DATA(0x800a2120) PsxVtEntry DAT_800a2120[2] = {
+PsxVtEntry DAT_800a2120[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80066180},
 };
 
-PSX_DATA(0x800a2130) PsxVtEntry DAT_800a2130[2] = {
+PsxVtEntry DAT_800a2130[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8006553c},
 };
 
-PSX_DATA(0x800a2450) PsxVtEntry DAT_800a2450[2] = {
+PsxVtEntry DAT_800a2450[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80071a14},
 };
 
-PSX_DATA(0x800a2460) PsxVtEntry DAT_800a2460[2] = {
+PsxVtEntry DAT_800a2460[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80071acc},
 };
 
-PSX_DATA(0x800a2498) PsxVtEntry DAT_800a2498[2] = {
+PsxVtEntry DAT_800a2498[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80072e60},
 };
 
-PSX_DATA(0x800a24a8) PsxVtEntry DAT_800a24a8[2] = {
+PsxVtEntry DAT_800a24a8[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80072e94},
 };
 
-PSX_DATA(0x800a3630) void *D_800a3630[1] = {
+void *D_800a3630[1] = {
 	Delay,
 };
 
 /* THPS2 demo: GamePreferences */
-PSX_DATA(0x800a4118) int GPreferences[104];
+int GPreferences[104];
 
 /* THPS2 demo: SCrowd[1] */
-PSX_DATA(0x800a42b8) int Crowd[6];
+int Crowd[6];
 
 /* SVideoRestart (THPS2 demo: SVideoRestart) */
-PSX_DATA(0x800a42f4) int GVideoRestart[5];
+int GVideoRestart[5];
 
 /* SStats[11] (THPS2 demo: SStats[14]) */
-PSX_DATA(0x800a44fc) SStats Stats[11] = {
+SStats Stats[11] = {
 	{
 		"hawk", "hawk", "hawk_fe", 0, 0, 1, 2, 18, 8, {}, {3, 7, 7, 4}, "Tony Hawk",
 		{"31", "USA", "Carlsbad", "16", "Goofy", "6'2"}, 0x1e64cc11, 0x59bd3dd8, 0x52158ad3,
@@ -331,7 +328,7 @@ PSX_DATA(0x800a44fc) SStats Stats[11] = {
 };
 
 /* SLevel[10] (THPS2 demo: SLevel[10]) */
-PSX_DATA(0x800a5398) SLevel Levels[10] = {
+SLevel Levels[10] = {
 	{
 		"Warehouse", "Woodland Hills", "ware", 0, 0, "SkWare_T", 0, 0, 0, "levsel0.bmp", {136, 358},
 		"load_war.bmp", "back_war.bmp", "boxes", 0, 0, 5000, 15000, 0, {50000, 50000},
@@ -375,19 +372,19 @@ PSX_DATA(0x800a5398) SLevel Levels[10] = {
 };
 
 /* EFileType[15] (THPS2 demo: EFileType[15]) */
-PSX_DATA(0x800a5880) int FileType[15];
+int FileType[15];
 
 /* DIRENTRY[15] (THPS2 demo: DIRENTRY[15]) */
-PSX_DATA(0x800a58bc) char SLOT_DIR[15][40];
+char SLOT_DIR[15][40];
 
 /* SSaveGame (THPS2 demo: SSaveGame) */
-PSX_DATA(0x800a5bdc) int LastGameState[34];
+int LastGameState[34];
 
 /* SSaveGame (THPS2 demo: SSaveGame) */
-PSX_DATA(0x800a5c64) int StartupGameState[34];
+int StartupGameState[34];
 
 /* LocalText (THPS2 demo: LocalText) */
-PSX_DATA(0x800a5d5c) LocalText GameText = {
+LocalText GameText = {
 	"Tape Challenges", "End Game", "End Run", "No replay files", "No career files", "Save Career?",
 	"A file by that", "name already exists", "S-K-A-T-E TAPE!", "HI SCORE TAPE!", "PRO SCORE TAPE!",
 	"5 %s TAPE!", "HIDDEN TAPE!", "Enter name", "Press start", "Career mode", "Single session",
@@ -422,17 +419,17 @@ PSX_DATA(0x800a5d5c) LocalText GameText = {
 };
 
 /* THPS2 demo: SMessageProg[5] */
-PSX_DATA(0x800a6070) int Messprog_Goal[40] = {
+int Messprog_Goal[40] = {
 	0x10005, 0x1800000, -1, 0xffff, 0x1000000, 0x100005a, 90, 0x10001, 0x10001, 0x1800180, -1,
 	0xffff, 0x1000000, 0x100005a, 90, 0x10001, 0x10004, 0x1000180, -1, 0xffff, 0x1000000, 0x100005a,
 	90, 0x10001, 0x1001e, 0x1000100, -1, 0xffff, 0x1000000, 0x100005a, 90, 0x10001, 0x1000f, 256,
 	-1, 0xffff, 0x1000000, 0x100005a, 90, 1,
 };
 
-PSX_DATA(0x800a6388) int DAT_800a6388[24];
+int DAT_800a6388[24];
 
 /* SMovieDetails[27] (THPS2 demo: SMovieDetails[30]) */
-PSX_DATA(0x800a63e8) SMovieDetails movieDetails[27] = {
+SMovieDetails movieDetails[27] = {
 	{"\\ATVILOGO.STR;1", 320, 240, 208, 0, 153600, 48, 1, 1, 128},
 	{"\\LOGO.STR;1", 320, 144, 237, 0, 92160, 48, 1, 1, 128},
 	{"\\SUICIDE.STR;1", 96, 64, 3667, 0, 0x4000, 16, 0, 1, 102},
@@ -459,78 +456,82 @@ PSX_DATA(0x800a63e8) SMovieDetails movieDetails[27] = {
 	{"\\ERNIES.STR;1", 96, 64, 3750, 0, 0x4000, 16, 0, 1, 102},
 	{"\\INTRO.STR;1", 320, 240, 991, 0, 153600, 48, 1, 1, 128},
 	{"\\411.STR;1", 320, 240, 451, 0, 153600, 48, 1, 1, 128},
-	{
-		(char *)0x3020100, 1284, 1798, 2312, 2826, 0xf0e0d0c, 0x13121110, 0x17161514, 0x1b1a1918, 7452,
-	},
+	{0},
+};
+
+/* the movies' order (FUN_80022b4c), which retail kept in the empty 27th movieDetails entry */
+unsigned char MovieOrder[30] = {
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+	26, 27, 28, 29,
 };
 
 /* the viewports (SViewport; the code sets TanHalf by its own name, <name>_c, before a game) */
-PSX_DATA(0x800a6790) SViewport ApocalypseViewport = {512, 240, 0, 0, 10, 30000, 0};
-PSX_DATA(0x800a67a4) SViewport LeftViewport = {254, 240, 0, 0, 10, 30000, 0};
-PSX_DATA(0x800a67b8) SViewport RightViewport = {512, 240, 258, 0, 10, 30000, 0};
-PSX_DATA(0x800a67cc) SViewport TopViewport = {512, 118, 0, 0, 10, 30000, 0};
-PSX_DATA(0x800a67e0) SViewport BottomViewport = {512, 240, 0, 122, 10, 30000, 0};
-PSX_DATA(0x800a67f4) SViewport TopLeftViewport = {256, 120, 0, 0, 10, 30000, 0};
-PSX_DATA(0x800a6808) SViewport BottomRightViewport = {512, 240, 256, 120, 10, 30000, 0};
-PSX_DATA(0x800a681c) SViewport TopLeftBigViewport = {304, 152, 0, 0, 10, 30000, 3413};
-PSX_DATA(0x800a6830) SViewport BottomRightBigViewport = {512, 240, 208, 88, 10, 30000, 0};
+SViewport ApocalypseViewport = {512, 240, 0, 0, 10, 30000, 0};
+SViewport LeftViewport = {254, 240, 0, 0, 10, 30000, 0};
+SViewport RightViewport = {512, 240, 258, 0, 10, 30000, 0};
+SViewport TopViewport = {512, 118, 0, 0, 10, 30000, 0};
+SViewport BottomViewport = {512, 240, 0, 122, 10, 30000, 0};
+SViewport TopLeftViewport = {256, 120, 0, 0, 10, 30000, 0};
+SViewport BottomRightViewport = {512, 240, 256, 120, 10, 30000, 0};
+SViewport TopLeftBigViewport = {304, 152, 0, 0, 10, 30000, 3413};
+SViewport BottomRightBigViewport = {512, 240, 208, 88, 10, 30000, 0};
 
 /* SCareer (THPS2 demo: SCareer) */
-PSX_DATA(0x800a6844) int GCareer[628];
+int GCareer[628];
 
-PSX_DATA(0x800a7214) int DAT_800a7214[3];
+int DAT_800a7214[3];
 
-PSX_DATA(0x800a7e2c) STrick DAT_800a7e2c = {
+STrick DAT_800a7e2c = {
 	0x410a211, 62, 0x10000, "{YEEEEHAW FRONTFLIP}", 0, 0, 0, 4000, 1, -120,
 };
 
-PSX_DATA(0x800a7e58) STrick DAT_800a7e58 = {
+STrick DAT_800a7e58 = {
 	0xa441, 63, 0x18000, "{ASSUME THE POSITION}", 22, 5, 0, 1500, 0, 128,
 };
 
-PSX_DATA(0x800a7e84) STrick DAT_800a7e84[2] = {
+STrick DAT_800a7e84[2] = {
 	{0xa483, 64, 0x10000, "{NECKBREAK GRIND}", 18, 8, 10, 750},
 	{-1, 0, 0, ""},
 };
 
-PSX_DATA(0x800a7f28) int DAT_800a7f28[3];
-PSX_DATA(0x800a7f34) int DAT_800a7f34[3];
+int DAT_800a7f28[3];
+int DAT_800a7f34[3];
 
-PSX_DATA(0x800a7f40) SStats DAT_800a7f40 = {
+SStats DAT_800a7f40 = {
 	"skater", "skater", "skater_f", 0xb000, 16, 17, 18, 15, 251, {}, {10, 10, 10, 10, 2},
 	"Private Carrera", {"Barely Legal", "USA", "Fort Worth", "1", "Regular", "5'8"}, 0xbfa29d29,
 	0x43d4141b, 0xda362762,
 	{{"b1neve08.bmp", "Erector Set"}, {"b1neve07.bmp", "Viagra Falls"}, {"b1neve03.bmp", "Manhandler", 3}, {"b1neve05.bmp", "Feelin Blue", 7}, {"b1neve02.bmp", "New Member", 10}, {"b1neve06.bmp", "Solid Wood", 15}, {"b1neve04.bmp", "She Got Pop", 21}, {"b1neve01.bmp", "Skate Hard", 24}},
 };
 
-PSX_DATA(0x800a8094) STrick DAT_800a8094 = {
+STrick DAT_800a8094 = {
 	0x80b421, 62, 0x10000, "{SOMI SPIN}", 0, 5, 0, 5500, 0, 128,
 };
 
-PSX_DATA(0x800a80c0) STrick DAT_800a80c0 = {
+STrick DAT_800a80c0 = {
 	0x200b413, 63, 0x10000, "{HO-HO HO}", 0, 10, 10, 2000, 0, 128,
 };
 
-PSX_DATA(0x800a80ec) STrick DAT_800a80ec = {
+STrick DAT_800a80ec = {
 	0xb842, 64, 0x10000, "{THE WELL HARDFLIP}", 0, 10, 10, 5500,
 };
 
-PSX_DATA(0x800a8245) unsigned char DAT_800a8245[7];
+unsigned char DAT_800a8245[7];
 
 /* CVector (THPS2 demo: CVector) */
-PSX_DATA(0x800a824c) int ZeroVector[3];
+int ZeroVector[3];
 
-PSX_DATA(0x800b8a74) int D_800b8a74[3] = {
+int D_800b8a74[3] = {
 	128, 0x26c0, 0x1f40,
 };
 
-PSX_DATA(0x800b8a80) unsigned char D_800b8a80[2] = {0x40, 0x48};
+unsigned char D_800b8a80[2] = {0x40, 0x48};
 
-PSX_DATA(0x800b8a84) int D_800b8a84[6] = {
+int D_800b8a84[6] = {
 	0x6fe0, 0xade0, 0xf6c0, 0x18040, 0x18040, 0x3c00,
 };
 
-PSX_DATA(0x800b8a9c) int DAT_800b8a9c[350] = {
+int DAT_800b8a9c[350] = {
 	0x80000001, 100, 0x80000002, 100, 4, 0x3c0064, 8, 100, 16, 0x3f0064, 32, 100, 64, 0x3c0064,
 	0x80000080, 0, 256, 200, 512, 400, 1024, 400, 0x80010001, 100, 0x80010002, 200, 0x80010004,
 	0x3c0096, 0x80010008, 100, 0x80010010, 100, 0x10008, 200, 0x20001, 100, 0x20002, 500, 0x20004,
@@ -563,10 +564,10 @@ PSX_DATA(0x800b8a9c) int DAT_800b8a9c[350] = {
 	100, 0x10004, 250, 0x10008, 250, 0x10010, 250,
 };
 
-PSX_DATA(0x800b9014) int DAT_800b9014[34];
+int DAT_800b9014[34];
 
 /* THPS2 demo: uchar[256] */
-PSX_DATA(0x800b9d9c) unsigned char BigFont_Mapping[256] = {
+unsigned char BigFont_Mapping[256] = {
 	0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a,
 	0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a,
 	0xff, 0x2c, 0x2a, 0x2a, 0x2a, 0x02, 0x2a, 0x30, 0x2a, 0x2a, 0x2a, 0x01, 0x2a, 0x32, 0x31, 0x2a,
@@ -586,23 +587,23 @@ PSX_DATA(0x800b9d9c) unsigned char BigFont_Mapping[256] = {
 };
 
 /* the heaps (game/mem.h) */
-PSX_DATA(0x800be09c) SHeapRange DAT_800be09c[2];
-PSX_DATA(0x800be0ac) int DAT_800be0ac[96];
+SHeapRange DAT_800be09c[2];
+int DAT_800be0ac[96];
 
-PSX_DATA(0x800be3d0) int DAT_800be3d0[10] = {
+int DAT_800be3d0[10] = {
 	-6, -24, -23, -4, -7, -5, -10, -3, -8, -9,
 };
 
-PSX_DATA(0x800be3f8) int DAT_800be3f8[13] = {
+int DAT_800be3f8[13] = {
 	0x10000000, 0, 0xf000, 4096, 0, 0x2c003fc, 0x2840dc0, 0xdc002c0, 0x2c001a0, 3520, 1024, 1024,
 	1024,
 };
 
-PSX_DATA(0x800be444) int DAT_800be444[13] = {
+int DAT_800be444[13] = {
 	0x10000000, 0, 0xf000, 0, 4096, 0xb800000, 0, 2944, 0xb800000, 0, 3136, 3136, 3136,
 };
 
-PSX_DATA(0x800be478) SScreenFiles DAT_800be478[15] = {
+SScreenFiles DAT_800be478[15] = {
 	{{"main_h.bmp", "mainf.fnt", "selectp.bmp"}, 3},
 	{{"selectp.bmp", "select2p.bmp", "Player1.pre"}, 3},
 	{{"select2p.bmp", "Player2.pre"}, 2},
@@ -621,614 +622,609 @@ PSX_DATA(0x800be478) SScreenFiles DAT_800be478[15] = {
 };
 
 /* a FileLoader (the front end's, FrontLoader_*) */
-PSX_DATA(0x800bec34) PsxStorage<FileLoader> DAT_800bec34;
+PsxStorage<FileLoader> DAT_800bec34;
 
-PSX_DATA(0x800bf0dc) int DAT_800bf0dc[1] = {
+int DAT_800bf0dc[1] = {
 	44,
 };
 
-PSX_DATA(0x800bf0e8) int DAT_800bf0e8[1] = {
+int DAT_800bf0e8[1] = {
 	184,
 };
 
-PSX_DATA(0x800bf0ec) int DAT_800bf0ec[1] = {
+int DAT_800bf0ec[1] = {
 	57,
 };
 
-PSX_DATA(0x800bf0f0) int DAT_800bf0f0[1] = {
+int DAT_800bf0f0[1] = {
 	56,
 };
 
-PSX_DATA(0x800bf0f4) int DAT_800bf0f4[1] = {
+int DAT_800bf0f4[1] = {
 	56,
 };
 
-PSX_DATA(0x800bf0f8) int DAT_800bf0f8[1] = {
+int DAT_800bf0f8[1] = {
 	206,
 };
 
-PSX_DATA(0x800bf0fc) int DAT_800bf0fc[1] = {
+int DAT_800bf0fc[1] = {
 	204,
 };
 
-PSX_DATA(0x800bf100) int DAT_800bf100[1] = {
+int DAT_800bf100[1] = {
 	214,
 };
 
 /* DAT_800bf104 (a PadBuffer, zero until its static constructor builds it): src/unnamed/8005de08.cpp */
-PSX_DATA(0x800bf2f0) SlicedImage *DAT_800bf2f0[10];
+SlicedImage *DAT_800bf2f0[10];
 
 /* GVInfo2 (0x800bf3d8) is GVInfo1[1] (data/video.cpp) */
 
-PSX_DATA(0x800bf614) int DAT_800bf614[16] = {
+int DAT_800bf614[16] = {
 	0x1e00280, 0, 0x7530000a, 3413,
 };
 
 /* SPSXRegion[40] (THPS2 demo: SPSXRegion[40]) */
-PSX_DATA(0x800bf7a8) SPSXRegion PSXRegion[40];
+SPSXRegion PSXRegion[40];
 
 
 /* THPS2 demo: uint*[40] */
-PSX_DATA(0x800c09a8) uint *Memories[40];
+uint *Memories[40];
 
 /* SControl[2] (THPS2 demo: SControl[2]) */
-PSX_DATA(0x800c0a48) SControl Pad[2];
+SControl Pad[2];
 
 /* THPS2 demo: CVector */
-PSX_DATA(0x800c1160) PsxQuat UpDownPosition_8;
+PsxQuat UpDownPosition_8;
 
 /* CQuat (THPS2 demo: CQuat) */
-PSX_DATA(0x800c1174) PsxQuat testquat2;
+PsxQuat testquat2;
 
 /* CQuat (THPS2 demo: CQuat) */
-PSX_DATA(0x800c1188) PsxQuat testquat3;
+PsxQuat testquat3;
 
 /* SLight (THPS2 demo: SLight) */
-PSX_DATA(0x800c5acc) int M3d_DefaultLight[13] = {
+int M3d_DefaultLight[13] = {
 	0x10000000, 0, 0xf000, 0, 4096, 0x9001000, 0x8000800, 0x8000d00, 0x10000200, 2048, 512, 512,
 	512,
 };
 
 /* THPS2 demo: SVertex[800] */
-PSX_DATA(0x800c5b00) int Vertices[1600];
+int Vertices[1600];
 
 /* THPS2 demo: short[1024] */
-PSX_DATA(0x800c7400) short WibbleTables[1024];
+short WibbleTables[1024];
 
-PSX_DATA(0x800cffff) unsigned char DAT_800cffff[1];
-PSX_DATA(0x800d0000) unsigned char DAT_800d0000[1];
-PSX_DATA(0x800d0001) unsigned char DAT_800d0001[3];
-PSX_DATA(0x800d0004) int DAT_800d0004[1];
-PSX_DATA(0x800d0008) short DAT_800d0008[1];
-PSX_DATA(0x800d000a) unsigned char DAT_800d000a[1];
-PSX_DATA(0x800d000c) int DAT_800d000c[1];
-PSX_DATA(0x800d0014) int DAT_800d0014[13];
-PSX_DATA(0x800d0048) int DAT_800d0048[1];
-PSX_DATA(0x800d004c) int DAT_800d004c[1];
-PSX_DATA(0x800d0050) int DAT_800d0050[12];
-PSX_DATA(0x800d0080) int DAT_800d0080[3];
-PSX_DATA(0x800d008c) int DAT_800d008c[29];
+unsigned char DAT_800cffff[1];
+unsigned char DAT_800d0000[1];
+unsigned char DAT_800d0001[3];
+int DAT_800d0004[1];
+short DAT_800d0008[1];
+unsigned char DAT_800d000a[1];
+int DAT_800d000c[1];
+int DAT_800d0014[13];
+int DAT_800d0048[1];
+int DAT_800d004c[1];
+int DAT_800d0050[12];
+int DAT_800d0080[3];
+int DAT_800d008c[29];
 
-PSX_DATA(0x800d0100) void *DAT_800d0100[24] = {
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, D_800a3d64, 0, FUN_80096f18,
+void *DAT_800d0100[24] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 /* (Psy-Q library data) */, 0, FUN_80096f18,
 };
 
-PSX_DATA(0x800d10e8) int DAT_800d10e8[1];
+int DAT_800d10e8[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d10ec) int Crowd_Bored[1];
+int Crowd_Bored[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d10f4) int GHasCareerLoaded[1];
+int GHasCareerLoaded[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1114) int SelectedSkater[1];
+int SelectedSkater[1];
 
-PSX_DATA(0x800d113c) int DAT_800d113c[1];
-PSX_DATA(0x800d1140) int DAT_800d1140[1];
-PSX_DATA(0x800d137c) int DAT_800d137c[1];
-
-/* THPS2 demo: ulong */
-PSX_DATA(0x800d13ac) unsigned int ev10[1];
+int DAT_800d113c[1];
+int DAT_800d1140[1];
+int DAT_800d137c[1];
 
 /* THPS2 demo: ulong */
-PSX_DATA(0x800d13b0) unsigned int ev11[1];
+unsigned int ev10[1];
 
 /* THPS2 demo: ulong */
-PSX_DATA(0x800d13b4) unsigned int ev12[1];
+unsigned int ev11[1];
 
 /* THPS2 demo: ulong */
-PSX_DATA(0x800d13b8) unsigned int ev13[1];
+unsigned int ev12[1];
+
+/* THPS2 demo: ulong */
+unsigned int ev13[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d13cc) int SFXLEVEL[1] = {
+int SFXLEVEL[1] = {
 	0x4000,
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d13d0) int XALEVEL[1] = {
+int XALEVEL[1] = {
 	0x1f40,
 };
 
-PSX_DATA(0x800d1408) void *DAT_800d1408;
+void *DAT_800d1408;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d140c) int GamePaused[1];
+int GamePaused[1];
 
 /* THPS2 demo: CMenu* */
-PSX_DATA(0x800d1428) CMenu *pYesNoMenu;
+CMenu *pYesNoMenu;
 
-PSX_DATA(0x800d1524) int DAT_800d1524[1];
-PSX_DATA(0x800d1528) int DAT_800d1528[1];
-PSX_DATA(0x800d152c) int DAT_800d152c[1];
+int DAT_800d1524[1];
+int DAT_800d1528[1];
+int DAT_800d152c[1];
 
-PSX_DATA(0x800d15c4) int D_800d15c4[1] = {
+int D_800d15c4[1] = {
 	84,
 };
 
-PSX_DATA(0x800d15d0) int D_800d15d0[1] = {
+int D_800d15d0[1] = {
 	69,
 };
 
-PSX_DATA(0x800d15d4) int D_800d15d4[1] = {
+int D_800d15d4[1] = {
 	83,
 };
 
-PSX_DATA(0x800d15d8) int D_800d15d8[1] = {
+int D_800d15d8[1] = {
 	75,
 };
 
-PSX_DATA(0x800d15dc) int D_800d15dc[1] = {
+int D_800d15dc[1] = {
 	65,
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1634) int GameFMV_Active[1];
+int GameFMV_Active[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1648) int CycleTracks[1] = {
+int CycleTracks[1] = {
 	2,
 };
 
-PSX_DATA(0x800d1650) int DAT_800d1650[1] = {
+int DAT_800d1650[1] = {
 	4,
 };
 
 /* THPS2 demo: short */
-PSX_DATA(0x800d1658) short GameFMV_StartX[2];
+short GameFMV_StartX[2];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1678) int GameFMV_NumSoundSources[1];
+int GameFMV_NumSoundSources[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1680) int GameFMV_MusicScale[1];
+int GameFMV_MusicScale[1];
 
-PSX_DATA(0x800d1694) int DAT_800d1694[1] = {
+int DAT_800d1694[1] = {
 	1,
 };
 
 /* THPS2 demo: null */
-PSX_DATA(0x800d1698) int Redbook_XACheckSectorOnVSync[1];
+int Redbook_XACheckSectorOnVSync[1];
 
-PSX_DATA(0x800d169c) int DAT_800d169c[1] = {
+int DAT_800d169c[1] = {
 	1,
 };
 
 /* THPS2 demo: null */
-PSX_DATA(0x800d16a0) int Redbook_XAModeSet[1];
+int Redbook_XAModeSet[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16a4) int GGame[1] = {
+int GGame[1] = {
 	1,
 };
 
-PSX_DATA(0x800d16dc) char *DAT_800d16dc;
+char *DAT_800d16dc;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16e4) int TTime[1];
+int TTime[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16fc) int GameFrozen[1];
+int GameFrozen[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1700) int Cheat_PanelOn[1] = {
+int Cheat_PanelOn[1] = {
 	1,
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1718) int Cheat_FPS[1];
+int Cheat_FPS[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1730) int PolyBufferBytesUsed[1];
+int PolyBufferBytesUsed[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1734) int MusicStopped[1];
+int MusicStopped[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d173c) int ViewportMode[3] = {
+int ViewportMode[3] = {
 	0, 16, 150,
 };
 
-PSX_DATA(0x800d1748) int DAT_800d1748[2] = {
+int DAT_800d1748[2] = {
 	1,
 };
 
-PSX_DATA(0x800d1750) int DAT_800d1750[1];
+int DAT_800d1750[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1780) int GNumberOfPlayers[1];
+int GNumberOfPlayers[1];
 
 /* THPS2 demo: CBruce*[2] */
-PSX_DATA(0x800d17c8) CBruce *GSkater;
+CBruce *GSkater;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1838) int XFramesShifted[1];
+int XFramesShifted[1];
 
-PSX_DATA(0x800d1840) int DAT_800d1840[1];
-
-/* THPS2 demo: int */
-PSX_DATA(0x800d1844) int LastXblanks[1];
+int DAT_800d1840[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1848) int Profile_Bop[1];
+int LastXblanks[1];
+
+/* THPS2 demo: int */
+int Profile_Bop[1];
 
 /* THPS2 demo: Sprite* */
-PSX_DATA(0x800d1850) Sprite *pSpecialSprite;
+Sprite *pSpecialSprite;
 
-PSX_DATA(0x800d1858) Sprite *DAT_800d1858[2];
+Sprite *DAT_800d1858[2];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d186c) int UseCacheForBits[1] = {
+int UseCacheForBits[1] = {
 	1,
 };
 
 /* THPS2 demo: CNonRenderedBit* */
-PSX_DATA(0x800d18cc) void *NonRenderedBitList;
+void *NonRenderedBitList;
 
 /* THPS2 demo: CFlatBit* */
-PSX_DATA(0x800d18d0) void *FlatBitList;
+void *FlatBitList;
 
 /* THPS2 demo: CLinked2EndedBit* */
-PSX_DATA(0x800d18d4) void *Linked2EndedBitList;
+void *Linked2EndedBitList;
 
 /* THPS2 demo: CPixel* */
-PSX_DATA(0x800d18d8) void *PixelList;
+void *PixelList;
 
 /* THPS2 demo: CQuadBit* */
-PSX_DATA(0x800d18dc) void *QuadBitList;
+void *QuadBitList;
 
 /* THPS2 demo: CGenPoly* */
-PSX_DATA(0x800d18e0) void *GenPolyList;
+void *GenPolyList;
 
 /* THPS2 demo: CGlassBit* */
-PSX_DATA(0x800d18ec) void *GlassList;
+void *GlassList;
 
 /* THPS2 demo: CPolyLine* */
-PSX_DATA(0x800d18f4) void *PolyLineList;
+void *PolyLineList;
 
 /* THPS2 demo: CGPolyLine* */
-PSX_DATA(0x800d18f8) void *GPolyLineList;
+void *GPolyLineList;
 
 /* THPS2 demo: CBody* */
-PSX_DATA(0x800d19a4) CBruce *MechList[2];
+CBruce *MechList[2];
 
-PSX_DATA(0x800d19ac) int DAT_800d19ac[1];
-PSX_DATA(0x800d19b8) short DAT_800d19b8[1];
-PSX_DATA(0x800d19ba) short DAT_800d19ba[1];
-PSX_DATA(0x800d19bc) int DAT_800d19bc[1];
+int DAT_800d19ac[1];
+short DAT_800d19b8[1];
+short DAT_800d19ba[1];
+int DAT_800d19bc[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d19c0) unsigned int SuspendDistance[1] = {
+unsigned int SuspendDistance[1] = {
 	0x32c8,
 };
 
-PSX_DATA(0x800d1a18) int DAT_800d1a18[1];
+int DAT_800d1a18[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1a20) unsigned int Vblanks[1];
+unsigned int Vblanks[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1a24) unsigned int Xblanks[1];
+unsigned int Xblanks[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1a28) unsigned int LastVblanks[1];
+unsigned int LastVblanks[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1a2c) int DoDisplayDraw[1];
+int DoDisplayDraw[1];
 
-PSX_DATA(0x800d1a38) int DAT_800d1a38[1];
+int DAT_800d1a38[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1a3c) unsigned int Db_SkyColor[1];
+unsigned int Db_SkyColor[1];
 
-PSX_DATA(0x800d1a40) int DAT_800d1a40[2] = {
+int DAT_800d1a40[2] = {
 	0, 0x1ff0200,
 };
 
 /* THPS2 demo: SDoubleBuffer* */
-PSX_DATA(0x800d1a48) SDoubleBuffer *pDoubleBuffer;
+SDoubleBuffer *pDoubleBuffer;
 
 /* THPS2 demo: SDoubleBuffer* */
-PSX_DATA(0x800d1a4c) SDoubleBuffer *pOtherBuffer;
+SDoubleBuffer *pOtherBuffer;
 
 /* THPS2 demo: uint* */
-PSX_DATA(0x800d1a50) int OrderingTable[1];
+int OrderingTable[1];
 
 /* THPS2 demo: uint* */
-PSX_DATA(0x800d1a54) unsigned char *pPoly;
+unsigned char *pPoly;
 
 /* THPS2 demo: SDoubleBuffer* */
-PSX_DATA(0x800d1a58) SDoubleBuffer *pVB[2];
+SDoubleBuffer *pVB[2];
 
-PSX_DATA(0x800d1a80) SPalette *DAT_800d1a80;
+SPalette *DAT_800d1a80;
 
-PSX_DATA(0x800d1a94) int DAT_800d1a94[1] = {
+int DAT_800d1a94[1] = {
 	-1,
 };
 
-PSX_DATA(0x800d1a98) int DAT_800d1a98[1] = {
+int DAT_800d1a98[1] = {
 	-1,
 };
 
 /* THPS2 demo: null */
-PSX_DATA(0x800d1a9c) int SFXPaused[1];
+int SFXPaused[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1aa0) unsigned int soundRAMOccupied[1];
+unsigned int soundRAMOccupied[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1acc) int SFX_v[1];
+int SFX_v[1];
 
 /* THPS2 demo: void* */
-PSX_DATA(0x800d1ad0) char *pSFXVABHeader;
+char *pSFXVABHeader;
 
 /* THPS2 demo: void* */
-PSX_DATA(0x800d1ad4) char *pLevelSpecificSFXVABHeader;
+char *pLevelSpecificSFXVABHeader;
 
 /* THPS2 demo: SAnimFrame* */
-PSX_DATA(0x800d1adc) SAnimFrame *BigFontAnim;
+SAnimFrame *BigFontAnim;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1af8) int CurrentPos[1];
+int CurrentPos[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1afc) int Loading[1];
+int Loading[1];
 
 /* THPS2 demo: char* */
-PSX_DATA(0x800d1b00) char *FilePath = "m:\\psx\\sk\\?\??\??\??\?.?\??";
+char *FilePath = "m:\\psx\\sk\\?\??\??\??\?.?\??";
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1b04) int FileOpen[1];
+int FileOpen[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1b08) int SectorsPerFrame[1] = {
+int SectorsPerFrame[1] = {
 	4,
 };
 
 /* THPS2 demo: null */
-PSX_DATA(0x800d1b10) PREManager *SpoolerBlocksFileIO;
+PREManager *SpoolerBlocksFileIO;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1b14) int LoadFromPRE[1];
+int LoadFromPRE[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1b34) int LastLoading[1];
+int LastLoading[1];
 
-PSX_DATA(0x800d1b48) SBlockHeader *DAT_800d1b48;
-PSX_DATA(0x800d1b4c) SBlockHeader *DAT_800d1b4c;
+SBlockHeader *DAT_800d1b48;
+SBlockHeader *DAT_800d1b4c;
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1b54) unsigned int CriticalBigHeapUsage;
+unsigned int CriticalBigHeapUsage;
 
 /* THPS2 demo: int[2] */
-PSX_DATA(0x800d1b5c) int Used[2];
+int Used[2];
 
 /* THPS2 demo: CTrickOb* */
-PSX_DATA(0x800d1b70) CTrickOb *TrickObList;
+CTrickOb *TrickObList;
 
-PSX_DATA(0x800d1b74) int DAT_800d1b74[6] = {
+int DAT_800d1b74[6] = {
 	0x2580708, 900, 256, 220, 128,
 };
 
 /* THPS2 demo: CRail* */
-PSX_DATA(0x800d1b94) CRail *RailList;
+CRail *RailList;
 
-PSX_DATA(0x800d1b98) int DAT_800d1b98[3] = {
+int DAT_800d1b98[3] = {
 	1, 1, 945,
 };
 
-PSX_DATA(0x800d1ba8) int DAT_800d1ba8[1];
+int DAT_800d1ba8[1];
 
-PSX_DATA(0x800d1c0c) int DAT_800d1c0c[1] = {
+int DAT_800d1c0c[1] = {
 	0x1b88,
 };
 
-PSX_DATA(0x800d1c10) int DAT_800d1c10[2] = {
+int DAT_800d1c10[2] = {
 	0x1b88,
 };
 
-PSX_DATA(0x800d1c18) int DAT_800d1c18[1] = {
+int DAT_800d1c18[1] = {
 	52,
 };
 
-PSX_DATA(0x800d1c80) TSPack *DAT_800d1c80;
-PSX_DATA(0x800d1c84) TSPack *DAT_800d1c84;
-PSX_DATA(0x800d1c88) TSPack *DAT_800d1c88;
-PSX_DATA(0x800d1c8c) TSPack *DAT_800d1c8c;
-PSX_DATA(0x800d1c90) TSPack *DAT_800d1c90;
-PSX_DATA(0x800d1c94) int DAT_800d1c94[1];
-PSX_DATA(0x800d1c98) int DAT_800d1c98[1];
-PSX_DATA(0x800d1ca0) int DAT_800d1ca0[1];
-PSX_DATA(0x800d1ca4) int DAT_800d1ca4[1];
-PSX_DATA(0x800d1ca8) int DAT_800d1ca8[1];
-PSX_DATA(0x800d1cac) int DAT_800d1cac[1];
+TSPack *DAT_800d1c80;
+TSPack *DAT_800d1c84;
+TSPack *DAT_800d1c88;
+TSPack *DAT_800d1c8c;
+TSPack *DAT_800d1c90;
+int DAT_800d1c94[1];
+int DAT_800d1c98[1];
+int DAT_800d1ca0[1];
+int DAT_800d1ca4[1];
+int DAT_800d1ca8[1];
+int DAT_800d1cac[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1cb0) int DemoTimer[1];
+int DemoTimer[1];
 
-PSX_DATA(0x800d1cbc) int DAT_800d1cbc[1];
-PSX_DATA(0x800d1cc0) int DAT_800d1cc0[1];
-PSX_DATA(0x800d1cc4) int DAT_800d1cc4[1];
-PSX_DATA(0x800d1cc8) int DAT_800d1cc8[1];
-PSX_DATA(0x800d1ccc) int DAT_800d1ccc[3];
-PSX_DATA(0x800d1cd8) int DAT_800d1cd8[1];
-PSX_DATA(0x800d1cdc) int DAT_800d1cdc[1];
-PSX_DATA(0x800d1ce0) int DAT_800d1ce0[1];
-PSX_DATA(0x800d1ce4) int DAT_800d1ce4[1];
-PSX_DATA(0x800d1ce8) int DAT_800d1ce8[1];
-PSX_DATA(0x800d1cec) int DAT_800d1cec[1];
+int DAT_800d1cbc[1];
+int DAT_800d1cc0[1];
+int DAT_800d1cc4[1];
+int DAT_800d1cd8[1];
+int DAT_800d1cdc[1];
+int DAT_800d1ce0[1];
+int DAT_800d1ce4[1];
+int DAT_800d1ce8[1];
+int DAT_800d1cec[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1cf0) int BackOut[1];
+int BackOut[1];
 
-PSX_DATA(0x800d1cf4) int DAT_800d1cf4[1];
-PSX_DATA(0x800d1cf8) int DAT_800d1cf8[2];
-PSX_DATA(0x800d1d0c) Sprite *DAT_800d1d0c[2];
-PSX_DATA(0x800d1d14) int DAT_800d1d14[1];
-PSX_DATA(0x800d1d18) int DAT_800d1d18[3];
-PSX_DATA(0x800d1d28) int DAT_800d1d28[1];
-PSX_DATA(0x800d1d2c) int DAT_800d1d2c[1];
-PSX_DATA(0x800d1d5c) Sprite *DAT_800d1d5c;
-PSX_DATA(0x800d1d60) Sprite *DAT_800d1d60;
-PSX_DATA(0x800d1d7c) int DAT_800d1d7c[1];
-PSX_DATA(0x800d1d80) int DAT_800d1d80[1];
+int DAT_800d1cf4[1];
+int DAT_800d1cf8[2];
+Sprite *DAT_800d1d0c[2];
+int DAT_800d1d14[1];
+int DAT_800d1d18[3];
+int DAT_800d1d28[1];
+int DAT_800d1d2c[1];
+Sprite *DAT_800d1d5c;
+Sprite *DAT_800d1d60;
+int DAT_800d1d7c[1];
+int DAT_800d1d80[1];
 
-PSX_DATA(0x800d1d84) int DAT_800d1d84[1] = {
+int DAT_800d1d84[1] = {
 	-1,
 };
 
-PSX_DATA(0x800d1d88) void *DAT_800d1d88;
-PSX_DATA(0x800d1d8c) short DAT_800d1d8c[1];
-PSX_DATA(0x800d1d8e) short DAT_800d1d8e[1];
-PSX_DATA(0x800d1d90) short DAT_800d1d90[1];
-PSX_DATA(0x800d1d92) short DAT_800d1d92[1];
+void *DAT_800d1d88;
+short DAT_800d1d8c[1];
+short DAT_800d1d8e[1];
+short DAT_800d1d90[1];
+short DAT_800d1d92[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1d94) int OT_entry[1] = {
+int OT_entry[1] = {
 	4096,
 };
 
-PSX_DATA(0x800d1d98) int DAT_800d1d98[1];
-PSX_DATA(0x800d1d9c) int DAT_800d1d9c[1];
+int DAT_800d1d98[1];
+int DAT_800d1d9c[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1df4) int FirstEntry[1];
+int FirstEntry[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1df8) int LastEntry[1];
+int LastEntry[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1e04) int TrickOb1[1];
+int TrickOb1[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1e08) int TrickOb2[1];
+int TrickOb2[1];
 
-PSX_DATA(0x800d1e20) int DAT_800d1e20[2] = {
+int DAT_800d1e20[2] = {
 	0, 0x2000280,
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1e28) int GLevel[1];
+int GLevel[1];
 
-PSX_DATA(0x800d1e48) int DAT_800d1e48[1];
-PSX_DATA(0x800d1e4c) SAnimFrame *DAT_800d1e4c[2];
+int DAT_800d1e48[1];
+SAnimFrame *DAT_800d1e4c[2];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1e5c) int TAPES_Display[1];
+int TAPES_Display[1];
 
-PSX_DATA(0x800d1ec4) int DAT_800d1ec4[1];
+int DAT_800d1ec4[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1ec8) unsigned int LastHoldingScore[1];
+unsigned int LastHoldingScore[1];
 
 /* THPS2 demo: null */
-PSX_DATA(0x800d1ecc) int prim_added[1];
+int prim_added[1];
 
-PSX_DATA(0x800d1ed8) int DAT_800d1ed8[1];
-PSX_DATA(0x800d1edc) int DAT_800d1edc[1];
+int DAT_800d1ed8[1];
+int DAT_800d1edc[1];
 
-PSX_DATA(0x800d1f18) int DAT_800d1f18[7] = {
+int DAT_800d1f18[7] = {
 	0, 0x80646400, 0, 0, 3,
 };
 
-PSX_DATA(0x800d1f34) int DAT_800d1f34[1];
+int DAT_800d1f34[1];
 
-PSX_DATA(0x800d1f38) int DAT_800d1f38[1] = {
+int DAT_800d1f38[1] = {
 	255,
 };
 
-PSX_DATA(0x800d1f3c) int DAT_800d1f3c[1];
+int DAT_800d1f3c[1];
 
-PSX_DATA(0x800d1f40) int DAT_800d1f40[1] = {
+int DAT_800d1f40[1] = {
 	255,
 };
 
-PSX_DATA(0x800d1f44) int DAT_800d1f44[1];
+int DAT_800d1f44[1];
 
-PSX_DATA(0x800d1f48) int DAT_800d1f48[1] = {
+int DAT_800d1f48[1] = {
 	255,
 };
 
-PSX_DATA(0x800d1f4c) int DAT_800d1f4c[1];
+int DAT_800d1f4c[1];
 
-PSX_DATA(0x800d1f50) int DAT_800d1f50[1] = {
+int DAT_800d1f50[1] = {
 	255,
 };
 
-PSX_DATA(0x800d1f54) int DAT_800d1f54[1] = {
+int DAT_800d1f54[1] = {
 	128,
 };
 
-PSX_DATA(0x800d1f58) int DAT_800d1f58[1] = {
+int DAT_800d1f58[1] = {
 	128,
 };
 
-PSX_DATA(0x800d1f5c) int DAT_800d1f5c[1] = {
+int DAT_800d1f5c[1] = {
 	128,
 };
 
-PSX_DATA(0x800d1f60) int DAT_800d1f60[2] = {
+int DAT_800d1f60[2] = {
 	128,
 };
 
-PSX_DATA(0x800d1f78) void *DAT_800d1f78;
+void *DAT_800d1f78;
 
-PSX_DATA(0x800d1f8c) int DAT_800d1f8c[3] = {
-	0, 0x2000400,
-};
+/* a RECT: all of VRAM */
+short DAT_800d1f8c[4] = {0, 0, 1024, 512};
 
-/* THPS2 demo: null */
-PSX_DATA(0x800d1fbc) int CTape_mOkayToDisplayTitle[1];
 
 /* THPS2 demo: uchar */
-PSX_DATA(0x800d1ff0) unsigned char InShell[4];
+unsigned char InShell[4];
 
 /* THPS2 demo: CBody* */
-PSX_DATA(0x800d2044) CBody *CameraList;
+CBody *CameraList;
 
-PSX_DATA(0x800d2068) short DAT_800d2068[1];
-PSX_DATA(0x800d206a) short DAT_800d206a[1];
+short DAT_800d2068[1];
+short DAT_800d206a[1];
 
-PSX_DATA(0x800d207c) int D_800d207c[1] = {
+int D_800d207c[1] = {
 	1,
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d2120) int GHeadPart[1] = {
+int GHeadPart[1] = {
 	-1,
 };
 
 /* EWaterClip (THPS2 demo: EWaterClip) */
-PSX_DATA(0x800d2140) int WaterClipValue[1] = {
+int WaterClipValue[1] = {
 	0xffff,
 };
 
 /* SVECTOR (THPS2 demo: SVECTOR) */
-PSX_DATA(0x800d2144) int FarColor[2];
+int FarColor[2];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d21b8) int TestTheWater[1];
+int TestTheWater[1];
 
-PSX_DATA(0x800dc94c) void *DAT_800dc94c[1] = {
-	D_800dc950,
+void *DAT_800dc94c[1] = {
+	0, /* (the end of the retail .bss: the Psy-Q heap) */
 };

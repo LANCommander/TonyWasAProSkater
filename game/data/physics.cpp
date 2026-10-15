@@ -1,35 +1,34 @@
-/* Decompiled data: the retail executable's initialised globals that src/physics/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/physics/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 #include "game/panel.h"
 
-PSX_DATA(0x800a7250) STrick DAT_800a7250 = {
+STrick DAT_800a7250 = {
 	0, 60, 0x10000, "VARIAL", 0, 9, 9, 800,
 };
 
-PSX_DATA(0x800a727c) STrick DAT_800a727c = {
+STrick DAT_800a727c = {
 	0, 61, 0x10000, "FINGER FLIP", 26, 8, 8, 500,
 };
 
-PSX_DATA(0x800a72a8) STrick DAT_800a72a8 = {
+STrick DAT_800a72a8 = {
 	0, 59, 0x10000, "FRONT FOOT IMPOSSIBLE", 0, 8, 8, 600,
 };
 
-PSX_DATA(0x800a72d4) STrick DAT_800a72d4 = {
+STrick DAT_800a72d4 = {
 	0x1000000, 61, 0x10000, "SEX CHANGE", 0, 6, 8, 500,
 };
 
-PSX_DATA(0x800a7300) STrick DAT_800a7300 = {
+STrick DAT_800a7300 = {
 	0, 60, 0x10000, "HARDFLIP", 0, 4, 8, 300,
 };
 
-PSX_DATA(0x800a732c) STrick DAT_800a732c = {
+STrick DAT_800a732c = {
 	0, 59, 0x10000, "360 FLIP", 0, 3, 8, 300,
 };
 
 /* THPS2 demo: SGroup[4] */
-PSX_DATA(0x800a7358) STrick Group[6] = {
+STrick Group[6] = {
 	{0, 78, -1},
 	{0, 53, 0x10000, "360 SHOVE IT", 0, 7, 10, 250},
 	{0, 22, 0x10000, "IMPOSSIBLE", 0, 3, 6, 250},
@@ -38,15 +37,15 @@ PSX_DATA(0x800a7358) STrick Group[6] = {
 	{0, 28, 0x10000, "KICKFLIP TO INDY", 28, 8, 0, 500},
 };
 
-PSX_DATA(0x800a7460) STrick DAT_800a7460[3] = {
+STrick DAT_800a7460[3] = {
 	{0, 78, -1},
 	{0, 78, -1},
 	{0, 21, 0x10000, "HEELFLIP", 0, 6, 10, 100},
 };
 
-PSX_DATA(0x800a74e4) STrick DAT_800a74e4 = {0, 78, -1};
+STrick DAT_800a74e4 = {0, 78, -1};
 
-PSX_DATA(0x800a7510) STrick DAT_800a7510[53] = {
+STrick DAT_800a7510[53] = {
 	{0, 78, -1},
 	{0, 78, -1},
 	{0, 78, -1},
@@ -102,11 +101,11 @@ PSX_DATA(0x800a7510) STrick DAT_800a7510[53] = {
 	{0x809421, 64, 0x10000, "{JUDO MADONNA}", 0, 5, 0, 1500, 0, 128},
 };
 
-PSX_DATA(0x800a7edc) int DAT_800a7edc[5] = {
+int DAT_800a7edc[5] = {
 	0xfa00c8, 0x640064, 0x7d007d, 0x960064, 0xfa0096,
 };
 
-PSX_DATA(0x800a7ef0) char *DAT_800a7ef0[11] = {
+char *DAT_800a7ef0[11] = {
 	"BALANCED SLIDE",
 	"INTO BACKSLIDE",
 	"FS BOARDSLIDE",
@@ -121,59 +120,59 @@ PSX_DATA(0x800a7ef0) char *DAT_800a7ef0[11] = {
 };
 
 /* CVector (THPS2 demo: CVector) */
-PSX_DATA(0x800a7f1c) int WorldUp[3];
+int WorldUp[3];
 
 /* THPS2 demo: short[14] */
-PSX_DATA(0x800a8228) short HeadBloodAtFrame[12] = {
+short HeadBloodAtFrame[12] = {
 	19, -1, 17, 17, 17, 17, 17, 17, 17, 17, 17,
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1704) int Cheat_L2KillsBaddies[1];
+int Cheat_L2KillsBaddies[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d172c) int Cheat_Fire[1];
+int Cheat_Fire[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1770) int XFrames[1];
+int XFrames[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1774) int TimeScale[1];
+int TimeScale[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1778) int TimeScaleSquared[1];
+int TimeScaleSquared[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d179c) int GHorsePlayer[1];
+int GHorsePlayer[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1868) int BitCount[1];
+int BitCount[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1924) int Cheat_StatsOverride[2] = {
+int Cheat_StatsOverride[2] = {
 	0, 1,
 };
 
-PSX_DATA(0x800d1938) int D_800d1938[1] = {
+int D_800d1938[1] = {
 	49,
 };
 
-PSX_DATA(0x800d1950) int DAT_800d1950[1];
+int DAT_800d1950[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1974) int Face_Air[1];
+int Face_Air[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1978) int Face_Skateable[1];
+int Face_Skateable[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d197c) int Face_WallRide[1];
+int Face_WallRide[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1980) int Face_Visible[1];
+int Face_Visible[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1984) int Face_Terrain[1];
+int Face_Terrain[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d20d4) int BulletCollisionCheck[1];
+int BulletCollisionCheck[1];

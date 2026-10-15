@@ -6,8 +6,8 @@ typedef struct TSPack {
 	struct TSPack *next;
 } TSPack;
 
-TSPack *Pack_pFree;
-int Pack_Width, ZapCalls;
+extern TSPack *Pack_pFree;
+extern int Pack_Width, ZapCalls;
 
 void Pack_KillSlot(TSPack *);
 void Pack_Zap(int, int, int, int);

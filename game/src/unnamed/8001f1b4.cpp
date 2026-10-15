@@ -3,7 +3,7 @@
 
 extern FontInfo Font_table[];
 
-int Current_font;
+extern int Current_font;
 
 void Mess_SetFontShadowOffset(uchar v) {
 	Font_table[Current_font].mFont_shadow_offset = v;

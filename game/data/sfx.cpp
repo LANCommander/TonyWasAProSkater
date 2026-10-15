@@ -1,36 +1,35 @@
-/* Decompiled data: the retail executable's initialised globals that src/sfx/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/sfx/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 
 /* THPS2 demo: long */
-PSX_DATA(0x800d1aa4) int nko_flag[1];
+int nko_flag[1];
 
 /* THPS2 demo: long */
-PSX_DATA(0x800d1aa8) int keyon_queue[1];
+int keyon_queue[1];
 
 /* THPS2 demo: long */
-PSX_DATA(0x800d1aac) int keyoff_queue[1];
+int keyoff_queue[1];
 
 /* THPS2 demo: long */
-PSX_DATA(0x800d1ab0) int voiceon_flag[1];
+int voiceon_flag[1];
 
 /* THPS2 demo: long */
-PSX_DATA(0x800d1ab4) int exp_flag[1];
+int exp_flag[1];
 
 /* THPS2 demo: long */
-PSX_DATA(0x800d1ab8) int loop_flag[1];
+int loop_flag[1];
 
 /* THPS2 demo: long */
-PSX_DATA(0x800d1abc) int voicefree_flag[1] = {
+int voicefree_flag[1] = {
 	0xffffff,
 };
 
 /* THPS2 demo: char */
-PSX_DATA(0x800d1ac0) unsigned char reverb_changed[4];
+unsigned char reverb_changed[4];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1ac4) unsigned int SFX_ReverbDepthSetTimer[1];
+unsigned int SFX_ReverbDepthSetTimer[1];
 
 /* THPS2 demo: ulong */
-PSX_DATA(0x800d1ac8) unsigned int reverb_queue[1];
+unsigned int reverb_queue[1];

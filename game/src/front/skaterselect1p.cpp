@@ -54,23 +54,23 @@ extern char *MechList;
 extern char MikeCamera[];
 extern PREManager *SpoolerBlocksFileIO;
 
-static int DAT_800d232c;
-static int DAT_800d2330;
-static int DAT_800d2334;
-static int DAT_800d2340;
-static int DAT_800d2344;
-static int DAT_800d2328;
+extern int DAT_800d232c;
+extern int DAT_800d2330;
+extern int DAT_800d2334;
+extern int DAT_800d2340;
+extern int DAT_800d2344;
+extern int DAT_800d2328;
 
-int DAT_800d1c40 = 0; /* selected skater */
-int DAT_800d1c44 = 0;
-int DAT_800d1c48 = 0x11b1;
-int DAT_800d1c4c = 0x11b1;
-int DAT_800d1c50 = 30;
-int DAT_800d1c54 = 70;
-int DAT_800d1c58 = 16; /* slide speed */
-int DAT_800d1c5c = -1;
-int DAT_800d1c60 = 0; /* secret skater unlocked */
-int DAT_800d1c64 = 0; /* ... as of the last visit */
+extern int DAT_800d1c40; /* selected skater */
+extern int DAT_800d1c44;
+extern int DAT_800d1c48;
+extern int DAT_800d1c4c;
+extern int DAT_800d1c50;
+extern int DAT_800d1c54;
+extern int DAT_800d1c58; /* slide speed */
+extern int DAT_800d1c5c;
+extern int DAT_800d1c60; /* secret skater unlocked */
+extern int DAT_800d1c64; /* ... as of the last visit */
 
 typedef char SLabel6[6] __attribute__((aligned(4)));
 

@@ -9,26 +9,11 @@
 
 /* DecDCTvlcBuild3 expands this into the scratchpad table DecDCTvlc3 reads: one (run, level) pair
  * per AC code, grouped by code shape (see AcCode). Comments give the codes, s being the sign. */
-unsigned char DecDCTvlcCodes3[216] = {
-	7,  1,  6,  1,  1,  2,  5,  1,  2,  2,  9,  1,  0,  4,  8,  1, /* 0001xxs, 00001xxs */
-	16, 1,  5,  2,  0,  7,  2,  3,  1,  4,  15, 1,  14, 1,  4,  2, /* 0000001xxxs */
-	0,  11, 8,  2,  4,  3,  0,  10, 2,  4,  7,  2,  21, 1,  20, 1, /* 00000001xxxxs */
-	0,  9,  19, 1,  18, 1,  1,  5,  3,  3,  0,  8,  6,  2,  17, 1,  10,
-	2,  9,  2,  5,  3,  3,  4,  2,  5,  1,  7,  1,  6,  0,  15, /* 000000001xxxxs */
-	0,  14, 0,  13, 0,  12, 26, 1,  25, 1,  24, 1,  23, 1,  22, 1,  0,
-	31, 0,  30, 0,  29, 0,  28, 0,  27, 0,  26, 0,  25, 0,  24, /* 0000000001xxxxs */
-	0,  23, 0,  22, 0,  21, 0,  20, 0,  19, 0,  18, 0,  17, 0,  16, 0,
-	40, 0,  39, 0,  38, 0,  37, 0,  36, 0,  35, 0,  34, 0,  33, /* 00000000001xxxxs */
-	0,  32, 1,  14, 1,  13, 1,  12, 1,  11, 1,  10, 1,  9,  1,  8,  1,
-	18, 1,  17, 1,  16, 1,  15, 6,  3,  16, 2,  15, 2,  14, 2, /* 000000000001xxxxs */
-	13, 2,  12, 2,  11, 2,  31, 1,  30, 1,  29, 1,  28, 1,  27, 1,  13,
-	1,  0,  6,  12, 1,  11, 1,  3,  2,  1,  3,  0,  5,  10, 1, /* 00100xxxs (the last pair is never indexed) */
-	0,  3,  4,  1,  3,  1,  0,  0,                             /* 001xxs, then padding */
-};
+extern unsigned char DecDCTvlcCodes3[216];
 
 /* Output budget of one call, in halfwords: DecDCTvlc3 suspends at the first macroblock (block, for
  * version 2) boundary past it, and DecDCTvlc3(0, ...) carries on. Nothing in THPS changes it. */
-unsigned int DecDCTvlcMaxSize3 = 0xffffff;
+extern unsigned int DecDCTvlcMaxSize3;
 
 /* A suspended decode: the retail code saves its registers here, in this order. */
 struct VlcState {

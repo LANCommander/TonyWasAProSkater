@@ -1,19 +1,16 @@
-"""Link step of build.py: runtime, generated glue, and the game's objects.
+"""Link step of build.py: runtime, generated glue, and the game's objects and data.
 
 Generated into build/pc/gen/:
-  psx_syms.ld    every `psx_<addr>` symbol: a function's native code (pcfn_<addr>, or its stub),
-                 a global's place in the native data, else (.bss) its address in PS1 RAM
-  data.s/.bin    the game's data (game/data, data_image.py), native, in its retail layout
-  data_table.c   pc_data: where the native data is, by retail address (PC_Data)
+  psx_syms.ld    every `psx_<addr>` symbol (a function the code or the data names by its retail
+                 address): its native code (pcfn_<addr>), or its stub
   stubs.c        pcstub_<addr>: every other known function entry (logs a call)
   thunks.s       virtual-dispatch thunks and destructor-call adapters
   names.c        PC_SymbolName for logs
+  data_names.c   PC_DataByName: the game's data (game/data) by name, for THPS_POKE
 """
-import bisect
 import concurrent.futures as cf
 import glob
 import io
-import json
 import os
 import re
 import shlex
@@ -27,7 +24,6 @@ sys.path.insert(0, HERE)
 from toolchain import EXE_NAME, MFLAG, USCORE, WINDOWS, X64, tool  # noqa: E402
 PC = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(PC))
-EXE = os.path.join(ROOT, "extern", "thps1_retail", "SLUS_008.60")
 
 GAME_END = 0x800858AC
 LIB_END = 0x8009D0E0  # first byte of .rodata after the Psy-Q libraries
@@ -253,67 +249,34 @@ def thunks_x64(metas, unowned):
     return asm
 
 
-BSS_START, BSS_END = 0x800D21C8, 0x800DC94C
-
-
-def x64_symbols(ctx, data, syms, game, stubs, gen, extra_ld=()):
-    """link()'s psx_syms.ld and data_table.c for x64, and bss.s. A function is its native code
-    (or stub); a global of the data is its own (data_image.py's 64-bit layout), an address inside
-    one the place data_image.py found for it; .bss is an object of its own for every address the
-    code names there, twice its retail extent (to the next name) so that pointers fit; anything
-    else is the retail address, which only data may name (never followed)."""
-    globs = data["globals"]
-    gstarts = [g[0] for g in globs]
-    known = sorted({int(v, 16) for tu in ctx.tus.values() for k, v in tu["syms"].items()
-                    if BSS_START <= int(v, 16) < BSS_END} |
-                   {int(s[5:13], 16) for s in syms if BSS_START <= int(s[5:13], 16) < BSS_END} |
-                   {BSS_END})
-    ld, dead, bss, table = [], [], [], []
+def psx_symbols(syms, game, stubs, gen):
+    """link()'s psx_syms.ld: every `psx_<addr>` the code or the data names is a function, its
+    native code (pcfn_<addr>) or its stub. (As PE spells the names: `_psx_80012345`, and
+    `_psx_80012345_a1` for a second name objcopy needed.)"""
+    ld = []
     stub_set = set(stubs)
     for s in sorted(syms):
         a = int(s[5:13], 16)
-        name = s[1:]
-        k = bisect.bisect_right(gstarts, a) - 1
+        name = s if USCORE else s[1:]
         if a in game or a in stub_set:
-            ld.append("%s = %s_%08x;\n" % (name, "pcfn" if a in game else "pcstub", a))
-        elif TEXT_START <= a < LIB_END and not (k >= 0 and a < globs[k][1]):
-            raise SystemExit("link: %s is in the retail code but no function" % s)
-        elif k >= 0 and a < globs[k][1]:
-            o = 0 if a == globs[k][0] else globs[k][2].get(str(a))
-            if o is None:
-                raise SystemExit("link: %s is inside a global with no 64-bit place" % s)
-            if name != "psx_%08x" % a or a != globs[k][0]:
-                ld.append("%s = pc_data_%08x + %d;\n" % (name, globs[k][0], o))
-            else:
-                ld.append("%s = pc_data_%08x;\n" % (name, a))
-        elif BSS_START <= a < BSS_END:
-            if name == "psx_%08x" % a:
-                nxt = known[bisect.bisect_right(known, a)]
-                bss.append((a, 2 * (nxt - a)))
-            else:
-                ld.append("%s = psx_%08x;\n" % (name, a))
+            ld.append("%s = %s%s_%08x;\n" % (name, USCORE, "pcfn" if a in game else "pcstub", a))
         else:
-            dead.append(a)
-            ld.append("%s = 0x%08x;\n" % (name, a))
-    write_if_changed(os.path.join(gen, "psx_syms.ld"), "".join(ld + list(extra_ld)))
-    if dead:
-        print("link: %d addresses outside the game's data (never followed): %s" % (
-            len(dead), " ".join("%08x" % a for a in sorted(dead))))
-    asm = ["\t.bss"]
-    for a, n in bss:
-        asm += ["\t.p2align 4", "\t.globl psx_%08x" % a, "psx_%08x:" % a, "\t.zero %d" % n]
-    if not WINDOWS:
-        asm.append("\t.section .note.GNU-stack,\"\",@progbits")
-    write_if_changed(os.path.join(gen, "bss.s"), "\n".join(asm) + "\n")
-    lines = ['#include "pc_runtime.h"']
-    lines += ["extern char pc_data_%08x[];" % g[0] for g in globs]
-    lines += ["extern char psx_%08x[];" % a for a, _ in bss]
-    lines.append("const PcData pc_data[] = {")
-    ents = [(g[0], g[1], "pc_data_%08x" % g[0]) for g in globs] + \
-        [(a, a + n // 2, "psx_%08x" % a) for a, n in bss]
-    lines += ["\t{0x%08xu, 0x%08xu, %s}," % e for e in sorted(ents)]
-    lines.append("\t{0, 0, 0}\n};")
-    write_if_changed(os.path.join(gen, "data_table.c"), "\n".join(lines) + "\n")
+            raise SystemExit("link: %s is no function (data is linked by name)" % s)
+    write_if_changed(os.path.join(gen, "psx_syms.ld"), "".join(ld))
+
+
+def data_names(ctx, gen):
+    """link()'s data_names.c: PC_DataByName, the game's data by C name (THPS_POKE)."""
+    names = sorted(n for n in ctx.data_defined if re.fullmatch(r"[A-Za-z_]\w*", n))
+    lines = ["#include <string.h>", '#include "pc_runtime.h"']
+    lines += ["extern char %s[];" % n for n in names]
+    lines.append("static const struct { const char *n; char *p; } T[] = {")
+    lines += ['\t{"%s", %s},' % (n, n) for n in names]
+    lines.append("};")
+    lines.append("void *PC_DataByName(const char *n) { int lo = 0, hi = (int)(sizeof T / sizeof T[0])"
+                 " - 1; while (lo <= hi) { int m = (lo + hi) / 2, c = strcmp(T[m].n, n);"
+                 " if (!c) return T[m].p; if (c < 0) lo = m + 1; else hi = m - 1; } return NULL; }")
+    write_if_changed(os.path.join(gen, "data_names.c"), "\n".join(lines) + "\n")
 
 
 def link(ctx, metas, out, toolbin, release=False):
@@ -396,32 +359,11 @@ def link(ctx, metas, out, toolbin, release=False):
     for n, addrs in psyq.items():
         for a in addrs:
             names[a] = n
-    # The game's data (game/data; data_image.py checks it against the retail data) is native:
-    # data.s, its globals and .bss in their retail layout with native pointers and string literals.
-    img_bin = os.path.join(gen, "image.bin")
-    data_s = os.path.join(gen, "data.s")
-    cmd = [sys.executable, os.path.join(HERE, "data_image.py"), img_bin, "--check", EXE,
-           "--asm", data_s]
-    if X64:
-        # x64: the data's own layout; data_image.py places what the code names inside a global
-        refs_txt = os.path.join(gen, "code_refs.txt")
-        write_if_changed(refs_txt, "".join("%s\n" % s[5:13] for s in sorted(
-            {s for m in metas for s in m.get("psx_syms", [])})))
-        cmd += ["--refs", refs_txt]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    sys.stdout.write(r.stdout)
-    if r.returncode:
-        sys.stderr.write(r.stderr)
-        raise SystemExit("link: game/data doesn't build the retail data (data_image.py)")
-    data = json.load(open(data_s[:-2] + ".json"))
-    if data["fixed"]:
-        raise SystemExit("link: game/data/fixed has globals, but nothing is at a PS1 address any "
-                         "more: make them native data")
-
     # ---- 4. tables, stubs, thunks, names ----------------------------------------------------
     # every code address the game's code or data names: a function, else a stub (library tables
-    # in the data point at library internals the port doesn't have)
-    referenced = set(data["refs"])
+    # in the data point at library functions the port doesn't have)
+    data_psx = ctx.data["psx_syms"]
+    referenced = {int(s[5:13], 16) for s in data_psx}
     for m in metas:
         for s in m.get("psx_syms", []):
             referenced.add(int(s[5:13], 16))
@@ -586,89 +528,27 @@ def link(ctx, metas, out, toolbin, release=False):
         asm_text += "\t.section .note.GNU-stack,\"\",@progbits\n"
     write_if_changed(os.path.join(gen, "thunks.s"), asm_text)
 
-    # psx_<addr>: what the game's code (and the data) refers to by retail address. A function is
-    # its native code (or stub); in a block of native data, it's its place there (a global, or a
-    # field or element the code names as a global of its own); anything else (.bss) is in PS1
-    # RAM, at that address. (The TU metadata spells them as PE does, `_psx_80012345`,
-    # `_psx_80012345_a1` for a second name objcopy needed.)
-    syms = {"_psx_%08x" % a for a in data["refs"]}
+    # psx_<addr>: the functions the game's code and data refer to by retail address, each its
+    # native code (or stub). The data itself is linked by name (game/data's objects).
+    syms = set(data_psx)
     syms.update("_psx_%08x" % a for a in list(game) + stubs)
     for m in metas:
         syms.update(m.get("psx_syms", []))
-    # data a TU's object holds (build.py relocate_data_defs) is defined there
-    kept = {a for m in metas for a in m.get("kept", [])}
-    kept_aliases = ["%s = %spsx_%s;\n" % (s if USCORE else s[1:], USCORE, s[5:13])
-                    for s in sorted(syms) if int(s[5:13], 16) in kept and len(s) > 13]
-    syms = {s for s in syms if int(s[5:13], 16) not in kept}
-    if X64:
-        x64_symbols(ctx, data, syms, game, stubs, gen, kept_aliases)
-    else:
-        starts = [b[0] for b in data["blocks"]]
-        fixed = data["fixed"]
-
-        def native_block(a):
-            k = bisect.bisect_right(starts, a) - 1
-            if k < 0 or a >= data["blocks"][k][1] or any(s <= a < e for s, e in fixed):
-                return None
-            return starts[k]
-
-        ld, dead = [], []
-        stub_set = set(stubs)
-        for s in sorted(syms):
-            a = int(s[5:13], 16)
-            b = native_block(a)
-            name = s if WINDOWS else s[1:]
-            if a in game or a in stub_set:
-                ld.append("%s = %s%s_%08x;\n" % (name, USCORE, "pcfn" if a in game else "pcstub", a))
-            elif TEXT_START <= a < LIB_END and b is None:
-                raise SystemExit("link: %s is in the retail code but no function" % s)
-            elif b is None:
-                # outside the game's data: a library table's pointer into library data the port
-                # doesn't have, never followed
-                dead.append(a)
-                ld.append("%s = 0x%08x;\n" % (name, a))
-            else:
-                ld.append("%s = %spc_data_%08x + %d;\n" % (name, USCORE, b, a - b))
-        write_if_changed(os.path.join(gen, "psx_syms.ld"), "".join(ld + kept_aliases))
-        if dead:
-            print("link: %d addresses outside the game's data (never followed): %s" % (
-                len(dead), " ".join("%08x" % a for a in sorted(dead))))
-        # PC_Data's table: the blocks, less the fixed data inside them
-        ranges = []
-        for s, e in data["blocks"]:
-            cuts = sorted((max(fs, s), min(fe, e)) for fs, fe in fixed if fs < e and fe > s)
-            a = s
-            for cs, ce in cuts + [(e, e)]:
-                if cs > a:
-                    ranges.append((a, cs, s))
-                a = max(a, ce)
-        lines = ['#include "pc_runtime.h"']
-        lines += ["extern char pc_data_%08x[];" % b[0] for b in data["blocks"]]
-        lines.append("const PcData pc_data[] = {")
-        lines += ["\t{0x%08xu, 0x%08xu, pc_data_%08x + %d}," % (a, e, b, a - b) for a, e, b in ranges]
-        lines.append("\t{0, 0, 0}\n};")
-        write_if_changed(os.path.join(gen, "data_table.c"), "\n".join(lines) + "\n")
+    psx_symbols(syms, game, stubs, gen)
+    data_names(ctx, gen)
 
     # ---- 5. compile generated sources and link ------------------------------------------------
     gen_objs = []
     gflags = rt_flags + ["-O1", "-Wno-unused-label", "-Wno-unused-but-set-variable",
                          "-Wno-maybe-uninitialized"]
     jobs = [(os.path.join(gen, n), os.path.join(gen, n[:-2] + ".o"))
-            for n in ["stubs.c", "names.c", "data_table.c"]]
+            for n in ["stubs.c", "names.c", "data_names.c"]]
     with cf.ThreadPoolExecutor() as ex:
         gen_objs = list(ex.map(lambda j: cc(j[0], j[1], gflags), jobs))
     th_o = os.path.join(gen, "thunks.o")
     run([gcc, MFLAG, "-c", os.path.join(gen, "thunks.s"), "-o", th_o])
     gen_objs.append(th_o)
-    data_o = os.path.join(gen, "data.o")
-    if not os.path.exists(data_o) or os.path.getmtime(data_o) < max(
-            os.path.getmtime(data_s), os.path.getmtime(data_s[:-2] + ".bin")):
-        run([gcc, MFLAG, "-c", data_s, "-o", data_o], cwd=gen)
-    gen_objs.append(data_o)
-    if X64:
-        bss_o = os.path.join(gen, "bss.o")
-        run([gcc, MFLAG, "-c", os.path.join(gen, "bss.s"), "-o", bss_o])
-        gen_objs.append(bss_o)
+    gen_objs += ctx.data["objs"]
 
 
     if WINDOWS:

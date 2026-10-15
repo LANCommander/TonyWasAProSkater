@@ -1,11 +1,10 @@
-/* Decompiled data: the retail executable's initialised globals that src/shatter/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/shatter/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 
 struct CSVector;
 
-PSX_DATA(0x800a6278) int DecDCTvlcCodes3[54] = {
+int DecDCTvlcCodes3[54] = {
 	0x1060107, 0x1050201, 0x1090202, 0x1080400, 0x2050110, 0x3020700, 0x10f0401, 0x204010e,
 	0x2080b00, 0xa000304, 0x2070402, 0x1140115, 0x1130900, 0x5010112, 0x8000303, 0x1110206,
 	0x209020a, 0x4030305, 0x7010502, 0xf000601, 0xd000e00, 0x11a0c00, 0x1180119, 0x1160117,
@@ -15,14 +14,14 @@ PSX_DATA(0x800a6278) int DecDCTvlcCodes3[54] = {
 	0x600010d, 0x10b010c, 0x3010203, 0x10a0500, 0x1040300, 259,
 };
 
-PSX_DATA(0x800a6350) int DecDCTvlcMaxSize3[1] = {
+int DecDCTvlcMaxSize3[1] = {
 	0xffffff,
 };
 
 /* DecDCTvlcState3 (0x800a6354): src/shatter/decdctvlc3.c holds it */
 
 /* THPS2 demo: CSVector* */
-PSX_DATA(0x800d1624) CSVector *pNormal;
+CSVector *pNormal;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1628) int ShatterSound[1];
+int ShatterSound[1];

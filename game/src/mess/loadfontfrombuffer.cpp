@@ -12,8 +12,8 @@ extern "C" {
 
 extern FontInfo Font_table[10];
 
-int Num_fonts, Current_font;
-u_short Clut;
+extern int Num_fonts, Current_font;
+extern u_short Clut;
 
 extern int Pack_NoBottom, Pack_NoRight, Pal16X, Pal16Y;
 

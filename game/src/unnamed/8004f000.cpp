@@ -16,12 +16,12 @@
    all regs as live, and can't take `move a0,s5` from the fall-through. No per-TU flag helps
    (match_sym ignores CC1_OPTS; sweep with match_div). FUN_8006eb18 takes one argument;
    SFX_PlayX returns int. */
-CTrickOb *TrickObList;
+extern CTrickOb *TrickObList;
 
 extern CBruce *GSkater;
 extern int GGame;
 
-int TrickPlayer, TrickScore;
+extern int TrickPlayer, TrickScore;
 
 extern "C" {
 	int FUN_8006ef00(Item *);

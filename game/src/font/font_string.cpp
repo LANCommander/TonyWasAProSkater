@@ -1,8 +1,8 @@
 /* Font_String__FUsUsPcUcUcUcUc (0x8004c1a8) flags=-fstructure-noalias */
 #include "game/font.h"
 
-SString *BufferPos;
-uint CodeVal;
+extern SString *BufferPos;
+extern uint CodeVal;
 
 void Font_String(ushort X, ushort Y, char *pString, uchar r, uchar g, uchar b, uchar BigText) {
 	BufferPos->End = 0;

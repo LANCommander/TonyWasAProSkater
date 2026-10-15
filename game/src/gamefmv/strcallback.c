@@ -8,11 +8,11 @@ typedef struct {
 extern unsigned int *decodeSliceBuffer[];
 extern int StCdIntrFlag;
 
-int currentDecodeBuffer, GameFMV_IsMovie;
-unsigned char GameFMV_Is24Bit, GameFMV_SliceBuffers;
-short GameFMV_StartX, decodeSlice_2, decodeSlice_6;
-RECT decodeSlice;
-unsigned short GameFMV_EndX, decodeSlice_4;
+extern int currentDecodeBuffer, GameFMV_IsMovie;
+extern unsigned char GameFMV_Is24Bit, GameFMV_SliceBuffers;
+extern short GameFMV_StartX;
+extern RECT decodeSlice;
+extern unsigned short GameFMV_EndX;
 
 void FUN_8008f79c(void);
 void DecDCTout(unsigned int *, int);
@@ -31,18 +31,18 @@ void strCallback(void) {
 	if (currentDecodeBuffer >= GameFMV_SliceBuffers)
 		currentDecodeBuffer = 0;
 
-	decodeSlice.x += decodeSlice_4;
+	decodeSlice.x += ((unsigned short)decodeSlice.w);
 
 	if (decodeSlice.x < GameFMV_EndX) {
-		DecDCTout(decodeSliceBuffer[currentDecodeBuffer], (short)decodeSlice_4 * decodeSlice_6 / 2);
+		DecDCTout(decodeSliceBuffer[currentDecodeBuffer], (short)((unsigned short)decodeSlice.w) * decodeSlice.h / 2);
 	} else {
 		decodeSlice.x = GameFMV_StartX;
 
 		if (GameFMV_IsMovie) {
-			if (decodeSlice_2 < 256)
-				decodeSlice_2 += 256;
+			if (decodeSlice.y < 256)
+				decodeSlice.y += 256;
 			else
-				decodeSlice_2 -= 256;
+				decodeSlice.y -= 256;
 		}
 	}
 

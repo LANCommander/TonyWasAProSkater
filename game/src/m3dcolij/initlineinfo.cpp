@@ -11,7 +11,7 @@ extern "C" {
 
 extern MATRIX Tfm;
 
-ushort Inquiry;
+extern ushort Inquiry;
 
 int M3dMaths_SquareRoot0(int);
 void NextInquiry();

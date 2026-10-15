@@ -12,7 +12,7 @@ typedef struct {
 extern SControl Pad[];
 extern int Cheat_ScreenShots, GameFrozen;
 
-int GStart1, GStart2;
+extern int GStart1, GStart2;
 
 #define TRIG(pad, button) Pad[pad].b[(button) + PAD_TRIGGERED]
 

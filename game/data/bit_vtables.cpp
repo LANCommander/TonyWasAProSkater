@@ -16,49 +16,49 @@ extern char dtor_6CSpark[] PSX_NAME("_._6CSpark");
 extern char dtor_7CRibbon[] PSX_NAME("_._7CRibbon");
 extern char dtor_9CChunkBit[] PSX_NAME("_._9CChunkBit");
 
-PSX_DATA(0x8009f610) PsxVtEntry __vt_11CGrindSpark[3] = {
+PsxVtEntry __vt_11CGrindSpark[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_11CGrindSpark},
 	{0, 0, Move__11CGrindSpark},
 };
 
-PSX_DATA(0x8009f628) PsxVtEntry D_8009f628[3] = {
+PsxVtEntry __vt_6CGLine[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_6CGLine},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f6b8) PsxVtEntry D_8009f6b8[3] = {
+PsxVtEntry __vt_7CRibbon[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_7CRibbon},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f6d0) PsxVtEntry D_8009f6d0[3] = {
+PsxVtEntry __vt_10CRibbonBit[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_10CRibbonBit},
 	{0, 0, Move__10CRibbonBit},
 };
 
-PSX_DATA(0x8009f788) PsxVtEntry __vt_6CSpark[3] = {
+PsxVtEntry __vt_6CSpark[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_6CSpark},
 	{0, 0, Move__6CSpark},
 };
 
-PSX_DATA(0x8009f800) PsxVtEntry D_8009f800[3] = {
+PsxVtEntry __vt_5CGlow[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_5CGlow},
 	{0, 0, FUN_8002ee54},
 };
 
-PSX_DATA(0x8009f818) PsxVtEntry D_8009f818[3] = {
+PsxVtEntry __vt_9CChunkBit[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_9CChunkBit},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f890) PsxVtEntry D_8009f890[4] = {
+PsxVtEntry __vt_15CSpecialDisplay[4] = {
 	{0, 0, 0},
 	{0, 0, dtor_15CSpecialDisplay},
 	{0, 0, FUN_8002ee64},

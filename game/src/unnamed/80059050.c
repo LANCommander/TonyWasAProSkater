@@ -1,13 +1,13 @@
 /* Front_InitSkaterSpool1P__Fv (0x80059050) */
 #include "names.h"
 
-int DAT_800d2338;
-int DAT_800d2340;
-int DAT_800d2344;
-int DAT_800d233c;
+extern int DAT_800d2338;
+extern int DAT_800d2340;
+extern int DAT_800d2344;
+extern int DAT_800d233c;
 
 extern int DAT_800d37e4[];
-extern unsigned char DAT_800a7068[];
+extern unsigned char GCareer[];
 
 void Front_InitSkaterSpool1P(void) {
 	int i;
@@ -19,5 +19,5 @@ void Front_InitSkaterSpool1P(void) {
 		DAT_800d37e4[i] = 0;
 
 	DAT_800d2344 = 0;
-	DAT_800d233c = DAT_800a7068[0];
+	DAT_800d233c = GCareer[0x824]; /* LastSkater[0] */
 }

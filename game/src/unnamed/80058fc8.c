@@ -1,10 +1,10 @@
 /* FUN_80058fc8 (0x80058fc8) */
-int DAT_800d1c18;
-int DAT_800d1c10;
-int DAT_800d1c0c;
-int DAT_800d2300;
-int DAT_800d22fc;
-int DAT_800d22f8;
+extern int DAT_800d1c18;
+extern int DAT_800d1c10;
+extern int DAT_800d1c0c;
+extern int DAT_800d2300;
+extern int DAT_800d22fc;
+extern int DAT_800d22f8;
 
 void FUN_80058fc8(void) {
 	DAT_800d2300 = -(DAT_800d1c0c * 112);

@@ -1,8 +1,8 @@
 /* GetCommandPoint__Fi (0x80044920) */
 #include "game/trig.h"
 
-short **OffsetList;
-SCommandPoint *CommandPoints;
+extern short **OffsetList;
+extern SCommandPoint *CommandPoints;
 
 SCommandPoint *GetCommandPoint(int n) {
 	SCommandPoint *p;

@@ -1,7 +1,7 @@
 /* FUN_8005d370 (0x8005d370) */
 #include "names.h"
 
-unsigned DAT_800d1cf8;
+extern unsigned DAT_800d1cf8;
 
 void LoadingScreen_WaitLevel(void);
 void LoadingScreen_Wait(void);

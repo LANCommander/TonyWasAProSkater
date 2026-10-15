@@ -7,7 +7,7 @@ extern int Vblanks, SelectedSkater;
 extern const int GLevel;
 extern SLevel Levels[];
 
-short HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
+extern short HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
 
 void Redbook_InitialRand(int);
 int Redbook_Rnd(int);

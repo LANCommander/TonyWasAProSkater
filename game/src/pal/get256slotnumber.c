@@ -1,7 +1,7 @@
 /* Get256SlotNumber__FUs (0x8004ae50) */
 #include "names.h"
 
-int Pal256X, Pal256Y;
+extern int Pal256X, Pal256Y;
 
 unsigned short FUN_8008f70c(int, int);
 

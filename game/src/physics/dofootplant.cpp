@@ -11,7 +11,7 @@
 
 extern SStats Stats[];
 
-int Cheat_StatsOverride; /* stats cheat override */
+extern int Cheat_StatsOverride; /* stats cheat override */
 
 extern int Cheat_Fire;
 

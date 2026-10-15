@@ -5,9 +5,9 @@
 
 extern SStats Stats[];
 
-int DAT_800d2304[2];
-int DAT_800d231c[2];
-int DAT_800d230c, DAT_800d2310, DAT_800d2314;
+extern int DAT_800d2304[2];
+extern int DAT_800d231c[2];
+extern int DAT_800d230c, DAT_800d2310, DAT_800d2314;
 
 extern int DAT_800d3758[], DAT_800d3788[];
 

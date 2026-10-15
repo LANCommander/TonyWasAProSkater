@@ -1,9 +1,9 @@
 /* FillInDefaultName__Fv (0x80012650) */
 #include "names.h"
 
-int GSaveAction;
-int DAT_800d113c;
-int DAT_800d1140;
+extern int GSaveAction;
+extern int DAT_800d113c;
+extern int DAT_800d1140;
 
 extern char SaveGameName[];
 

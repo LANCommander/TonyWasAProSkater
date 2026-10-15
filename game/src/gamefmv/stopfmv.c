@@ -9,12 +9,12 @@ typedef struct {
 
 extern unsigned int *decodeSliceBuffer[];
 
-int GameFMV_Active, GameFMV_FrameBufferCopyActive, GameFMV_NumSoundSources, GameFMV_StartSector;
-unsigned int *pRingBuffer;
-unsigned int *vlcBuffer[2];
-unsigned char GameFMV_SliceBuffers;
-short GameFMV_StartX;
-unsigned short GameFMV_StartY, GameFMV_Width, GameFMV_Height;
+extern int GameFMV_Active, GameFMV_FrameBufferCopyActive, GameFMV_NumSoundSources, GameFMV_StartSector;
+extern unsigned int *pRingBuffer;
+extern unsigned int *vlcBuffer[2];
+extern unsigned char GameFMV_SliceBuffers;
+extern short GameFMV_StartX;
+extern unsigned short GameFMV_StartY, GameFMV_Width, GameFMV_Height;
 
 void CdMix(unsigned char *);
 void DecDCToutCallback(int);

@@ -23,12 +23,12 @@ struct SWobble {
 
 extern FontInfo Font_table[10];
 
-int Current_font;
-SWobble *DAT_800d15e8;
-uchar TextJustification;
-u_int FlagsBGR;
-u_short Sort;
-u_int LastFlagsBGR;
+extern int Current_font;
+extern SWobble *DAT_800d15e8;
+extern uchar TextJustification;
+extern u_int FlagsBGR;
+extern u_short Sort;
+extern u_int LastFlagsBGR;
 
 extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;

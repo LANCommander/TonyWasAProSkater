@@ -2,7 +2,7 @@
 #include "names.h"
 #include "pc_frame.h"
 
-int DAT_800d1c44;
+extern int DAT_800d1c44;
 
 void VSync(int a);
 int FUN_8008cf04(void);

@@ -6,7 +6,7 @@
 extern CBruce *MechList;
 extern CBody *BaddyList, *EnvironmentalObjectList;
 
-int ReplaySoundLockout;
+extern int ReplaySoundLockout;
 
 void Video_SyncObs(int count) {
 	CBruce *b = MechList;

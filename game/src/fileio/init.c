@@ -3,7 +3,7 @@
 
 extern char Directory[];
 
-int Loading, WadStart, ReadSyncFailures;
+extern int Loading, WadStart, ReadSyncFailures;
 
 void FUN_8008f208(int);
 void printf(char *);

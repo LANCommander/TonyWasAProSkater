@@ -2,8 +2,8 @@
 #include "names.h"
 #include "pc_screen.h"
 
-int DAT_800d1cac;
-int DAT_800d1ca8;
+extern int DAT_800d1cac;
+extern int DAT_800d1ca8;
 
 extern int DAT_800d1dc0;
 extern char DAT_800bec34[];

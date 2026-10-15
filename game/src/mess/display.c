@@ -22,10 +22,10 @@ typedef struct Node {
 	struct Node *next;
 } Node;
 
-Node *pMessages;
-char TextJustification;
-int FlagsBGR;
-unsigned short Scale;
+extern Node *pMessages;
+extern char TextJustification;
+extern int FlagsBGR;
+extern unsigned short Scale;
 
 extern volatile unsigned Xblanks;
 

@@ -1,8 +1,8 @@
 /* SetOTPlayer__Fi (0x80061eb4) */
 #include "names.h"
 
-int DAT_800d1d98;
-int OT_entry;
+extern int DAT_800d1d98;
+extern int OT_entry;
 
 void SetOTPlayer(int a) {
 	if (DAT_800d1d98 != a) {

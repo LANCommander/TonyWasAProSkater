@@ -5,10 +5,10 @@
 #include "game/mem.h"
 #include "game/m3d.h"
 
-TSPack *DAT_800d2398[2];
-TSPack *DAT_800d23a0[2];
-int DAT_800d23b0[2];
-int DAT_800d23b8[2];
+extern TSPack *DAT_800d2398[2];
+extern TSPack *DAT_800d23a0[2];
+extern int DAT_800d23b0[2];
+extern int DAT_800d23b8[2];
 
 void Pack_Unpack(short, short);
 

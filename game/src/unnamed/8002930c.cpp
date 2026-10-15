@@ -3,7 +3,7 @@
    1.0 x 1.0, semi-transparency rate 32. */
 #include "game/bit.h"
 
-CFlatBit *FlatBitList;
+extern CFlatBit *FlatBitList;
 
 CFlatBit::CFlatBit() {
 	AttachTo(&FlatBitList);

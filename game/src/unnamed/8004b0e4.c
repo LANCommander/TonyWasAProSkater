@@ -1,6 +1,6 @@
 /* FUN_8004b0e4 (0x8004b0e4) */
-int DAT_800d1a98;
-char pLevelSpecificSFXVABHeader[8];
+extern int DAT_800d1a98;
+extern char pLevelSpecificSFXVABHeader[8];
 
 int FUN_8004b188(char *, char *);
 

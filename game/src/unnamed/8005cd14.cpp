@@ -13,9 +13,9 @@
 extern SLevel Levels[];
 extern char Pad[];
 
-int DAT_800d1cf4, DAT_800d1cf8, DAT_800d1cec, DAT_800d1d14;
-Sprite *DAT_800d1d04;
-Sprite *DAT_800d1d0c;
+extern int DAT_800d1cf4, DAT_800d1cf8, DAT_800d1cec, DAT_800d1d14;
+extern Sprite *DAT_800d1d04;
+extern Sprite *DAT_800d1d0c;
 
 extern "C" void FUN_80061a10(char *);
 extern "C" void FUN_8005dc58(int);

@@ -3,7 +3,7 @@
 
 extern char DAT_800bec34[];
 
-int DAT_800d1ca8;
+extern int DAT_800d1ca8;
 
 void FUN_80065ca4(char *p);
 int FUN_80065fd4(char *p);

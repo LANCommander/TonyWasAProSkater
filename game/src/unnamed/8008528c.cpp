@@ -14,8 +14,8 @@
 
 extern SPSXRegion PSXRegion[];
 
-int XblanksNow;
-int BasePhase;
+extern int XblanksNow;
+extern int BasePhase;
 
 int uWibble(STexWibVertInfo *pTexWibVertInfo);
 int vWibble(STexWibVertInfo *pTexWibVertInfo);

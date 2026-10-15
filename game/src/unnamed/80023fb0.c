@@ -1,7 +1,7 @@
 /* GameFMV_ScaleMusicVolume__Fi (0x80023fb0) */
 #include "names.h"
 
-int GameFMV_MusicScale;
+extern int GameFMV_MusicScale;
 
 int GameFMV_ScaleMusicVolume(int a) {
 	int t = (a * GameFMV_MusicScale) / 128;

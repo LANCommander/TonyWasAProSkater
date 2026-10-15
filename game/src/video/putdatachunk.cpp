@@ -10,12 +10,12 @@ extern "C" {
 
 enum ESoundCmdType { SOUNDCMD_NONE, SOUNDCMD_PLAY, SOUNDCMD_STOP };
 
-extern SVideoInfo GVInfo1, GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern int PosBits[], EulerBits[], FlipAngleBits[], PrefixCode[], PrefixBits[];
 extern CBruce *MechList;
 extern volatile int Xblanks;
 
-int Splat1, Splat2, TrickOb1, TrickOb2;
+extern int Splat1, Splat2, TrickOb1, TrickOb2;
 
 int BitsRequired(int);
 void PutNBits(SVideoInfo *, int, int);
@@ -31,9 +31,9 @@ void PutDataChunk(CBruce *pSkater) {
 	SVideoInfo *VInfo;
 
 	if (pSkater == MechList)
-		VInfo = &GVInfo1;
+		VInfo = &GVInfo1[0];
 	else
-		VInfo = &GVInfo2;
+		VInfo = &GVInfo1[1];
 
 	if (VInfo->pStream + 6 >= VInfo->pStreamStart + 6000) {
 		Video_Stop(pSkater);

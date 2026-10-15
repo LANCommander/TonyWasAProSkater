@@ -23,15 +23,15 @@ extern int BackOut;
 extern int DemoTimer;
 extern int StartScreen;
 
-int GAutoTest;
-int GGame;
-int GNumberOfPlayers;
-int CloseCam;
-int ViewportMode;
-int EndCode;
-int GClear1;
-int GClear2;
-int GHorseDoneStart;
+extern int GAutoTest;
+extern int GGame;
+extern int GNumberOfPlayers;
+extern int CloseCam;
+extern int ViewportMode;
+extern int EndCode;
+extern int GClear1;
+extern int GClear2;
+extern int GHorseDoneStart;
 
 void Pack_Init();
 void Init_Restart(EPackInitType, int);

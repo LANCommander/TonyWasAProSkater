@@ -11,7 +11,8 @@ typedef struct {
 
 struct VerticalMenu;
 
-extern R GCareer_c[];
+extern unsigned char GCareer[];
+#define Tapes ((R *)(GCareer + 12)) /* GCareer.CharacterProgress[].Tapes */
 extern T DAT_800a1eb4;
 
 int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);
@@ -27,7 +28,7 @@ int FUN_800605c0(int a) {
 		cnt[i] = 0;
 
 		for (j = 0; j < 9; j++) {
-			cnt[i] += (GCareer_c[i].b[j] >> 5) & 1;
+			cnt[i] += (Tapes[i].b[j] >> 5) & 1;
 		}
 	}
 

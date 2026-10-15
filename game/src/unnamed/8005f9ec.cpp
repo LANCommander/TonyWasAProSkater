@@ -12,8 +12,8 @@ extern int SFXLEVEL;
 extern int XALEVEL;
 extern short GameFMV_StartX;
 
-Sprite *DAT_800d1d5c;
-Sprite *DAT_800d1d60;
+extern Sprite *DAT_800d1d5c;
+extern Sprite *DAT_800d1d60;
 
 void GameFMV_StopFMV(void);
 void GameFMV_StartFMV(int);

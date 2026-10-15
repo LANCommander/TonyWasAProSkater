@@ -9,24 +9,24 @@ by native services and its memory by native memory. Ports to other platforms sta
 
 ## Architecture
 
-- **Memory.** Nothing is at a PS1 address. The game's initialised data and `.bss` are native data
-  in the executable (`game/data`; `tools/data_image.py` writes it as `gen/data.s`), in their
-  retail layout, which the code relies on (a struct it names as several globals, a table it
-  indexes from into the next). The build checks the data against `SLUS_008.60`; the game doesn't
-  need it to run. The game's heaps (`Mem_NewX`, `Mem_NewTop`, its own allocator) manage one block
+- **Memory.** Nothing is at a PS1 address. The game's initialised data and `.bss` are ordinary
+  C++ globals (`game/data`, compiled and linked with the game; `game/data/bss.cpp` the
+  zero-initialised ones), each laid out on its own: the game code names a place inside one by an
+  expression on it (`GVInfo1[1]`, `decodeSlice.y`), not as a global of its own. The game's heaps
+  (`Mem_NewX`, `Mem_NewTop`, its own allocator) manage one block
   it gets from the system (`PC_GameHeap`, 8 MB); the scratchpad is a native buffer
   (`game/include/game/scratchpad.h`); primitive packets and ordering tables link by native
   pointers (`include/psyq/libgpu.h`, `P_TAG`), and the display buffers are the native
   `DoubleBuffer` (`game/include/game/dbuffer.h`). The game's null-pointer reads, which read low
   RAM on the PS1, are fixed where they happen; any left are redirected to a zero page and logged
-  once (`src/pc_main.c`). The executable is still 32-bit: the game's structures and its files keep
-  4-byte pointers.
-- **Globals and functions by retail address.** Each game TU (`game/tus.tsv`) is compiled natively,
-  then its symbols are renamed to the retail addresses recorded in its `.syms.json`
-  (`psx_<addr>`), so the decompilation's many separate declarations of one global agree. The link
-  resolves those (`gen/psx_syms.ld`): a function to its native code (`pcfn_<addr>`; one with no C,
-  none of which is called in play, to a stub that logs the call), a global to its place in the
-  native data. Runtime code that reads a game global by address goes through `PC_Data`.
+  once (`src/pc_main.c`). The executable is 32- or 64-bit (below).
+- **Globals by name, functions by retail address.** Each game TU (`game/tus.tsv`) is compiled
+  natively. Its globals keep their C names: `game/data` defines them, and a TU only declares them.
+  Its functions are renamed to the retail addresses recorded in its `.syms.json` (`psx_<addr>`),
+  as are the data's pointers to functions, so the decompilation's many names for one function
+  agree. The link resolves those (`gen/psx_syms.ld`) to the function's native code
+  (`pcfn_<addr>`; one with no C, none of which is called in play, to a stub that logs the call).
+  Runtime code reads the game's globals by name (`include/pc_gamedata.h`).
 - **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` renderer and maths, and a few game
   helpers) is C interpretations in `game/src/m3dasm/` and elsewhere (`tus.tsv` kind `asm`); the
   Psy-Q library code the game uses is the port's own C (`src/pc_libgte.c` for libgte,
@@ -95,7 +95,7 @@ Needs MSYS2 with the `mingw32` (i686) toolchain and SDL2
 (`pacman -S mingw-w64-i686-gcc mingw-w64-i686-SDL2`), Python 3, and your own copies of:
 
 - `extern/thps1_retail/SLUS_008.60` (the USA executable), for the build only: the build takes
-  function layouts from it and checks the decompiled data against it; and
+  function layouts from it; and
 - a disc for the first startup, which the game data is extracted from: `extern/thps1_disc/thps1.bin`,
   a raw MODE2/2352 image of the USA disc (`chdman extractcd -i "Tony Hawk's Pro Skater (USA).chd"
   -o thps1.cue -ob thps1.bin`), or the Dreamcast disc (below). `thps.exe` looks for it next to
@@ -119,9 +119,8 @@ Ghidra install `GHIDRA_INSTALL_DIR` names, default `D:\Tools\ghidra`, or takes `
 
 `THPS_ARCH=x64` builds a 64-bit program into `build/pc64` (Linux: `build/pc64-linux`), with
 `--release` too. On Windows it needs MSYS2's `ucrt64` toolchain and SDL2
-(`pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-SDL2`) and still the `mingw32` one: the
-build checks the decompiled data in its retail, 32-bit layout before laying it out natively
-(`tools/data_image.py`). `tools/ptr64_check.py` (with both builds made) compares every view of a
+(`pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-SDL2`). `tools/ptr64_check.py` (with
+both builds made, and the `mingw32` toolchain for its 32-bit objects) compares every view of a
 global, parameter and return value between the 32- and 64-bit layouts and lists where they
 disagree.
 
@@ -159,7 +158,7 @@ How the Linux build differs:
   `build.py` takes the `_` off at the end. `-freg-struct-return` keeps the Windows ABI's 8-byte
   struct returns in registers (the decomp declares some functions both ways; see Calling
   convention). Static constructors (`.init_array`, Windows `.ctors`) are dropped: the game runs
-  them from its own table. `data_image.py` reads ELF objects as well as COFF.
+  them from its own table.
 - Low-memory accesses, the MIPS division results and crash reports come from signal handlers
   (`SIGSEGV`, `SIGFPE`, `SIGTRAP` for the single step) instead of a vectored exception handler, on
   the same decoders (`src/pc_main.c`). The hang watchdog asks the main thread for its backtrace with `SIGUSR2`.
@@ -411,7 +410,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_MOVIES=0` | skip every movie |
 | `THPS_STRICT=1` | abort on a call to an unimplemented function |
 | `THPS_DETERMINISTIC=1` | virtual clock: identical runs every time (use with `THPS_INPUT` for bisecting) |
-| `THPS_POKE=addr:value,...` | store those words every frame (`0x800d1708:1` = level select cheat: every level unlocked) |
+| `THPS_POKE=name[+offset]:value,...` | store those words every frame into globals of `game/data` (`Cheat_LevelSelect:1` = level select cheat: every level unlocked; `GCareer+0x82c:4` = the last level played) |
 | `THPS_WATCH=addr` | hardware write watchpoint on a 4-byte word: logs value, native EIP and callers |
 | `THPS_GPUTRACE=frame` / `THPS_GPUSTATS=1` | log fills and drawing-environment changes / polygon counts per frame |
 | `THPS_TRACE_CULL`, `THPS_TRACE_RENDER` | frustum-culling and renderer traces |
@@ -445,8 +444,6 @@ reverb.
 Port glue worth knowing about (see the tools for details):
 - C++ follows the egcs ABI where the retail code depends on it: vtable layout, `delete` through
   the virtual destructor with in_chrg 3, constructors returning `this`.
-- File statics in the game's TUs keep their retail addresses as names (listed in each
-  `.syms.json`), resolved into the native data.
 - Hardware behaviour the game relies on is kept: MIPS division never traps (the fault handler
   gives the MIPS result), busy-waits let frames happen (`PC_FramePoll`).
 
@@ -458,5 +455,5 @@ matching decompilation, kept byte-exact and not built into the port.
 The port layer (`platform/pc/`) is MIT, like the rest of the project (see the repository's LICENSE).
 `include/pl_mpeg/pl_mpeg.h` is Dominic Szablewski's PL_MPEG (MIT, see its header). The
 decompiled game code and data, and all game assets, remain © Activision / Neversoft. No assets
-or original executables are committed; the build reads your own `SLUS_008.60` (to check against),
-and the game your own disc.
+or original executables are committed; the build reads your own `SLUS_008.60` (for the function
+layout), and the game your own disc.

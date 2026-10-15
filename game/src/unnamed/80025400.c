@@ -4,7 +4,7 @@
 extern int DAT_800a7214[];
 extern int Xblanks;
 
-int LastXblanks;
+extern int LastXblanks;
 
 void FPS_Init(void) {
 	int i;

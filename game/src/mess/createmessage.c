@@ -12,7 +12,7 @@ typedef struct Message {
 	struct Message *prev;
 } Message;
 
-Message *pMessages;
+extern Message *pMessages;
 
 extern Message *Mem_NewX(int, int, int);
 

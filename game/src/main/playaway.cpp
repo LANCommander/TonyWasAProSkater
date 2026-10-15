@@ -49,39 +49,38 @@ extern "C" {
 	extern int M3d_WireframeMode;
 	extern short M3d_OTPushback;        /* M3d_OTPushback */
 	extern SVideoRestart GVideoRestart; /* GVideoRestart */
-	extern SVideoInfo GVInfo1;          /* GVInfo1 */
-	extern SVideoInfo GVInfo2;          /* GVInfo2 */
+	extern SVideoInfo GVInfo1[2];          /* GVInfo1[1] */
 	extern uchar DemoName[];            /* DemoName */
 	extern SLevel Levels[];             /* Levels */
 	extern SControl Pad[2];             /* Pad */
 
-	int EndCode;          /* EndCode */
-	int GGame;            /* GGame */
-	int GNumberOfPlayers; /* GNumberOfPlayers */
-	char GVideoFlags;     /* GVideoFlags */
-	CPowerUp *GPowS;      /* GPowS */
-	CPowerUp *GPowK;      /* GPowK */
-	CPowerUp *GPowA;      /* GPowA */
-	CPowerUp *GPowT;      /* GPowT */
-	CPowerUp *GPowE;      /* GPowE */
-	CPowerUp *GPowTape;   /* GPowTape */
-	int GState;           /* GState */
-	int GSpin;
-	int GSpinSpeed;
-	CBruce *GSkater;      /* GSkater[0] */
-	CBruce *DAT_800d17cc; /* GSkater[1] */
-	int GHorsePlayer;     /* GHorsePlayer */
-	int GClear1;          /* GClear1 */
-	int GClear2;          /* GClear2 */
-	int GHorseClearInput2;
-	int Cheat_ScreenShots;
-	int GameFrozen;
-	int Cheat_FPS;
-	int GHorseWordChosen;
-	int GHorseDoneStart;
-	int GStartTime;
-	int GSkaterRegion;
-	int DAT_800d1798;
+	extern int EndCode;          /* EndCode */
+	extern int GGame;            /* GGame */
+	extern int GNumberOfPlayers; /* GNumberOfPlayers */
+	extern char GVideoFlags;     /* GVideoFlags */
+	extern CPowerUp *GPowS;      /* GPowS */
+	extern CPowerUp *GPowK;      /* GPowK */
+	extern CPowerUp *GPowA;      /* GPowA */
+	extern CPowerUp *GPowT;      /* GPowT */
+	extern CPowerUp *GPowE;      /* GPowE */
+	extern CPowerUp *GPowTape;   /* GPowTape */
+	extern int GState;           /* GState */
+	extern int GSpin;
+	extern int GSpinSpeed;
+	extern CBruce *GSkater;      /* GSkater[0] */
+	extern CBruce *DAT_800d17cc; /* GSkater[1] */
+	extern int GHorsePlayer;     /* GHorsePlayer */
+	extern int GClear1;          /* GClear1 */
+	extern int GClear2;          /* GClear2 */
+	extern int GHorseClearInput2;
+	extern int Cheat_ScreenShots;
+	extern int GameFrozen;
+	extern int Cheat_FPS;
+	extern int GHorseWordChosen;
+	extern int GHorseDoneStart;
+	extern int GStartTime;
+	extern int GSkaterRegion;
+	extern int DAT_800d1798;
 }
 
 static inline void System_Logic(void) {
@@ -132,9 +131,9 @@ void PlayAway(void) {
 		VblankUpdateBar = 1;
 
 		if (GVideoRestart.NumSkaters == 1)
-			LoadError = Card_Load(1, GVInfo1.pBlockStart, 0);
+			LoadError = Card_Load(1, GVInfo1[0].pBlockStart, 0);
 		else
-			LoadError = Card_Load(1, GVInfo1.pBlockStart, GVInfo2.pBlockStart);
+			LoadError = Card_Load(1, GVInfo1[0].pBlockStart, GVInfo1[1].pBlockStart);
 
 		VblankUpdateBar = 0;
 
@@ -162,21 +161,21 @@ void PlayAway(void) {
 		}
 
 		{
-			SVideoHead *VH = (SVideoHead *)(GVInfo1.pBlockStart + 128);
+			SVideoHead *VH = (SVideoHead *)(GVInfo1[0].pBlockStart + 128);
 
-			GVInfo1.NumFrames = VH->NumFrames;
+			GVInfo1[0].NumFrames = VH->NumFrames;
 
 			for (int i = 0; i < 5; i++)
-				GVInfo1.Highlights[i] = VH->Highlights[i];
+				GVInfo1[0].Highlights[i] = VH->Highlights[i];
 		}
 
 		if (GVideoRestart.NumSkaters == 2) {
-			SVideoHead *VH = (SVideoHead *)(GVInfo2.pBlockStart + 128);
+			SVideoHead *VH = (SVideoHead *)(GVInfo1[1].pBlockStart + 128);
 
-			GVInfo2.NumFrames = VH->NumFrames;
+			GVInfo1[1].NumFrames = VH->NumFrames;
 
 			for (int i = 0; i < 5; i++)
-				GVInfo2.Highlights[i] = VH->Highlights[i];
+				GVInfo1[1].Highlights[i] = VH->Highlights[i];
 		}
 
 		GVideoRestart.NumSkaters = -GVideoRestart.NumSkaters;
@@ -187,7 +186,7 @@ void PlayAway(void) {
 		int LoadError;
 
 		VblankUpdateBar = 1;
-		LoadError = Card_LoadReplayFromCD(GVInfo1.pBlockStart, GVInfo2.pBlockStart, DemoName);
+		LoadError = Card_LoadReplayFromCD(GVInfo1[0].pBlockStart, GVInfo1[1].pBlockStart, DemoName);
 		DemoName[4]++;
 
 		if (DemoName[4] > 'J')
@@ -201,26 +200,26 @@ void PlayAway(void) {
 		}
 
 		{
-			SVideoHead *VH = (SVideoHead *)(GVInfo1.pBlockStart + 128);
+			SVideoHead *VH = (SVideoHead *)(GVInfo1[0].pBlockStart + 128);
 
 			GVideoRestart.NumSkaters = VH->NumSkaters;
 			GVideoRestart.Skater = VH->Skater;
 			GVideoRestart.Skater2 = VH->Skater2;
 			GVideoRestart.Level = VH->Level;
 			GVideoRestart.GGame = VH->GGame;
-			GVInfo1.NumFrames = VH->NumFrames;
+			GVInfo1[0].NumFrames = VH->NumFrames;
 
 			for (int i = 0; i < 5; i++)
-				GVInfo1.Highlights[i] = VH->Highlights[i];
+				GVInfo1[0].Highlights[i] = VH->Highlights[i];
 		}
 
 		if (GVideoRestart.NumSkaters == 2) {
-			SVideoHead *VH = (SVideoHead *)(GVInfo2.pBlockStart + 128);
+			SVideoHead *VH = (SVideoHead *)(GVInfo1[1].pBlockStart + 128);
 
-			GVInfo2.NumFrames = VH->NumFrames;
+			GVInfo1[1].NumFrames = VH->NumFrames;
 
 			for (int i = 0; i < 5; i++)
-				GVInfo2.Highlights[i] = VH->Highlights[i];
+				GVInfo1[1].Highlights[i] = VH->Highlights[i];
 		}
 
 		GVideoRestart.NumSkaters = -GVideoRestart.NumSkaters;
@@ -240,7 +239,7 @@ void PlayAway(void) {
 			GVideoFlags = 3;
 		}
 	} else {
-		GVideoFlags = ((SVideoHead *)(GVInfo1.pBlockStart + 128))->VideoFlags;
+		GVideoFlags = ((SVideoHead *)(GVInfo1[0].pBlockStart + 128))->VideoFlags;
 	}
 
 	if (GGame == 1 && !Levels[GLevel].isCompetition) {
@@ -261,22 +260,22 @@ void PlayAway(void) {
 		CBody *pSkater2 = (CBody *)pSkater->mNextItem;
 
 		if (GVideoReplay > 0) {
-			GVInfo1.ReplayHighlight = GVideoReplay;
-			GVInfo2.ReplayHighlight = GVideoReplay;
+			GVInfo1[0].ReplayHighlight = GVideoReplay;
+			GVInfo1[1].ReplayHighlight = GVideoReplay;
 			Video_Start((CBruce *)pSkater, (EVideoMode)2,
-			            GVInfo1.Highlights[GVideoReplay - 1].FromFrame,
-			            GVInfo1.Highlights[GVideoReplay - 1].ToFrame);
+			            GVInfo1[0].Highlights[GVideoReplay - 1].FromFrame,
+			            GVInfo1[0].Highlights[GVideoReplay - 1].ToFrame);
 
 			if (pSkater2)
 				Video_Start((CBruce *)pSkater2, (EVideoMode)2,
-				            GVInfo1.Highlights[GVideoReplay - 1].FromFrame,
-				            GVInfo1.Highlights[GVideoReplay - 1].ToFrame);
+				            GVInfo1[0].Highlights[GVideoReplay - 1].FromFrame,
+				            GVInfo1[0].Highlights[GVideoReplay - 1].ToFrame);
 
 			Video_SyncObsIfNeeded();
 		} else {
 			GVideoReplay = 0;
-			GVInfo1.ReplayHighlight = 0;
-			GVInfo2.ReplayHighlight = 0;
+			GVInfo1[0].ReplayHighlight = 0;
+			GVInfo1[1].ReplayHighlight = 0;
 			Video_Start((CBruce *)pSkater, (EVideoMode)2, 1, 0x7fffffff);
 
 			if (pSkater2)
@@ -297,13 +296,13 @@ void PlayAway(void) {
 			CBody *pSkater = MechList;
 			CBody *pSkater2 = (CBody *)pSkater->mNextItem;
 
-			if (!GVInfo1.VideoMode && !((CCamera *)CameraList)->InCompetitionIntro()) {
+			if (!GVInfo1[0].VideoMode && !((CCamera *)CameraList)->InCompetitionIntro()) {
 				Video_Start((CBruce *)pSkater, (EVideoMode)1, 1, 0x7fffffff);
 
 				if (pSkater2)
 					Video_Start((CBruce *)pSkater2, (EVideoMode)1, 1, 0x7fffffff);
 
-				((SVideoHead *)(GVInfo1.pBlockStart + 128))->VideoFlags = GVideoFlags;
+				((SVideoHead *)(GVInfo1[0].pBlockStart + 128))->VideoFlags = GVideoFlags;
 			}
 		}
 	}

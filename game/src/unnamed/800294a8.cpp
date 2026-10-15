@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). Unlinks the pixel from PixelList; CBit's destructor does the rest. */
 #include "game/bit.h"
 
-CPixel *PixelList;
+extern CPixel *PixelList;
 
 CPixel::~CPixel() {
 	DeleteFrom(&PixelList);

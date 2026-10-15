@@ -14,10 +14,10 @@ extern "C" {
 extern SStats Stats[];
 extern char DAT_800be444[];
 
-int DAT_800d2304[2];
-int DAT_800d2300;
-int DAT_800d22fc;
-int DAT_800d22f8;
+extern int DAT_800d2304[2];
+extern int DAT_800d2300;
+extern int DAT_800d22fc;
+extern int DAT_800d22f8;
 
 CBruce *Front_CreateSkaterModel2P(int Player) {
 	CBruce *pBruce = new CBruce;

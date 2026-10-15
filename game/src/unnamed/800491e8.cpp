@@ -12,11 +12,11 @@ typedef struct {
 extern SLevel Levels[];
 extern int GNumberOfPlayers, GLevel;
 
-int Db_SkyColor;
+extern int Db_SkyColor;
 
 extern R DAT_800d1a40[];
 
-SDoubleBuffer *pOtherBuffer;
+extern SDoubleBuffer *pOtherBuffer;
 
 extern "C" {
 void FUN_8008c3d0(int);

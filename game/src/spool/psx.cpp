@@ -9,7 +9,7 @@
 extern SPSXRegion PSXRegion[40];
 extern SQueue SpoolQ[20];
 
-int FreePos;
+extern int FreePos;
 
 int Utils_CompareStrings(const char *, const char *, unsigned int);
 void LoadNameExt(char *, char *);

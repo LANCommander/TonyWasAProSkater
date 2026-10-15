@@ -1,12 +1,10 @@
 /* Bit_SetSparkFadeRGB__FUcUcUc (0x80029670) */
 #include "names.h"
 
-char SparkFadeRGB;
-char SparkFadeRGB_1;
-char SparkFadeRGB_2;
+extern char SparkFadeRGB[4]; /* CVECTOR */
 
 void Bit_SetSparkFadeRGB(char a, char b, char c) {
-	SparkFadeRGB = a;
-	SparkFadeRGB_1 = b;
-	SparkFadeRGB_2 = c;
+	SparkFadeRGB[0] = a;
+	SparkFadeRGB[1] = b;
+	SparkFadeRGB[2] = c;
 }

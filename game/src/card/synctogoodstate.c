@@ -2,7 +2,7 @@
 #include "names.h"
 #include "pc_frame.h"
 
-int CardStatusMode, CardLoadFlag, CardStatusTemp, CardStatus;
+extern int CardStatusMode, CardLoadFlag, CardStatusTemp, CardStatus;
 
 void VSync(int);
 int Card_CheckStatus(int, int);

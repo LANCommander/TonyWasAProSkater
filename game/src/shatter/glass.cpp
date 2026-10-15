@@ -8,7 +8,7 @@
 #include "game/camera.h"
 #include "game/m3d.h"
 
-int ShatterSound;
+extern int ShatterSound;
 
 extern int Camera_CurrentMikeCamera;
 extern CVector ShatterSoundPos;

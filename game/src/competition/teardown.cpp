@@ -10,7 +10,7 @@ struct VtEntry {
 	void (*fn)(char *, int);
 };
 
-extern char __vt_6CClass[];
+extern char DAT_800a3464[];
 
 extern "C" void FUN_80077060() {
 	CCompetition *t = &theCompetition;
@@ -25,5 +25,5 @@ extern "C" void FUN_80077060() {
 		}
 	}
 
-	*(char **)t = __vt_6CClass;
+	*(char **)t = DAT_800a3464;
 }

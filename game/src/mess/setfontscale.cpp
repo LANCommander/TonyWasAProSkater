@@ -1,8 +1,8 @@
 /* Mess_SetFontScale__FUi (0x8001f1d8) */
 
 
-unsigned char NewFont;
-int Current_font;
+extern unsigned char NewFont;
+extern int Current_font;
 
 #include "game/font.h"
 

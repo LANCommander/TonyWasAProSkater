@@ -11,7 +11,7 @@ struct O {
 	struct VT *vt;
 };
 
-struct O *RailList;
+extern struct O *RailList;
 
 void FUN_8004f5d0(void) {
 	struct O *p = RailList;

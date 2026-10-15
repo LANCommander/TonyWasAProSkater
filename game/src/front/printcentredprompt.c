@@ -7,7 +7,7 @@ typedef struct {
 	void *pTexture;
 } SAnimFrame;
 
-SAnimFrame *ButtonsAnim;
+extern SAnimFrame *ButtonsAnim;
 
 void Mess_SetTextJustify(int);
 void Mess_SetScale(int);

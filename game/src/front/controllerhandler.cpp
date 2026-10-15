@@ -31,8 +31,8 @@ extern SPadMap DAT_800bf260[2]; /* edited mapping */
 extern SPadMap DAT_800bf280[2]; /* mapping before the last change */
 extern LocalText GameText;
 
-int DAT_800d1d28;   /* player being configured */
-uchar DAT_800d2350; /* row last changed with left/right */
+extern int DAT_800d1d28;   /* player being configured */
+extern uchar DAT_800d2350; /* row last changed with left/right */
 
 int SFX_PlayX(unsigned, short, int);
 

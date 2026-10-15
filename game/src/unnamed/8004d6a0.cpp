@@ -30,7 +30,7 @@ void Mem_Shrink(void *p, uint n) {
 		AddToFreeList(r, f);
 
 		if (f == 1) {
-			if (Used_4 >= CriticalBigHeapUsage)
+			if (((uint)Used[1]) >= CriticalBigHeapUsage)
 				LowMemory = f;
 			else
 				LowMemory = 0;

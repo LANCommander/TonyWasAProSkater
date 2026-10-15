@@ -11,9 +11,9 @@ typedef struct {
 	unsigned char b8, _9, b10, _b, b12, _d, b14, _f, b16, _11, b18;
 } Q;
 
-unsigned short **OffsetList;
-int NumNodes, NumTrigMenuEntries;
-char DAT_800d1a10[8];
+extern unsigned short **OffsetList;
+extern int NumNodes, NumTrigMenuEntries;
+extern char DAT_800d1a10[8];
 
 extern int UseCacheForBits;
 extern unsigned short *MenuFilenamePointers[];

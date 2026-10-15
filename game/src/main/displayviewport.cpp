@@ -14,7 +14,7 @@ extern "C" {
    camera, then renders the item lists, skaters (with their shadow tint), bits and background. */
 extern SCamera MikeCamera[];
 
-int Mick_MapMode, Mick_MapDoit;
+extern int Mick_MapMode, Mick_MapDoit;
 
 struct SEnviro;
 
@@ -23,12 +23,12 @@ extern SEnviro *EnviroList;
 extern CBruce *MechList;
 extern int Camera_CurrentMikeCamera;
 
-int ViewportMode;
-CBruce *DAT_800d17cc;
+extern int ViewportMode;
+extern CBruce *DAT_800d17cc;
 
 extern short M3d_OTPushback, M3d_OTPushback2;
 
-CBruce *GSkater;
+extern CBruce *GSkater;
 
 void Bit_Display();
 void M3d_RenderBackground(void *p);

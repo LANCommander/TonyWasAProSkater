@@ -14,8 +14,8 @@ extern "C" {
 
 extern SDoubleBuffer DoubleBuffer[2];
 
-SDoubleBuffer *pDoubleBuffer;
-SDoubleBuffer *pOtherBuffer;
+extern SDoubleBuffer *pDoubleBuffer;
+extern SDoubleBuffer *pOtherBuffer;
 
 void Pause(int);
 

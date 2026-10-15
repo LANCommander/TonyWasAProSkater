@@ -1,8 +1,8 @@
 /* FUN_80068f40 (0x80068f40) */
 extern int GVInfo1[];
 
-int TrickOb1;
-int TrickOb2;
+extern int TrickOb1;
+extern int TrickOb2;
 
 void FUN_80068f40(int a, int b) {
 	if (GVInfo1[0] == 1) {

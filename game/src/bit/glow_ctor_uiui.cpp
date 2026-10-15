@@ -5,7 +5,7 @@
 
 void *Mem_New(uint, int, int);
 
-char GlowList[8];
+extern char GlowList[8];
 
 CGlow::CGlow(uint NumPoints, uint NumFringes) {
 	mNumSections = NumPoints * 2;

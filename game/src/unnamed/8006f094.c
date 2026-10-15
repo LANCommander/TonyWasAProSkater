@@ -3,8 +3,8 @@
 
 struct Texture;
 
-int HashIndex;
-struct Texture *pCurrentTex;
+extern int HashIndex;
+extern struct Texture *pCurrentTex;
 
 extern struct Texture *TextureChecksumHashTable[];
 

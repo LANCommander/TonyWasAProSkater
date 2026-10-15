@@ -1,7 +1,7 @@
 /* _card_event_x__Fv (0x80014fd4) */
 #include "names.h"
 
-int ev10, ev11, ev12, ev13;
+extern int ev10, ev11, ev12, ev13;
 
 int FUN_8008eb08(int);
 

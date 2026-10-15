@@ -13,7 +13,7 @@ typedef struct {
 
 extern int SFXLEVEL;
 
-unsigned short SFXFalloffArray[48];
+extern unsigned short SFXFalloffArray[24];
 
 void SpuNSetVoiceAttr(int, S *);
 unsigned Utils_CalculateSpatialAttenuation(void *, int, int);

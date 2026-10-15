@@ -7,7 +7,7 @@ class CBruce;
 extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList;
 
-int GVideoReplay;
+extern int GVideoReplay;
 
 void FlushBits(SVideoInfo *);
 

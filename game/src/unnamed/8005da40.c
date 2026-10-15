@@ -19,8 +19,8 @@ extern char DAT_800c0a79[];
 extern int DAT_800bf0dc[], DAT_800bf0e8[];
 extern int GameFade, DemoTimer;
 
-int DAT_800d1ce8, DAT_800d1cec, BackOut, DAT_800d1d14;
-O *DAT_800d1d0c;
+extern int DAT_800d1ce8, DAT_800d1cec, BackOut, DAT_800d1d14;
+extern O *DAT_800d1d0c;
 
 void DrawSync(int);
 void HiRes_DrawOTagNoSync(void);

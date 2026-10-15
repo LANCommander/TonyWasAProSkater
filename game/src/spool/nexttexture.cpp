@@ -4,8 +4,8 @@
 
 extern Texture *TextureChecksumHashTable[];
 
-int HashIndex;
-Texture *pCurrentTex;
+extern int HashIndex;
+extern Texture *pCurrentTex;
 
 Texture *NextTexture(void) {
 	Texture *t;

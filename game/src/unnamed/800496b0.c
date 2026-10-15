@@ -5,7 +5,7 @@ typedef struct {
 	short a, b, c, d;
 } TSPack;
 
-TSPack *Pack_pFull;
+extern TSPack *Pack_pFull;
 
 TSPack *Pack_New(TSPack **);
 

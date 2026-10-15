@@ -1,9 +1,9 @@
 /* FUN_800447ac (0x800447ac) */
 extern int ZeroVector[];
 
-short DAT_800d19b8;
-short DAT_800d19ba;
-short DAT_800d19bc;
+extern short DAT_800d19b8;
+extern short DAT_800d19ba;
+extern short DAT_800d19bc;
 
 void FUN_800447ac(void) {
 	ZeroVector[0] = 0;

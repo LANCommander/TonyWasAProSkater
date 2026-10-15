@@ -11,7 +11,7 @@ struct O {
 	struct VT *vt;
 };
 
-struct O *TrickObList;
+extern struct O *TrickObList;
 
 void FUN_8004ee24(void) {
 	struct O *p = TrickObList;

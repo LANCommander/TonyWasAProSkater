@@ -2,7 +2,7 @@
 extern int DpqMax __attribute__((section(".data"))), DpqMin __attribute__((section(".data"))),
     DpqShift __attribute__((section(".data")));
 
-int LastDpqMax, LastDpqMin, LastDpqShift;
+extern int LastDpqMax, LastDpqMin, LastDpqShift;
 
 void M3dInit_SetFoggingParams(int a, int nearz, unsigned range) {
 	DpqMin = nearz;

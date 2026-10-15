@@ -6,7 +6,7 @@
 
 extern FontInfo Font_table[];
 
-int Current_font;
+extern int Current_font;
 
 int GetCharIndex(char ch) {
 	unsigned c;

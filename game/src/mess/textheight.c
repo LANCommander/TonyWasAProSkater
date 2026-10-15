@@ -5,7 +5,7 @@ extern int Mess_TextHeight2(const char *);
 extern int Mess_TextHeightAboveBaseline(const char *);
 extern int Mess_TextHeightBelowBaseline(const char *);
 
-char NewFont;
+extern char NewFont;
 
 int Mess_TextHeight(const char *s) {
 	if (NewFont == 0)

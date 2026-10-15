@@ -3,7 +3,7 @@
    GlowList; CBit's destructor does the rest. */
 #include "game/bit.h"
 
-char GlowList[8];
+extern char GlowList[8];
 
 void Mem_Delete(void *);
 

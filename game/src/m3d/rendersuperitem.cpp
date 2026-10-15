@@ -32,15 +32,15 @@ extern SPSXRegion PSXRegion[];
 extern SAnimFrame *QuickAnimLookup[];
 extern int CurrentWaterLevel;
 
-int Fast;
-SCamera *pCurrentCamera;
-int Dewibble;
-uint FrameNo;
-char *ProjectedVertices;
-char *FreeStitchVertex;
-SAnimFrame *pColourTable;
-int SubObjectMasked;
-int TestTheWater;
+extern int Fast;
+extern SCamera *pCurrentCamera;
+extern int Dewibble;
+extern uint FrameNo;
+extern char *ProjectedVertices;
+extern char *FreeStitchVertex;
+extern SAnimFrame *pColourTable;
+extern int SubObjectMasked;
+extern int TestTheWater;
 
 void RenderModelInSuperFast(SModel *);
 void M3dElips_RenderEllipsoid(SModel *, MATRIX *, uint, int, int, Texture *);

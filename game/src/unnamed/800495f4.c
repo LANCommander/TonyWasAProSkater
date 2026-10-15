@@ -1,7 +1,7 @@
 /* Pack_KillSlot__FP6TSPack (0x800495f4) */
 #include "names.h"
 
-int TotSlots;
+extern int TotSlots;
 
 void Mem_Delete(void *);
 

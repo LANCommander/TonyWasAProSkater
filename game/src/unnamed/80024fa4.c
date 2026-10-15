@@ -12,15 +12,15 @@ typedef struct {
 	short f0e;
 } Z;
 
-extern Z DAT_800a6790;
-extern char DAT_800a67a4[];
-extern char DAT_800a67b8[];
-extern char DAT_800a67cc[];
-extern char DAT_800a67e0[];
-extern char DAT_800a67f4[];
-extern char DAT_800a6808[];
-extern char DAT_800a681c[];
-extern char DAT_800a6830[];
+extern Z ApocalypseViewport;
+extern char LeftViewport[];
+extern char RightViewport[];
+extern char TopViewport[];
+extern char BottomViewport[];
+extern char TopLeftViewport[];
+extern char BottomRightViewport[];
+extern char TopLeftBigViewport[];
+extern char BottomRightBigViewport[];
 extern int Status;
 extern int GamePaused;
 extern unsigned char *pPoly;
@@ -29,9 +29,8 @@ extern int camDist;
 extern int camPitch;
 extern int camYOffset;
 
-char *DAT_800d16dc;
-int GGame, GameFrozen, Cheat_ScreenShots, PolyBufferBytesUsed, Mick_Darkness,
-    ViewportMode, DAT_800d1748, GNumberOfPlayers, CloseCam;
+extern char *DAT_800d16dc;
+extern int GGame, GameFrozen, Cheat_ScreenShots, PolyBufferBytesUsed, Mick_Darkness, ViewportMode, DAT_800d1748, GNumberOfPlayers, CloseCam;
 
 void BlackOut(int, int, int, int);
 void Front_Display(void);
@@ -58,7 +57,7 @@ void Display(void) {
 		Mess_DrawText(256, 60, DAT_800d16dc, 0, 0, 256, 0);
 	}
 
-	DAT_800a6790.f0e = FUN_8007b0fc(CameraList);
+	ApocalypseViewport.f0e = FUN_8007b0fc(CameraList);
 
 	if (!(GameFrozen && Cheat_ScreenShots == 0)) {
 		Ob_AI(&CameraList, GameFrozen);
@@ -111,7 +110,7 @@ L90:
 				camYOffset = b;
 			}
 
-			Display_Viewport((char *)&DAT_800a6790, 0);
+			Display_Viewport((char *)&ApocalypseViewport, 0);
 			break;
 		case 1:
 			f = GameFrozen;
@@ -123,8 +122,8 @@ L90:
 			}
 
 			BlackOut(254, 0, 4, 240);
-			Display_Viewport(DAT_800a67a4, 0);
-			Display_Viewport(DAT_800a67b8, 1);
+			Display_Viewport(LeftViewport, 0);
+			Display_Viewport(RightViewport, 1);
 			break;
 		case 2:
 			f = GameFrozen;
@@ -136,8 +135,8 @@ L90:
 			}
 
 			BlackOut(0, 118, 512, 4);
-			Display_Viewport(DAT_800a67cc, 0);
-			Display_Viewport(DAT_800a67e0, 1);
+			Display_Viewport(TopViewport, 0);
+			Display_Viewport(BottomViewport, 1);
 			break;
 		case 3:
 			f = GameFrozen;
@@ -150,8 +149,8 @@ L90:
 
 			BlackOut(256, 0, 256, 120);
 			BlackOut(0, 120, 256, 120);
-			Display_Viewport(DAT_800a67f4, 0);
-			Display_Viewport(DAT_800a6808, 1);
+			Display_Viewport(TopLeftViewport, 0);
+			Display_Viewport(BottomRightViewport, 1);
 			break;
 		case 4:
 			f = GameFrozen;
@@ -164,8 +163,8 @@ L90:
 
 			BlackOut(304, 0, 208, 88);
 			BlackOut(0, 152, 208, 88);
-			Display_Viewport(DAT_800a681c, 0);
-			Display_Viewport(DAT_800a6830, 1);
+			Display_Viewport(TopLeftBigViewport, 0);
+			Display_Viewport(BottomRightBigViewport, 1);
 			break;
 	}
 

@@ -16,9 +16,9 @@ extern "C" {
 
 extern SPSXRegion PSXRegion[];
 
-SCamera *pCurrentCamera;
-uint *pColourTable;
-ushort DpqMin;
+extern SCamera *pCurrentCamera;
+extern uint *pColourTable;
+extern ushort DpqMin;
 
 #include "pc_video.h"
 

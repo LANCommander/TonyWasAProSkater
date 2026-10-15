@@ -1,7 +1,7 @@
 /* Pause__Fi (0x800478f4) */
 #include "pc_frame.h"
 
-volatile unsigned Vblanks;
+extern volatile unsigned Vblanks;
 
 void Pause(int n) {
 	unsigned t = Vblanks + n;

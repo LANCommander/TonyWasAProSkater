@@ -23,10 +23,10 @@ extern char soundBuf[];
 extern char musicBuf[];
 extern int GGame, GLevel;
 
-CMenu *pYesNoMenu, *pESMenu, *pVSMenu, *pVS2Menu, *pVS3Menu, *pEHMenu, *pSoundMenu;
-int soundVol, musicVol;
+extern CMenu *pYesNoMenu, *pESMenu, *pVSMenu, *pVS2Menu, *pVS3Menu, *pEHMenu, *pSoundMenu;
+extern int soundVol, musicVol;
 
-void (*DAT_800d1408)(void);
+extern void (*DAT_800d1408)(void);
 extern "C" void FUN_80071fa4(void);
 
 void Front_Init(void) {

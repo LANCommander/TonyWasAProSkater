@@ -17,7 +17,7 @@ typedef struct STrig {
 
 extern STrig *HashTable[];
 
-STrig *CommandPoints;
+extern STrig *CommandPoints;
 
 void *Mem_NewX(int, int, int);
 

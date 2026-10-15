@@ -15,8 +15,7 @@ struct Message;
 extern int GGame;
 extern int GHorsePlayer;
 extern SCareer GCareer;
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 
 void Pad_ActuatorOn(uchar, ushort, uchar, uchar);
 
@@ -29,10 +28,10 @@ void CBruce::Vibrate(int a, int b, int c) {
 	if (GCareer.Options.VibrationEnabled[Pad] == 0)
 		return;
 
-	if (GVInfo1.VideoMode == 2)
+	if (GVInfo1[0].VideoMode == 2)
 		return;
 
-	if (GVInfo2.VideoMode == 2)
+	if (GVInfo1[1].VideoMode == 2)
 		return;
 
 	Pad_ActuatorOn(Pad, a, b, c);

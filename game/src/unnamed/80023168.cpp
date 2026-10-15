@@ -4,17 +4,17 @@
 
 extern SMovieDetails movieDetails[];
 
-int GameFMV_Active;
-int CycleTracks;
-unsigned char GameFMV_CurrentTrack;
-unsigned short GameFMV_Width;
-unsigned short GameFMV_Height;
-int GameFMV_EndFrame;
-int GameFMV_VLCBufferSize;
-int GameFMV_RingBufferSectors;
-unsigned char GameFMV_Is24Bit;
-int GameFMV_MusicScale;
-int GameFMV_StartSector;
+extern int GameFMV_Active;
+extern int CycleTracks;
+extern unsigned char GameFMV_CurrentTrack;
+extern unsigned short GameFMV_Width;
+extern unsigned short GameFMV_Height;
+extern int GameFMV_EndFrame;
+extern int GameFMV_VLCBufferSize;
+extern int GameFMV_RingBufferSectors;
+extern unsigned char GameFMV_Is24Bit;
+extern int GameFMV_MusicScale;
+extern int GameFMV_StartSector;
 
 void GameFMV_SetStartTrack(int a) {
 	if (GameFMV_Active)

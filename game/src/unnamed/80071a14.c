@@ -14,7 +14,7 @@ struct L {
 extern char DAT_800a2450[];
 extern char DAT_800a2460[];
 
-struct L *DAT_800d1f78;
+extern struct L *DAT_800d1f78;
 
 void Mem_Delete(int *p);
 void __dl__6CClassPv(void *p);

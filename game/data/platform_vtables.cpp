@@ -12,7 +12,7 @@ extern char GetVariable__9CPlatformUs[];
 extern char SetVariable__9CPlatformUs[];
 extern char dtor_9CPlatform[] PSX_NAME("_._9CPlatform");
 
-PSX_DATA(0x800a013c) PsxVtEntry __vt_9CPlatform[11] = {
+PsxVtEntry __vt_9CPlatform[11] = {
 	{0, 0, 0},
 	{0, 0, dtor_9CPlatform},
 	{0, 0, Die__6CBaddy},

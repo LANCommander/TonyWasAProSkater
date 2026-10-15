@@ -3,17 +3,15 @@
 #include "pc_stream.h"
 #include "pc_vdec.h"
 
-extern short decodeSlice, decodeSlice_2, GameFMV_StartX, GameFMV_EndX;
+extern short decodeSlice[4], GameFMV_StartX, GameFMV_EndX; /* a RECT */
 extern unsigned char GameFMV_Is24Bit;
 
 typedef struct {
 	int x, y, z;
 } V;
 
-int DAT_800d1650, GameFMV_NumSoundSources, GameFMV_Active, alreadyHandledPause,
-    GameFMV_RewindSwitch, sendVLC, currentVlcBuffer, currentDecodeBuffer;
-short decodeSlice_4, decodeSlice_6;
-unsigned int *vlcBuffer[2];
+extern int DAT_800d1650, GameFMV_NumSoundSources, GameFMV_Active, alreadyHandledPause, GameFMV_RewindSwitch, sendVLC, currentVlcBuffer, currentDecodeBuffer;
+extern unsigned int *vlcBuffer[2];
 
 extern char *CameraList;
 extern int GamePaused, GameFrozen, MusicStopped;
@@ -72,7 +70,7 @@ void GameFMV_SyncFMV(int a) {
 				/* the whole frame into the song's texture, where strCallback put its slices */
 				if (GameFMV_StartX != -1)
 					PC_VdecToTexture(vlcBuffer[currentVlcBuffer], GameFMV_Is24Bit,
-					                 decodeSlice, decodeSlice_2, GameFMV_EndX, decodeSlice_6);
+					                 decodeSlice[0], decodeSlice[1], GameFMV_EndX, decodeSlice[3]);
 
 				currentVlcBuffer = 1 - currentVlcBuffer;
 			}

@@ -35,7 +35,7 @@ extern STrick Group[];
 extern ushort DAT_800a7edc[];
 extern char *DAT_800a7ef0[];
 
-int Cheat_StatsOverride;
+extern int Cheat_StatsOverride;
 
 extern int Cheat_Fire;
 extern int XFrames;

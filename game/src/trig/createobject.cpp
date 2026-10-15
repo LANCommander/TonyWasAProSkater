@@ -8,7 +8,7 @@
 #include "game/car.h"
 #include "game/powerup.h"
 
-short **OffsetList;
+extern short **OffsetList;
 
 extern CBody *BaddyList;
 extern CBody *EnvironmentalObjectList;

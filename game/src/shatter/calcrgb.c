@@ -1,7 +1,7 @@
 /* CalcRGB__FiUiiPUi (0x8002172c) */
 #include "names.h"
 
-unsigned char AverageR, AverageG, AverageB;
+extern unsigned char AverageR, AverageG, AverageB;
 
 void CalcRGB(int f, unsigned c, int mode, unsigned *t) {
 	unsigned a, b, d;

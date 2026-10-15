@@ -5,8 +5,8 @@
 
 extern char *pCurrentObjFile __attribute__((section(".data")));
 
-CBody *BackgroundList;
-ushort CurrentIndex;
+extern CBody *BackgroundList;
+extern ushort CurrentIndex;
 
 int Spool_GetModel(uint, int);
 

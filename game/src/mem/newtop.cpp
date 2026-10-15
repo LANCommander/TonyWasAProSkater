@@ -5,12 +5,11 @@
    allocation serial number (odd: a free block's pNext is an aligned pointer). */
 #include "game/mem.h"
 
-int LowMemory;
-uint CriticalBigHeapUsage;
-uint UniqueIndentifier;
-int Used[2];
-uint Used_4;
-SBlockHeader *FirstFreeBlock[2];
+extern int LowMemory;
+extern uint CriticalBigHeapUsage;
+extern uint UniqueIndentifier;
+extern int Used[2];
+extern SBlockHeader *FirstFreeBlock[2];
 
 void *Mem_NewTop(uint size) {
 	int Heap = 1;
@@ -62,7 +61,7 @@ void *Mem_NewTop(uint size) {
 		Used[Heap] += pBlock->Size + MEM_HEADER;
 
 		if (Heap == 1) {
-			if (Used_4 >= CriticalBigHeapUsage)
+			if (((uint)Used[1]) >= CriticalBigHeapUsage)
 				LowMemory = Heap;
 			else
 				LowMemory = 0;
@@ -83,7 +82,7 @@ void *Mem_NewTop(uint size) {
 	Used[Heap] += pChoice->Size + MEM_HEADER;
 
 	if (Heap == 1) {
-		if (Used_4 >= CriticalBigHeapUsage)
+		if (((uint)Used[1]) >= CriticalBigHeapUsage)
 			LowMemory = Heap;
 		else
 			LowMemory = 0;

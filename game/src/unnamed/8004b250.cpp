@@ -7,7 +7,7 @@
 extern int DAT_800b8a9c[];
 extern int SFXLEVEL;
 
-int SFX_v;
+extern int SFX_v;
 
 void Video_SFXPlay(int, short, int);
 

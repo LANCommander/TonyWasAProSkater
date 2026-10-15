@@ -8,11 +8,11 @@
 extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList;
 
-int HLStartCalled;
-int HighlightStartFrame;
-int HighlightEndFrame;
-int HighlightStartY;
-int HighlightEndY;
+extern int HLStartCalled;
+extern int HighlightStartFrame;
+extern int HighlightEndFrame;
+extern int HighlightStartY;
+extern int HighlightEndY;
 
 void Video_HighlightEnd(CBruce *pSkater, int Score) {
 	SVideoInfo *VInfo;

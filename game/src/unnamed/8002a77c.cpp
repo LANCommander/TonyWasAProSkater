@@ -5,7 +5,7 @@
 
 extern "C" char __vt_9CGlassBit[];
 
-CGlassBit *GlassList;
+extern CGlassBit *GlassList;
 
 extern "C" int BASEF(CBit *p, int a);   /* CBit::~CBit, as retail calls it */
 extern "C" void __dl__4CBitPv(void *p); /* egcs-ABI call, as retail makes it */

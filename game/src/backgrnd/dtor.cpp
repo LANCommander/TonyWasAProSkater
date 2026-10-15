@@ -3,8 +3,8 @@
    does the rest. */
 #include "game/backgrnd.h"
 
-CBody *BackgroundList;
-ushort CurrentIndex;
+extern CBody *BackgroundList;
+extern ushort CurrentIndex;
 
 CBackground::~CBackground() {
 	DeleteFrom(&BackgroundList);

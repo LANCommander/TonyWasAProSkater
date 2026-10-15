@@ -14,7 +14,7 @@
 
 extern SPSXRegion PSXRegion[];
 
-uint *pCurrentTexWibPacket;
+extern uint *pCurrentTexWibPacket;
 
 extern int Pack_NoBottom;
 extern int Pack_NoRight;

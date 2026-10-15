@@ -106,25 +106,6 @@ const char *PC_NameOf(uint32_t addr) {
     return buf[n];
 }
 
-void *PC_Data(uint32_t addr) {
-    static int n = -1;
-    int lo = 0, hi;
-    if (n < 0)
-        for (n = 0; pc_data[n].start; n++)
-            ;
-    hi = n - 1;
-    while (lo <= hi) {
-        int m = (lo + hi) / 2;
-        if (addr < pc_data[m].start)
-            hi = m - 1;
-        else if (addr >= pc_data[m].end)
-            lo = m + 1;
-        else
-            return pc_data[m].p + (addr - pc_data[m].start);
-    }
-    return NULL;
-}
-
 uint32_t PC_MissingFunction(uint32_t addr) {
     static uint32_t seen[512];
     static int nseen;

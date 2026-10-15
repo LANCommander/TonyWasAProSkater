@@ -1,6 +1,5 @@
-/* Decompiled data: the retail executable's initialised globals that src/font/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/font/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 #include "game/font.h"
 
@@ -8,10 +7,10 @@ struct SAnimFrame;
 struct SString;
 
 /* SString[100] (THPS2 demo: SString[100]) */
-PSX_DATA(0x800b909c) SString StringBuffer[100];
+SString StringBuffer[100];
 
 /* THPS2 demo: uchar[128] */
-PSX_DATA(0x800b9d1c) unsigned char Mapping[128] = {
+unsigned char Mapping[128] = {
 	0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c,
 	0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c,
 	0xff, 0x1d, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1b, 0x1e, 0x1a, 0x1c,
@@ -23,21 +22,21 @@ PSX_DATA(0x800b9d1c) unsigned char Mapping[128] = {
 };
 
 /* THPS2 demo: char[512] */
-PSX_DATA(0x800b9e9c) unsigned char NumberStrings[512];
+unsigned char NumberStrings[512];
 
 /* THPS2 demo: SAnimFrame* */
-PSX_DATA(0x800d1ad8) SAnimFrame *FontAnim;
+SAnimFrame *FontAnim;
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d1ae0) unsigned int CodeVal[1] = {
+unsigned int CodeVal[1] = {
 	0x2c000000,
 };
 
 /* THPS2 demo: SString* */
-PSX_DATA(0x800d1aec) SString *BufferPos;
+SString *BufferPos;
 
 /* THPS2 demo: char* */
-PSX_DATA(0x800d1af0) char *pNumberStrings;
+char *pNumberStrings;
 
 /* THPS2 demo: char* */
-PSX_DATA(0x800d1af4) int Where[1];
+int Where[1];

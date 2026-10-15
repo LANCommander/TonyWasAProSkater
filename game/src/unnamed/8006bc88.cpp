@@ -11,8 +11,7 @@ extern "C" {
 #include "game/m3d.h"
 #include "game/video.h"
 
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern SPSXRegion PSXRegion[];
 extern CBruce *MechList;
 
@@ -24,7 +23,7 @@ void CollideWithSkaters(CCar *p) {
 	CBruce *s1, *s2;
 	short *x;
 
-	if (GVInfo1.VideoMode == 2 || GVInfo2.VideoMode == 2)
+	if (GVInfo1[0].VideoMode == 2 || GVInfo1[1].VideoMode == 2)
 		return;
 
 	info = PSXRegion[p->mRegion].ppModels;

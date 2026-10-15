@@ -1,7 +1,7 @@
 /* Competition_LadderLogic__Fv (0x80074b94) */
 #include "game/competition.h"
 
-unsigned short FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
+extern unsigned short FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
 
 int Redbook_Rnd(int n);
 

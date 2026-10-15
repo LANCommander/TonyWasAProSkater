@@ -2,7 +2,7 @@
 /* C++ (POWERUP.CPP). Makes the next bits come from the bit cache. */
 #include "game/powerup.h"
 
-int UseCacheForBits;
+extern int UseCacheForBits;
 
 void CPowerUp::CreateBit() {
 	UseCacheForBits = 1;

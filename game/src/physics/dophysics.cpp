@@ -33,8 +33,8 @@ extern short HeadBloodAtFrame[];
 extern CVector WorldUp;
 extern CVector DAT_800d25e4;
 
-int Cheat_StatsOverride;
-int DAT_800d1950;
+extern int Cheat_StatsOverride;
+extern int DAT_800d1950;
 
 extern int Cheat_Fire;
 extern int GGame;

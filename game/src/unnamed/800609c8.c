@@ -16,7 +16,7 @@ extern int GVideoRestart[];
 extern char Pad[];
 extern struct VerticalMenu *pVertMenu;
 
-struct Sprite *DAT_800d2358, *DAT_800d235c;
+extern struct Sprite *DAT_800d2358, *DAT_800d235c;
 
 int Mess_GetFontScale(void);
 void Pack_DefragmentFully(void);

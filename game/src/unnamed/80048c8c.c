@@ -2,7 +2,7 @@
 #include "names.h"
 #include "game/dbuffer.h"
 
-int Db_SkyColor;
+extern int Db_SkyColor;
 
 /* The sky colour (-1: none) as both buffers' background fill. */
 void Db_UpdateSky(void) {

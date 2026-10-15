@@ -7,7 +7,7 @@ typedef struct {
 
 extern SSoundCmd SoundCmd[];
 
-int FirstEntry;
+extern int FirstEntry;
 
 void DequeueSoundCmd(int *type, int *val) {
 	*type = SoundCmd[FirstEntry].type;

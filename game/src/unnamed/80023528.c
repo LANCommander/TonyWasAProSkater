@@ -1,7 +1,7 @@
 /* GameFMV_SkipTrack__Fv (0x80023528) */
 #include "names.h"
 
-short GameFMV_StartX;
+extern short GameFMV_StartX;
 
 struct S {
 	int a, b, c;

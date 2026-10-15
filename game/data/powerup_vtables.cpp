@@ -9,7 +9,7 @@ extern char FUN_800447dc[];
 extern char FUN_800447e4[];
 extern char dtor_8CPowerUp[] PSX_NAME("_._8CPowerUp");
 
-PSX_DATA(0x8009f0f8) PsxVtEntry __vt_8CPowerUp[8] = {
+PsxVtEntry __vt_8CPowerUp[8] = {
 	{0, 0, 0},
 	{0, 0, dtor_8CPowerUp},
 	{0, 0, Die__8CPowerUp},

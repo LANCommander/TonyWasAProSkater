@@ -10,7 +10,7 @@ extern "C" {
 extern SCamera MikeCamera[];
 extern CVector Camera_CamOffset;
 
-int Camera_CurrentMikeCamera;
+extern int Camera_CurrentMikeCamera;
 
 void QToM(const CQuat &, MATRIX &);
 

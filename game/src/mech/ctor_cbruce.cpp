@@ -32,8 +32,8 @@ extern SControl Pad[];
 
 void *Mem_New(uint, int, int);
 
-int NumMechs;
-CBody *MechList;
+extern int NumMechs;
+extern CBody *MechList;
 
 CBruce::CBruce() : mPanel(this) {
 	int i;

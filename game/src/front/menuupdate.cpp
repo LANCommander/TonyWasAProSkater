@@ -5,7 +5,7 @@
 
 extern SControl Pad[];
 
-int UpDownAutoRepeatTimer;
+extern int UpDownAutoRepeatTimer;
 
 int SFX_PlayX(unsigned int, short, int);
 

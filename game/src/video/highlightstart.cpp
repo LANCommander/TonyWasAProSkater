@@ -6,7 +6,7 @@
 extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList;
 
-int HLStartCalled, HighlightStartFrame, HighlightStartY;
+extern int HLStartCalled, HighlightStartFrame, HighlightStartY;
 
 void Video_HighlightStart(CBruce *b) {
 	SVideoInfo *v;

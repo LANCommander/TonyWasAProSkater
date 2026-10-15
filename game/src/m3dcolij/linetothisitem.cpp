@@ -22,8 +22,8 @@ extern SProjectedVertex *ProjectedVertices;
 extern int OtherEnvIndex;
 extern int *EnvModelChecksums[2];
 
-int CollidedTriggerModel;
-int TriggerCollisionCheck;
+extern int CollidedTriggerModel;
+extern int TriggerCollisionCheck;
 
 int Spool_GetEnvIndex(int);
 

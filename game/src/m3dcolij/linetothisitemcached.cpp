@@ -20,13 +20,12 @@
 extern SPSXRegion PSXRegion[];
 extern SFaceCache FaceCache[];
 extern SHit NearestHit;
-extern SVECTOR *NearestHit_8[];
 extern int OtherEnvIndex;
 extern int *EnvModelChecksums[2];
 
-int TriggerCollisionCheck;
-int M3dColij_ZeroMask;
-int M3dColij_OneMask;
+extern int TriggerCollisionCheck;
+extern int M3dColij_ZeroMask;
+extern int M3dColij_OneMask;
 
 int Spool_GetEnvIndex(int);
 
@@ -230,7 +229,7 @@ void M3dColij_LineToThisItemCached(Item *pItem, SLineInfo *pInfo, SColCache *pCo
 								pInfo->pFace = pFace;
 								pInfo->Model = pItem->Model;
 								pInfo->Distance = Mips_FixMul(LineLen, tNear) >> 2;
-								NearestHit_8[0] =
+								NearestHit.pNormal =
 								    (SVECTOR *)((char *)Normals + (((ushort *)pFace)[6] & 0xfff8));
 								pColij->pFace = pFace;
 							}

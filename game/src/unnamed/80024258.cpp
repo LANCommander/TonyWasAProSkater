@@ -7,11 +7,11 @@
 extern SDoubleBuffer *pDoubleBuffer; /* pDoubleBuffer */
 extern int GLevel;                   /* GLevel */
 
-int GNumberOfPlayers; /* number of players */
+extern int GNumberOfPlayers; /* number of players */
 
 extern SLevel Levels[]; /* Levels */
 
-unsigned char *PolyBufferEnd; /* PolyBufferEnd */
+extern unsigned char *PolyBufferEnd; /* PolyBufferEnd */
 
 #define POLYBUFFERSIZE (Levels[GLevel].ExtraPolyBuffer[GNumberOfPlayers - 1] + 0x17c00)
 

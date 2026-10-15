@@ -1,5 +1,5 @@
 /* Redbook_InitialRand__Fi (0x80047928) */
-int DAT_800d2238, DAT_800d223c, DAT_800d2240;
+extern int DAT_800d2238, DAT_800d223c, DAT_800d2240;
 
 void Redbook_InitialRand(int seed) {
 	DAT_800d2238 = seed;

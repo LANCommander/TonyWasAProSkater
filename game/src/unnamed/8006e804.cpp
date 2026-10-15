@@ -6,7 +6,7 @@
 #include "game/panel.h"
 #include "game/psyq.h"
 
-int DAT_800d1ec4; /* points x10 cheat */
+extern int DAT_800d1ec4; /* points x10 cheat */
 
 void CPanelData::Trick(char *pName, int Points, int Dep) {
 	mLastHoldingScore = 1;

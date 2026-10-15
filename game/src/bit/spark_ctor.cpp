@@ -5,14 +5,9 @@
    -fstructure-noalias: retail loads the globals above the vptr and mLifetime stores. */
 #include "game/bit.h"
 
-uint SparkSize;
-int SparkSemiTrans;
-uchar SparkRGB;
-uchar SparkRGB_1;
-uchar SparkRGB_2;
-uchar SparkFadeRGB;
-uchar SparkFadeRGB_1;
-uchar SparkFadeRGB_2;
+extern uint SparkSize;
+extern int SparkSemiTrans;
+extern uchar SparkRGB[4], SparkFadeRGB[4]; /* CVECTOR */
 
 short Redbook_Rnd(int);
 void Bit_CalculateSparkVelocity(CVector &, int);
@@ -28,12 +23,12 @@ CSpark::CSpark(CVector &pos, int vel, int gravity, int life) {
 		tag = 0x03000000;
 	}
 
-	r0 = SparkRGB;
-	g0 = SparkRGB_1;
-	b0 = SparkRGB_2;
-	mFadeR = SparkFadeRGB;
-	mFadeG = SparkFadeRGB_1;
-	mFadeB = SparkFadeRGB_2;
+	r0 = SparkRGB[0];
+	g0 = SparkRGB[1];
+	b0 = SparkRGB[2];
+	mFadeR = SparkFadeRGB[0];
+	mFadeG = SparkFadeRGB[1];
+	mFadeB = SparkFadeRGB[2];
 	mPos = pos;
 	Bit_CalculateSparkVelocity(mVel, vel);
 

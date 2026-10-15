@@ -1,7 +1,7 @@
 /* Trig_RemoveDualBuffer__Fv (0x8004634c) */
 #include "names.h"
 
-void *pPSXDualBuffer;
+extern void *pPSXDualBuffer;
 
 void Mem_Delete(void *p);
 

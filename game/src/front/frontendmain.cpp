@@ -64,7 +64,7 @@ void Competition_Init();
 extern "C" {
 	extern SVideoRestart GVideoRestart;   /* GVideoRestart */
 	extern SLevel Levels[];               /* Levels */
-	extern unsigned char DAT_800a7068[];  /* last 1P skater */
+	extern SCareer GCareer;
 	extern SDoubleBuffer DoubleBuffer[2]; /* DB */
 	extern SName DemoName;                /* DemoName */
 	extern int GRollCredits;              /* GRollCredits */
@@ -81,11 +81,11 @@ extern "C" {
 	extern int GVideoReplay; /* GVideoReplay */
 	extern int GLevel;       /* GLevel */
 
-	int StartScreen; /* screen to return to */
-	short DAT_800d1ca0;
-	int DemoTimer; /* DemoTimer */
-	int DAT_800d1cb4;
-	int DAT_800d1cb8;
+	extern int StartScreen; /* screen to return to */
+	extern short DAT_800d1ca0;
+	extern int DemoTimer; /* DemoTimer */
+	extern int DAT_800d1cb4;
+	extern int DAT_800d1cb8;
 }
 
 static inline int GetReturnScreen() {
@@ -169,7 +169,7 @@ top:
 		Mess_SetFontShadowOffset(4);
 
 		mode = 0;
-		skater = DAT_800a7068[0];
+		skater = (unsigned char)GCareer.LastSkater[0];
 		players = 1;
 
 		switch (GGame) {

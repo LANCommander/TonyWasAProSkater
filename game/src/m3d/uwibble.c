@@ -4,7 +4,7 @@ typedef struct {
 	unsigned char wib;
 } STexWibVertInfo;
 
-int BasePhase;
+extern int BasePhase;
 
 extern short WibbleTables[][64];
 

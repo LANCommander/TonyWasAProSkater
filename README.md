@@ -14,7 +14,7 @@ This repository contains **no game code or data from the original game**: to bui
 - **Open source**: This port contains no copyrighted code or assets and is MIT licensed.
 - **Cross-platform**: For the first time, play THPS natively on Windows or Linux.
 
-Known gaps: the PS1's exact reverb (the port's own is an approximation), a 64-bit build. See [platform/pc/README.md](platform/pc/README.md#status).
+Known gaps: the PS1's exact reverb (the port's own is an approximation). See [platform/pc/README.md](platform/pc/README.md#status).
 
 ## Playing
 
@@ -48,7 +48,7 @@ On Windows or x86 Linux. You need:
 | Linux: GCC with 32-bit support, SDL2 (32-bit) | Debian/Ubuntu: `dpkg --add-architecture i386`, then `apt install gcc-multilib g++-multilib pkg-config libsdl2-dev:i386`; other distributions in [platform/pc/README.md](platform/pc/README.md#linux) |
 | Python 3 | the build scripts (standard library only) |
 | [Ghidra](https://ghidra-sre.org) | its GNU v2 demangler (`GPL/DemanglerGnu`), which the build runs: set `GHIDRA_INSTALL_DIR` (default `D:\Tools\ghidra`) |
-| `extern/thps1_retail/SLUS_008.60` | the executable from your disc (`dumpsxiso` from [mkpsxiso](https://github.com/Lameguy64/mkpsxiso) extracts it); the build takes the function layout from it and checks the decompiled data against it. The game doesn't need it |
+| `extern/thps1_retail/SLUS_008.60` | the executable from your disc (`dumpsxiso` from [mkpsxiso](https://github.com/Lameguy64/mkpsxiso) extracts it); the build takes the function layout from it. The game doesn't need it |
 | `build/psyq_names.tsv` | the addresses of the Sony library functions: `python tools/psyq_sigmatch.py` makes it once, from the Psy-Q signatures of [ghidra_psx_ldr](https://github.com/lab313ru/ghidra_psx_ldr) (set `SIGDIR` in the script to its `data/psyq` folder) |
 
 ```
@@ -56,9 +56,9 @@ python platform/pc/tools/build.py            # development build: build/pc/thps.
 python platform/pc/tools/build.py --release  # release build:     build/pc/release/ (Linux: build/pc-linux/release/)
 ```
 
-Both embed the game's data (its initialised globals: strings, tables, class tables), built from
-the decompiled data in `decomp/data` and checked byte for byte against the retail executable
-(`platform/pc/tools/data_image.py`; the build fails if they differ). A **development build** has
+Both build in the game's data (its initialised globals: strings, tables, class tables) from the
+decompiled data in `game/data`, which was checked byte for byte against the retail executable
+until the port's data stopped keeping the retail layout. A **development build** has
 a console with the log and keeps its debug information. It finds the disc image for the first
 startup in `extern/thps1_disc/thps1.bin`.
 
@@ -111,8 +111,6 @@ describes how those were carried over to THPS1.
 
 ```
 cd decomp && node tools/check_all.mjs    # recompile every matched function, compare with the retail bytes
-python platform/pc/tools/data_image.py build/pc/image.bin --check extern/thps1_retail/SLUS_008.60
-                                         # build the data image from decomp/data, compare with the retail data
 ```
 
 `check_all` needs Node, `npm install` in `decomp/`, and the Psy-Q 4.5 SDK's compiler

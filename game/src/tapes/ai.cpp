@@ -5,7 +5,6 @@
 
 extern CTape *GTape[5];
 
-int CTape::mOkayToDisplayContinueButton, CTape::mOkayToDisplayTitle;
 
 void Mess_SetTextJustify(unsigned char);
 void Mess_SetScale(int);

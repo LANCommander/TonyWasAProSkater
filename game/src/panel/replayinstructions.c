@@ -4,7 +4,7 @@
 extern int GVInfo1[];
 extern int DemoTimer;
 extern int Status;
-extern const char *GameText_178[];
+extern const char *GameText[];
 
 void Mess_SetRGB(unsigned char, unsigned char, unsigned char, int);
 void Mess_SetScale(int);
@@ -19,7 +19,7 @@ void Panel_ReplayInstructions(void) {
 			Mess_SetRGB(128, 128, 128, 0);
 			Mess_SetScale(188);
 			Mess_SetTextJustify(0);
-			Mess_DrawPanelText(256, 220, GameText_178[0], 0, 0, 256);
+			Mess_DrawPanelText(256, 220, GameText[94], 0, 0, 256);
 		}
 	}
 }

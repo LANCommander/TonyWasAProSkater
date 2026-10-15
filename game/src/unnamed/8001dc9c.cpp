@@ -4,8 +4,8 @@
 
 extern FontInfo Font_table[];
 
-uchar NewFont;
-int Current_font;
+extern uchar NewFont;
+extern int Current_font;
 
 int Mess_TextHeightAboveBaseline2(const char *s);
 int GetCharIndex(char c);

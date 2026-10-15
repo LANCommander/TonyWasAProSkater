@@ -2,7 +2,7 @@
 /* C++ (OB.CPP). Moves a suspended body from the suspended list back onto the list it came from. */
 #include "game/ob.h"
 
-CBody *SuspendedList;
+extern CBody *SuspendedList;
 
 void CBody::UnSuspend() {
 	if (!(mCBodyFlags & 1))

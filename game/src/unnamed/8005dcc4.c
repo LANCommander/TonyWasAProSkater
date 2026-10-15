@@ -14,12 +14,12 @@ extern unsigned short DAT_800bf0f8[];
 extern unsigned short DAT_800bf0f4[];
 extern unsigned short DAT_800bf100[];
 
-int BackOut;
-int DAT_800d1ce4;
-int DAT_800d1cd8;
-unsigned DAT_800d1ce0;
-unsigned DAT_800d1cdc;
-int DAT_800d1cf8;
+extern int BackOut;
+extern int DAT_800d1ce4;
+extern int DAT_800d1cd8;
+extern unsigned DAT_800d1ce0;
+extern unsigned DAT_800d1cdc;
+extern int DAT_800d1cf8;
 
 extern unsigned Vblanks;
 

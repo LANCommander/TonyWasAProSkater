@@ -10,7 +10,7 @@
 struct SMessageProg;
 
 extern SMessageProg Messprog_Zoom;
-extern char *GameText_25c[];
+extern char *GameText[];
 extern int GNumberOfPlayers;
 extern CBruce *MechList;
 
@@ -55,35 +55,35 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 						SFX_PlayX(20, 8192, 0);
 
 						if (!Panel_Letter(0))
-							pMess = GameText_25c[3];
+							pMess = GameText[154];
 
 						break;
 					case 4:
 						SFX_PlayX(20, 8192, 0);
 
 						if (!Panel_Letter(1))
-							pMess = GameText_25c[4];
+							pMess = GameText[155];
 
 						break;
 					case 6:
 						SFX_PlayX(20, 8192, 0);
 
 						if (!Panel_Letter(2))
-							pMess = GameText_25c[5];
+							pMess = GameText[156];
 
 						break;
 					case 15:
 						SFX_PlayX(20, 8192, 0);
 
 						if (!Panel_Letter(3))
-							pMess = GameText_25c[0];
+							pMess = GameText[151];
 
 						break;
 					case 10:
 						SFX_PlayX(20, 8192, 0);
 
 						if (!Panel_Letter(4))
-							pMess = GameText_25c[2];
+							pMess = GameText[153];
 
 						break;
 					case 16:

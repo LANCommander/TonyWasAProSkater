@@ -43,11 +43,11 @@ extern "C" {
 
 #include "pc_saves.h"
 
-VerticalMenu *pVertMenu;
-int VideoToDisk, GHasCareerLoaded, GLoadedCareerIsSaved, CursorPos, SizeUp;
-int NumVertMenuItems, VertMenuTopIndex, VertMenuTopChanged, MCState, CheckingCardPause;
-int GLoadAction, GSaveAction;
-int Delay, Retries, SaveNeedBlocks, SaveFreeBlocks, GReturnToState;
+extern VerticalMenu *pVertMenu;
+extern int VideoToDisk, GHasCareerLoaded, GLoadedCareerIsSaved, CursorPos, SizeUp;
+extern int NumVertMenuItems, VertMenuTopIndex, VertMenuTopChanged, MCState, CheckingCardPause;
+extern int GLoadAction, GSaveAction;
+extern int Delay, Retries, SaveNeedBlocks, SaveFreeBlocks, GReturnToState;
 
 int Card_CheckStatus(int, int);
 int Card_GetDirAndFreeBlocks(int, int);

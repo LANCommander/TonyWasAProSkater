@@ -4,15 +4,15 @@
 
 extern char Pad[];
 
-void *pYesNoMenu;
+extern void *pYesNoMenu;
 
-extern char *GameText_1b8[];
+extern char *GameText[];
 
-int GamePaused;
+extern int GamePaused;
 
 extern int DAT_800d1e48;
 
-int Front_OnTime;
+extern int Front_OnTime;
 
 void Pad_ClearTriggers(char *p);
 int CMenu_FindEntry(void *m, const char *c);
@@ -29,7 +29,7 @@ void CommonSwitchOnMenuCode(void) {
 	Pad_ClearTriggers(s + PAD_SIZE);
 
 	GamePaused = 1;
-	CMenu_SetLine(pYesNoMenu, CMenu_FindEntry(pYesNoMenu, GameText_1b8[0]));
+	CMenu_SetLine(pYesNoMenu, CMenu_FindEntry(pYesNoMenu, GameText[110]));
 	Mess_DeleteAll();
 	Pad_ActuatorOff(0, 0);
 	Pad_ActuatorOff(0, 1);

@@ -4,7 +4,7 @@
    low nibble phase-shifts the global counter BasePhase into it. */
 #include "game/m3d.h"
 
-int BasePhase;
+extern int BasePhase;
 
 extern short WibbleTables[][64];
 

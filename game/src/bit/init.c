@@ -3,22 +3,22 @@
 #include <sys/types.h>
 #include <libgpu.h>
 
-int BitCount;
-void *NonRenderedBitList;
-void *FlatBitList;
-void *Linked2EndedBitList;
-void *PixelList;
-void *PolyLineList;
-void *GPolyLineList;
-void *QuadBitList;
-void *GenPolyList;
-void *ChunkBitList;
-void *GlowList;
-void *GlassList;
-void *GLineList;
-void *SpecialDisplayList;
+extern int BitCount;
+extern void *NonRenderedBitList;
+extern void *FlatBitList;
+extern void *Linked2EndedBitList;
+extern void *PixelList;
+extern void *PolyLineList;
+extern void *GPolyLineList;
+extern void *QuadBitList;
+extern void *GenPolyList;
+extern void *ChunkBitList;
+extern void *GlowList;
+extern void *GlassList;
+extern void *GLineList;
+extern void *SpecialDisplayList;
 DR_TPAGE StoredTPagePrim; /* the draw-mode packet the bits copy (native: no retail address) */
-void *pShadowTexture;
+extern void *pShadowTexture;
 
 extern void *ButtonsAnim __attribute__((section(".data")));
 

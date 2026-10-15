@@ -3,10 +3,10 @@
 #include "game/bruce.h"
 
 extern SVideoInfo GVInfo1[];
-extern SVideoInfo GVInfo2[];
+extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList[2];
 
-int HLStartCalled;
+extern int HLStartCalled;
 
 extern int Xblanks;
 
@@ -24,7 +24,7 @@ void Video_Start(CBruce *a, EVideoMode b, int c, int d) {
 	if (a == MechList[0])
 		s = GVInfo1;
 	else
-		s = GVInfo2;
+		s = (&GVInfo1[1]);
 
 	HLStartCalled = 0;
 	FUN_80068d88();

@@ -5,7 +5,7 @@
 #include "game/career.h"
 
 extern SLevel Levels[];
-extern uchar GCareer_c[];
+extern SCareer GCareer;
 extern CBruce *GSkater;
 
 int Competition_WonGameAllGold() {
@@ -15,7 +15,7 @@ int Competition_WonGameAllGold() {
 
 	for (; i < 10; i++) {
 		if (Levels[i].isCompetition) {
-			if (GCareer_c[i + g->mSkaterIndex * 14] & 32)
+			if (GCareer.CharacterProgress[0].Tapes[i + g->mSkaterIndex * 14] & 32)
 				c++;
 		}
 	}

@@ -8,7 +8,7 @@
 extern int DAT_800b8a9c[];
 extern int SFXLEVEL;
 
-int SFX_v;
+extern int SFX_v;
 
 unsigned int Utils_CalculateSpatialAttenuation(const CVector &, int, int);
 

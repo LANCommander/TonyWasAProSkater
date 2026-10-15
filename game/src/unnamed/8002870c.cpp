@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). Unlinks the bit from GenPolyList; CBit's destructor does the rest. */
 #include "game/bit.h"
 
-char GenPolyList[8];
+extern char GenPolyList[8];
 
 CGenPoly::~CGenPoly() {
 	DeleteFrom(GenPolyList);

@@ -17,8 +17,7 @@ extern int Cheat_FPS;
 extern int Cheat_StatsOverride;
 extern CBruce *GSkater;
 extern int Cheat_Fire;
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern char DAT_800d25f0[];
 extern SStats Stats[];
 
@@ -67,9 +66,9 @@ void CBruce::AI() {
 				m314 = 0;
 
 			if (this == MechList[0])
-				pp = &GVInfo1;
+				pp = &GVInfo1[0];
 			else
-				pp = &GVInfo2;
+				pp = &GVInfo1[1];
 
 			x3 = pp->VideoMode;
 

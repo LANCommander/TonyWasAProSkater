@@ -17,7 +17,7 @@ typedef struct {
 extern E Levels[];
 extern int Loading;
 
-int DAT_800d2360, DAT_800d2374, DAT_800d2378, DAT_800d237c, DAT_800d2380, DAT_800d2390;
+extern int DAT_800d2360, DAT_800d2374, DAT_800d2378, DAT_800d237c, DAT_800d2380, DAT_800d2390;
 
 extern char *DAT_800d3810[];
 extern int DAT_800d3840[];

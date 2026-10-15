@@ -18,7 +18,7 @@ extern uint Xblanks;
 extern int GStartTime;
 extern int GSkaterRegion;
 
-int Urgent;
+extern int Urgent;
 
 int SFX_PlayX(unsigned int, short, int);
 void Mess_SetRGB(uchar, uchar, uchar, int);

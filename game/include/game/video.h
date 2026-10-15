@@ -13,6 +13,7 @@ extern "C" {
 
 #include "game/types.h"
 #include "game/vector.h"
+#include "game/classsizes.h"
 
 /* Video_Start */
 enum EVideoMode { VIDEO_OFF, VIDEO_RECORD, VIDEO_PLAYBACK };
@@ -58,6 +59,7 @@ struct SVideoInfo {
 	int Yblanks;              /* 0xb8 */
 	int PlaybackFrozen;       /* 0xbc */
 }; /* size 0xc0 */
+CHECK_CLASS_SIZE(SVideoInfo, SIZEOF_SVIDEOINFO);
 
 /* the replay header (at pBlockStart + 128 words; Video_SetHeader) */
 struct SVideoHead {

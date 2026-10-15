@@ -7,7 +7,7 @@ struct E {
 };
 
 extern struct E movieDetails[];
-extern unsigned char DAT_800a6728[];
+extern unsigned char MovieOrder[];
 
 int FUN_8009085c(char *a, char *b);
 int FUN_800913c0(char *a);
@@ -19,14 +19,14 @@ void FUN_80022b4c(void) {
 	int i;
 
 	for (i = 0; i < 26; i++) {
-		if (movieDetails[DAT_800a6728[i]].f24) {
+		if (movieDetails[MovieOrder[i]].f24) {
 			/* PC: the file's stream (pc_stream.h) where the PS1 kept its position on the disc */
-			movieDetails[DAT_800a6728[i]].f24 = PC_StreamFind(movieDetails[DAT_800a6728[i]].f0);
+			movieDetails[MovieOrder[i]].f24 = PC_StreamFind(movieDetails[MovieOrder[i]].f0);
 			continue;
-			if (FUN_8009085c(buf, movieDetails[DAT_800a6728[i]].f0))
-				movieDetails[DAT_800a6728[i]].f24 = FUN_800913c0(buf);
+			if (FUN_8009085c(buf, movieDetails[MovieOrder[i]].f0))
+				movieDetails[MovieOrder[i]].f24 = FUN_800913c0(buf);
 			else
-				movieDetails[DAT_800a6728[i]].f24 = 0;
+				movieDetails[MovieOrder[i]].f24 = 0;
 		}
 	}
 }

@@ -39,14 +39,14 @@ extern int Loading;
 extern int Cheat_LevelSelect;
 extern PREManager *SpoolerBlocksFileIO;
 
-int DAT_800d1dc4 = 0; /* chosen level */
-int DAT_800d1dc8 = -1;
-static int DAT_800d2368; /* skater */
-static int DAT_800d236c; /* competition medals */
-static int DAT_800d2370; /* free-skate: first five levels open */
-static int DAT_800d237c; /* number of levels */
-static int DAT_800d2380;
-static int DAT_800d238c;
+extern int DAT_800d1dc4; /* chosen level */
+extern int DAT_800d1dc8;
+extern int DAT_800d2368; /* skater */
+extern int DAT_800d236c; /* competition medals */
+extern int DAT_800d2370; /* free-skate: first five levels open */
+extern int DAT_800d237c; /* number of levels */
+extern int DAT_800d2380;
+extern int DAT_800d238c;
 
 void Pack_DefragmentFully();
 void Mess_SetFontScale(uint);

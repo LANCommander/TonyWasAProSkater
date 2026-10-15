@@ -2,7 +2,7 @@
 #include "names.h"
 #include "pc_frame.h"
 
-short DAT_800d1ca0;
+extern short DAT_800d1ca0;
 
 void Front_SetMusicLoop(int a);
 void Front_UpdateMusicLoop(void);

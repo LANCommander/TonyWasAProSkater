@@ -1,10 +1,9 @@
-/* Decompiled data: the retail executable's initialised globals that src/trickob/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/trickob/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1b8c) int TrickPlayer[1];
+int TrickPlayer[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1b90) int TrickScore[1];
+int TrickScore[1];

@@ -16,7 +16,7 @@ extern CPowerUp *GPowTape;
 extern unsigned char CurrentItemsFileRegion;
 extern unsigned char CurrentMedalsFileRegion;
 
-char PowerUpList[8];
+extern char PowerUpList[8];
 
 CPowerUp::CPowerUp(ushort a1, const CVector &a2_, const CVector &a3_, uint a4, int a5) {
 	const CVector *a2 = &a2_, *a3 = &a3_;

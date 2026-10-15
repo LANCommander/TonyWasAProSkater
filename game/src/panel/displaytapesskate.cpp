@@ -4,10 +4,10 @@
 extern CBruce *MechList;
 extern uint Xblanks;
 
-int TAPES_Display;
-int TAPES_Pos;
-int SKATE_Display;
-int SKATE_Pos;
+extern int TAPES_Display;
+extern int TAPES_Pos;
+extern int SKATE_Display;
+extern int SKATE_Pos;
 
 void Mess_SetRGB(uchar, uchar, uchar, int);
 void Mess_SetTextJustify(uchar);

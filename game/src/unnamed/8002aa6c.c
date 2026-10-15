@@ -1,19 +1,19 @@
 /* Bit_Move__Fv (0x8002aa6c) */
 #include "names.h"
 
-void *PixelList;
-void *FlatBitList;
-void *GlassList;
-void *GenPolyList;
-void *ChunkBitList;
-void *QuadBitList;
-void *GlowList;
-void *NonRenderedBitList;
-void *Linked2EndedBitList;
-void *PolyLineList;
-void *GPolyLineList;
-void *GLineList;
-void *SpecialDisplayList;
+extern void *PixelList;
+extern void *FlatBitList;
+extern void *GlassList;
+extern void *GenPolyList;
+extern void *ChunkBitList;
+extern void *QuadBitList;
+extern void *GlowList;
+extern void *NonRenderedBitList;
+extern void *Linked2EndedBitList;
+extern void *PolyLineList;
+extern void *GPolyLineList;
+extern void *GLineList;
+extern void *SpecialDisplayList;
 
 void FUN_8002aa0c(void *p);
 

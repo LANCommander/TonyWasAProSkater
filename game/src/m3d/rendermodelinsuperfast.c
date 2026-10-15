@@ -7,7 +7,7 @@ typedef struct {
 	char verts[1];
 } SModel;
 
-int Dewibble, SubObjectMasked;
+extern int Dewibble, SubObjectMasked;
 
 int FUN_80086404(char *, int);
 int FUN_800862d4(char *, int);

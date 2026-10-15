@@ -51,11 +51,11 @@ extern int TimeScaleSquared;
 extern CVector ZeroVector;
 extern SPSXRegion PSXRegion[];
 
-int Face_Air;
-int Face_Skateable;
-int Face_WallRide;
-int Face_Visible;
-int Face_Terrain;
+extern int Face_Air;
+extern int Face_Skateable;
+extern int Face_WallRide;
+extern int Face_Visible;
+extern int Face_Terrain;
 
 void Platform_HandleBounce();
 void Bit_SetSparkTrajectory(const CSVector &);

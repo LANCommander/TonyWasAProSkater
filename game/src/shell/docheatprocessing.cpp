@@ -6,7 +6,7 @@
 
 extern SControl Pad[2];
 
-uint CheatCheck;
+extern uint CheatCheck;
 
 extern int DAT_800d1d24;
 extern int Cheat_SlowMo;

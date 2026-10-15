@@ -17,7 +17,7 @@ typedef struct {
 	unsigned char f7;
 } CP;
 
-short **OffsetList;
+extern short **OffsetList;
 
 extern int UseCacheForBits;
 

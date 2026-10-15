@@ -11,7 +11,7 @@ extern char FUN_8007d944[];
 extern char FUN_8007d978[];
 extern char dtor_7CCamera[] PSX_NAME("_._7CCamera");
 
-PSX_DATA(0x800a3554) PsxVtEntry D_800a3554[8] = {
+PsxVtEntry __vt_7CCamera[8] = {
 	{0, 0, 0},
 	{0, 0, dtor_7CCamera},
 	{0, 0, Die__5CBody},
@@ -22,12 +22,12 @@ PSX_DATA(0x800a3554) PsxVtEntry D_800a3554[8] = {
 	{0, 0, FUN_800447d4},
 };
 
-PSX_DATA(0x800a35b4) PsxVtEntry D_800a35b4[2] = {
+PsxVtEntry DAT_800a35b4[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8007d944},
 };
 
-PSX_DATA(0x800a35c4) PsxVtEntry D_800a35c4[2] = {
+PsxVtEntry DAT_800a35c4[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8007d978},
 };

@@ -3,7 +3,7 @@
    the suspended list, remembering the list to return to. */
 #include "game/ob.h"
 
-CBody *SuspendedList;
+extern CBody *SuspendedList;
 
 void CBody::Suspend(CBody **pp_list) {
 	DeleteStuff();

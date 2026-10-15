@@ -21,24 +21,21 @@ void M3d_PreprocessPulsingColours(int);
 void M3d_PreprocessWibblyTextures(int);
 
 extern SVECTOR FrustumNormals[];
-extern SVector FrustumMatrix1[];
-extern SVector FrustumMatrix2[];
 extern int Xblanks;
 extern SDoubleBuffer *pDoubleBuffer;
 extern DR_AREA *pPoly;
-extern int EnvRegions;
-extern int EnvRegions_4;
+extern int EnvRegions[2];
 extern uchar CurrentObjFileRegion;
 extern int CurrentWaterLevel;
 
-int XblanksNow, XblanksThen, FrameNo;
-ushort DpqMax, Xres, Yres;
-SCamera *pCurrentCamera;
-SViewport *pCurrentViewport;
-P_TAG *CurrentOrderingTable;
-int PixelAspectX, PixelAspectY;
-int RefMapClut, RefMapTpage, RefMapU0V0;
-SVECTOR WaterNormal;
+extern int XblanksNow, XblanksThen, FrameNo;
+extern ushort DpqMax, Xres, Yres;
+extern SCamera *pCurrentCamera;
+extern SViewport *pCurrentViewport;
+extern P_TAG *CurrentOrderingTable;
+extern int PixelAspectX, PixelAspectY;
+extern int RefMapClut, RefMapTpage, RefMapU0V0;
+extern SVECTOR WaterNormal;
 
 #include "pc_render3d.h"
 #include "pc_video.h"
@@ -149,9 +146,9 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, P_TAG *ot) {
 		int i;
 
 		for (i = 0; i < 3; i++) {
-			ApplyMatrixSV(&pCamera->Transform, &FrustumNormals[i], (SVECTOR *)&FrustumMatrix1[i]);
+			ApplyMatrixSV(&pCamera->Transform, &FrustumNormals[i], (SVECTOR *)&((SVector *)&FrustumNormals[10])[i]);
 			ApplyMatrixSV(&pCamera->Transform, &FrustumNormals[i + 3],
-			              (SVECTOR *)&FrustumMatrix2[i]);
+			              (SVECTOR *)&((SVector *)&FrustumNormals[14])[i]);
 		}
 	}
 
@@ -180,8 +177,8 @@ void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, P_TAG *ot) {
 	} else {
 		RefMapClut = RefMapTpage = RefMapU0V0 = 0;
 	}
-	M3d_PreprocessPulsingColours(EnvRegions);
-	M3d_PreprocessPulsingColours(EnvRegions_4);
+	M3d_PreprocessPulsingColours(EnvRegions[0]);
+	M3d_PreprocessPulsingColours(EnvRegions[1]);
 	M3d_PreprocessPulsingColours(CurrentObjFileRegion);
 	M3d_PreprocessWibblyTextures(CurrentObjFileRegion);
 

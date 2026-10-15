@@ -25,10 +25,10 @@ Item *PSXRegionItems[40];
 
 extern SPSXRegion PSXRegion[];
 
-int GHeadPart;
-int GBoardPart;
-int GWheel1Part;
-int GWheel2Part;
+extern int GHeadPart;
+extern int GBoardPart;
+extern int GWheel1Part;
+extern int GWheel2Part;
 
 extern const int GHeadUp;
 extern ushort M3d_DefaultLODDistance;
@@ -242,5 +242,3 @@ void M3dInit_ParsePSX(int Region) {
 		pItems++;
 	}
 }
-
-extern const int GHeadUp = 0;

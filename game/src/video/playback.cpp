@@ -20,7 +20,7 @@ extern int BitCount;
 extern int UseCacheForBits;
 extern int GNumberOfPlayers;
 
-int GVideoReplay;
+extern int GVideoReplay;
 
 void RestartCompFrig();
 extern "C" int Mips_DotProd2(int, int, int, int);

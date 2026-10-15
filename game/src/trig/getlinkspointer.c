@@ -1,5 +1,5 @@
 /* Trig_GetLinksPointer__Fi (0x8004754c) */
-unsigned short **OffsetList;
+extern unsigned short **OffsetList;
 
 unsigned short *Trig_GetLinksPointer(int n) {
 	unsigned short *p = OffsetList[n];

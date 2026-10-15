@@ -5,8 +5,8 @@ struct V {
 	int x, y, z;
 };
 
-int GameFMV_Active;
-int GameFMV_NumSoundSources;
+extern int GameFMV_Active;
+extern int GameFMV_NumSoundSources;
 
 extern struct V DAT_800a6388[];
 

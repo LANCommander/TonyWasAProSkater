@@ -14,10 +14,10 @@ extern SLevel Levels[];
 extern CBruce *MechList;
 extern int GLevel;
 
-ushort HOLYCOW_PLACE;
-ushort FIRST_PLACE;
-ushort SECOND_PLACE;
-ushort THIRD_PLACE;
+extern ushort HOLYCOW_PLACE;
+extern ushort FIRST_PLACE;
+extern ushort SECOND_PLACE;
+extern ushort THIRD_PLACE;
 
 int Redbook_Rnd(int);
 

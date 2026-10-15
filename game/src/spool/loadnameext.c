@@ -3,7 +3,7 @@
 
 extern char SpoolQ[][17];
 
-int FreePos;
+extern int FreePos;
 
 void LoadNameExt(char *a, char *b) {
 	char *d = SpoolQ[FreePos];

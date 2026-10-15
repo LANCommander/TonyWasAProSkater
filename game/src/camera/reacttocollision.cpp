@@ -17,7 +17,7 @@ extern int GameFrozen;
 extern int CameraCollisionCheck;
 extern int GState;
 
-int Camera_CamDist;
+extern int Camera_CamDist;
 
 void QToM(const CQuat &, MATRIX &);
 void M3dColij_InitLineInfo(SLineInfo *);

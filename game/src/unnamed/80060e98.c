@@ -37,12 +37,12 @@ extern int DAT_800d1cb4;
 extern int DAT_800d1cb8;
 extern int DAT_800d1d80;
 
-struct O *DAT_800d1d88;
+extern struct O *DAT_800d1d88;
 
-short DAT_800d1d8c;
-short DAT_800d1d8e;
-short DAT_800d1d90;
-short DAT_800d1d92;
+extern short DAT_800d1d8c;
+extern short DAT_800d1d8e;
+extern short DAT_800d1d90;
+extern short DAT_800d1d92;
 
 void Pack_DefragmentFully(void);
 void Mess_LoadFont__FPciii(char *, int, int, int);

@@ -13,10 +13,10 @@ extern "C" {
 #include "game/m3d.h"
 #include "pc_texstore.h"
 
-int Pal16X;
-int Pal16Y;
-int Pal256X;
-int Pal256Y;
+extern int Pal16X;
+extern int Pal16Y;
+extern int Pal256X;
+extern int Pal256Y;
 
 tag_S_Pal *Pal_NewEntry(uint);
 int GetFree16Slot(void);

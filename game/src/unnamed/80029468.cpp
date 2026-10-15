@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). A single-tile particle, linked into PixelList. */
 #include "game/bit.h"
 
-CPixel *PixelList;
+extern CPixel *PixelList;
 
 CPixel::CPixel() {
 	AttachTo(&PixelList);

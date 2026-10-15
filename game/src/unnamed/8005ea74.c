@@ -10,26 +10,26 @@ typedef struct {
 	int f[4];
 } T;
 
-extern S DAT_800a5e38;
+extern char *GameText[];
 extern T GPreferences;
 
-int DAT_800d1d28;
+extern int DAT_800d1d28;
 
 char *Front_GetPadFunctionName(int i) {
 	int cur = DAT_800d1d28;
 
 	switch (i) {
 		case 0:
-			return DAT_800a5e38.a;
+			return ((S *)&GameText[55])->a;
 		case 2:
-			return DAT_800a5e38.b;
+			return ((S *)&GameText[55])->b;
 		case 3:
-			return DAT_800a5e38.e;
+			return ((S *)&GameText[55])->e;
 		case 1:
 			if (GPreferences.f[cur])
-				return DAT_800a5e38.c;
+				return ((S *)&GameText[55])->c;
 
-			return DAT_800a5e38.d;
+			return ((S *)&GameText[55])->d;
 	}
 
 	return 0;

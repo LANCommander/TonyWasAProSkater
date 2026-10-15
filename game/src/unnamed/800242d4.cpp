@@ -2,9 +2,9 @@
 /* C++: the skaters are CBruce objects (their fields move in a 64-bit build) */
 #include "game/bruce.h"
 
-int GGame, GState, GSpin, GSpinSpeed;
-CBruce *GSkater;
-CBruce *DAT_800d17cc;
+extern int GGame, GState, GSpin, GSpinSpeed;
+extern CBruce *GSkater;
+extern CBruce *DAT_800d17cc;
 
 extern int GWins1, GLosses1, GStreak1, GHighTags1, GWins2, GLosses2, GStreak2, GHighTags2;
 

@@ -7,7 +7,7 @@ typedef struct {
 
 extern SSoundCmd SoundCmd[];
 
-int LastEntry;
+extern int LastEntry;
 
 void QueueSoundCmd(int type, int val) {
 	SoundCmd[LastEntry].type = type;

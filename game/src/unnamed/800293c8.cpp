@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). A sprite stretched between two end points, linked into Linked2EndedBitList. */
 #include "game/bit.h"
 
-CLinked2EndedBit *Linked2EndedBitList;
+extern CLinked2EndedBit *Linked2EndedBitList;
 
 CLinked2EndedBit::CLinked2EndedBit() {
 	AttachTo(&Linked2EndedBitList);

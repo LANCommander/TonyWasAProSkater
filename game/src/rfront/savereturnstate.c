@@ -1,8 +1,8 @@
 /* SaveReturnState__Fv (0x80012774) */
 #include "names.h"
 
-int GSaveAction;
-int GReturnToState;
+extern int GSaveAction;
+extern int GReturnToState;
 
 int InCompetition(void);
 int Competition_IsOver(void);

@@ -5,7 +5,7 @@
 
 extern char Pad[];
 
-unsigned short DAT_800d2068, DAT_800d206a;
+extern unsigned short DAT_800d2068, DAT_800d206a;
 
 void Font_String(ushort, ushort, char *, uchar, uchar, uchar, uchar);
 CQuat QFromXRot(short);

@@ -14,7 +14,7 @@ extern "C" {
 
 extern SHit NearestHit;
 
-CBody *pBodyHit;
+extern CBody *pBodyHit;
 
 static inline void SetSVector(SVECTOR *v, int _x, int _y, int _z) {
 	v->vx = _x;

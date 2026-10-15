@@ -3,7 +3,7 @@
 #include "game/shellutils.h"
 
 extern "C" {
-	int DAT_800d1cac;
+	extern int DAT_800d1cac;
 
 	extern SScreenFiles DAT_800be478[15];
 }

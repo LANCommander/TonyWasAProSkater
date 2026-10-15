@@ -2,14 +2,15 @@
 /* Panel: the current combo/score readout (PANEL.CPP). Sums the pending trick scores, works out
    the multiplier, and draws the score and x-multiplier text. */
 #include "game/bruce.h"
+#include "game/career.h"
 #include "game/mess.h"
 #include "game/panel.h"
 #include "game/psyq.h"
 
-extern int GCareer_9b8[];
+extern SCareer GCareer;
 extern int GVInfo1[];
 
-unsigned LastHoldingScore;
+extern unsigned LastHoldingScore;
 
 void GraffitiColor(CBruce *);
 int Mess_DrawPanelText(int, int, const char *, int, unsigned, int);
@@ -27,7 +28,7 @@ extern "C" void FUN_8006d0c8(CBruce *o, int x0, int y0) {
 	y = y0 & 0xffff;
 	s5 = GVInfo1[0] != 2;
 
-	if (GCareer_9b8[0]) {
+	if (GCareer.Options.ScoreDisplayEnabled) {
 		n = o->mPanel.mTQStack;
 
 		if (n > 0) {

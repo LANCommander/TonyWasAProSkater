@@ -6,7 +6,7 @@ typedef struct Item {
 	struct Item *next;
 } Item;
 
-unsigned short Inquiry;
+extern unsigned short Inquiry;
 
 extern Item *EnviroList __attribute__((section(".data"))),
     *EnvironmentalObjectList __attribute__((section(".data")));

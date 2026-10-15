@@ -3,7 +3,7 @@
    UseCacheForBits test allocate the same way in retail). */
 #include "game/bit.h"
 
-int UseCacheForBits;
+extern int UseCacheForBits;
 
 void *Mem_NewX(unsigned int, int, int);
 

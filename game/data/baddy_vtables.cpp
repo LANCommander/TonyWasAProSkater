@@ -16,7 +16,7 @@ extern char SetVariable__16CScriptOnlyBaddyUs[];
 extern char SetVariable__6CBaddyUs[];
 extern char dtor_6CBaddy[] PSX_NAME("_._6CBaddy");
 
-PSX_DATA(0x800a0218) PsxVtEntry __vt_16CScriptOnlyBaddy[11] = {
+PsxVtEntry __vt_16CScriptOnlyBaddy[11] = {
 	{0, 0, 0},
 	{0, 0, FUN_80041264},
 	{0, 0, Die__6CBaddy},
@@ -30,7 +30,7 @@ PSX_DATA(0x800a0218) PsxVtEntry __vt_16CScriptOnlyBaddy[11] = {
 	{0, 0, GetVariable__6CBaddyUs},
 };
 
-PSX_DATA(0x800a0270) PsxVtEntry __vt_6CBaddy[11] = {
+PsxVtEntry __vt_6CBaddy[11] = {
 	{0, 0, 0},
 	{0, 0, dtor_6CBaddy},
 	{0, 0, Die__6CBaddy},

@@ -60,185 +60,185 @@ extern char dtor_8CQuadBit[] PSX_NAME("_._8CQuadBit");
 extern char dtor_9CPolyLine[] PSX_NAME("_._9CPolyLine");
 extern char draw__14VerticalDialog[];
 
-PSX_DATA(0x8009e538) PsxVtEntry D_8009e538[2] = {
+PsxVtEntry __vt_5CMenu[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8001664c},
 };
 
-PSX_DATA(0x8009f0b0) PsxVtEntry __vt_6CLight[3] = {
+PsxVtEntry __vt_6CLight[3] = {
 	{0, 0, 0},
 	{0, 0, FUN_8001f718},
 	{0, 0, FUN_8001f794},
 };
 
-PSX_DATA(0x8009f640) PsxVtEntry D_8009f640[3] = {
+PsxVtEntry __vt_15CSmokeGenerator[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_15CSmokeGenerator},
 	{0, 0, Move__15CSmokeGenerator},
 };
 
-PSX_DATA(0x8009f658) PsxVtEntry D_8009f658[3] = {
+PsxVtEntry __vt_10CGPolyLine[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_10CGPolyLine},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f670) PsxVtEntry __vt_9CPolyLine[3] = {
+PsxVtEntry __vt_9CPolyLine[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_9CPolyLine},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f688) PsxVtEntry __vt_9CGlassBit[3] = {
+PsxVtEntry __vt_9CGlassBit[3] = {
 	{0, 0, 0},
 	{0, 0, FUN_8002a77c},
 	{0, 0, Move__9CGlassBit},
 };
 
-PSX_DATA(0x8009f6a0) PsxVtEntry __vt_11CSmokeTrail[3] = {
+PsxVtEntry __vt_11CSmokeTrail[3] = {
 	{0, 0, 0},
 	{0, 0, FUN_8002a448},
 	{0, 0, Move__11CSmokeTrail},
 };
 
-PSX_DATA(0x8009f6e8) PsxVtEntry __vt_15CTexturedRibbon[4] = {
+PsxVtEntry __vt_15CTexturedRibbon[4] = {
 	{0, 0, 0},
 	{0, 0, FUN_8002e290},
 	{0, 0, FUN_8002ee64},
 	{0, 0, Display__15CTexturedRibbon},
 };
 
-PSX_DATA(0x8009f728) PsxVtEntry __vt_5CFrag[3] = {
+PsxVtEntry __vt_5CFrag[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_5CFrag},
 	{0, 0, Move__5CFrag},
 };
 
-PSX_DATA(0x8009f740) PsxVtEntry D_8009f740[3] = {
+PsxVtEntry __vt_19CMotionBlurImmortal[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_19CMotionBlurImmortal},
 	{0, 0, Move__19CMotionBlurImmortal},
 };
 
-PSX_DATA(0x8009f758) PsxVtEntry D_8009f758[3] = {
+PsxVtEntry __vt_11CMotionBlur[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_11CMotionBlur},
 	{0, 0, Move__11CMotionBlur},
 };
 
-PSX_DATA(0x8009f770) PsxVtEntry __vt_11CSimpleAnim[3] = {
+PsxVtEntry __vt_11CSimpleAnim[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_11CSimpleAnim},
 	{0, 0, Move__11CSimpleAnim},
 };
 
-PSX_DATA(0x8009f7a0) PsxVtEntry __vt_6CPixel[3] = {
+PsxVtEntry __vt_6CPixel[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_6CPixel},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f7b8) PsxVtEntry __vt_16CLinked2EndedBit[3] = {
+PsxVtEntry __vt_16CLinked2EndedBit[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_16CLinked2EndedBit},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f7d0) PsxVtEntry __vt_8CFlatBit[3] = {
+PsxVtEntry __vt_8CFlatBit[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_8CFlatBit},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f7e8) PsxVtEntry __vt_11CWobblyGlow[3] = {
+PsxVtEntry __vt_11CWobblyGlow[3] = {
 	{0, 0, 0},
 	{0, 0, FUN_8002ee00},
 	{0, 0, Move__11CWobblyGlow},
 };
 
-PSX_DATA(0x8009f830) PsxVtEntry D_8009f830[3] = {
+PsxVtEntry __vt_8CGenPoly[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_8CGenPoly},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f848) PsxVtEntry __vt_8CQuadBit[3] = {
+PsxVtEntry __vt_8CQuadBit[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_8CQuadBit},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f860) PsxVtEntry __vt_7CFT4Bit[3] = {
+PsxVtEntry __vt_7CFT4Bit[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_7CFT4Bit},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f878) PsxVtEntry __vt_15CNonRenderedBit[3] = {
+PsxVtEntry __vt_15CNonRenderedBit[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_15CNonRenderedBit},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x8009f8b0) PsxVtEntry __vt_4CBit[3] = {
+PsxVtEntry __vt_4CBit[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_4CBit},
 	{0, 0, FUN_8002ee64},
 };
 
-PSX_DATA(0x800a05f4) PsxVtEntry __vt_5CItem[2] = {
+PsxVtEntry __vt_5CItem[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80043584},
 };
 
-PSX_DATA(0x800a1308) PsxVtEntry __vt_11CFlatRipple[3] = {
+PsxVtEntry __vt_11CFlatRipple[3] = {
 	{0, 0, 0},
 	{0, 0, FUN_8004eba0},
 	{0, 0, Move__11CFlatRipple},
 };
 
-PSX_DATA(0x800a1340) PsxVtEntry __vt_5CRail[2] = {
+PsxVtEntry __vt_5CRail[2] = {
 	{0, 0, 0},
 	{0, 0, dtor_5CRail},
 };
 
-PSX_DATA(0x800a1350) PsxVtEntry DAT_800a1350[2] = {
+PsxVtEntry DAT_800a1350[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8004fdf4},
 };
 
-PSX_DATA(0x800a2140) PsxVtEntry __vt_14VerticalDialog[3] = {
+PsxVtEntry __vt_14VerticalDialog[3] = {
 	{0, 0, 0},
 	{0, 0, dtor_14VerticalDialog},
 	{0, 0, draw__14VerticalDialog},
 };
 
-PSX_DATA(0x800a2170) PsxVtEntry D_800a2170[2] = {
+PsxVtEntry __vt_9PadBuffer[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80066524},
 };
 
-PSX_DATA(0x800a2180) PsxVtEntry D_800a2180[2] = {
+PsxVtEntry __vt_11EraseSprite[2] = {
 	{0, 0, 0},
 	{0, 0, dtor_11EraseSprite},
 };
 
-PSX_DATA(0x800a2190) PsxVtEntry __vt_6Sprite[2] = {
+PsxVtEntry __vt_6Sprite[2] = {
 	{0, 0, 0},
 	{0, 0, dtor_6Sprite},
 };
 
-PSX_DATA(0x800a21a0) PsxVtEntry __vt_11SlicedImage[2] = {
+PsxVtEntry __vt_11SlicedImage[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_800620f0},
 };
 
-PSX_DATA(0x800a21b0) PsxVtEntry DAT_800a21b0[2] = {
+PsxVtEntry DAT_800a21b0[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80066558},
 };
 
-PSX_DATA(0x800a233c) PsxVtEntry __vt_4CCar[11] = {
+PsxVtEntry __vt_4CCar[11] = {
 	{0, 0, 0},
 	{0, 0, FUN_8006b630},
 	{0, 0, Die__6CBaddy},
@@ -252,22 +252,22 @@ PSX_DATA(0x800a233c) PsxVtEntry __vt_4CCar[11] = {
 	{0, 0, GetVariable__6CBaddyUs},
 };
 
-PSX_DATA(0x800a3444) PsxVtEntry D_800a3444[2] = {
+PsxVtEntry __vt_12CCompetition[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_80077130},
 };
 
-PSX_DATA(0x800a3454) PsxVtEntry D_800a3454[2] = {
+PsxVtEntry __vt_6CJudge[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_800771c4},
 };
 
-PSX_DATA(0x800a3464) PsxVtEntry DAT_800a3464[2] = {
+PsxVtEntry DAT_800a3464[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_800771f8},
 };
 
-PSX_DATA(0x800a35a4) PsxVtEntry DAT_800a35a4[2] = {
+PsxVtEntry __vt_6CamPos[2] = {
 	{0, 0, 0},
 	{0, 0, FUN_8007d20c},
 };

@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). A bit with its own display routine: links itself into SpecialDisplayList. */
 #include "game/bit.h"
 
-CBit *SpecialDisplayList;
+extern CBit *SpecialDisplayList;
 
 CSpecialDisplay::CSpecialDisplay() {
 	AttachTo(&SpecialDisplayList);

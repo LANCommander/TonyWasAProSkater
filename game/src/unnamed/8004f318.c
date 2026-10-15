@@ -8,7 +8,7 @@ typedef struct T {
 	struct T *mpNext;
 } T;
 
-T *TrickObList;
+extern T *TrickObList;
 
 unsigned int FUN_8006ef00(char *);
 

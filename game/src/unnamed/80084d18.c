@@ -14,11 +14,9 @@ typedef struct {
 	E v[1];
 } P;
 
-short FarColor;
-short FarColor_2;
-short FarColor_4;
-int TestTheWater;
-int WaterClipValue;
+extern short FarColor[4]; /* SVECTOR */
+extern int TestTheWater;
+extern int WaterClipValue;
 
 int FUN_80085d28(E *, int);
 void FUN_80086500(int, int);
@@ -48,7 +46,7 @@ void RenderModel(P *p) {
 	if (!(r & 0xbf)) {
 		n = p->m;
 		w = v + p->i;
-		FUN_8009736c(FarColor, FarColor_2, FarColor_4);
+		FUN_8009736c(FarColor[0], FarColor[1], FarColor[2]);
 		FUN_80086f40(w, v, n);
 	}
 }

@@ -16,7 +16,7 @@ extern "C" {
 extern SDoubleBuffer *pDoubleBuffer;
 extern char *pPoly;
 
-int OT_entry;
+extern int OT_entry;
 
 void SlicedImage::draw(int x, int y, int otFront, int r, int g, int b, int semiTrans, int drawNow) {
 	drawScaled(x, y, 0, 0, otFront, r, g, b, semiTrans, drawNow);

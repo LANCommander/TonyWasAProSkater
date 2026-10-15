@@ -8,8 +8,8 @@
 extern SStats Stats[];
 extern SLight DAT_800be3f8;
 
-int DAT_800d1ba8;
-int SKATER_Y_POS;
+extern int DAT_800d1ba8;
+extern int SKATER_Y_POS;
 
 void M3dMaths_SetIdentityRotation(MATRIX *m); /* identity-matrix init, one arg */
 

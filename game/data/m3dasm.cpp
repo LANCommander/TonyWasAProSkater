@@ -1,6 +1,5 @@
-/* Decompiled data: the retail executable's initialised globals that src/m3dasm/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/m3dasm/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 
 struct P_TAG;
@@ -8,7 +7,7 @@ struct SProjectedVertex;
 struct SRotatedVertex;
 struct SViewport;
 
-PSX_DATA(0x800c7c90) int SquareRootTable[1536] = {
+int SquareRootTable[1536] = {
 	0x80178007, 0x80378027, 0x80578047, 0x80778067, 0x80978087, 0x80b780a7, 0x80d780c7, 0x80f780e7,
 	0x81168106, 0x81368126, 0x81568146, 0x81758166, 0x81958185, 0x81b581a5, 0x81d481c4, 0x81f481e4,
 	0x82138203, 0x82338223, 0x82528242, 0x82728262, 0x82918281, 0x82b082a1, 0x82d082c0, 0x82ef82df,
@@ -204,28 +203,28 @@ PSX_DATA(0x800c7c90) int SquareRootTable[1536] = {
 };
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d20fc) unsigned int M3dColij_ZeroMask[1];
+unsigned int M3dColij_ZeroMask[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d2100) unsigned int M3dColij_OneMask[1];
+unsigned int M3dColij_OneMask[1];
 
 /* THPS2 demo: uint */
-PSX_DATA(0x800d2104) unsigned int M3dColij_ZeroOneMask[1];
+unsigned int M3dColij_ZeroOneMask[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d210c) int CollidedTriggerModel[1];
+int CollidedTriggerModel[1];
 
 /* THPS2 demo: SProjectedVertex* */
-PSX_DATA(0x800d2160) SProjectedVertex *ProjectedVertices;
+SProjectedVertex *ProjectedVertices;
 
 /* THPS2 demo: SRotatedVertex* */
-PSX_DATA(0x800d2164) SRotatedVertex *RotatedVertices;
+SRotatedVertex *RotatedVertices;
 
 /* THPS2 demo: SViewport* */
-PSX_DATA(0x800d2178) SViewport *pCurrentViewport;
+SViewport *pCurrentViewport;
 
 /* THPS2 demo: SProjectedVertex* */
-PSX_DATA(0x800d2198) SProjectedVertex *FreeStitchVertex;
+SProjectedVertex *FreeStitchVertex;
 
 /* THPS2 demo: uint* */
-PSX_DATA(0x800d21a0) P_TAG *CurrentOrderingTable;
+P_TAG *CurrentOrderingTable;

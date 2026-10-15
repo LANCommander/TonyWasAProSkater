@@ -8,7 +8,7 @@ struct B {
 extern int FileType[];
 extern char SLOT_DIR[];
 
-int TimeStamp;
+extern int TimeStamp;
 
 int SyncToGoodState(void);
 void *Mem_NewX(unsigned, int, int);

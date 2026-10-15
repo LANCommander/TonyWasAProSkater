@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). Unlinks the quad from QuadBitList; CBit's destructor does the rest. */
 #include "game/bit.h"
 
-CQuadBit *QuadBitList;
+extern CQuadBit *QuadBitList;
 
 CQuadBit::~CQuadBit() {
 	DeleteFrom(&QuadBitList);

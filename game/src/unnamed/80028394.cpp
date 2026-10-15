@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). A grey opaque textured quad, linked into QuadBitList. */
 #include "game/bit.h"
 
-CQuadBit *QuadBitList;
+extern CQuadBit *QuadBitList;
 
 CQuadBit::CQuadBit() {
 	mCodeBGR = 0x2c808080;

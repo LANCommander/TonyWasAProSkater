@@ -83,9 +83,9 @@ int PC_FramePoll(void) {
 }
 
 /* Automated runs: THPS_SHOT="f1,f2,..." dumps the display (and VRAM) at those frames to
- * THPS_SHOTDIR (default "."); THPS_FRAMES=n exits after n frames; THPS_POKE="addr:value,..."
- * stores those words every frame (0x800d1708:1 = Cheat_LevelSelect; a decompiled global by its
- * retail address, PC_Data). */
+ * THPS_SHOTDIR (default "."); THPS_FRAMES=n exits after n frames; THPS_POKE="name[+offset]:value,..."
+ * stores those words every frame into globals of the game's data (Cheat_LevelSelect:1,
+ * GCareer+0x82c:4 = GCareer.LastLevel; PC_DataByName). */
 static void DebugHooks(void) {
     static int frames, maxFrames = -1;
     static const char *shots, *pokes;
@@ -96,10 +96,19 @@ static void DebugHooks(void) {
         pokes = getenv("THPS_POKE");
     }
     for (const char *p = pokes; p && *p;) {
-        char *e;
-        uint32_t a = strtoul(p, &e, 0), v = *e == ':' ? strtoul(e + 1, &e, 0) : 0;
-        if (!(a & 3) && PC_Data(a))
-            *(uint32_t *)PC_Data(a) = v;
+        char name[128], *e;
+        size_t n = strcspn(p, "+:,");
+        uint32_t off = 0, v = 0;
+        char *g;
+        snprintf(name, sizeof name, "%.*s", (int)(n < sizeof name ? n : sizeof name - 1), p);
+        e = (char *)p + n;
+        if (*e == '+')
+            off = strtoul(e + 1, &e, 0);
+        if (*e == ':')
+            v = strtoul(e + 1, &e, 0);
+        g = PC_DataByName(name);
+        if (g && !(off & 3))
+            *(uint32_t *)(g + off) = v;
         p = strchr(e, ',') ? strchr(e, ',') + 1 : "";
     }
     frames++;

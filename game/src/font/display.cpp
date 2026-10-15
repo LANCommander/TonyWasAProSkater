@@ -17,7 +17,7 @@ extern int Camera_CurrentMikeCamera;
 extern SString StringBuffer[];
 extern uchar Mapping[];
 
-SAnimFrame *FontAnim;
+extern SAnimFrame *FontAnim;
 
 extern char *pPoly;
 extern char *PolyBufferEnd;

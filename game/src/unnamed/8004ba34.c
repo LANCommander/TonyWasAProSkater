@@ -1,13 +1,13 @@
 /* FUN_8004ba34 (0x8004ba34) */
 #include "pc_sound.h"
-int nko_flag;
-int keyon_queue;
-int keyoff_queue;
-int voiceon_flag;
-int exp_flag;
-int loop_flag;
-int voicefree_flag;
-char reverb_changed;
+extern int nko_flag;
+extern int keyon_queue;
+extern int keyoff_queue;
+extern int voiceon_flag;
+extern int exp_flag;
+extern int loop_flag;
+extern int voicefree_flag;
+extern char reverb_changed;
 
 void FUN_800947e4(int a, int b);
 

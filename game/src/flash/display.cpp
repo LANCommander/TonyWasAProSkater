@@ -10,19 +10,18 @@ extern "C" {
 
 #include "game/m3d.h"
 
-int FlashCountdown;
+extern int FlashCountdown;
 
 extern const int Fading;
 
-int FlashSort;
+extern int FlashSort;
 
 extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 
-volatile ushort CurrentR_2;
-volatile ushort CurrentG_2;
-volatile ushort CurrentB_2;
+/* the flash colour, 16.16 fixed point: the integer parts are drawn */
+extern int CurrentR, CurrentG, CurrentB;
 
 void Flash_Display() {
 	if (FlashCountdown || Fading) {
@@ -35,7 +34,7 @@ void Flash_Display() {
 			pPoly = newppoly;
 			setPolyF4(aPoly);
 			setSemiTrans(aPoly, 1);
-			setRGB0(aPoly, CurrentR_2, CurrentG_2, CurrentB_2);
+			setRGB0(aPoly, (ushort)(CurrentR >> 16), (ushort)(CurrentG >> 16), (ushort)(CurrentB >> 16));
 
 			aPoly->x0 = 0;
 			aPoly->x1 = 512;
@@ -58,5 +57,3 @@ void Flash_Display() {
 		}
 	}
 }
-
-extern const int Fading = 0;

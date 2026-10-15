@@ -5,7 +5,7 @@ struct S6 {
 	short x, y, z;
 };
 
-struct S6 SparkTrajectoryCone[1];
+extern struct S6 SparkTrajectoryCone[1];
 
 void Bit_SetSparkTrajectoryCone(struct S6 *p) {
 	SparkTrajectoryCone[0] = *p;

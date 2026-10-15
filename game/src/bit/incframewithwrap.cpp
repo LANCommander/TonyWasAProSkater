@@ -3,7 +3,7 @@
 #include "game/bit.h"
 #include "game/m3d.h"
 
-int TimeScale;
+extern int TimeScale;
 
 void CFT4Bit::IncFrameWithWrap() {
 	short Frame = (mFrame << 8) | mFrameFrac;

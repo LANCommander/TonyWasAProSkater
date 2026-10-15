@@ -2,9 +2,9 @@
 #include "names.h"
 #include "pc_stream.h"
 
-unsigned int *pRingBuffer;
-int GameFMV_RingBufferSectors;
-unsigned char GameFMV_Is24Bit;
+extern unsigned int *pRingBuffer;
+extern int GameFMV_RingBufferSectors;
+extern unsigned char GameFMV_Is24Bit;
 
 extern int Redbook_XACheckSectorOnVSync;
 extern int DAT_800d169c;

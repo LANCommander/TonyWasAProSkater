@@ -11,7 +11,7 @@
 /* The inline members and vtables of the game headers' classes are not emitted in every TU that
    uses them: the TUs refer to the vtables in game/data (egcs layout). The data files themselves
    build without it (GAME_DATA_TU), which gives their objects the classes' full debug types. */
-#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
+#ifndef GAME_DATA_TU /* (the data files: full debug types) */
 #pragma interface
 #endif
 

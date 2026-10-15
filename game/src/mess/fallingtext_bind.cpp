@@ -3,7 +3,7 @@
    wobble descriptor DAT_800d15e8 points at it) or unbinds it. */
 #include "game/mess.h"
 
-FallingTextEffect *DAT_800d15e8;
+extern FallingTextEffect *DAT_800d15e8;
 
 void FallingTextEffect::bind(int On) {
 	if (On) {

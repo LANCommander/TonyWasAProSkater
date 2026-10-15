@@ -1,7 +1,7 @@
 /* Pack_GetSlot__Fv (0x800495c4) */
 #include "names.h"
 
-int TotSlots;
+extern int TotSlots;
 
 void *Mem_NewX(int a, int b, int c);
 

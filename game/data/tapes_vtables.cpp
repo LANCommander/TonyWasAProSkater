@@ -9,7 +9,7 @@ extern char FUN_800447e4[];
 extern char FUN_800447ec[];
 extern char dtor_5CTape[] PSX_NAME("_._5CTape");
 
-PSX_DATA(0x800a3060) PsxVtEntry D_800a3060[8] = {
+PsxVtEntry __vt_5CTape[8] = {
 	{0, 0, 0},
 	{0, 0, dtor_5CTape},
 	{0, 0, Die__5CBody},

@@ -28,10 +28,10 @@ extern int DAT_800d1cb8;
 extern int GGame;
 extern PREManager *SpoolerBlocksFileIO;
 
-SlicedImage *DAT_800d22dc;
-uchar DAT_800d22e8;
-int DAT_800d22ec;
-int DAT_800d22f0;
+extern SlicedImage *DAT_800d22dc;
+extern uchar DAT_800d22e8;
+extern int DAT_800d22ec;
+extern int DAT_800d22f0;
 
 void Pack_DefragmentFully();
 void Mess_SetRGB(uchar, uchar, uchar, int);

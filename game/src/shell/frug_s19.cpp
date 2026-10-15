@@ -1,5 +1,5 @@
 /* frug__FUi (0x800782b4) */
-unsigned int CheatCheck;
+extern unsigned int CheatCheck;
 
 int arccos(int);
 

@@ -4,7 +4,7 @@
 #include <libgpu.h>
 #include "pc_draw.h"
 
-volatile int GameFade;
+extern volatile int GameFade;
 
 extern int SFX_ReverbDepthSetTimer;
 

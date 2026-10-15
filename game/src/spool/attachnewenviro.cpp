@@ -4,8 +4,8 @@
 extern SPSXRegion PSXRegion[];
 
 extern Item *EnviroList;
-uint *pCurrentTexWibPacket;
-uint *pTexWibPacket[2];
+extern uint *pCurrentTexWibPacket;
+extern uint *pTexWibPacket[2];
 
 int Spool_GetEnvIndex(int);
 

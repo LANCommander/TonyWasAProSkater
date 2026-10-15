@@ -1,10 +1,10 @@
 /* Flash_Reset__Fv (0x8001f310) */
 #include "names.h"
 
-int FlashCountdown;
-int FadeCountdown;
-int Fading;
-char CurrentImportance;
+extern int FlashCountdown;
+extern int FadeCountdown;
+extern int Fading;
+extern char CurrentImportance;
 
 void Flash_Reset(void) {
 	FlashCountdown = 0;

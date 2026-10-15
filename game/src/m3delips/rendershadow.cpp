@@ -20,7 +20,7 @@ extern char *pPoly;
 extern char *PolyBufferEnd;
 extern Texture *pShadowTexture;
 
-int M3dElips_MinDotProd;
+extern int M3dElips_MinDotProd;
 
 void M3dMaths_ZeroMat(ushort *);
 void M3dMaths_CopyMat(ushort *, ushort *);

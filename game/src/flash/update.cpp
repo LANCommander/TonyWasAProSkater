@@ -1,14 +1,14 @@
 /* Flash_Update__Fv (0x8001f3f4) */
-int Fading;
-int FadeCountdown;
-int FlashCountdown;
-char CurrentImportance;
-int CurrentR;
-int CurrentG;
-int CurrentB;
-int dR;
-int dG;
-int dB;
+extern int Fading;
+extern int FadeCountdown;
+extern int FlashCountdown;
+extern char CurrentImportance;
+extern int CurrentR;
+extern int CurrentG;
+extern int CurrentB;
+extern int dR;
+extern int dG;
+extern int dB;
 
 void Flash_Update(void) {
 	if (Fading) {

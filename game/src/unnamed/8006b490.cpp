@@ -6,7 +6,7 @@
 
 extern CBody *BaddyList;
 
-int CarVol;
+extern int CarVol;
 
 int SFX_PlayX(uint, short, int);
 ushort *Trig_GetLinksPointer(int);

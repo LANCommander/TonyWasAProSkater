@@ -1,8 +1,8 @@
 /* Ob_MaybeUnSuspendOrCull__Fv (0x800446d4) */
 #include "game/ob.h"
 
-CBody *SuspendedList;
-unsigned SuspendDistance;
+extern CBody *SuspendedList;
+extern unsigned SuspendDistance;
 
 #include "pc_video.h"
 

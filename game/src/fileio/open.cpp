@@ -21,21 +21,22 @@ extern "C" {
 #include "game/debug.h"
 #include "game/pre.h"
 #include "game/psyq.h"
+#include "game/pad.h"
 #include "pc_fileio.h"
 
-int CurrentPos;
-int FileOpen;
-PREManager *SpoolerBlocksFileIO;
-int LoadFromPRE;
-char *ThePREFile;
-int ThePREFileSize;
-const char *Opening;
-int FileSize;
-int NumSectors;
-int Start;
+extern int CurrentPos;
+extern int FileOpen;
+extern PREManager *SpoolerBlocksFileIO;
+extern int LoadFromPRE;
+extern char *ThePREFile;
+extern int ThePREFileSize;
+extern const char *Opening;
+extern int FileSize;
+extern int NumSectors;
+extern int Start;
 
 extern RECT DAT_800d1b20[];
-extern uchar Pad_50[];
+extern SControl Pad[2];
 extern uchar Directory[];
 
 int FileIO_Open(const char *filename) {
@@ -75,7 +76,7 @@ int FileIO_Open(const char *filename) {
 
 	FileOpen = 1;
 
-	if (Pad_50[0])
+	if (Pad[0].TapSpinLeft.Pressed)
 		printf("(%d) ");
 
 	Debug_String(filename, 495, "fileio.cpp");

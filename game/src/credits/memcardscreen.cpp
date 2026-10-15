@@ -33,8 +33,8 @@ extern SOptions GPreferences;
 extern SPadMap DAT_800bf260[2];
 extern VerticalMenu *pVertMenu;
 
-Sprite *DAT_800d2358;
-Sprite *DAT_800d235c;
+extern Sprite *DAT_800d2358;
+extern Sprite *DAT_800d235c;
 
 int Mess_GetFontScale();
 void Mess_SetFontScale(uint);

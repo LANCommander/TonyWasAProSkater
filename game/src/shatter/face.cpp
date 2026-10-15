@@ -23,12 +23,12 @@ extern SPSXRegion PSXRegion[];
 extern CVector DAT_800d2574;
 extern int LowMemory;
 
-int VRAMClut;
-int VRAMTPage;
-SVECTOR *pNormal;
-uchar AverageR;
-uchar AverageG;
-uchar AverageB;
+extern int VRAMClut;
+extern int VRAMTPage;
+extern SVECTOR *pNormal;
+extern uchar AverageR;
+extern uchar AverageG;
+extern uchar AverageB;
 
 void TransformVertex(CVector &, SVECTOR *, uchar *, int);
 void CalcRGB(int, uint, int, uint *);

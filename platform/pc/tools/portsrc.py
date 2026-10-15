@@ -10,9 +10,9 @@ The decompiled sources are written for egcs 1.1.2 on MIPS. Two things in them do
 * C++ virtual functions. egcs puts a class's vtable pointer after its data members and lays out
   vtable entries as {short delta, short index, pfn}; modern g++ uses the Itanium ABI (vptr at
   offset 0), which would shift every field. `transform_cxx` strips `virtual`, inserts an explicit
-  `__vptr` member where egcs puts it, stores the retail vtable address in constructors and
-  destructors, and records each class's virtual slots so the build can route virtual calls through
-  the retail vtables (see build.py, "virtual dispatch").
+  `__vptr` member where egcs puts it, stores the class's egcs-layout vtable (game/data) in
+  constructors and destructors, and records each class's virtual slots so the build can route
+  virtual calls through those vtables (see build.py, "virtual dispatch").
 """
 import re
 
@@ -417,45 +417,6 @@ def mark_deletes(src):
 _CAST_INC_RE = re.compile(r"\*\s*\(\s*\(\s*([\w ]+?)\s*\*\s*\)\s*(\w+)\s*\)\s*\+\+")
 
 
-def unstatic_shared(src, names):
-    """Drop `static` from file-scope variables that have a retail address (`names`, the TU's
-    .syms.json). Matching sources declare a TU's view of a shared retail global as a file static
-    (skaterselect1p's DAT_800d2328, also read by 8005933c's skater constructor); the build
-    relocates statics to their retail addresses, but g++ drops a static it sees only written and
-    folds one it sees only read to its initial value, so the other TUs never saw the store."""
-    clean = _strip_comments(src)
-    clean = re.sub(r'"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'',
-                   lambda m: " " * len(m.group(0)), clean)
-    depth, cut, i, n = 0, [], 0, len(clean)
-    while i < n:
-        c = clean[i]
-        if c == "{":
-            depth += 1
-        elif c == "}":
-            depth -= 1
-        elif depth == 0 and clean.startswith("static", i) and \
-                (i == 0 or not (clean[i - 1].isalnum() or clean[i - 1] == "_")) and \
-                i + 6 < n and clean[i + 6].isspace():
-            j = clean.find(";", i)
-            decl = clean[i + 6:j] if j >= 0 else ""
-            # variables only: no functions, inline struct bodies or read-only tables
-            if decl and not re.search(r"[({]|\bconst\b", decl.split("=", 1)[0]):
-                flat = decl
-                while re.search(r"\{[^{}]*\}", flat):  # aggregate initializers' commas
-                    flat = re.sub(r"\{[^{}]*\}", "0", flat)
-                declared = [re.sub(r"\[[^\]]*\]", "", part.split("=", 1)[0])
-                            for part in _split_top(flat, ",")]
-                declared = [(re.findall(r"\w+", d) or [""])[-1] for d in declared]
-                if all(d in names for d in declared):
-                    cut.append(i)
-            i += 6
-            continue
-        i += 1
-    for i in reversed(cut):
-        src = src[:i] + src[i + 6:]
-    return src
-
-
 def fix_cast_lvalues(src):
     """g++ 2.x's cast-as-lvalue `*((T *)p)++` (removed from modern GCC)."""
     return _CAST_INC_RE.sub(
@@ -492,7 +453,7 @@ def strip_virtual_bodies(src):
 
 
 def transform_cxx(src, vtables, tukey="tu"):
-    """vtables: {class name: retail vtable address}. Returns (new source, class info dict for the
+    """vtables: {class name: its vtable (a global of game/data)}. Returns (new source, class info dict for the
     build: {class: {"vptr_root": root class, "slots": [...], "has_delete": bool}})."""
     src = re.sub(r"^[ \t]*#[ \t]*pragma[ \t]+(interface|implementation)\b[^\n*]*$", "", src, flags=re.M)
     src = strip_virtual_bodies(src)
@@ -520,13 +481,13 @@ def transform_cxx(src, vtables, tukey="tu"):
                           "static_cast<%s *>(p)->__vptr, %d, static_cast<%s *>(p)); }\n"
                           % (n, r, c.slots.index("~"), r)))
     # constructors / destructors of polymorphic classes defined in this TU: store the vtable (the
-    # class's vtable global, by its retail address: psx_<addr>, which the link resolves)
+    # class's vtable, a global of game/data)
     clean = _strip_comments(src)
     used_vtables = set()
     for n, c in classes.items():
         if not c.polymorphic or n not in vtables:
             continue
-        store = " this->__vptr = (void *)psx_%08x; " % vtables[n]
+        store = " this->__vptr = (void *)pcvt_%s; " % vtables[n]
         used_vtables.add(vtables[n])
         # out-of-line: `Class::Class(...) [: inits] {` and `Class::~Class() {`
         for m in re.finditer(r"\b%s\s*::\s*(~\s*)?%s\s*\(" % (n, n), clean):
@@ -573,10 +534,12 @@ def transform_cxx(src, vtables, tukey="tu"):
                     k += 1
             if k < len(clean) and clean[k] == "{":
                 edits.append((k + 1, store))
+    # (under a name of their own, whatever the source declares: the game TUs are compiled with a
+    # '_' before every C name, build.py)
     for pos, text in sorted(edits, key=lambda e: -e[0]):
         src = src[:pos] + text + src[pos:]
-    if used_vtables:
-        src = "".join('extern "C" char psx_%08x[];\n' % a for a in sorted(used_vtables)) + src
+    src = "".join('extern "C" char pcvt_%s[] __asm__("_%s");\n' % (v, v)
+                  for v in sorted(used_vtables)) + src
     # virtual off; pure virtuals become plain declarations (only after `virtual`: a statement like
     # `SCRATCH_S(0x2d4) = 0;` has the same shape)
     src = re.sub(r"\bvirtual\b([^;{}]*\))\s*(const\s*)?=\s*0\s*;",

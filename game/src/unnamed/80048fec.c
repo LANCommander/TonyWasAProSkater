@@ -3,7 +3,7 @@
 #include "game/dbuffer.h"
 #include "pc_draw.h"
 
-SDoubleBuffer *pVB;
+extern SDoubleBuffer *pVB;
 extern unsigned char *pPoly;
 
 void Pause__Fi(int);

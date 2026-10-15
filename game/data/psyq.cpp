@@ -1,6 +1,5 @@
 /* Decompiled data: the retail executable's initialised globals that the Psy-Q libraries' code
- * uses (kept: the game or the port reads them), each at its retail address (psxdata.h).
- * platform/pc/tools/data_image.py checks it all against the retail bytes. */
+ * uses (kept: the game or the port reads them; psxdata.h). */
 #include "psxdata.h"
 
 extern char FUN_80022490[];
@@ -30,7 +29,7 @@ extern char _GLOBAL__I_LoadingScreen_Main__Fv[] PSX_NAME("_GLOBAL_.I.LoadingScre
 extern char _GLOBAL__I_SCROLL_COUNT[] PSX_NAME("_GLOBAL_.I.SCROLL_COUNT");
 
 /* THPS2 demo: short[8200] */
-PSX_DATA(0x800c9670) short rcossin_tbl[8200] = {
+short rcossin_tbl[8200] = {
 	0, 4096, 6, 4096, 13, 4096, 19, 4096, 25, 4096, 31, 4096, 38, 4096, 44, 4096, 50, 4096, 57,
 	4096, 63, 4096, 69, 4095, 75, 4095, 82, 4095, 88, 4095, 94, 4095, 101, 4095, 107, 4095, 113,
 	4094, 119, 4094, 126, 4094, 132, 4094, 138, 4094, 144, 4093, 151, 4093, 157, 4093, 163, 4093,
@@ -594,10 +593,10 @@ PSX_DATA(0x800c9670) short rcossin_tbl[8200] = {
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800ce490) int ctors_done[1];
+int ctors_done[1];
 
 /* THPS2 demo: ushort[198] */
-PSX_DATA(0x800ce548) unsigned short rsqrt_tbl[198] = {
+unsigned short rsqrt_tbl[198] = {
 	4096, 4064, 4033, 4003, 3973, 3944, 3916, 3888, 3861, 3835, 3809, 3783, 3758, 3734, 3710, 3686,
 	3663, 3640, 3618, 3596, 3575, 3554, 3533, 3513, 3493, 3473, 3454, 3435, 3416, 3397, 3379, 3361,
 	3344, 3327, 3310, 3293, 3276, 3260, 3244, 3228, 3213, 3197, 3182, 3167, 3153, 3138, 3124, 3110,
@@ -613,12 +612,12 @@ PSX_DATA(0x800ce548) unsigned short rsqrt_tbl[198] = {
 };
 
 /* THPS2 demo: int[12] */
-PSX_DATA(0x800ce6d4) int K_cor_tbl[12] = {
+int K_cor_tbl[12] = {
 	511, 302, 159, 81, 41, 20, 10, 5, 3, 1,
 };
 
 /* THPS2 demo: short[1026] */
-PSX_DATA(0x800ce704) short ratan_tbl[1026] = {
+short ratan_tbl[1026] = {
 	0, 1, 2, 2, 3, 3, 4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 10, 11, 12, 12, 13, 14, 14, 15, 16, 16, 17, 17,
 	18, 19, 19, 20, 21, 21, 22, 23, 23, 24, 24, 25, 26, 26, 27, 28, 28, 29, 30, 30, 31, 31, 32, 33,
 	33, 34, 35, 35, 36, 36, 37, 38, 38, 39, 40, 40, 41, 42, 42, 43, 43, 44, 45, 45, 46, 47, 47, 48,
@@ -675,17 +674,17 @@ PSX_DATA(0x800ce704) short ratan_tbl[1026] = {
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d0544) int _stacksize[1] = {
+int _stacksize[1] = {
 	0x8000,
 };
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d0548) int _stacktop[1] = {
+int _stacktop[1] = {
 	0x800000,
 };
 
 /* THPS2 demo: ushort[192] */
-PSX_DATA(0x800d0a9c) unsigned short sqrt_tbl[192] = {
+unsigned short sqrt_tbl[192] = {
 	4096, 0x101f, 0x103f, 0x105e, 0x107e, 0x109c, 0x10bb, 0x10da, 0x10f8, 0x1116, 0x1134, 0x1152,
 	0x116f, 0x118c, 0x11a9, 0x11c6, 0x11e3, 0x1200, 0x121c, 0x1238, 0x1254, 0x1270, 0x128c, 0x12a7,
 	0x12c2, 0x12de, 0x12f9, 0x1314, 0x132e, 0x1349, 0x1364, 0x137e, 0x1398, 0x13b2, 0x13cc, 0x13e6,
@@ -705,7 +704,7 @@ PSX_DATA(0x800d0a9c) unsigned short sqrt_tbl[192] = {
 };
 
 /* retail's __CTOR_LIST__ (the name is the toolchain's) */
-PSX_DATA(0x800d101c) void *GameCtorList[25] = {
+void *GameCtorList[25] = {
 	_GLOBAL__I_LoadingScreen_Main__Fv, FUN_80022490, FUN_80023fe8, FUN_8002edf8, FUN_8003d6bc,
 	FUN_800447ac, FUN_80048c58, FUN_8004c724, _GLOBAL__I_SCROLL_COUNT, FUN_80058fc8, FUN_8005bad0,
 	FUN_8005cb7c, FUN_8005de08, FUN_80060e38, FUN_8006af5c, FUN_80072e4c, FUN_800770dc, FUN_8007d6e4,

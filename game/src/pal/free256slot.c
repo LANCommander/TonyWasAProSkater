@@ -3,7 +3,7 @@
 
 extern unsigned char Free256Slots[];
 
-int Pal256X, Pal256Y;
+extern int Pal256X, Pal256Y;
 
 unsigned short FUN_8008f70c(int, int);
 

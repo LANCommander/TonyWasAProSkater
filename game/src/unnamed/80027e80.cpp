@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). Counts the bit out of BitCount. */
 #include "game/bit.h"
 
-int BitCount;
+extern int BitCount;
 
 CBit::~CBit() {
 	BitCount--;

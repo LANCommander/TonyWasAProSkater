@@ -15,9 +15,9 @@ extern "C" {
 extern SStats Stats[];
 extern char DAT_800be444[];
 
-int DAT_800d1c40;
-int DAT_800d232c;
-int DAT_800d2328;
+extern int DAT_800d1c40;
+extern int DAT_800d232c;
+extern int DAT_800d2328;
 
 CBruce *Front_CreateSkaterModel1P() {
 	CBruce *pBruce = new CBruce;

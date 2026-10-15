@@ -26,14 +26,14 @@ extern int GAutoTest;
 extern uint GameFade;    /* GameFade */
 extern int DAT_800d1cb8; /* START+SELECT quit */
 
-int DAT_800d1ce8;
-int DAT_800d1cec;     /* loading finished */
-int BackOut;          /* backed out */
-int DAT_800d1cf8;     /* screen type */
-Sprite *DAT_800d1d04; /* "Press X" */
-int DAT_800d1d08;     /* blink counter */
-Sprite *DAT_800d1d0c; /* level picture */
-int DAT_800d1d14;     /* redraw picture */
+extern int DAT_800d1ce8;
+extern int DAT_800d1cec;     /* loading finished */
+extern int BackOut;          /* backed out */
+extern int DAT_800d1cf8;     /* screen type */
+extern Sprite *DAT_800d1d04; /* "Press X" */
+extern int DAT_800d1d08;     /* blink counter */
+extern Sprite *DAT_800d1d0c; /* level picture */
+extern int DAT_800d1d14;     /* redraw picture */
 
 int SFX_PlayX(uint, short, int);
 void Pause(int);

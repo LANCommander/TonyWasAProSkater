@@ -1,7 +1,7 @@
 /* DumpAutoTest__Fv (0x800240d8) */
 #include "pc_screen.h"
-int GAutoLevela, GAutoPlayer1a, GAutoPlayer2a, GAutoGamea;
-int GAutoLevel, GAutoPlayer1, GAutoPlayer2, GAutoGame;
+extern int GAutoLevela, GAutoPlayer1a, GAutoPlayer2a, GAutoGamea;
+extern int GAutoLevel, GAutoPlayer1, GAutoPlayer2, GAutoGame;
 
 int FUN_8008c3d0(int);
 int FUN_8008c314(int);

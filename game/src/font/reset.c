@@ -4,8 +4,8 @@
 extern int StringBuffer[];
 extern char NumberStrings[];
 
-void *BufferPos;
-char *pNumberStrings;
+extern void *BufferPos;
+extern char *pNumberStrings;
 
 void Font_Reset(void) {
 	BufferPos = StringBuffer;

@@ -9,8 +9,7 @@
 #include "game/video.h"
 #include "game/sfx.h"
 
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList;
 
 int Utils_CrapDist(const CVector &, const CVector &);
@@ -23,7 +22,7 @@ extern "C" {
 void HonkAtSkaters(CCar *pCar, CVector Front) {
 	int Honk = 0;
 
-	if (GVInfo1.VideoMode == 2 || GVInfo2.VideoMode == 2)
+	if (GVInfo1[0].VideoMode == 2 || GVInfo1[1].VideoMode == 2)
 		return;
 
 	CBruce *pSkater = MechList;

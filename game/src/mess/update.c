@@ -18,7 +18,7 @@ typedef struct Message {
 	struct Message *prev;
 } Message;
 
-Message *pMessages;
+extern Message *pMessages;
 
 extern void Mess_DeleteMessage(Message *);
 

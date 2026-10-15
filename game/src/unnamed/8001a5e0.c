@@ -1,7 +1,7 @@
 /* Front_PrintHorseLetters__Fv (0x8001a5e0) */
 #include "names.h"
 
-int Status;
+extern int Status;
 
 void CommonSwitchOnMenuCode(void);
 

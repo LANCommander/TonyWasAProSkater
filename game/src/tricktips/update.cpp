@@ -17,15 +17,15 @@ extern SCareer GCareer;
 extern SLevel Levels[];
 extern STip TRICKTIP[];
 extern SVideoInfo GVInfo1[];
-extern SVideoInfo GVInfo2[];
+extern SVideoInfo GVInfo1[2];
 extern SControl Pad[2];
 extern int DemoTimer;
 extern int GGame;
 extern CBruce *MechList;
 extern int GLevel;
 
-char *TEXT_TIP;
-char *TEXT_REMEMBER;
+extern char *TEXT_TIP;
+extern char *TEXT_REMEMBER;
 
 static inline int TipBank(int tip) {
 	int tip_bank;
@@ -125,7 +125,7 @@ inline void CTrickTipMonitor::Update() {
 	if (Levels[GLevel].isCompetition)
 		return;
 
-	if (GVInfo1[0].VideoMode == 2 || GVInfo2[0].VideoMode == 2)
+	if (GVInfo1[0].VideoMode == 2 || GVInfo1[1].VideoMode == 2)
 		return;
 
 	if (!DemoTimer || GGame != 1)

@@ -13,8 +13,8 @@ extern "C" {
 extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 
-uchar *PolyBufferEnd;
-int Mick_Darkness;
+extern uchar *PolyBufferEnd;
+extern int Mick_Darkness;
 
 void Mick_Darken() {
 	POLY_F4 *aPoly;

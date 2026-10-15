@@ -7,13 +7,13 @@
 #include "game/backgrnd.h"
 #include "game/camera.h"
 
-int NumCheatRestarts;
-int NumHorseRestarts;
-int RestartNode;
-short **OffsetList;
-int NumNodes;
-char *pCurrentObjFile;
-char CurrentObjFileRegion;
+extern int NumCheatRestarts;
+extern int NumHorseRestarts;
+extern int RestartNode;
+extern short **OffsetList;
+extern int NumNodes;
+extern char *pCurrentObjFile;
+extern char CurrentObjFileRegion;
 
 extern char *CheatRestarts[];
 extern char *HorseRestarts[];

@@ -2,9 +2,9 @@
 #include "names.h"
 #include "pc_frame.h"
 
-int DAT_800d1d84;
-void *DAT_800d1d88;
-short DAT_800d1d8c, DAT_800d1d8e;
+extern int DAT_800d1d84;
+extern void *DAT_800d1d88;
+extern short DAT_800d1d8c, DAT_800d1d8e;
 
 void HiRes_ClearOTag(void);
 void ResetOT(void);

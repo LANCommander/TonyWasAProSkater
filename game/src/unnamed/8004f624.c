@@ -17,7 +17,7 @@ struct O {
 	struct O *next2;
 };
 
-struct O *RailList;
+extern struct O *RailList;
 
 void Rail_DeleteAll(void) {
 	struct O *p = RailList;

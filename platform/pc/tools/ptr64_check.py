@@ -7,7 +7,7 @@ Needs both builds: build/pc (32-bit) and build/pc64 (THPS_ARCH=x64). Reads the d
 of every game TU's object in both, and of the data (game/data), and collects the *views* of each
 piece of shared memory the code has:
 
-  * a global at a retail address (the data file's definition, every TU's declaration of it),
+  * a global (the data file's definition, every TU's declaration of it, by its C name),
   * a function's parameters and return value (its definition, every TU's prototype of it), and
     through pointers, the structs they point at.
 
@@ -331,8 +331,8 @@ def scalar_view(a, ta, b, tb):
 
 
 def tu_views(src):
-    """(src, [(key, what, layout)], error): key = ('var', addr) / ('param', addr, i) /
-    ('ret', addr), or ('name', name) for a variable linked by its C name."""
+    """(src, [(key, what, layout)], error): key = ('param', addr, i) / ('ret', addr) for a
+    function, ('name', name) for a variable (linked by its C name)."""
     try:
         rel = os.path.splitext(src)[0]
         b32 = os.path.join(OUT32, "obj", rel)
@@ -374,30 +374,25 @@ def tu_views(src):
 
 
 def data_views():
-    """The data files' globals: [(('var', addr), name, layout, file)]."""
-    import data_image  # noqa: E402
+    """The data files' globals: [(('name', name), name, layout, file)]."""
     out = []
-    d32 = os.path.join(OUT64, "dataobj32")
-    d64 = os.path.join(OUT64, "dataobj")
-    for src, fixed in data_image.data_sources():
-        o = os.path.basename(src)[:-4] + ".o"
+    d32, d64 = os.path.join(OUT32, "dataobj"), os.path.join(OUT64, "dataobj")
+    for src in sorted(os.listdir(os.path.join(GAME, "data"))):
+        if not src.endswith(".cpp"):
+            continue
+        o = src[:-4] + ".o"
         p32, p64 = os.path.join(d32, o), os.path.join(d64, o)
         if not (os.path.exists(p32) and os.path.exists(p64)):
             continue
         a, b = Dwarf(p32, 32), Dwarf(p64, 64)
         ea, eb = entities(a), entities(b)
-        obj = data_image.read_object(p32)
-        for k, s in enumerate(obj.sections):
-            m = data_image.NATIVE_SEC.match(s["name"])
-            if not m:
+        for n, da in ea.items():
+            if da["tag"] != "DW_TAG_variable" or "DW_AT_declaration" in da["attrs"] or \
+                    n not in eb:
                 continue
-            for sym in obj.symbols:
-                if sym and sym["sec"] == k + 1 and sym["cls"] == 2:
-                    n = data_image.c_name(sym["name"], 32)
-                    if n in ea and n in eb:
-                        out.append((("var", int(m.group(1), 16)), n,
-                                    scalar_view(a, a.typ(ea[n]), b, b.typ(eb[n])),
-                                    "data/" + os.path.basename(src)))
+            ta, tb = a.typ(da), b.typ(eb[n])
+            if ta is not None and tb is not None:
+                out.append((("name", n), n, scalar_view(a, ta, b, tb), "data/" + src))
     return out
 
 
@@ -429,8 +424,6 @@ def main():
                 groups.setdefault(tuple(key), []).append((src, what, lay, defn))
     for key, what, lay, f in data_views():
         groups.setdefault(key, []).append((f, what, lay, True))
-        if ("name", what) in groups:  # (TUs that use the data global by its C name)
-            groups[("name", what)].append((f, what, lay, True))
     findings = []
     for key, views in groups.items():
         if len(views) < 2:

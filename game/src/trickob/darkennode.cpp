@@ -4,9 +4,9 @@
 
 extern int GGame;
 
-CTrickOb *TrickObList;
-uchar TrickPlayer;
-ushort TrickScore;
+extern CTrickOb *TrickObList;
+extern uchar TrickPlayer;
+extern ushort TrickScore;
 
 Item *Spool_FindEnviroItem(uint);
 

@@ -21,7 +21,7 @@ extern T DAT_800a1df8;
 extern Q GameText;
 extern D GPreferences;
 
-int DAT_800d1d28;
+extern int DAT_800d1d28;
 
 int FUN_8005ffac(struct VerticalMenu *);
 void FrontLoader_LoadSet(int);

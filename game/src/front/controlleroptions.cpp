@@ -28,7 +28,7 @@ extern SPadMap DAT_800bf280[2];
 extern LocalText GameText;
 extern SLabels DAT_800a1d0c;
 
-int DAT_800d1d28;
+extern int DAT_800d1d28;
 
 /* PC: the controls screen. The PS1's (a pad picture with what each face button does, plus
    vibration and autokick) is replaced by a list of every action with its two bindings, for the

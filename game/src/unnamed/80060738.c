@@ -12,7 +12,7 @@ typedef struct {
 struct VerticalMenu;
 
 extern T DAT_800a1f34;
-extern unsigned char DAT_800a6858[];
+extern unsigned char GCareer[];
 
 int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);
 
@@ -24,7 +24,7 @@ int FUN_80060738(int arg, int *p) {
 	K b;
 
 	for (i = 0; i < 11; i++) {
-		if (DAT_800a6858[i * 14] & 224)
+		if (GCareer[20 + i * 14] & 224)
 			flag = 1;
 	}
 

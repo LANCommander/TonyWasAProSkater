@@ -11,7 +11,7 @@
 #ifndef GAME_BRUCE_H
 #define GAME_BRUCE_H
 
-#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
+#ifndef GAME_DATA_TU /* (the data files: full debug types) */
 #pragma interface /* see class.h */
 #endif
 

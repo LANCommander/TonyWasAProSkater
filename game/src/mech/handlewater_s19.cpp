@@ -12,7 +12,7 @@ extern SSinCos rcossin_tbl[];
 void SFX_PlayX(unsigned int, short, int);
 int Rnd(int);
 
-CBruce *MechList;
+extern CBruce *MechList;
 
 void CBruce::HandleWater() {
 	int WaterLevel;

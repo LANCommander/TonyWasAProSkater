@@ -11,7 +11,7 @@ struct VerticalMenu;
 extern unsigned char Pad[];
 extern S DAT_800a1c44;
 
-int DAT_800d1d2c;
+extern int DAT_800d1d2c;
 
 int Pad_Update(void);
 int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);

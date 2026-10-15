@@ -8,7 +8,7 @@
 #include "game/bit.h"
 #include "game/trig.h"
 
-short **OffsetList;
+extern short **OffsetList;
 
 extern CBaddy *EnvironmentalObjectList;
 extern CBaddy *BaddyList;

@@ -8,7 +8,7 @@ typedef struct N {
 	struct N *next;
 } N;
 
-N *DAT_800d1a80;
+extern N *DAT_800d1a80;
 
 void Mem_Delete(void *p);
 

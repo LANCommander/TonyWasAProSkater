@@ -9,8 +9,8 @@ typedef struct {
 	short x, y, z;
 } SV;
 
-SV SparkTrajectory;
-short SparkTrajectoryCone, SparkTrajectoryCone_2, SparkTrajectoryCone_4;
+extern SV SparkTrajectory;
+extern short SparkTrajectoryCone[4]; /* SVECTOR */
 
 int Redbook_Rnd(int);
 void Utils_GetVecFromMagDir(V *, int, SV *);
@@ -18,14 +18,14 @@ void Utils_GetVecFromMagDir(V *, int, SV *);
 void Bit_CalculateSparkVelocity(V *out, int mag) {
 	SV d = SparkTrajectory;
 
-	if (SparkTrajectoryCone)
-		d.x += Redbook_Rnd(SparkTrajectoryCone) - (SparkTrajectoryCone >> 1);
+	if (SparkTrajectoryCone[0])
+		d.x += Redbook_Rnd(SparkTrajectoryCone[0]) - (SparkTrajectoryCone[0] >> 1);
 
-	if (SparkTrajectoryCone_2)
-		d.y += Redbook_Rnd(SparkTrajectoryCone_2) - (SparkTrajectoryCone_2 >> 1);
+	if (SparkTrajectoryCone[1])
+		d.y += Redbook_Rnd(SparkTrajectoryCone[1]) - (SparkTrajectoryCone[1] >> 1);
 
-	if (SparkTrajectoryCone_4)
-		d.z += Redbook_Rnd(SparkTrajectoryCone_4) - (SparkTrajectoryCone_4 >> 1);
+	if (SparkTrajectoryCone[2])
+		d.z += Redbook_Rnd(SparkTrajectoryCone[2]) - (SparkTrajectoryCone[2] >> 1);
 
 	Utils_GetVecFromMagDir(out, mag, &d);
 }

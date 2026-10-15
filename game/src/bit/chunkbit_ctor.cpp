@@ -8,7 +8,7 @@ typedef struct {
 int Redbook_Rnd(int);
 void Utils_CalcUnit(CVector &, const CVector &);
 
-char ChunkBitList[8];
+extern char ChunkBitList[8];
 
 static inline void VI(V *p, int x, int y, int z) {
 	p->x = x;

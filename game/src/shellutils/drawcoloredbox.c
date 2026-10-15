@@ -8,7 +8,7 @@
 #include "game/dbuffer.h"
 extern u_char *pPoly;
 
-int OT_entry;
+extern int OT_entry;
 
 void DrawColoredBox(int x, int y, int w, int h, u_char r, u_char g, u_char b) {
 	POLY_F4 *Poly = (POLY_F4 *)pPoly;

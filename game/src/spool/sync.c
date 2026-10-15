@@ -4,7 +4,7 @@
 extern char SpoolQ[][17];
 extern int Loading;
 
-int SpoolPos;
+extern int SpoolPos;
 
 void Spool_Continue(void);
 void FileIO_Continue(void);

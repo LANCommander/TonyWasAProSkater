@@ -2,7 +2,7 @@
 /* C++ (BIT.CPP). Unlinks the bit from NonRenderedBitList; CBit's destructor does the rest. */
 #include "game/bit.h"
 
-CNonRenderedBit *NonRenderedBitList;
+extern CNonRenderedBit *NonRenderedBitList;
 
 CNonRenderedBit::~CNonRenderedBit() {
 	DeleteFrom(&NonRenderedBitList);

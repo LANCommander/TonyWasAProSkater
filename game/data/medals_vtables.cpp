@@ -9,7 +9,7 @@ extern char FUN_800447e4[];
 extern char FUN_80073da8[];
 extern char dtor_6CMedal[] PSX_NAME("_._6CMedal");
 
-PSX_DATA(0x800a314c) PsxVtEntry __vt_6CMedal[8] = {
+PsxVtEntry __vt_6CMedal[8] = {
 	{0, 0, 0},
 	{0, 0, dtor_6CMedal},
 	{0, 0, Die__5CBody},

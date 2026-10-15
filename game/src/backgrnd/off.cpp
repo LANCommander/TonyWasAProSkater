@@ -2,7 +2,7 @@
 /* C++. Hides the background with the given index (clears its mFlags bit 0). */
 #include "game/backgrnd.h"
 
-CBody *BackgroundList;
+extern CBody *BackgroundList;
 
 void Backgrnd_Off(unsigned short id) {
 	CBody *p;

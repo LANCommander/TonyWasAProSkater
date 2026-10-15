@@ -5,7 +5,7 @@
 
 void *Mem_New(uint, int, int);
 
-char GlowList[8];
+extern char GlowList[8];
 
 CGlow::CGlow(const CVector &Pos, int InnerRadius, int FringeRadius, uchar r0, uchar g0, uchar b0,
              uchar r1, uchar g1, uchar b1) {

@@ -2,7 +2,7 @@
 #include "game/career.h"
 
 extern SLevel Levels[];
-extern char DAT_800a5c68[];
+extern char StartupGameState[];
 
 extern int GLevel;
 
@@ -17,8 +17,8 @@ void kickIt(int a, int b) {
 	GLevel = a;
 	n = Levels[a].pTRGName;
 	SelectedSkater = b;
-	Utils_CopyString(n, DAT_800a5c68);
+	Utils_CopyString(n, (StartupGameState + 4));
 
-	DAT_800a5c68[9] = 0;
+	StartupGameState[13] = 0;
 	LaunchGame();
 }

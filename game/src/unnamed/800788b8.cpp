@@ -3,8 +3,8 @@
    destructor do the rest. */
 #include "game/camera.h"
 
-CBody *CameraList;
-int NumCameras;
+extern CBody *CameraList;
+extern int NumCameras;
 
 CCamera::~CCamera() {
 	DeleteFrom(&CameraList);

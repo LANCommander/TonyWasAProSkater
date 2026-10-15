@@ -3,7 +3,7 @@
 
 extern SPSXRegion PSXRegion[];
 
-Item *EnviroList;
+extern Item *EnviroList;
 
 Item *Spool_FindEnviroItem(uint id) {
 	Item *e = EnviroList;

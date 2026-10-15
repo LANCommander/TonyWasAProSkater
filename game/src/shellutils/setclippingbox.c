@@ -8,7 +8,7 @@
 #include "game/dbuffer.h"
 extern u_char *pPoly;
 
-int OT_entry;
+extern int OT_entry;
 
 void SetClippingBox(int x, int y, int w, int h) {
 	RECT r;

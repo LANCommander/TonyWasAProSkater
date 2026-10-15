@@ -1,7 +1,7 @@
 /* __8CTrickObUs (0x8004ef08) flags=-fstructure-noalias */
 #include "game/trickob.h"
 
-CTrickOb *TrickObList;
+extern CTrickOb *TrickObList;
 
 extern unsigned short **OffsetList;
 

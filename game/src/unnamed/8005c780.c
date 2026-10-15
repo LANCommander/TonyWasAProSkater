@@ -3,11 +3,11 @@
 
 extern int SFXLEVEL;
 
-int DAT_800d1cc0;
-int DAT_800d1cc4;
-short DAT_800d1ca0;
-int DAT_800d1ca4;
-int DAT_800d1cbc;
+extern int DAT_800d1cc0;
+extern int DAT_800d1cc4;
+extern short DAT_800d1ca0;
+extern int DAT_800d1ca4;
+extern int DAT_800d1cbc;
 
 void SFX_ModifyVol(int a, int b, int c);
 void SFX_Stop(int a);

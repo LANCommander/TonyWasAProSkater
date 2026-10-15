@@ -22,7 +22,7 @@ typedef struct {
 
 extern char __vt_5CRail[];
 
-P *RailList;
+extern P *RailList;
 
 unsigned short *Trig_GetLinksPointer(int);
 Q *Trig_GetPosition(V *, int);

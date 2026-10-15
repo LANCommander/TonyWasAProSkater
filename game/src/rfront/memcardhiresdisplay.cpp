@@ -20,15 +20,13 @@ extern "C" {
 
 extern "C" {
 	extern LocalText GameText;
-	extern char *GameText_180[];
 	extern char *VertMenuItem[];
 	extern char msg[];
 	extern int TTime;
 }
 
-VerticalMenu *pVertMenu;
-int NumVertMenuItems, VertMenuTopIndex, VertMenuTopChanged, MCState, OldMCState, MCResolution,
-    GLoadAction;
+extern VerticalMenu *pVertMenu;
+extern int NumVertMenuItems, VertMenuTopIndex, VertMenuTopChanged, MCState, OldMCState, MCResolution, GLoadAction;
 
 void Front_DirtyRectText(int, int, const char *);
 void Front_PrintCentredPrompt(const char *);
@@ -201,7 +199,7 @@ void Front_MemCardHiResDisplay() {
 			Front_DirtyRectText(XMid, 220, "Video loaded");
 
 			if (MCResolution == 512)
-				Front_PrintCentredPrompt(GameText_180[0]);
+				Front_PrintCentredPrompt(((char **)&GameText)[96]);
 
 			break;
 		case 27:

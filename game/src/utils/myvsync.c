@@ -1,8 +1,8 @@
 /* MyVSync__Fv (0x80047870) */
 #include "names.h"
 
-int Vblanks;
-int Xblanks, DoVblankProcessing;
+extern int Vblanks;
+extern int Xblanks, DoVblankProcessing;
 
 extern int GamePaused, GameFrozen;
 

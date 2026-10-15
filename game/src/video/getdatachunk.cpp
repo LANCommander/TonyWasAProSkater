@@ -14,7 +14,7 @@ extern "C" {
 #include "game/psyq.h"
 #include "pc_frame.h"
 
-extern SVideoInfo GVInfo1, GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern int PosBits[], EulerBits[], FlipAngleBits[];
 extern CBruce *MechList, *GSkater;
 extern volatile int Xblanks;
@@ -24,7 +24,7 @@ extern CBruce *pCurrentPlayer;
 extern CBody *PowerUpList;
 extern SStats Stats[];
 
-int ReplaySoundLockout;
+extern int ReplaySoundLockout;
 
 int GetBit(SVideoInfo *);
 int GetNBitsSigned(SVideoInfo *, int);
@@ -47,9 +47,9 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 	SVideoInfo *VInfo;
 
 	if (pSkater == MechList)
-		VInfo = &GVInfo1;
+		VInfo = &GVInfo1[0];
 	else
-		VInfo = &GVInfo2;
+		VInfo = &GVInfo1[1];
 
 	pSkater->mOldPos = pSkater->mPos;
 

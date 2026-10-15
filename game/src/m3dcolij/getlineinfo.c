@@ -10,7 +10,12 @@ typedef struct {
 } SLineInfo;
 
 extern char Tfm[];
-extern SVECTOR *NearestHit_8[];
+typedef struct {
+	void *pItem, *pFace;
+	SVECTOR *pNormal;
+} SHitN; /* SHit */
+
+extern SHitN NearestHit;
 
 void M3dMaths_RotMatrixYXZ__FP7SVECTORP6MATRIX(char *, char *);
 
@@ -22,7 +27,7 @@ int M3dColij_GetLineInfo(SLineInfo *li) {
 			int16_t v[3];
 			GeomAcc r;
 
-			geom_ld_sv(v, NearestHit_8[0]);
+			geom_ld_sv(v, NearestHit.pNormal);
 			r = geom_mvmva(pc_geom.rot, 0, v[0], v[1], v[2], 12, 0, 0);
 			geom_st_sv(li->v, r.ir);
 		}

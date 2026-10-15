@@ -7,10 +7,10 @@ extern SStats Stats[];
 extern int DAT_800d37e4[];
 extern int DAT_800d37b4[];
 
-int DAT_800d2338;
-int DAT_800d2324;
-int DAT_800d233c;
-int DAT_800d2340;
+extern int DAT_800d2338;
+extern int DAT_800d2324;
+extern int DAT_800d233c;
+extern int DAT_800d2340;
 
 extern "C" int FUN_80070830(void);
 int Spool_PSX(char *Name, int IsEnviro, int WhichHeap);

@@ -14,12 +14,12 @@ extern char *CheatRestarts[];
 extern char *HorseRestarts[];
 extern int GNumberOfPlayers;
 
-char *TrigFile;
-short **OffsetList;
-int NumNodes;
-int NumCheatRestarts;
-int NumHorseRestarts;
-int RestartNode;
+extern char *TrigFile;
+extern short **OffsetList;
+extern int NumNodes;
+extern int NumCheatRestarts;
+extern int NumHorseRestarts;
+extern int RestartNode;
 
 char *Trig_GetPosition(CVector &, int);
 void Trig_ParseTRGFile();

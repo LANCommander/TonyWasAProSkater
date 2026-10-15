@@ -16,9 +16,7 @@ typedef struct {
 	E v[1];
 } P;
 
-short FarColor;
-short FarColor_2;
-short FarColor_4;
+extern short FarColor[4]; /* SVECTOR */
 
 int FUN_80089790(E *, int, VECTOR *);
 void FUN_8009736c(int, int, int);
@@ -44,7 +42,7 @@ void RenderModelFast(P *p, VECTOR *c) {
 	if (!(r & 0x6000e000)) {
 		n = p->m;
 		w = v + p->i;
-		FUN_8009736c(FarColor, FarColor_2, FarColor_4);
+		FUN_8009736c(FarColor[0], FarColor[1], FarColor[2]);
 		FUN_800898ac(w, v, n);
 	}
 }

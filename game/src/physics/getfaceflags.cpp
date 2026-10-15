@@ -1,7 +1,7 @@
 /* GetFaceFlags__FP9SLineInfo (0x8002ee6c) */
 #include "game/colij.h"
 
-int Face_Air, Face_Skateable, Face_WallRide, Face_Visible, Face_Terrain;
+extern int Face_Air, Face_Skateable, Face_WallRide, Face_Visible, Face_Terrain;
 
 void GetFaceFlags(SLineInfo *li) {
 	if (li->pItem) {

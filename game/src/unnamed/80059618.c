@@ -1,17 +1,17 @@
 /* Front_SelectSkaterPack__Fi (0x80059618) */
 #include "names.h"
 
-int DAT_800d1c5c;
+extern int DAT_800d1c5c;
 
 struct TSPack;
 
 extern struct TSPack *Pack_pFree;
 extern struct TSPack *Pack_pFull;
 
-struct TSPack *DAT_800d1c8c;
-struct TSPack *DAT_800d1c90;
-struct TSPack *DAT_800d1c84;
-struct TSPack *DAT_800d1c88;
+extern struct TSPack *DAT_800d1c8c;
+extern struct TSPack *DAT_800d1c90;
+extern struct TSPack *DAT_800d1c84;
+extern struct TSPack *DAT_800d1c88;
 
 void Front_SelectSkaterPack(int a) {
 	if (DAT_800d1c5c == -1) {

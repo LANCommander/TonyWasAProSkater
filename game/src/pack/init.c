@@ -1,8 +1,8 @@
 /* Pack_Init__Fv (0x80049780) */
 #include "names.h"
 
-struct TSPack *Pack_pFree, *Pack_pFull;
-int TotSlots, Pack_Width, LastPackInitType;
+extern struct TSPack *Pack_pFree, *Pack_pFull;
+extern int TotSlots, Pack_Width, LastPackInitType;
 
 void *Pack_NewFree(int, int, int, int);
 

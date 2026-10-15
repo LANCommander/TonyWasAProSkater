@@ -13,13 +13,13 @@ typedef struct S {
 extern S *Pack_pFree;
 extern S *Pack_pFull;
 
-S *DAT_800d1c84;
-S *DAT_800d1c80;
-S *DAT_800d1c88;
-S *DAT_800d1c8c;
-S *DAT_800d1c90;
-char DAT_800d1c94[8];
-char DAT_800d1c98[8];
+extern S *DAT_800d1c84;
+extern S *DAT_800d1c80;
+extern S *DAT_800d1c88;
+extern S *DAT_800d1c8c;
+extern S *DAT_800d1c90;
+extern char DAT_800d1c94[8];
+extern char DAT_800d1c98[8];
 
 S *Pack_Pack(int a, int b, int c, char *d, char *e, int f, int g, int h);
 S *Mem_NewX(int a, int b, int c);

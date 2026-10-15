@@ -23,7 +23,7 @@ extern int GNumberOfPlayers;
 extern int GLevel;
 extern SLevel Levels[];
 
-CBody *BaddyList;
+extern CBody *BaddyList;
 
 extern CBody *EnvironmentalObjectList __attribute__((section(".data")));
 

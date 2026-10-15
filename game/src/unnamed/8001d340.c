@@ -10,7 +10,7 @@ typedef struct {
 extern unsigned char BigFont_Mapping[];
 extern E *BigFontAnim;
 
-unsigned short Scale;
+extern unsigned short Scale;
 
 int FUN_8001d340(unsigned char *s) {
 	int w = 0;

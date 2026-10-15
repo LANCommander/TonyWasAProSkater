@@ -22,28 +22,25 @@ struct CdlATV {
 	uchar val0, val1, val2, val3;
 };
 
-int GameFMV_IsMovie;
-int GameFMV_RewindSwitch;
-int GameFMV_Active;
-int currentDecodeBuffer;
-int currentVlcBuffer;
-int sendVLC;
-short GameFMV_StartX;
-int GameFMV_VLCBufferSize;
-int GameFMV_RingBufferSectors;
-uchar GameFMV_SliceBuffers;
-short GameFMV_StartY;
-short GameFMV_EndX;
-ushort GameFMV_Width;
-ushort GameFMV_Height;
-uchar GameFMV_Is24Bit;
-uchar GameFMV_CurrentTrack;
-short decodeSlice;
-short decodeSlice_2;
-short decodeSlice_4;
-short decodeSlice_6;
-u_long *vlcBuffer[2];
-u_long *pRingBuffer;
+extern int GameFMV_IsMovie;
+extern int GameFMV_RewindSwitch;
+extern int GameFMV_Active;
+extern int currentDecodeBuffer;
+extern int currentVlcBuffer;
+extern int sendVLC;
+extern short GameFMV_StartX;
+extern int GameFMV_VLCBufferSize;
+extern int GameFMV_RingBufferSectors;
+extern uchar GameFMV_SliceBuffers;
+extern short GameFMV_StartY;
+extern short GameFMV_EndX;
+extern ushort GameFMV_Width;
+extern ushort GameFMV_Height;
+extern uchar GameFMV_Is24Bit;
+extern uchar GameFMV_CurrentTrack;
+extern RECT decodeSlice;
+extern u_long *vlcBuffer[2];
+extern u_long *pRingBuffer;
 
 extern SMovieDetails movieDetails[];
 extern int MIDILEVEL;
@@ -84,10 +81,10 @@ void GameFMV_PlayMovie(int track) {
 	if (!movieDetails[GameFMV_CurrentTrack].startsector)
 		return;
 
-	decodeSlice = GameFMV_StartX;
-	decodeSlice_2 = GameFMV_StartY;
-	decodeSlice_6 = GameFMV_Height;
-	decodeSlice_4 = GameFMV_Is24Bit ? 24 : 16;
+	decodeSlice.x = GameFMV_StartX;
+	decodeSlice.y = GameFMV_StartY;
+	decodeSlice.h = GameFMV_Height;
+	decodeSlice.w = GameFMV_Is24Bit ? 24 : 16;
 	currentDecodeBuffer = 0;
 	currentVlcBuffer = 0;
 	sendVLC = 0;
@@ -187,13 +184,13 @@ void GameFMV_PlayMovie(int track) {
 
 	for (;;) {
 		/* the whole frame into the movie's screen (pc_movie.h), where strCallback put its slices */
-		PC_MovieDecode(vlcBuffer[currentVlcBuffer], decodeSlice, decodeSlice_2 & 255, GameFMV_EndX,
-		               decodeSlice_6);
+		PC_MovieDecode(vlcBuffer[currentVlcBuffer], decodeSlice.x, decodeSlice.y & 255, GameFMV_EndX,
+		               decodeSlice.h);
 
-		if (decodeSlice_2 < 256)
-			decodeSlice_2 += 256;
+		if (decodeSlice.y < 256)
+			decodeSlice.y += 256;
 		else
-			decodeSlice_2 -= 256;
+			decodeSlice.y -= 256;
 
 		{
 			uchar result[8];
@@ -215,7 +212,7 @@ void GameFMV_PlayMovie(int track) {
 
 			count = 0x800000;
 
-			while (decodeSlice != GameFMV_StartX) {
+			while (decodeSlice.x != GameFMV_StartX) {
 				if (!count)
 					goto end;
 
@@ -226,7 +223,7 @@ void GameFMV_PlayMovie(int track) {
 				break;
 		}
 
-		SetDefDispEnv(&disp, 0, (decodeSlice_2 < 256) << 8, GameFMV_Is24Bit ? 480 : 320, 240);
+		SetDefDispEnv(&disp, 0, (decodeSlice.y < 256) << 8, GameFMV_Is24Bit ? 480 : 320, 240);
 
 		if (GameFMV_Is24Bit) {
 			disp.isrgb24 = 1;

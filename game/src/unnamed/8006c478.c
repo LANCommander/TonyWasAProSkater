@@ -2,7 +2,7 @@
 #include "names.h"
 #include "game/dbuffer.h"
 
-int prim_added;
+extern int prim_added;
 
 /* Adds a panel primitive to the 2D entry of the buffer being built. */
 void Panel_addPrim(void *p) {

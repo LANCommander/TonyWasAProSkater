@@ -14,10 +14,10 @@ typedef struct {
 	E v[1];
 } P;
 
-int Dewibble;
-int TestTheWater;
-int SubObjectMasked;
-int WaterClipValue;
+extern int Dewibble;
+extern int TestTheWater;
+extern int SubObjectMasked;
+extern int WaterClipValue;
 
 int FUN_800860cc(E *, int);
 int FUN_80085e98(E *, int);

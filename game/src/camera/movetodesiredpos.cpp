@@ -24,8 +24,8 @@ extern MATRIX tm;
 extern CVector Camera_CamOffset;
 extern int CameraCollisionCheck;
 
-int Camera_CamDist;
-int Camera_CamPitch;
+extern int Camera_CamDist;
+extern int Camera_CamPitch;
 
 void QToM(const CQuat &, MATRIX &);
 void MToQ(const MATRIX &, CQuat &);

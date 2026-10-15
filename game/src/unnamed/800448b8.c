@@ -13,7 +13,7 @@ typedef struct CP {
 
 extern CP *HashTable[];
 
-CP *CommandPoints;
+extern CP *CommandPoints;
 
 void Mem_Delete(void *p);
 

@@ -16,7 +16,7 @@ extern int FUN_80093914(ATTR *);
 extern int FUN_80094ca4(int);
 extern int FUN_80094c74(int, int);
 
-int SFX_ReverbDepthSetTimer;
+extern int SFX_ReverbDepthSetTimer;
 
 void SFX_SetReverbType(unsigned char t) {
 	ATTR a;

@@ -3,7 +3,7 @@
    rest. */
 #include "game/powerup.h"
 
-CBody *PowerUpList;
+extern CBody *PowerUpList;
 
 CPowerUp::~CPowerUp() {
 	DeleteFrom(&PowerUpList);

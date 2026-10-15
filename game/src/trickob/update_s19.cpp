@@ -2,7 +2,7 @@
 #include "game/m3d.h"
 #include "game/trickob.h"
 
-CTrickOb *TrickObList;
+extern CTrickOb *TrickObList;
 
 extern const int GGame;
 extern uint Xblanks;

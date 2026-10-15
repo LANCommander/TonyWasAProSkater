@@ -9,7 +9,7 @@
 
 /* egcs: the inline members and vtables of this header's classes are not emitted in every TU that
    uses them (byte-exact TUs hold one function each); the port build drops the pragma */
-#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
+#ifndef GAME_DATA_TU /* (the data files: full debug types) */
 #pragma interface
 #endif
 

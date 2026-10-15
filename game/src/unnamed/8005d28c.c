@@ -5,9 +5,9 @@
 
 extern char Pad[];
 
-char *DAT_800d1d0c;
-int DAT_800d1cec;
-int DAT_800d1d14;
+extern char *DAT_800d1d0c;
+extern int DAT_800d1cec;
+extern int DAT_800d1d14;
 
 void FrontLoader_SetFiles(int a);
 void FrontLoader_LoadSet(int a);

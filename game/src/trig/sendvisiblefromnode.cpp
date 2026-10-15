@@ -11,7 +11,7 @@ extern CBruce *MechList[];
 extern CItem *PowerUpList;
 extern CBit *NonRenderedBitList;
 
-short **OffsetList;
+extern short **OffsetList;
 
 ushort *Trig_GetLinksPointer(int);
 Item *Spool_FindEnviroItem(uint);

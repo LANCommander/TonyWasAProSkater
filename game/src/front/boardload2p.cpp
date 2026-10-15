@@ -19,13 +19,13 @@ extern int DAT_800d333c[2][3]; /* load offset from the start entry (-1: not star
 extern int DAT_800d335c[2][3]; /* start entry */
 extern int DAT_800d337c[2][3]; /* column fully loaded */
 
-int DAT_800d22ac;          /* player being loaded */
-SlicedImage *DAT_800d22b0; /* "locked" picture */
-int DAT_800d22b8[2];       /* column being loaded, per player */
-char *DAT_800d22c0[2];     /* load buffer, per player */
-uchar DAT_800d22c8;
-int DAT_800d22cc;    /* all pictures loaded */
-int DAT_800d22d0[2]; /* skater, per player */
+extern int DAT_800d22ac;          /* player being loaded */
+extern SlicedImage *DAT_800d22b0; /* "locked" picture */
+extern int DAT_800d22b8[2];       /* column being loaded, per player */
+extern char *DAT_800d22c0[2];     /* load buffer, per player */
+extern uchar DAT_800d22c8;
+extern int DAT_800d22cc;    /* all pictures loaded */
+extern int DAT_800d22d0[2]; /* skater, per player */
 
 int Load8BitBMP2(char *, char **, int *, int *, ushort *);
 

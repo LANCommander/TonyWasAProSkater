@@ -16,12 +16,12 @@ extern SStats Stats[];
 extern SCareer GCareer;
 extern CBruce *GSkater;
 extern int GLevel;
-extern char *GameText_180[];
+extern char *GameText[];
 
-ushort FIRST_PLACE;
-ushort SECOND_PLACE;
-ushort THIRD_PLACE;
-ushort LAST_PLACE;
+extern ushort FIRST_PLACE;
+extern ushort SECOND_PLACE;
+extern ushort THIRD_PLACE;
+extern ushort LAST_PLACE;
 
 void Mess_DeleteAll(void);
 void Mess_SetScale(int);
@@ -297,10 +297,10 @@ void Competition_WinLoseDisplay() {
 				show = 0;
 
 			if (show && !c->mFading)
-				Front_PrintCentredPrompt(GameText_180[0]);
+				Front_PrintCentredPrompt(GameText[96]);
 		}
 	} else {
 		if (!c->mFading)
-			Front_PrintCentredPrompt(GameText_180[0]);
+			Front_PrintCentredPrompt(GameText[96]);
 	}
 }

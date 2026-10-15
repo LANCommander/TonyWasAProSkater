@@ -7,9 +7,9 @@ typedef struct {
 	void *pTexture;
 } SAnimFrame;
 
-SAnimFrame *ButtonsAnim;
+extern SAnimFrame *ButtonsAnim;
 
-extern const char *GameText_194[];
+extern const char *GameText[];
 
 void Mess_SetTextJustify(int);
 void Mess_SetScale(int);
@@ -24,7 +24,7 @@ void Front_PrintGoBack(void) {
 	Mess_SetTextJustify(1);
 	Mess_SetScale(192);
 	Mess_SetRGB(150, 100, 25, 0);
-	Mess_DrawText(92, 214, GameText_194[0], 0, 0, 256, 0);
+	Mess_DrawText(92, 214, GameText[101], 0, 0, 256, 0);
 	Mess_SetTextJustify(0);
 
 	p = Panel_DrawTexturedPoly(ButtonsAnim + 1);

@@ -12,7 +12,7 @@ struct Q {
 
 extern struct Q *Pack_pFree;
 
-struct Q *DAT_800d1c80;
+extern struct Q *DAT_800d1c80;
 
 void Front_SelectSkaterPack(int a);
 void Mem_Delete(struct Q *p);

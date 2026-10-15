@@ -1,5 +1,6 @@
 /* PlayAway_Init__Fv (0x8002566c) */
 #include "game/career.h"
+#include "game/m3d.h"
 #include "game/psyq.h"
 
 /* PlayAway_Init (demo twin PlayAway_Init). LastDeck[] picks each player's board texture,
@@ -7,16 +8,13 @@
    fixes the loop's preheader order (sp+16 hoisted before sp+48). */
 extern SStats Stats[];
 extern SCareer GCareer;
-extern short ApocalypseViewport_c[], LeftViewport_c[], RightViewport_c[], TopViewport_c[],
-    BottomViewport_c[], TopLeftViewport_c[], BottomRightViewport_c[], TopLeftBigViewport_c[],
-    BottomRightBigViewport_c[];
+extern SViewport ApocalypseViewport, LeftViewport, RightViewport, TopViewport, BottomViewport,
+    TopLeftViewport, BottomRightViewport, TopLeftBigViewport, BottomRightBigViewport;
 extern int SelectedSkater;
 extern char InShell;
 extern int DAT_800d1f14, DAT_800d1f18;
 
-int SelectedSkater2, EndCode, TTime, EveryOther, XFrames, GNumberOfPlayers, GState, GStartTime,
-    GSkaterRegion, DAT_800d1798, GClear1, GClear2, XFramesShifted, DAT_800d183c, DAT_800d1840,
-    LastXblanks;
+extern int SelectedSkater2, EndCode, TTime, EveryOther, XFrames, GNumberOfPlayers, GState, GStartTime, GSkaterRegion, DAT_800d1798, GClear1, GClear2, XFramesShifted, DAT_800d183c, DAT_800d1840, LastXblanks;
 
 extern volatile int Vblanks, Xblanks;
 
@@ -69,16 +67,16 @@ void PlayAway_Init() {
 	if (GNumberOfPlayers == 2)
 		ReplaceTexture(Stats[SelectedSkater2].TruckChecksum, nm[1]);
 
-	ApocalypseViewport_c[0] = 3413;
-	LeftViewport_c[0] = 2275;
-	RightViewport_c[0] = 2275;
-	TopViewport_c[0] = 3413;
-	BottomViewport_c[0] = 3413;
-	TopLeftViewport_c[0] = 2275;
-	BottomRightViewport_c[0] = 2275;
-	TopLeftBigViewport_c[0] = 2275;
+	ApocalypseViewport.TanHalf = 3413;
+	LeftViewport.TanHalf = 2275;
+	RightViewport.TanHalf = 2275;
+	TopViewport.TanHalf = 3413;
+	BottomViewport.TanHalf = 3413;
+	TopLeftViewport.TanHalf = 2275;
+	BottomRightViewport.TanHalf = 2275;
+	TopLeftBigViewport.TanHalf = 2275;
 	GState = 0;
-	BottomRightBigViewport_c[0] = 2275;
+	BottomRightBigViewport.TanHalf = 2275;
 	Vblanks = 0;
 	Xblanks = 0;
 	XFramesShifted = 0;

@@ -12,9 +12,9 @@ extern "C" {
 
 extern SPSXRegion PSXRegion[];
 
-uint XblanksNow;
-uint XblanksThen;
-u_long *pColourTable;
+extern uint XblanksNow;
+extern uint XblanksThen;
+extern u_long *pColourTable;
 
 void M3d_PreprocessPulsingColours(int Region) {
 	uint *pData;

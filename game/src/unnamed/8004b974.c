@@ -9,7 +9,7 @@ struct S {
 	char pad[42];
 };
 
-int SFXPaused;
+extern int SFXPaused;
 
 extern unsigned short pitchPriorToPause[];
 

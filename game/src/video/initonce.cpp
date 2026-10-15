@@ -4,18 +4,17 @@
 #include "game/mem.h"
 #include "game/video.h"
 
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern int GNumberOfPlayers;
 
 void Video_InitOnce() {
-	GVInfo1.pBlockStart = GVInfo1.pStreamStart = (ulong *)Mem_NewX(24576, 1, 1);
-	GVInfo1.pStreamStart += 576 / 4;
+	GVInfo1[0].pBlockStart = GVInfo1[0].pStreamStart = (ulong *)Mem_NewX(24576, 1, 1);
+	GVInfo1[0].pStreamStart += 576 / 4;
 
 	if (GNumberOfPlayers == 2) {
-		GVInfo2.pBlockStart = GVInfo2.pStreamStart = (ulong *)Mem_NewX(24576, 1, 1);
-		GVInfo2.pStreamStart += 576 / 4;
+		GVInfo1[1].pBlockStart = GVInfo1[1].pStreamStart = (ulong *)Mem_NewX(24576, 1, 1);
+		GVInfo1[1].pStreamStart += 576 / 4;
 	} else {
-		GVInfo2.pBlockStart = GVInfo2.pStreamStart = 0;
+		GVInfo1[1].pBlockStart = GVInfo1[1].pStreamStart = 0;
 	}
 }

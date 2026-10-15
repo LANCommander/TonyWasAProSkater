@@ -9,7 +9,7 @@ extern char FUN_800427c4[];
 extern char FUN_80042d04[];
 extern char FUN_800447e4[];
 
-PSX_DATA(0x800a0534) PsxVtEntry DAT_800a0534[8] = {
+PsxVtEntry __vt_6CBruce[8] = {
 	{0, 0, 0},
 	{0, 0, FUN_80042380},
 	{0, 0, Die__6CBruce},

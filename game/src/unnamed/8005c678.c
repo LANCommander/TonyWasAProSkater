@@ -1,8 +1,8 @@
 /* ClearSoftReset__Fv (0x8005c678) */
 #include "names.h"
 
-int DAT_800d1cb8;
-int DAT_800d2348;
+extern int DAT_800d1cb8;
+extern int DAT_800d2348;
 
 void ClearSoftReset(void) {
 	DAT_800d1cb8 = 0;

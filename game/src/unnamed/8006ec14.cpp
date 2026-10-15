@@ -6,24 +6,23 @@
 struct SEnviro;
 
 extern SPSXRegion PSXRegion[];
-extern char SpoolQ_d[][17];
+extern SQueue SpoolQ[];
 extern Texture *TextureChecksumHashTable[];
 
-int SpoolPos;
-int FreePos;
-AnimPacket *AnimPackets;
-int EnvRegions;
-int EnvRegions_4;
-int DAT_800d1ed8;
-int DAT_800d1edc;
-SEnviro *EnviroList;
-int OtherEnvIndex;
+extern int SpoolPos;
+extern int FreePos;
+extern AnimPacket *AnimPackets;
+extern int EnvRegions[2];
+extern int DAT_800d1ed8;
+extern int DAT_800d1edc;
+extern SEnviro *EnviroList;
+extern int OtherEnvIndex;
 
 void Spool_Init() {
 	int i;
 
 	for (i = 0; i < 20; i++)
-		SpoolQ_d[i][0] = 0;
+		SpoolQ[i].Occupied = 0;
 
 	SpoolPos = 0;
 	FreePos = 0;
@@ -52,8 +51,8 @@ void Spool_Init() {
 		TextureChecksumHashTable[i] = 0;
 
 	AnimPackets = 0;
-	EnvRegions = -1;
-	EnvRegions_4 = -1;
+	EnvRegions[0] = -1;
+	EnvRegions[1] = -1;
 	DAT_800d1ed8 = 0;
 	DAT_800d1edc = 0;
 	EnviroList = 0;

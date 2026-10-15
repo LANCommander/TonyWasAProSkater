@@ -1,36 +1,34 @@
-/* Decompiled data: the retail executable's initialised globals that src/main/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/main/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 
 struct CBody;
 struct CBruce;
 struct CPowerUp;
 
-extern char D_800cf0ec[];
 extern char FUN_80096c70[];
 extern char FUN_80097060[];
 extern char FUN_80097100[];
 
-PSX_DATA(0x8009f5cc) int DAT_8009f5cc[12] = {
+int DAT_8009f5cc[12] = {
 	0x20746f6e, 0x2e2e2e2e, 0x444e4520, 0x45444f43, 0x4557545f, 0x554a4b41, 0xa504d, 0x20686f0a,
 	0x74696873, 0x21212121,
 };
 
-PSX_DATA(0x800d0010) int DAT_800d0010[1];
+int DAT_800d0010[1];
 
-PSX_DATA(0x800d0160) void *DAT_800d0160[5] = {
-	FUN_80096c70, FUN_80097060, 0, FUN_80097100, D_800cf0ec,
+void *DAT_800d0160[5] = {
+	FUN_80096c70, FUN_80097060, 0, FUN_80097100, 0 /* (Psy-Q library data) */,
 };
 
-PSX_DATA(0x800d01d8) int DAT_800d01d8[3];
+int DAT_800d01d8[3];
 
-PSX_DATA(0x800d05f0) int DAT_800d05f0[13] = {
+int DAT_800d05f0[13] = {
 	0xfb28, 0xfc18, 0xf6f8, 0xf204, 0xea44, 0xe128, 0xcff8, 0xcff8, 0xf880, 0, 0, 0x117350,
 	0x450000,
 };
 
-PSX_DATA(0x800d0734) int DAT_800d0734[134] = {
+int DAT_800d0734[134] = {
 	0x9c00c0f0, 0x4ec05280, 0x31b03e4, 0x2af03a4, 0x2660372, 0x25d031c, 0x18e025c, 0x135022f,
 	0xb701d2, 0xb5018f, 0x8000b4, 0x26004c, 0x80008000, 0, 0x7f00b1, 0x4fa870f0, 0x4510bce0,
 	0xb4c0bef0, 0x4ec05280, 0x76b0904, 0x65f0824, 0x61607a2, 0x5ed076c, 0x42e05ec, 0x305050f,
@@ -47,93 +45,93 @@ PSX_DATA(0x800d0734) int DAT_800d0734[134] = {
 	0x1d702b0, 0x26a0358, 0x11e01d6, 0xb1012d, 0x59011f, 0xe301a0, 0x400058, 0x140028, 0x80008000,
 };
 
-PSX_DATA(0x800d10d8) int D_800d10d8[1] = {
+int D_800d10d8[1] = {
 	1,
 };
 
 /* THPS2 demo: CBody* */
-PSX_DATA(0x800d1618) CBody *PowerUpList;
+CBody *PowerUpList;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16bc) int GAutoPlayer1a[1];
+int GAutoPlayer1a[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16c0) int GAutoPlayer2a[1];
+int GAutoPlayer2a[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16c4) int GAutoLevela[1];
+int GAutoLevela[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16c8) int GAutoGamea[1];
+int GAutoGamea[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16d0) int Mick_MapMode[1];
+int Mick_MapMode[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16d4) int Mick_MapDoit[1];
+int Mick_MapDoit[1];
 
 /* EEndCode (THPS2 demo: EEndCode) */
-PSX_DATA(0x800d16e0) int EndCode[1];
+int EndCode[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16e8) int EveryOther[1];
+int EveryOther[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d16ec) int Restart[1];
+int Restart[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1738) int Mick_Darkness[1];
+int Mick_Darkness[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1788) int GSpin[1];
+int GSpin[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d178c) int GSpinSpeed[1];
+int GSpinSpeed[1];
 
 /* THPS2 demo: int[2] */
-PSX_DATA(0x800d1794) int GSkaterRegion[1];
+int GSkaterRegion[1];
 
-PSX_DATA(0x800d1798) int DAT_800d1798[1];
+int DAT_800d1798[1];
 
 /* THPS2 demo: char */
-PSX_DATA(0x800d17c4) unsigned char GVideoFlags[4];
+unsigned char GVideoFlags[4];
 
-PSX_DATA(0x800d17cc) CBruce *DAT_800d17cc;
-
-/* THPS2 demo: CPowerUp* */
-PSX_DATA(0x800d17d0) CPowerUp *GPowS;
+CBruce *DAT_800d17cc;
 
 /* THPS2 demo: CPowerUp* */
-PSX_DATA(0x800d17d4) CPowerUp *GPowK;
+CPowerUp *GPowS;
 
 /* THPS2 demo: CPowerUp* */
-PSX_DATA(0x800d17d8) CPowerUp *GPowA;
+CPowerUp *GPowK;
 
 /* THPS2 demo: CPowerUp* */
-PSX_DATA(0x800d17dc) CPowerUp *GPowT;
+CPowerUp *GPowA;
 
 /* THPS2 demo: CPowerUp* */
-PSX_DATA(0x800d17e0) CPowerUp *GPowE;
+CPowerUp *GPowT;
 
 /* THPS2 demo: CPowerUp* */
-PSX_DATA(0x800d17e4) CPowerUp *GPowTape;
+CPowerUp *GPowE;
+
+/* THPS2 demo: CPowerUp* */
+CPowerUp *GPowTape;
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d17e8) int GClear1[1];
+int GClear1[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d17ec) int GClear2[17];
+int GClear2[17];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1830) int CloseCam[1];
+int CloseCam[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1834) int PrimitiveCount[1];
+int PrimitiveCount[1];
 
-PSX_DATA(0x800d183c) int DAT_800d183c[1];
+int DAT_800d183c[1];
 
 /* THPS2 demo: int */
-PSX_DATA(0x800d1a34) int VblankUpdateBar[1];
+int VblankUpdateBar[1];
 
 /* THPS2 demo: short */
-PSX_DATA(0x800d214c) short M3d_OTPushback[1];
+short M3d_OTPushback[1];

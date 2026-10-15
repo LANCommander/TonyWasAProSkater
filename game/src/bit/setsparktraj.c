@@ -5,7 +5,7 @@ typedef struct {
 	short x, y, z;
 } SV;
 
-SV SparkTrajectory;
+extern SV SparkTrajectory;
 
 void Bit_SetSparkTrajectory(SV *v) {
 	SparkTrajectory = *v;

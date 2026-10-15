@@ -7,7 +7,7 @@ extern SVideoInfo GVInfo1;
 
 extern int DemoTimer, Status, GNumberOfPlayers, GameFrozen, MusicStopped;
 
-int DAT_800d1df0;
+extern int DAT_800d1df0;
 
 void Video_HandleStepping() {
 	int i, v;

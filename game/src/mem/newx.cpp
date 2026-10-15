@@ -7,16 +7,15 @@
    block's pNext is an aligned pointer). */
 #include "game/mem.h"
 
-int LowMemory;
-uint CriticalBigHeapUsage;
-uint UniqueIndentifier;
-int Used[2];
-uint Used_4;
-SBlockHeader *FirstFreeBlock[2];
-char *DAT_800d1b40;
-char *DAT_800d1b44;
-SBlockHeader *DAT_800d1b48;
-SBlockHeader *DAT_800d1b4c;
+extern int LowMemory;
+extern uint CriticalBigHeapUsage;
+extern uint UniqueIndentifier;
+extern int Used[2];
+extern SBlockHeader *FirstFreeBlock[2];
+extern char *DAT_800d1b40;
+extern char *DAT_800d1b44;
+extern SBlockHeader *DAT_800d1b48;
+extern SBlockHeader *DAT_800d1b4c;
 
 void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 	SBlockHeader *pBlock;
@@ -109,7 +108,7 @@ void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 		AddToFreeList(pLeftOver, Heap);
 
 		if (Heap == 1) {
-			if (Used_4 >= CriticalBigHeapUsage)
+			if (((uint)Used[1]) >= CriticalBigHeapUsage)
 				LowMemory = Heap;
 			else
 				LowMemory = 0;
@@ -128,7 +127,7 @@ void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 	Used[Heap] += pBlock->Size + MEM_HEADER;
 
 	if (Heap == 1) {
-		if (Used_4 >= CriticalBigHeapUsage)
+		if (((uint)Used[1]) >= CriticalBigHeapUsage)
 			LowMemory = Heap;
 		else
 			LowMemory = 0;

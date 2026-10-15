@@ -3,7 +3,7 @@
 
 extern FontInfo Font_table[];
 
-int Current_font, Num_fonts;
+extern int Current_font, Num_fonts;
 
 void Pack_Unpack(short, short);
 void Free16Slot(unsigned short);

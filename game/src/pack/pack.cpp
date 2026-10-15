@@ -9,9 +9,9 @@
 #include "game/m3d.h"
 #include "game/pack.h"
 
-TSPack *Pack_pFree;
-int Pack_NoBottom;
-int Pack_NoRight;
+extern TSPack *Pack_pFree;
+extern int Pack_NoBottom;
+extern int Pack_NoRight;
 
 TSPack *Pack_NewFree(int, int, int, int);
 void Pack_Merge(TSPack *);

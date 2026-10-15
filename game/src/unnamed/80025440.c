@@ -6,8 +6,7 @@ extern int Xblanks;
 extern int DAT_800a7214[];
 extern char DAT_800d2580[];
 
-int DAT_800d1750, LastXblanks, Cheat_SlowMo, TimeScale, XFramesShifted, XFrames, TimeScaleSquared,
-    Cheat_FPS, DAT_800d2230, GameFrozen;
+extern int DAT_800d1750, LastXblanks, Cheat_SlowMo, TimeScale, XFramesShifted, XFrames, TimeScaleSquared, Cheat_FPS, DAT_800d2230, GameFrozen;
 
 int sprintf(char *, char *, int);
 void Font_String(unsigned short, unsigned short, char *, unsigned char, unsigned char,

@@ -9,8 +9,7 @@
 #include "game/front.h"
 #include "game/psyq.h"
 
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern SLevel Levels[];
 extern SCareer GCareer;
 extern FallingTextEffect DAT_800a5b28[];
@@ -22,11 +21,11 @@ extern int GGame;
 extern int GLevel;
 extern int GHorseWaitTime;
 
-int Status;
-int GHighScoreLineIndex;
-int GHighScoreInitialCursorPos;
-int GHorseScale;
-int GHorseContinue;
+extern int Status;
+extern int GHighScoreLineIndex;
+extern int GHighScoreInitialCursorPos;
+extern int GHorseScale;
+extern int GHorseContinue;
 
 void Video_Stop(CBruce *);
 void InitStatsSwisch();
@@ -44,10 +43,10 @@ void Front_SwitchOnEndLevelMenu() {
 	pSkater = MechList;
 	pSkater2 = (CBruce *)pSkater->mNextItem;
 
-	if (GVInfo1.VideoMode)
+	if (GVInfo1[0].VideoMode)
 		Video_Stop(pSkater);
 
-	if (pSkater2 && GVInfo2.VideoMode)
+	if (pSkater2 && GVInfo1[1].VideoMode)
 		Video_Stop(pSkater2);
 
 	if (GSkater->mNumTapes && GNumberOfPlayers == 1) {

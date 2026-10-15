@@ -23,17 +23,17 @@ extern "C" {
 	extern SControl Pad[2];
 	extern int GamePaused[1];
 
-	int EveryOther;
-	int DAT_800d183c;
-	int TTime;
-	int GameFrozen;
-	int GGame;
-	int GState;
-	int GSpin;
-	int GSpinSpeed;
-	int GHorsePlayer;
-	CBruce *GSkater;
-	CBruce *DAT_800d17cc;
+	extern int EveryOther;
+	extern int DAT_800d183c;
+	extern int TTime;
+	extern int GameFrozen;
+	extern int GGame;
+	extern int GState;
+	extern int GSpin;
+	extern int GSpinSpeed;
+	extern int GHorsePlayer;
+	extern CBruce *GSkater;
+	extern CBruce *DAT_800d17cc;
 
 	extern CBody *BaddyList;
 	extern CBody *EnvironmentalObjectList;

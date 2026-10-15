@@ -3,7 +3,7 @@
 
 extern unsigned char Free16Slots[];
 
-int Pal16X, Pal16Y;
+extern int Pal16X, Pal16Y;
 
 unsigned short FUN_8008f70c(int, int);
 

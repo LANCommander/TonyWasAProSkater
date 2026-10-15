@@ -4,7 +4,7 @@
 extern SControl Pad[];
 extern int GGame;
 
-uchar align[8];
+extern uchar align[8];
 
 #include "pc_input.h"
 

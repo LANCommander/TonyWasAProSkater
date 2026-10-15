@@ -18,13 +18,13 @@ extern SPSXRegion PSXRegion[];
 extern SColCache ItemCache[];
 extern SFaceCache FaceCache[];
 
-int ItemCacheIndex;
-int DAT_800d20e4;
-int DAT_800d20e8;
-int DAT_800d2110;
-int DAT_800d2114;
-int DAT_800d2118;
-int DAT_800d211c;
+extern int ItemCacheIndex;
+extern int DAT_800d20e4;
+extern int DAT_800d20e8;
+extern int DAT_800d2110;
+extern int DAT_800d2114;
+extern int DAT_800d2118;
+extern int DAT_800d211c;
 
 void M3dAsm_LineColijPreprocessItemsZoned(Item **, int, SLineInfo *, ushort);
 void M3dColij_LineToThisItemCached(Item *, SLineInfo *, SColCache *);

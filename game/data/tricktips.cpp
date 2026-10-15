@@ -1,11 +1,10 @@
-/* Decompiled data: the retail executable's initialised globals that src/tricktips/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/tricktips/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 #include "game/panel.h"
 
 /* THPS2 demo: CTrickTipText[27] */
-PSX_DATA(0x800a28c4) STip TRICKTIP[27] = {
+STip TRICKTIP[27] = {
 	{0, 2, "HOLD JUMP TO", "CROUCH AND", "GO FASTER"},
 	{2, 2, "DONT HOLD FORWARD", "UNLESS YOU WANT", "TO LEAVE RAMPS"},
 	{1, 2, "LAND STRAIGHT TO", "AVOID BAILING"},
@@ -35,17 +34,17 @@ PSX_DATA(0x800a28c4) STip TRICKTIP[27] = {
 	{0, 2},
 };
 
-PSX_DATA(0x800a2fc4) int D_800a2fc4[9] = {
+int D_800a2fc4[9] = {
 	0x69766f6d, 0x6620676e, 0x2e747361, 0x73754a20, 0x20322074, 0x65706174, 0x656c2073, 0x20857466,
 };
 
-PSX_DATA(0x800a3004) int D_800a3004[8] = {
+int D_800a3004[8] = {
 	0x79617453, 0x656c6120, 0x202e7472, 0x796c6e4f, 0x74203120, 0x20657061, 0x67206f74, 0x20856f,
 };
 
 /* THPS2 demo: char* */
-PSX_DATA(0x800d1fa0) char *TEXT_TIP = "TIP: ";
+char *TEXT_TIP = "TIP: ";
 
 /* THPS2 demo: char* */
-PSX_DATA(0x800d1fa4) char *TEXT_REMEMBER = "REMEMBER: ";
+char *TEXT_REMEMBER = "REMEMBER: ";
 

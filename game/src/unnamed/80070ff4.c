@@ -22,11 +22,9 @@ typedef struct {
 extern SControl Pad[];
 extern Raw theControllers[];
 
-int DAT_800d1f34, DAT_800d1f38, DAT_800d1f3c, DAT_800d1f40, DAT_800d1f44, DAT_800d1f48,
-    DAT_800d1f4c, DAT_800d1f50;
-int DAT_800d1f54, DAT_800d1f58, DAT_800d1f5c, DAT_800d1f60, Pad_IdleTime;
-int DAT_800d23e4, DAT_800d23e8, DAT_800d23ec, DAT_800d23f0, DAT_800d23f4, DAT_800d23f8,
-    DAT_800d23fc, DAT_800d2400;
+extern int DAT_800d1f34, DAT_800d1f38, DAT_800d1f3c, DAT_800d1f40, DAT_800d1f44, DAT_800d1f48, DAT_800d1f4c, DAT_800d1f50;
+extern int DAT_800d1f54, DAT_800d1f58, DAT_800d1f5c, DAT_800d1f60, Pad_IdleTime;
+extern int DAT_800d23e4, DAT_800d23e8, DAT_800d23ec, DAT_800d23f0, DAT_800d23f4, DAT_800d23f8, DAT_800d23fc, DAT_800d2400;
 
 void Pad_ActuatorOff(int, int);
 void Pad_Button(SButton *, int);

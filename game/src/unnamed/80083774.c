@@ -10,8 +10,8 @@ typedef struct {
 	short x1, y1, x0, y0;
 } SBox;
 
-SBox *pCurrentViewport;
-P_TAG *CurrentOrderingTable;
+extern SBox *pCurrentViewport;
+extern P_TAG *CurrentOrderingTable;
 
 extern u_char *pPoly;
 

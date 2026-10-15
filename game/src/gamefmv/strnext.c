@@ -1,6 +1,6 @@
 /* strNext__Fv (0x80023e88) */
 #include "pc_stream.h"
-int GameFMV_CurrentFrame, GameFMV_EndFrame, GameFMV_RewindSwitch;
+extern int GameFMV_CurrentFrame, GameFMV_EndFrame, GameFMV_RewindSwitch;
 
 int FUN_800911fc(int *, int **);
 

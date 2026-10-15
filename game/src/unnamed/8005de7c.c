@@ -18,12 +18,13 @@ typedef struct {
 	char a, b, c, d, e[10];
 } R;
 
-extern R GCareer_8[];
+extern unsigned char GCareer[];
+#define CharacterProgress ((R *)(GCareer + 8)) /* GCareer.CharacterProgress */
 
-int DAT_800d1d24;
+extern int DAT_800d1d24;
 
-struct O *DAT_800d2358;
-struct O *DAT_800d235c;
+extern struct O *DAT_800d2358;
+extern struct O *DAT_800d235c;
 
 extern void Pack_DefragmentFully(void);
 extern void FrontLoader_LoadSet(int);
@@ -47,17 +48,17 @@ int Front_MainMenu(int a) {
 
 	if (DAT_800d1d24) {
 		for (i = 0; i < 11; i++) {
-			GCareer_8[i].a = 0;
-			GCareer_8[i].d = 0;
-			GCareer_8[i].c = 0;
-			GCareer_8[i].b = 0;
+			CharacterProgress[i].a = 0;
+			CharacterProgress[i].d = 0;
+			CharacterProgress[i].c = 0;
+			CharacterProgress[i].b = 0;
 
 			for (j = 0; j < 10; j++) {
-				GCareer_8[i].e[j] = 255;
-				GCareer_8[i].a += 5;
-				GCareer_8[i].d += 1;
-				GCareer_8[i].c += 1;
-				GCareer_8[i].b += 1;
+				CharacterProgress[i].e[j] = 255;
+				CharacterProgress[i].a += 5;
+				CharacterProgress[i].d += 1;
+				CharacterProgress[i].c += 1;
+				CharacterProgress[i].b += 1;
 			}
 		}
 	}

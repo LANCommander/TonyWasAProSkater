@@ -7,7 +7,7 @@ typedef struct {
 
 extern short CamPtNode[];
 
-int CamPtIndex;
+extern int CamPtIndex;
 
 void Trig_GetPosition(V *v, int n);
 

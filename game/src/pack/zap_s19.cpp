@@ -1,7 +1,7 @@
 /* Pack_Zap__Fiiii (0x8004a69c) */
 #include "game/m3d.h"
 
-TSPack *Pack_pFull;
+extern TSPack *Pack_pFull;
 
 TSPack *Pack_NewFree(int, int, int, int);
 int Pack_Merge(TSPack *);

@@ -1,7 +1,7 @@
 /* Front_PrintDemo__Fv (0x800160bc) */
 #include "names.h"
 
-int DAT_800d13ec;
+extern int DAT_800d13ec;
 
 extern int GNumberOfPlayers;
 

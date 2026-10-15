@@ -64,9 +64,9 @@ extern "C" {
 int Redbook_Rnd(int);
 int allocateVoice(void);
 
-char *pSFXVABHeader;
-char *pLevelSpecificSFXVABHeader;
-unsigned nko_flag, keyon_queue, keyoff_queue, voiceon_flag, loop_flag, voicefree_flag;
+extern char *pSFXVABHeader;
+extern char *pLevelSpecificSFXVABHeader;
+extern unsigned nko_flag, keyon_queue, keyoff_queue, voiceon_flag, loop_flag, voicefree_flag;
 
 extern ushort SFXFalloffArray[];
 

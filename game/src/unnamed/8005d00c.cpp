@@ -19,10 +19,10 @@ typedef struct {
 extern SC GCareer[];
 extern char Pad[];
 
-int DAT_800d1cf4, DAT_800d234c;
-Sprite *DAT_800d1d0c, *DAT_800d1d04, *DAT_800d1d00;
-unsigned char DAT_800d1d18;
-int DAT_800d1cec, DAT_800d1d14;
+extern int DAT_800d1cf4, DAT_800d234c;
+extern Sprite *DAT_800d1d0c, *DAT_800d1d04, *DAT_800d1d00;
+extern unsigned char DAT_800d1d18;
+extern int DAT_800d1cec, DAT_800d1d14;
 
 extern "C" void FUN_80061a10(char *);
 extern "C" void FUN_8005dc58(int);

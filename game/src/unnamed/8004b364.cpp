@@ -6,7 +6,7 @@
 extern int DAT_800b8a9c[];
 extern int SFXLEVEL;
 
-int SFX_v;
+extern int SFX_v;
 
 int SFX_PlayLR(uint id, short l, short r, int pan) {
 	int p, note;

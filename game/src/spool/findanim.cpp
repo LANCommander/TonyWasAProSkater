@@ -6,7 +6,7 @@
 #include "game/m3d.h"
 #include "game/spool.h"
 
-AnimPacket *AnimPackets;
+extern AnimPacket *AnimPackets;
 
 SAnimFrame *Spool_FindAnim(char *pName) {
 	SAnimFrame *pAnim = 0;

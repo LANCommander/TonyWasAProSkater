@@ -6,7 +6,7 @@
 extern CBody *MechList[2];
 extern int GNumberOfPlayers;
 
-unsigned SuspendDistance;
+extern unsigned SuspendDistance;
 
 #include "pc_video.h"
 

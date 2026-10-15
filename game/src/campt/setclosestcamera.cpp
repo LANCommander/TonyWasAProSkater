@@ -4,14 +4,13 @@
 #include "game/video.h"
 #include "game/m3d.h"
 
-extern SVideoInfo GVInfo1;
-extern SVideoInfo GVInfo2;
+extern SVideoInfo GVInfo1[2];
 extern CBruce *MechList;
 extern unsigned int Xblanks;
 extern short CamPtNode[];
 extern unsigned int CamModes[];
 
-int CamPtIndex;
+extern int CamPtIndex;
 
 extern SViewport *pCurrentViewport;
 extern int camDist;
@@ -46,9 +45,9 @@ void CamPt_SetClosestCamera(CBruce *pSkater) {
 	AdjustedPlayerPos.vz += pSkater->mUp.vz * 110;
 
 	if (pSkater == MechList)
-		VInfo = &GVInfo1;
+		VInfo = &GVInfo1[0];
 	else
-		VInfo = &GVInfo2;
+		VInfo = &GVInfo1[1];
 
 	if (Utils_LineOfSight(AdjustedPlayerPos, pSkater->mpCamera->mPos)) {
 		VInfo->NoLOS = 0;

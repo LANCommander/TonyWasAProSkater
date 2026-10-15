@@ -26,7 +26,7 @@ extern "C" {
 
 extern SStats Stats[];
 
-int Cheat_StatsOverride;
+extern int Cheat_StatsOverride;
 
 extern int Cheat_Fire;
 extern int Cheat_L2KillsBaddies;

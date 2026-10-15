@@ -11,10 +11,10 @@ struct S {
 	int l, m;
 };
 
-char *pSFXVABHeader;
-char *pLevelSpecificSFXVABHeader;
-int DAT_800d1a94;
-int DAT_800d1a98;
+extern char *pSFXVABHeader;
+extern char *pLevelSpecificSFXVABHeader;
+extern int DAT_800d1a94;
+extern int DAT_800d1a98;
 
 void FUN_80094d74(void);
 void FUN_80094444(struct S *s);

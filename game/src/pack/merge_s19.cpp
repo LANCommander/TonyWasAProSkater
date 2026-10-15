@@ -1,7 +1,7 @@
 /* Pack_Merge__FP6TSPack (0x8004a590) */
 #include "game/m3d.h"
 
-TSPack *Pack_pFree;
+extern TSPack *Pack_pFree;
 
 TSPack *Pack_MergeAdjacent(TSPack *, TSPack *);
 

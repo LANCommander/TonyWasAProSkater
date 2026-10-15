@@ -1,7 +1,7 @@
 /* Trig_ResetCPExecutedFlags__Fi (0x800449cc) */
 #include "game/trig.h"
 
-SCommandPoint *CommandPoints;
+extern SCommandPoint *CommandPoints;
 
 void Trig_ResetCPExecutedFlags(int m) {
 	SCommandPoint *p;

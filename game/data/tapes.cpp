@@ -1,6 +1,5 @@
-/* Decompiled data: the retail executable's initialised globals that src/tapes/ uses, each at
- * its retail address (psxdata.h). Text is string literals where it's used and the tables have
- * the game's types; platform/pc/tools/data_image.py checks it all against the retail bytes. */
+/* Decompiled data: the retail executable's initialised globals that src/tapes/ uses (psxdata.h).
+ * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
 #include "game/tapes.h"
 
@@ -8,7 +7,7 @@ extern char D_800a2fc4[];
 extern char D_800a3004[];
 
 /* STapeMessage[33] (THPS2 demo: STapeMessage[30]) */
-PSX_DATA(0x800c0da4) STapeMessage TapeMessage[33] = {
+STapeMessage TapeMessage[33] = {
 	{0, "Great run! Earn more tapes", "by completing the five", "challenges in each level."},
 	{1, "New level! You've unlocked", "the SCHOOL. "},
 	{1, "NEW DECK now available.", "Stats increased! "},
@@ -44,9 +43,9 @@ PSX_DATA(0x800c0da4) STapeMessage TapeMessage[33] = {
 	{0, (char *)0xb80, (char *)0x40, (char *)0x40},
 };
 
-PSX_DATA(0x800c0fb4) int D_800c0fb4[1] = {
+int D_800c0fb4[1] = {
 	64,
 };
 
-/* THPS2 demo: null */
-PSX_DATA(0x800d1fb8) int CTape_mOkayToDisplayContinueButton[1];
+int CTape::mOkayToDisplayContinueButton;
+int CTape::mOkayToDisplayTitle;

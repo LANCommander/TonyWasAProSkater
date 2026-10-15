@@ -8,7 +8,7 @@ extern int GamePaused;
 extern int ViewportMode;
 extern CBruce *MechList[2];
 
-int TAPES_Display, SKATE_Display;
+extern int TAPES_Display, SKATE_Display;
 
 void DisplayTapesSkate();
 extern "C" void FUN_8001e100(FallingTextEffect *, int);

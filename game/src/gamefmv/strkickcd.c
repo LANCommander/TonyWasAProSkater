@@ -1,6 +1,6 @@
 /* strKickCD__Fv (0x80023f44) */
 #include "pc_stream.h"
-int GameFMV_StartSector;
+extern int GameFMV_StartSector;
 
 unsigned char *FUN_800912bc(int, unsigned char *);
 int CdControl(int, unsigned char *, unsigned char *);

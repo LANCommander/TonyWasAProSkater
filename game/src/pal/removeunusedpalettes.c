@@ -11,7 +11,7 @@ typedef struct SPalette {
 	struct SPalette *next; /* the entry made before (tag_S_Pal pPrevious) */
 } SPalette;
 
-SPalette *DAT_800d1a80;
+extern SPalette *DAT_800d1a80;
 
 extern unsigned char Free16Slots[], Free256Slots[];
 

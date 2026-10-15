@@ -4,7 +4,7 @@
 
 extern SVideoInfo GVInfo1[2];
 
-int GVideoReplay;
+extern int GVideoReplay;
 
 void Video_SyncObs(int);
 
