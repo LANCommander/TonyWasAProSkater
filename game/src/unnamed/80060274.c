@@ -2,13 +2,15 @@
 #include "names.h"
 
 typedef struct {
-	int w[7];
+	char *w[7];
 } T;
 
 typedef struct {
-	char p[0xf0];
-	int f0, f4, f8, fc;
+	char *p[0xf0 / 4];
+	char *f0, *f4, *f8, *fc;
 } Q;
+
+struct VerticalMenu;
 
 typedef struct {
 	char p[0x184];
@@ -21,13 +23,13 @@ extern D GPreferences;
 
 int DAT_800d1d28;
 
-int FUN_8005ffac(int);
+int FUN_8005ffac(struct VerticalMenu *);
 void FrontLoader_LoadSet(int);
 void FrontLoader_Defragment(void);
-int FrontLoader_TakeFile(char *);
-void DownloadBMP16x2(int);
-int sprintf(char *, char *, int, int);
-int Front_RunMenu(T *, int *, int, int, int *, int (*)(int), int, int, int);
+char *FrontLoader_TakeFile(char *);
+void DownloadBMP16x2(char *);
+int sprintf(char *, char *, char *, char *);
+int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);
 void Front_ControllerOptions(int);
 void FUN_8005fd50(int);
 void FUN_800601fc(int);
@@ -42,7 +44,7 @@ static char s_graphics[] = "GRAPHICS";
 int FUN_80060274(int a) {
 	char A[32];
 	char B[32];
-	int t[8];
+	char *t[8];
 	int k[8];
 	int v, i;
 
@@ -54,7 +56,7 @@ int FUN_80060274(int a) {
 		for (i = 0; i < 5; i++)
 			t[i] = DAT_800a1df8.w[i];
 
-		t[5] = (int)s_graphics;
+		t[5] = s_graphics;
 		t[6] = DAT_800a1df8.w[5];
 		t[7] = DAT_800a1df8.w[6];
 
@@ -63,11 +65,11 @@ int FUN_80060274(int a) {
 
 		sprintf(A, "%s %s", GameText.f8, GPreferences.f184 ? GameText.f0 : GameText.f4);
 
-		t[3] = (int)A;
+		t[3] = A;
 		sprintf(B, "%s %s", GameText.fc, GPreferences.f188 ? GameText.f0 : GameText.f4);
 
-		t[4] = (int)B;
-		v = Front_RunMenu((T *)t, k, 8, 80, &a, FUN_8005ffac, 0, 0, 0);
+		t[4] = B;
+		v = Front_RunMenu(t, k, 8, 80, &a, (void (*)(struct VerticalMenu *))FUN_8005ffac, 0, 0, 0);
 
 		if (v == -1 || v == 88) {
 			FrontLoader_LoadSet(0);

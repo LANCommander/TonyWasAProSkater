@@ -15,7 +15,9 @@
 #ifndef GAME_SHELLUTILS_H
 #define GAME_SHELLUTILS_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
 extern "C" {
 	#include <sys/types.h>
@@ -23,6 +25,7 @@ extern "C" {
 	#include <libgpu.h>
 }
 
+#include "game/classsizes.h"
 #include "game/types.h"
 #include "game/class.h"
 
@@ -57,6 +60,7 @@ class SlicedImage : public CClass {
 	void rotateDraw(int x, int y); /* 0x80063474 */
 	void removeBlack();            /* 0x800637d0 */
 };
+CHECK_CLASS_SIZE(SlicedImage, SIZEOF_SLICEDIMAGE);
 
 class Sprite : public CClass {
   public:
@@ -77,6 +81,7 @@ class Sprite : public CClass {
 	void unpack();                                                  /* 0x80063cec */
 	void removeFromMemory();                                        /* 0x80063d24 */
 };
+CHECK_CLASS_SIZE(Sprite, SIZEOF_SPRITE);
 
 class EraseSprite : public CClass {
   public:
@@ -106,6 +111,7 @@ class PadBuffer : public CClass {
 	int getPress();     /* 0x80064274 */
 	void reset();       /* 0x800642c0 */
 };
+CHECK_CLASS_SIZE(PadBuffer, SIZEOF_PADBUFFER);
 
 struct VerticalMenuItem {
 	Sprite *erase_sprite; /* 0x00 */
@@ -148,6 +154,7 @@ class VerticalMenu : public CClass {
 	void up();                                     /* 0x80065178 */
 	void down();                                   /* 0x80065230 */
 };
+CHECK_CLASS_SIZE(VerticalMenu, SIZEOF_VERTICALMENU);
 
 class VerticalDialog : public VerticalMenu {
   public:

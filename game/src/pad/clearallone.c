@@ -1,4 +1,5 @@
 /* Pad_ClearAllOne__Fi (0x80070960) */
+#include "game/padbuttons.h"
 #include "names.h"
 
 extern char Pad[];
@@ -6,7 +7,7 @@ extern char Pad[];
 extern void Pad_Clear(char *);
 
 void Pad_ClearAllOne__Fi(int i) {
-	int o = i * 0x16c;
+	int o = i * PAD_SIZE;
 	char *p = Pad + o;
 
 	Pad_Clear(p);

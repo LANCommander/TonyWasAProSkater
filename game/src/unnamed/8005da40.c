@@ -3,7 +3,8 @@
 #include "game/padbuttons.h"
 
 struct VT {
-	char pad[8];
+	short off0, i0; /* entry 0 (unused) */
+	void *fn0;
 	short off;
 	short pad2;
 	void (*fn)(char *, int);
@@ -63,7 +64,7 @@ void FUN_8005da40(void) {
 		SFX_PlayX(2, 0x2000, 0);
 		Pause__Fi(20);
 		Pad_ClearTriggers(Pad);
-		Pad_ClearTriggers(Pad + 364);
+		Pad_ClearTriggers(Pad + PAD_SIZE);
 
 		DAT_800d1ce8 = 0;
 		BackOut = 1;

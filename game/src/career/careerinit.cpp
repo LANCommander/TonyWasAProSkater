@@ -13,6 +13,11 @@ extern int GHasCareerLoaded, GLoadedCareerIsSaved;
 int Redbook_Rnd(int);
 void Options_SetPreferences();
 
+/* The tables of levels 10-19 (THPS1 has 10): retail took their base score from past the end of
+   Levels, i.e. from whatever data follows it (the card directory among it); the port uses what
+   retail read there on a cold boot, so saves stay the same whatever the memory layout. */
+static const int UnusedLevelHiScore[10] = {3, 0, 0, 0, 0, 0, 0x23002c, 0, 1, 0};
+
 void Career_Init() {
 	char *p;
 	char **pHighScore;
@@ -47,7 +52,9 @@ void Career_Init() {
 				GCareer.HighScore[Level][Score].Name[0] = (*pHighScore)[0];
 				GCareer.HighScore[Level][Score].Name[1] = (*pHighScore)[1];
 				GCareer.HighScore[Level][Score].Name[2] = (*pHighScore)[2];
-				GCareer.HighScore[Level][Score].Score = Levels[Level].HiScore + (7 - Score) * 5000;
+				GCareer.HighScore[Level][Score].Score =
+				    (Level < 10 ? Levels[Level].HiScore : UnusedLevelHiScore[Level - 10]) +
+				    (7 - Score) * 5000;
 				GCareer.HighScore[Level][Score].Skater = Redbook_Rnd(10);
 			}
 		}

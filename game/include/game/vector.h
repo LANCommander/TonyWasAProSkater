@@ -9,12 +9,14 @@
 
 /* egcs: the inline members and vtables of this header's classes are not emitted in every TU that
    uses them (byte-exact TUs hold one function each); the port build drops the pragma */
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface
+#endif
 
 #include "game/types.h"
 #include "game/class.h"
 
-extern "C" long SquareRoot0(long); /* libgte; as <libgte.h> declares it */
+extern "C" int SquareRoot0(int); /* libgte; as <libgte.h> declares it */
 
 struct CFriction {
 	uchar vx; /* 0x0 */

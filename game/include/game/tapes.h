@@ -3,7 +3,9 @@
 #ifndef GAME_TAPES_H
 #define GAME_TAPES_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
 #include "game/types.h"
 #include "game/vector.h"

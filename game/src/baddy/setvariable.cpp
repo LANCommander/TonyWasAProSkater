@@ -11,12 +11,12 @@ void CBaddy::SetVariable(ushort variable) {
 
 	switch (variable) {
 		case 8501:
-			p_word = (uint *)(((int)mpScript + 3) & -4);
+			p_word = (uint *)(((intptr_t)mpScript + 3) & -4);
 			mDeadChecksum = *p_word;
 			mpScript = (ushort *)(p_word + 1);
 			break;
 		case 8495:
-			p_word = (uint *)(((int)mpScript + 3) & -4);
+			p_word = (uint *)(((intptr_t)mpScript + 3) & -4);
 			mModel = Spool_GetModel(*p_word, mRegion);
 			mpScript = (ushort *)(p_word + 1);
 			break;

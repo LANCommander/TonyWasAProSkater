@@ -1,4 +1,5 @@
 /* Trig_ParseTRGFile__Fv (0x80047214) */
+#include "game/classsizes.h"
 #include "names.h"
 
 typedef struct {
@@ -65,7 +66,7 @@ void Trig_ParseTRGFile(void) {
 				b += 1;
 				b = (unsigned short *)((char *)b + (*(short *)b * 2 + 2));
 
-				if ((int)b & 2)
+				if ((intptr_t)b & 2)
 					b += 1;
 
 				CreateCommandPoint(*(int *)b, ui, (char *)b + 4);
@@ -75,7 +76,7 @@ void Trig_ParseTRGFile(void) {
 				b += 1;
 				b = (unsigned short *)((char *)b + (*(short *)b * 2 + 2));
 
-				if ((int)b & 2)
+				if ((intptr_t)b & 2)
 					b += 1;
 
 				CreateCommandPoint(*(int *)b, i, DAT_800d1a10);
@@ -83,7 +84,7 @@ void Trig_ParseTRGFile(void) {
 			case 500:
 				q = (Q *)Trig_GetPosition(&v, i);
 				UseCacheForBits = 0;
-				w = __nw__4CBitUi(100);
+				w = __nw__4CBitUi(SIZEOF_CLIGHT);
 
 				if (w)
 					CLight_ctor(w, &v, i, q->us0, q->us2, q->us4, q->us6, q->b8, q->b10, q->b12,
@@ -93,7 +94,7 @@ void Trig_ParseTRGFile(void) {
 				break;
 			case 12:
 			case 14:
-				it = __nw__6CClassUi(24);
+				it = __nw__6CClassUi(SIZEOF_CTRICKOB);
 
 				if (it)
 					CTrickOb_ctor(it, i, 0);

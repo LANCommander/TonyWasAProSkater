@@ -85,6 +85,6 @@ void M3d_PreprocessPulsingColours(int Region) {
 			__builtin_memcpy(&pColourTable[((uchar *)pData)[0]], &rgb, 4);
 		}
 
-		pData = (uint *)(ListLen * 4 + (int)pData) + 1;
+		pData = (uint *)((uchar *)pData + ListLen * 4) + 1;
 	}
 }

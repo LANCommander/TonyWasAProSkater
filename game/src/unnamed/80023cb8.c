@@ -2,7 +2,7 @@
 #include "names.h"
 #include "pc_stream.h"
 
-int pRingBuffer;
+unsigned int *pRingBuffer;
 int GameFMV_RingBufferSectors;
 unsigned char GameFMV_Is24Bit;
 

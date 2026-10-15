@@ -23,7 +23,15 @@
 extern unsigned int M3dColij_ZeroMask; /* face flag word bits allowed to be clear */
 extern unsigned int M3dColij_OneMask;  /* face flag word bits that must be clear */
 extern int CollidedTriggerModel;
-extern int NearestHit[]; /* SHit: pItem, pFace, Normal ... */
+/* the nearest hit so far (game/colij.h SHit; THPS1 keeps the hit face's normal pointer at 0x08) */
+extern struct {
+	Item *pItem;          /* 0x00 */
+	unsigned int *pFace;  /* 0x04 */
+	SVECTOR *pNormal;     /* 0x08 */
+	int pad0c[2];         /* 0x0c */
+	int PolyCentre[3];    /* 0x14 */
+	int Dist;             /* 0x20 */
+} NearestHit;
 
 /* MIPS div: never traps (x / 0 gives -1 for x >= 0, else 1; INT_MIN / -1 gives INT_MIN) */
 static int MipsDiv(int n, int d) {
@@ -137,8 +145,8 @@ static void TestFace(SFace *f, const SProjectedVertex *pv, SVECTOR *normals, SLi
 	info->Distance = t;
 	info->pFace = f;
 	info->Model = dmin;
-	NearestHit[2] = (int)n;
-	NearestHit[1] = (int)f;
+	NearestHit.pNormal = n;
+	NearestHit.pFace = (unsigned int *)f;
 }
 
 void M3dAsm_LineColijProcessFaces__FP6SModelP16SProjectedVertexP9SLineInfoP4Item(

@@ -22,7 +22,7 @@ CRibbon::CRibbon(const CVector &pos, int numbits, int pointsperbit, char *pMiddl
 	{
 		int i;
 
-		mBits = (CRibbonBit **)Mem_New(numbits * 4, 0, 1);
+		mBits = (CRibbonBit **)Mem_New(numbits * sizeof(CRibbonBit *), 0, 1);
 
 		for (i = mNumBits - 1; i >= 0; i--) {
 			mBits[i] = new CRibbonBit;

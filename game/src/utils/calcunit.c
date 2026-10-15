@@ -6,7 +6,7 @@ typedef struct {
 	int x, y, z;
 } V;
 
-extern long SquareRoot0(long);
+extern int SquareRoot0(int);
 
 static inline void VI(V *p, int _x, int _y, int _z) {
 	p->x = _x;

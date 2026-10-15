@@ -21,11 +21,14 @@ extern "C" {
 	int printf(const char *fmt, ...);                /* 0x8008c190 */
 	int sprintf(char *buffer, const char *fmt, ...); /* 0x8008b900 */
 	char *strcpy(char *dst, const char *src);                  /* 0x8008e904 */
-	unsigned int strlen(const char *s);                        /* 0x8008f6ec */
+	__SIZE_TYPE__ strlen(const char *s);                       /* 0x8008f6ec */
 	int strcmp(const char *s1, const char *s2);                /* 0x8008f6fc */
-	void *memcpy(void *dst, const void *src, unsigned int n);  /* 0x8009752c */
+	void *memcpy(void *dst, const void *src, __SIZE_TYPE__ n); /* 0x8009752c */
+	void *memset(void *dst, int c, __SIZE_TYPE__ n);
+	void *malloc(__SIZE_TYPE__ n); /* (the port's: the host's) */
+	void free(void *p);
 	int VSync(int mode);                                       /* 0x8008eebc */
-	int CdRead2(long mode);                                    /* 0x8008f0ec */
+	int CdRead2(int mode);                                    /* 0x8008f0ec */
 	void StSetMask(u_long mask, u_long start, u_long end);     /* 0x8008f19c */
 	int CdControl(u_char com, u_char *param, u_char *result);  /* 0x8008f264 */
 	int CdControlB(u_char com, u_char *param, u_char *result); /* 0x8008f4d4 */

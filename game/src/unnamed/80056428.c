@@ -49,7 +49,7 @@ void Front_UnloadSkaterTextures2P(void) {
 		} while (t);
 	}
 
-	Pack_pFree = Mem_NewX(20, 1, 1);
+	Pack_pFree = Mem_NewX(sizeof(N), 1, 1); /* a TSPack (24 bytes in 64-bit) */
 	*Pack_pFree = *DAT_800d1c80;
 	Pack_pFree->next = 0;
 }

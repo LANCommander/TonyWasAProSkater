@@ -63,13 +63,28 @@ typedef struct SFace {
 #define FACE_TRIANGLE 0x10 /* Flags: three vertices, else four */
 #define FACE2_TRIGGER 0x2  /* Flags2: a trigger face, not solid */
 
-/* a loaded region's models (game/m3d.h SPSXRegion; sizeof 0x40) */
+/* a loaded region (game/m3d.h SPSXRegion; sizeof 0x40): the whole entry, pointer fields as
+   pointers, so the array strides right on x64 too */
 typedef struct SPSXRegion {
 	char Filename[9];
 	unsigned char IsSuper, Usable, Protected;
-	unsigned int *pModelChecksums; /* 0x0c */
-	SModel **ppModels;             /* 0x10 */
-	char pad14[0x40 - 0x14];
+	unsigned int *pModelChecksums;  /* 0x0c */
+	SModel **ppModels;              /* 0x10 */
+	unsigned int *pPSX;             /* 0x14 */
+	unsigned int *pAnimFile;        /* 0x18 */
+	unsigned short *pHierarchy;     /* 0x1c */
+	void *pHooks;                   /* 0x20 */
+	unsigned int *pColourTable;     /* 0x24 */
+	unsigned int *pTexWibData;      /* 0x28 */
+	unsigned int *pColourPulseData; /* 0x2c */
+	unsigned short NumParts;        /* 0x30 */
+	unsigned char Fastable;         /* 0x32 */
+	unsigned char TexturesInRAM;    /* 0x33 */
+	unsigned char KeepTexturesInRAM; /* 0x34 */
+	char pad35[0x38 - 0x35];
+	void **ppTextures;              /* 0x38 */
+	unsigned short NumModels;       /* 0x3c */
+	unsigned short NumTextures;     /* 0x3e */
 } SPSXRegion;
 
 /* a line-collision query and its result (game/colij.h SLineInfo) */

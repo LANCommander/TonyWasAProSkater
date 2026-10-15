@@ -10,7 +10,9 @@ extern int Cheat_LevelSelect;
 
 int DAT_800d1d7c, DAT_800d1d80;
 
-int Front_RunMenu(char **, int *, int, int, int *, int, int, int, int);
+struct VerticalMenu;
+
+int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);
 void printf(char *);
 
 int FUN_80060854(int a) {

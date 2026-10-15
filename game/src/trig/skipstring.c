@@ -4,5 +4,5 @@ char *SkipString(char *p) {
 		p++;
 
 	p++;
-	return p + ((int)p & 1);
+	return p + ((intptr_t)p & 1);
 }

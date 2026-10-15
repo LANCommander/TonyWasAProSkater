@@ -35,10 +35,29 @@ struct SModel {
 	short Box[3][2];    /* 0x0c: per axis, the two box faces' coordinates */
 };
 
+/* the whole entry, pointer fields as pointers, so the array strides right on x64 too */
 struct SPSXRegion {
-	char pad[0x10];
-	struct SModel **ppModels; /* 0x10 */
-	char pad14[0x40 - 0x14];
+	char Filename[9];             /* 0x00 */
+	u_char IsSuper;               /* 0x09 */
+	u_char Usable;                /* 0x0a */
+	u_char Protected;             /* 0x0b */
+	uint32_t *pModelChecksums;    /* 0x0c */
+	struct SModel **ppModels;     /* 0x10 */
+	uint32_t *pPSX;               /* 0x14 */
+	uint32_t *pAnimFile;          /* 0x18 */
+	ushort *pHierarchy;           /* 0x1c */
+	void *pHooks;                 /* 0x20 */
+	uint32_t *pColourTable;       /* 0x24 */
+	uint32_t *pTexWibData;        /* 0x28 */
+	uint32_t *pColourPulseData;   /* 0x2c */
+	ushort NumParts;              /* 0x30 */
+	u_char Fastable;              /* 0x32 */
+	u_char TexturesInRAM;         /* 0x33 */
+	u_char KeepTexturesInRAM;     /* 0x34 */
+	char pad35[0x38 - 0x35];
+	void **ppTextures;            /* 0x38 */
+	ushort NumModels;             /* 0x3c */
+	ushort NumTextures;           /* 0x3e */
 };
 
 struct SCamera {

@@ -8,7 +8,9 @@
 #ifndef GAME_FRONT_H
 #define GAME_FRONT_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
 #include "game/types.h"
 #include "game/class.h"

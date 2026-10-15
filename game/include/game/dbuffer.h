@@ -35,8 +35,8 @@ typedef struct SDoubleBuffer {
 } SDoubleBuffer;
 
 /* A buffer's packet memory (Polys) for what took `bytes` on the PS1: the port's packets have native
-   tags (libgpu.h P_TAG), a word or more bigger than the PS1's. */
-#define DB_PACKET_MEMORY(bytes) ((bytes) * 2)
+   tags (libgpu.h P_TAG), a word or more bigger than the PS1's (three in a 64-bit build). */
+#define DB_PACKET_MEMORY(bytes) ((bytes) * (sizeof(void *) == 8 ? 4 : 2))
 
 #ifdef __cplusplus
 extern "C" {

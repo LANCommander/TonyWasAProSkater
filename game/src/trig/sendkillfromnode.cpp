@@ -66,7 +66,7 @@ void SendKillFromNode(int Node, int How) {
 				pKillNode++;
 				pKillNode += *pKillNode + 1;
 
-				if ((int)pKillNode & 2)
+				if ((intptr_t)pKillNode & 2)
 					pKillNode++;
 
 				pItem = Spool_FindEnviroItem(*(uint *)pKillNode);

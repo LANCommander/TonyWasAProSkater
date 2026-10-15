@@ -4,8 +4,11 @@
 #ifndef GAME_POWERUP_H
 #define GAME_POWERUP_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
+#include "game/classsizes.h"
 #include "game/types.h"
 #include "game/vector.h"
 #include "game/ob.h"
@@ -48,5 +51,6 @@ class CPowerUp : public CBody {
 	void TakeEffect(CBruce *);                                     /* 0x80020328 */
 	virtual void AI();                                             /* slot 2: 0x800206ac */
 };
+CHECK_CLASS_SIZE(CPowerUp, SIZEOF_CPOWERUP);
 
 #endif

@@ -2,6 +2,7 @@
 /* C++ (M3DINIT.CPP). Locals from the demo's MAIN.SYM; SModel/Texture are the demo's layouts.
    The per-region table (64-byte entries) is laid out by offset. */
 #include "game/m3d.h"
+#include "game/psyq.h"
 #include "pc_dctex.h"
 
 /* one item record in a PSX file (SPSXRegion::pPSX + 3): the first 0x24 bytes of m3d.h's Item.
@@ -16,9 +17,11 @@ struct SPSXItem {
 	uchar TintIndex;
 	uchar Anim;
 	uchar Region;
-	SPSXItem *NextItem;
+	uint NextItem; /* (a pointer on the PS1, linked by M3dInit_ParsePSX) */
 	uint RGB;
 };
+
+Item *PSXRegionItems[40];
 
 extern SPSXRegion PSXRegion[];
 
@@ -33,6 +36,7 @@ extern ushort M3d_DefaultLODDistance;
 void M3dInit_ParsePSX(int Region) {
 	SModel *pModel;
 	SPSXItem *pItem;
+	Item *pItems;
 	uint *pFace;
 	uint Fastable;
 	int i;
@@ -68,14 +72,14 @@ void M3dInit_ParsePSX(int Region) {
 		}
 	}
 
-	/* a Dreamcast (version 6) file keeps its faces' Texture pointers and 16-bit texture
+	/* a Dreamcast (version 6) file keeps its faces' texture entries and 16-bit texture
 	   coordinates; the renderer reads them (platform/pc/include/pc_dctex.h) */
 	int DcFile = (PSXRegion[Region].pPSX[0] & 0xffff) == 6;
 
 	NumStitchVertices = 0;
 	Fastable = 1;
 	NumParts = 0;
-	NumModels = (int)PSXRegion[Region].ppModels[-1];
+	NumModels = PSXRegion[Region].NumModels;
 	pModel = PSXRegion[Region].ppModels[0];
 
 	for (i = 0; i < NumModels; i++) {
@@ -145,7 +149,7 @@ void M3dInit_ParsePSX(int Region) {
 				pFace[2] &= 0xffffff;
 
 			if ((pFace[0] & 3) == 3 && !DcFile) {
-				pTex = (Texture *)pFace[4];
+				pTex = PSXRegion[Region].ppTextures[pFace[4]];
 				clut = pTex->clut;
 				tpage = pTex->tpage;
 				u0v0 = ((ushort *)pFace)[10];
@@ -173,7 +177,7 @@ void M3dInit_ParsePSX(int Region) {
 
 			/* a Dreamcast face's texture entry, by its index (pc_dctex.h) */
 			if ((pFace[0] & 3) == 3 && DcFile)
-				pFace[4] = PC_DcFaceTexIndex((void *)pFace[4]);
+				pFace[4] = PC_DcFaceTexIndex(PSXRegion[Region].ppTextures[pFace[4]]);
 
 			OrOfFlags |= pFace[0];
 			AndOfFUFlags &= ((ushort *)pFace)[7];
@@ -203,22 +207,39 @@ void M3dInit_ParsePSX(int Region) {
 	PSXRegion[Region].NumParts = NumParts;
 	NumItems = PSXRegion[Region].pPSX[2];
 	pItem = (SPSXItem *)(PSXRegion[Region].pPSX + 3);
+	/* retail linked the file's item records in place (NextItem is a pointer); the port makes them
+	   Items of their own */
+	free(PSXRegionItems[Region]);
+	pItems = (Item *)malloc((NumItems + 1) * sizeof(Item));
+	memset(pItems, 0, (NumItems + 1) * sizeof(Item));
+	PSXRegionItems[Region] = pItems;
 
 	for (i = 0; i < NumItems; i++) {
+		pItems->Flags = pItem->Flags;
+		pItems->Inquiry = pItem->Inquiry;
+		pItems->Position = pItem->Position;
+		pItems->Angles = pItem->Angles;
+		pItems->Model = pItem->Model;
+		pItems->Frame = pItem->Frame;
+		pItems->TintIndex = pItem->TintIndex;
+		pItems->Anim = pItem->Anim;
+		pItems->RGB = pItem->RGB;
+
 		if (i < NumItems - 1)
-			pItem->NextItem = pItem + 1;
+			pItems->NextItem = pItems + 1;
 		else
-			pItem->NextItem = 0;
+			pItems->NextItem = 0;
 
-		pItem->Region = Region;
+		pItems->Region = Region;
 
-		if (PSXRegion[pItem->Region].ppModels[pItem->Model]->Flags & 0x10)
-			pItem->Flags |= 0x20;
+		if (PSXRegion[pItems->Region].ppModels[pItems->Model]->Flags & 0x10)
+			pItems->Flags |= 0x20;
 
-		if (PSXRegion[pItem->Region].ppModels[pItem->Model]->Flags & 0x20)
-			pItem->Flags |= 0x1000;
+		if (PSXRegion[pItems->Region].ppModels[pItems->Model]->Flags & 0x20)
+			pItems->Flags |= 0x1000;
 
 		pItem++;
+		pItems++;
 	}
 }
 

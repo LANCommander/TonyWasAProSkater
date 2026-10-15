@@ -11,7 +11,9 @@
 #ifndef GAME_CAMERA_H
 #define GAME_CAMERA_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
 /* CPPPSX doesn't define __cplusplus: wrap the SDK headers ourselves (see ob.h) */
 extern "C" {

@@ -46,15 +46,17 @@ void Trig_InitialParseTRGFile(char *pName) {
 	FileIO_Sync();
 
 	{
-		short **pTable = (short **)TrigFile;
+		/* the node table: offsets from the file's start. Retail turned them into pointers in
+		   place; the port keeps an array of its own (Trig_DeleteTrigFile frees it) */
+		uint *pTable = (uint *)TrigFile;
 		int i;
 
 		NumNodes = ((ushort *)pTable)[4];
 		pTable += 3;
-		OffsetList = pTable;
+		OffsetList = (short **)Mem_NewX(NumNodes * sizeof(short *), 0, 1);
 
 		for (i = 0; i < NumNodes; i++) {
-			*pTable = (short *)((int)*pTable + (int)TrigFile);
+			OffsetList[i] = (short *)(TrigFile + *pTable);
 			pTable++;
 		}
 	}

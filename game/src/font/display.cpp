@@ -45,7 +45,7 @@ void Font_Display() {
 	camera_pos.vz = MikeCamera[Camera_CurrentMikeCamera].Position.vz << 12;
 
 	for (pStringInfo = StringBuffer; !pStringInfo->End; pStringInfo++) {
-		long zed;
+		int zed;
 
 		CurrentChar = pStringInfo->pString;
 

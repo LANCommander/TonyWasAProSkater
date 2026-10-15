@@ -10,8 +10,8 @@ extern "C" {
 	};
 
 	struct SpuVoiceAttr {
-		unsigned long voice;
-		unsigned long mask;
+		unsigned int voice;
+		unsigned int mask;
 		SpuVolume volume;
 		SpuVolume volmode;
 		SpuVolume volumex;
@@ -19,11 +19,11 @@ extern "C" {
 		unsigned short note;
 		unsigned short sample_note;
 		short envx;
-		unsigned long addr;
-		unsigned long loop_addr;
-		long a_mode;
-		long s_mode;
-		long r_mode;
+		unsigned int addr;
+		unsigned int loop_addr;
+		int a_mode;
+		int s_mode;
+		int r_mode;
 		unsigned short ar;
 		unsigned short dr;
 		unsigned short sr;

@@ -55,24 +55,30 @@ extern volatile uint32_t pc_heartbeat;
 
 void PC_RenderTrace(const char *what, uint32_t ret);
 
-#define M32(a) (*(volatile uint32_t *)PSX_PTR(a))
-#define M16(a) (*(volatile uint16_t *)PSX_PTR(a))
-#define S16(a) (*(volatile int16_t *)PSX_PTR(a))
+/* the game's memory, by address: its vertex caches, faces and the scratchpad */
+typedef uintptr_t Addr;
+#define M32(a) (*(volatile uint32_t *)(Addr)(a))
+#define M16(a) (*(volatile uint16_t *)(Addr)(a))
+#define S16(a) (*(volatile int16_t *)(Addr)(a))
+#define MPTR(a) (*(volatile Addr *)(Addr)(a))
 extern unsigned char Scratchpad[]; /* the game's scratchpad (pc_main.c) */
 extern uint32_t ClippedFaceBuffer[]; /* ProcessPolys' water-clipped faces (game/src/m3dasm) */
-#define SCR(o) ((uint32_t)(uintptr_t)Scratchpad + (uint32_t)(o))
+#define SCR(o) ((Addr)Scratchpad + (Addr)(o))
+/* a pointer the game keeps in the scratchpad (game/scratchpad.h SCRATCH_PTR) */
+extern uintptr_t ScratchPointers[];
+#define SCR_PTR(o) (((volatile uintptr_t *)ScratchPointers)[(o) >> 2])
 
-/* game globals */
-#define G_PPOLY        PSX_DATA_ADDR(0x800d1a54u)   /* pPoly */
-#define G_POLYBUFEND   PSX_DATA_ADDR(0x800d177cu)   /* PolyBufferEnd */
-#define G_PROJECTED    PSX_DATA_ADDR(0x800d2160u)   /* ProjectedVertices */
-#define G_ROTATED      PSX_DATA_ADDR(0x800d2164u)   /* RotatedVertices */
-#define G_FREESTITCH   PSX_DATA_ADDR(0x800d2198u)   /* FreeStitchVertex */
-#define G_COLOURTABLE  PSX_DATA_ADDR(0x800d219cu)   /* pColourTable */
-#define G_CURRENT_OT   PSX_DATA_ADDR(0x800d21a0u)   /* CurrentOrderingTable */
-#define G_TESTTHEWATER PSX_DATA_ADDR(0x800d21b8u)   /* TestTheWater */
-#define G_VIEWPORT     PSX_DATA_ADDR(0x800d2178u)   /* pCurrentViewport: xR, yB, xL, yT, Hither, Yon... */
-#define G_XRES         PSX_DATA_ADDR(0x800d2188u)   /* Xres */
+/* game globals (game/data) */
+extern unsigned char *pPoly;           /* the packet buffer's next free byte */
+extern unsigned char *PolyBufferEnd;
+extern void *ProjectedVertices;        /* SProjectedVertex[]: the vertex cache */
+extern void *RotatedVertices;          /* SRotatedVertex[] */
+extern void *FreeStitchVertex;         /* the stitch pool's next slot */
+extern unsigned int *pColourTable;
+extern P_TAG *CurrentOrderingTable;
+extern int32_t TestTheWater[1];
+extern void *pCurrentViewport;         /* SViewport: xR, yB, xL, yT, Hither, Yon... */
+extern uint32_t Xres[1];
 
 /* scratchpad words the renderer shares with its callers */
 #define S_DPQMIN     0x284   /* fog starts here (view z) */
@@ -110,11 +116,11 @@ typedef struct {
 #define SP_SLOTS 128   /* scratchpad cache of the fast paths (1 KB) */
 
 static Shadow s_pv[PV_SLOTS], s_sp[SP_SLOTS];
-static uint32_t s_pv_base;
+static Addr s_pv_base;
 
-static Shadow *shadow_at(uint32_t a)
+static Shadow *shadow_at(Addr a)
 {
-    uint32_t d = a - SCR(0);
+    Addr d = a - SCR(0);
     if (d < SP_SLOTS * 8)
         return &s_sp[d >> 3];
     d = a - s_pv_base;
@@ -123,7 +129,7 @@ static Shadow *shadow_at(uint32_t a)
     return NULL;
 }
 
-static void set_shadow(uint32_t a, float x, float y, float z)
+static void set_shadow(Addr a, float x, float y, float z)
 {
     Shadow *s = shadow_at(a);
     if (s) {
@@ -145,7 +151,7 @@ static int s_last_kind = -1;   /* the transform the next ProcessPolys draws from
 static float s_cap[1024][3];
 
 /* THPS_R3D_VERIFY: the float vertex against what retail stored (view position or screen word). */
-static void verify_slot(int kind, uint32_t slot, uint32_t rot)
+static void verify_slot(int kind, Addr slot, Addr rot)
 {
     Shadow *s = shadow_at(slot);
     int bad = 0;
@@ -172,7 +178,8 @@ static void verify_slot(int kind, uint32_t slot, uint32_t rot)
         st.vbad[kind]++;
         if (shown++ < 20)
             PC_Log("r3d verify %s slot %08x: float %.2f %.2f %.2f, retail %08x %08x (%d)",
-                   s_kind_name[kind], slot, s->x, s->y, s->z, M32(slot), M32(slot + 4), bad);
+                   s_kind_name[kind], (uint32_t)slot, s->x, s->y, s->z, M32(slot), M32(slot + 4),
+                   bad);
     }
 }
 
@@ -182,25 +189,25 @@ static void verify_slot(int kind, uint32_t slot, uint32_t rot)
 /* The widescreen margin of the current viewport: only a full-width one (one player) has it. */
 static int viewport_pad(int *xl, int *xr)
 {
-    uint32_t vp = M32(G_VIEWPORT);
+    Addr vp = (Addr)pCurrentViewport;
     if (!pc_wide_pad || !vp)
         return 0;
     *xr = M16(vp);
     *xl = M16(vp + 4);
-    return *xl == 0 && *xr == M16(G_XRES) ? pc_wide_pad : 0;
+    return *xl == 0 && *xr == (uint16_t)Xres[0] ? pc_wide_pad : 0;
 }
 
 /* Item-format cache (screen word, then z and the outcode halfword): outcode bits 0 (right of xR)
  * and 1 (left of xL), mirrored when behind the camera, and their "not out" copies in bits 8, 9,
  * against the widened viewport. Returns the transform's result (the AND of the outcodes) to
  * match. */
-static uint32_t widen_outcodes(uint32_t out, int n, uint32_t r, int pad, int xl, int xr)
+static uint32_t widen_outcodes(Addr out, int n, uint32_t r, int pad, int xl, int xr)
 {
     uint32_t all = 0xffff;
     xl -= pad;
     xr += pad;
     for (int i = 0; i < n; i++) {
-        uint32_t e = out + (uint32_t)i * 8;
+        Addr e = out + (Addr)i * 8;
         int sx = S16(e), z = S16(e + 4);
         uint32_t b = (uint32_t)(sx > xr) | (uint32_t)(sx < xl) << 1;
         if (z < 0)
@@ -220,11 +227,11 @@ static int fast_x_out(uint32_t w, int pad, int xl, int xr)
     return sx < xl - pad ? 1 : sx >= xr + pad ? 2 : 0;
 }
 
-static uint32_t widen_fast(uint32_t out, int n, uint32_t r, int pad, int xl, int xr)
+static uint32_t widen_fast(Addr out, int n, uint32_t r, int pad, int xl, int xr)
 {
     int all = 3;
     for (int i = 0; i < n; i++)
-        all &= fast_x_out(M32(out + (uint32_t)i * 8), pad, xl, xr);
+        all &= fast_x_out(M32(out + (Addr)i * 8), pad, xl, xr);
     return (r & ~0x6000u) | (all & 1 ? 0x2000u : 0) | (all & 2 ? 0x4000u : 0);
 }
 
@@ -259,9 +266,9 @@ static int clamp16(double v, int lo, int hi)
 /* TransformAndOutcodeItemVertices in double precision: the same cache entries (screen word,
  * depth limited to 16 bits, outcodes against the widened viewport, no far plane) and rotated
  * x, y, and the float vertices. */
-static uint32_t far_transform(uint32_t a0, int n)
+static uint32_t far_transform(Addr a0, int n)
 {
-    uint32_t pv = M32(G_PROJECTED), rot = M32(G_ROTATED), vp = M32(G_VIEWPORT);
+    Addr pv = (Addr)ProjectedVertices, rot = (Addr)RotatedVertices, vp = (Addr)pCurrentViewport;
     double h = (double)pc_geom.h;
     double ofx = pc_geom.ofx / 65536.0, ofy = pc_geom.ofy / 65536.0;
     int xr = M16(vp), yb = M16(vp + 2), xl = M16(vp + 4), yt = M16(vp + 6), hither = M16(vp + 8);
@@ -276,7 +283,7 @@ static uint32_t far_transform(uint32_t a0, int n)
     s_pv_base = pv;
     s_last_kind = T_ITEM;
     for (int i = 0; i < n && i < PV_SLOTS; i++) {
-        uint32_t v = a0 + (uint32_t)i * 8, dst = pv + (uint32_t)i * 8;
+        Addr v = a0 + (Addr)i * 8, dst = pv + (Addr)i * 8;
         double in[3] = { S16(v), S16(v + 2), S16(v + 4) }, o[3];
         for (int r = 0; r < 3; r++)
             o[r] = s_far.m[r][0] * in[0] + s_far.m[r][1] * in[1] + s_far.m[r][2] * in[2] +
@@ -298,29 +305,29 @@ static uint32_t far_transform(uint32_t a0, int n)
         M32(dst) = (uint32_t)(uint16_t)sx | (uint32_t)(uint16_t)sy << 16;
         M16(dst + 4) = (uint16_t)clamp16(o[2], -32768, 32767);
         M16(dst + 6) = (uint16_t)oc;
-        M32(rot + (uint32_t)i * 8) = (uint32_t)(uint16_t)clamp16(o[0], -32768, 32767) |
+        M32(rot + (Addr)i * 8) = (uint32_t)(uint16_t)clamp16(o[0], -32768, 32767) |
                                      (uint32_t)(uint16_t)clamp16(o[1], -32768, 32767) << 16;
         set_shadow(dst, (float)o[0], (float)o[1], (float)o[2]);
         all &= oc;
     }
-    M32(SCR(0x3d4)) = pv + (uint32_t)n * 8;   /* SCR_PROJECTED_END */
+    SCR_PTR(0x3d4) = pv + (Addr)n * 8;   /* SCR_PROJECTED_END */
     return all;
 }
 
 /* Run a vertex transform and keep its vertices unrounded. */
 static uint32_t transform(int kind, R3dTransformFn fn, void *verts, int count, void *o)
 {
-    uint32_t a0 = (uint32_t)(uintptr_t)verts;
+    Addr a0 = (Addr)verts;
     if (!s_native)
         return (uint32_t)fn(verts, count, o);
     if (s_far.on && kind == T_ITEM)
         return far_transform(a0, count);
 
-    uint32_t pv = M32(G_PROJECTED), rot = M32(G_ROTATED), pool = M32(G_FREESTITCH);
+    Addr pv = (Addr)ProjectedVertices, rot = (Addr)RotatedVertices, pool = (Addr)FreeStitchVertex;
     int fast = kind == T_SFAST || kind == T_SFAST_DW || kind == T_FAST;
     int super = kind == T_SUPER || kind == T_SUPER_DW || kind == T_SFAST || kind == T_SFAST_DW;
     float sc = (kind == T_SUPER_DW || kind == T_SFAST_DW) ? 1.0f / 16 : 1.0f;
-    uint32_t out = fast ? SCR(0) : pv;
+    Addr out = fast ? SCR(0) : pv;
     int n = count;
 
     PC_CaptureBegin(s_cap, (int)(sizeof s_cap / sizeof s_cap[0]));
@@ -332,7 +339,7 @@ static uint32_t transform(int kind, R3dTransformFn fn, void *verts, int count, v
     s_last_kind = kind;
 
     for (int i = 0; i < n; i++) {
-        uint32_t v = a0 + (uint32_t)i * 8, dst = out + (uint32_t)i * 8;
+        Addr v = a0 + (Addr)i * 8, dst = out + (Addr)i * 8;
         if (kind == T_BLOCK && (M16(v + 6) & 0x10)) {
             /* always-facing (billboard) vertices from here on: an offset of the given size from
              * a centre vertex, perpendicular to the screen direction toward a second vertex, x
@@ -342,8 +349,8 @@ static uint32_t transform(int kind, R3dTransformFn fn, void *verts, int count, v
             float ofx = (float)pc_geom.ofx / 65536.0f;
             float ofy = (float)pc_geom.ofy / 65536.0f;
             for (; i < n; i++) {
-                v = a0 + (uint32_t)i * 8;
-                dst = out + (uint32_t)i * 8;
+                v = a0 + (Addr)i * 8;
+                dst = out + (Addr)i * 8;
                 Shadow *c = shadow_at(pv + (M32(v) & 0xffff));
                 Shadow *t = shadow_at(pv + (M32(v) >> 16));
                 if (c && t && c->z >= 1 && t->z >= 1) {
@@ -364,7 +371,7 @@ static uint32_t transform(int kind, R3dTransformFn fn, void *verts, int count, v
         }
         if (super && (M32(v + 4) & 0x20000)) {
             /* stitch vertex: retail copied an earlier part's vertex from the pool */
-            uint32_t src = (fast ? SCR(0x3f8) : pv + 3192) - M32(v);
+            Addr src = (fast ? SCR(0x3f8) : pv + 3192) - M32(v);
             Shadow *s = shadow_at(src), *d = shadow_at(dst);
             if (s && d) {
                 *d = *s;
@@ -383,9 +390,9 @@ static uint32_t transform(int kind, R3dTransformFn fn, void *verts, int count, v
     }
     if (s_verify && kind != T_BG)
         for (int i = 0; i < n; i++) {
-            if (kind == T_BLOCK && (M16(a0 + (uint32_t)i * 8 + 6) & 0x10))
+            if (kind == T_BLOCK && (M16(a0 + (Addr)i * 8 + 6) & 0x10))
                 break;   /* billboards have no rotated vertex */
-            verify_slot(kind, out + (uint32_t)i * 8, rot + (uint32_t)i * 8);
+            verify_slot(kind, out + (Addr)i * 8, rot + (Addr)i * 8);
         }
     int xl, xr, pad = viewport_pad(&xl, &xr);
     if (pad && n > 0)
@@ -431,7 +438,7 @@ static uint32_t s_gen;
 
 void R3d_RenderSetup(const void *viewport, P_TAG *ot)
 {
-    uint32_t vp = (uint32_t)(uintptr_t)viewport;
+    Addr vp = (Addr)viewport;
     if (!s_native)
         return;
     int slot = (s_cur + 1) % NBATCH;
@@ -451,8 +458,8 @@ void R3d_RenderSetup(const void *viewport, P_TAG *ot)
 
     /* the marker: a packet of 3 words at the far end of the layer (drawn before its faces), from
      * the game's packet buffer */
-    P_TAG *m = (P_TAG *)(uintptr_t)M32(G_PPOLY), *head = &ot[4095];
-    uint8_t *end = (uint8_t *)(uintptr_t)M32(G_POLYBUFEND);
+    P_TAG *m = (P_TAG *)pPoly, *head = &ot[4095];
+    uint8_t *end = PolyBufferEnd;
     if ((uint8_t *)(m + 1) + 12 > end) {
         b->valid = 0;
         return;
@@ -462,7 +469,7 @@ void R3d_RenderSetup(const void *viewport, P_TAG *ot)
     P_WORDS(m)[2] = (uint32_t)slot | b->gen << 4;
     m->len = 3;
     addPrim(head, m);
-    M32(G_PPOLY) = (uint32_t)(uintptr_t)((uint8_t *)(m + 1) + 12);
+    pPoly = (uint8_t *)(m + 1) + 12;
 }
 
 static PC_GlVert *alloc_verts(Batch *b, int n)
@@ -588,7 +595,7 @@ static void corner(Corner *o, const Shadow *s, uint32_t rgb, float u, float v)
  * 16-bit (words 5-8, 512 = one repeat). Sets the clut and tpage words and the corners'
  * coordinates: for an HD texture (*hd = its handle) in 256ths of a repeat, for a PS1 one in its
  * texels (without tiling). 0 if the texture has no image: the face is drawn untextured. */
-static int dc_face(uint32_t a0, uint32_t tex, uint32_t f, uint32_t *uvw, uint16_t *hd, float *uf,
+static int dc_face(Addr a0, Addr tex, uint32_t f, uint32_t *uvw, uint16_t *hd, float *uf,
                    float *vf)
 {
     uint16_t clut = M16(tex + 2), tpage = M16(tex + 6);
@@ -603,7 +610,7 @@ static int dc_face(uint32_t a0, uint32_t tex, uint32_t f, uint32_t *uvw, uint16_
             return 0;
         *hd = clut;
     } else {
-        const uint8_t *t = PSX_PTR(tex);
+        const uint8_t *t = (const uint8_t *)tex;
         for (int i = 0; i < 4; i++) {
             float u = uf[i] / 256, v = vf[i] / 256;
             u = u < 0 ? 0 : u > 1 ? 1 : u;
@@ -639,9 +646,9 @@ static void put_vert(PC_GlVert *o, const Corner *c, uint16_t clut, uint16_t info
  * y axis (pCurrentCamera->Transform row 1) and the water level relative to the camera
  * (WaterNormal.pad). d = how far below the water a view-space point is; WaterClipValue says which
  * side is drawn (0xffff the part above, 0 the part below). */
-#define G_CAMERA     PSX_DATA_ADDR(0x800d217cu)   /* pCurrentCamera */
-#define G_WATERNORM  PSX_DATA_ADDR(0x800d2180u)   /* WaterNormal */
-#define G_WATERCLIP  PSX_DATA_ADDR(0x800d2140u)   /* WaterClipValue */
+extern void *pCurrentCamera;   /* SCamera */
+extern int32_t WaterNormal[2];  /* SVECTOR */
+extern int32_t WaterClipValue[1];
 
 typedef struct {
     float m0, m1, m2, level;
@@ -678,7 +685,7 @@ static int water_clip(const Corner *in, const int *outside, int n, Corner *out)
 }
 
 /* THPS_R3D_PROBE="frame,x,y": log the faces whose retail screen box contains x,y (debugging). */
-static void probe(const uint32_t *sl, int fast, uint32_t f, const char *what, uint32_t a, uint32_t c,
+static void probe(const Addr *sl, int fast, uint32_t f, const char *what, uint32_t a, uint32_t c,
                   uint32_t z)
 {
     static int on = -1, pf, px, py;
@@ -705,14 +712,14 @@ static void probe(const uint32_t *sl, int fast, uint32_t f, const char *what, ui
 
 /* The face walk of ProcessPolys (fast = ProcessPolysFast), into batch b; water: the call tests
  * the water (NULL if not). */
-static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
+static void faces(Batch *b, Addr face, int n, int fast, const Water *water)
 {
-    uint32_t cache = fast ? SCR(0) : M32(G_PROJECTED);
+    Addr cache = fast ? SCR(0) : (Addr)ProjectedVertices;
     uint32_t gff = fast ? 0xffff0000u : M32(SCR(S_FACEFLAGS));
     int mirror = M16(SCR(S_MIRROR)) != 0;
     int dpqmin = S16(SCR(S_DPQMIN)), dpqshift = S16(SCR(S_DPQSHIFT));
     int push1 = S16(SCR(S_PUSHBACK)), push2 = S16(SCR(S_PUSHBACK2));
-    uint32_t ctab = M32(G_COLOURTABLE);
+    Addr ctab = (Addr)pColourTable;
     int sky = !fast && s_last_kind == T_BG;
     int32_t fade = (int32_t)M32(SCR(S_FADECOLOUR));
     int wxl = 0, wxr = 0, wpad = fast ? viewport_pad(&wxl, &wxr) : 0;
@@ -720,15 +727,15 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
     for (int k = 0; k < n; k++) {
         uint32_t w0 = M32(face);
         uint32_t f = (w0 & (uint32_t)((int32_t)gff >> 16)) | (gff & 0xffff);
-        uint32_t a0 = face;
+        Addr a0 = face;
         face += f >> 16;
-        s_src = a0;
+        s_src = (uint32_t)a0;
         if (!(f & 0xc0))
             continue;
         uint32_t w1 = M32(a0 + 4);
         int tri = (f & 0x10) != 0, nvtx = tri ? 3 : 4;
         uint32_t idx[4] = { w1 & 0xff, (w1 >> 8) & 0xff, (w1 >> 16) & 0xff, w1 >> 24 };
-        uint32_t sl[4];
+        Addr sl[4];
         for (int i = 0; i < 4; i++)
             sl[i] = cache + idx[i] * 8;
 
@@ -906,7 +913,7 @@ static void faces(Batch *b, uint32_t face, int n, int fast, const Water *water)
         float uf[4], vf[4];
         if (tex && (M32(a0 + 16) & PC_DC_FACE_TEX)) {
             dc = 1;
-            tex = dc_face(a0, (uint32_t)(uintptr_t)PC_DcFaceTex(M32(a0 + 16)), f, uvw, &hd, uf, vf);
+            tex = dc_face(a0, (Addr)PC_DcFaceTex(M32(a0 + 16)), f, uvw, &hd, uf, vf);
         } else if (tex) {
             uvw[0] = M32(a0 + 16);
             uvw[1] = M32(a0 + 20) | (f & 0x180) << 14;
@@ -1050,18 +1057,18 @@ int R3d_ProcessPolys(int fast, uint32_t *list, int count)
         return 0;
     st.calls++;
     Batch *b = s_cur >= 0 ? &s_b[s_cur] : NULL;
-    if (!b || !b->valid || (uint32_t)(uintptr_t)b->ot != M32(G_CURRENT_OT)) {
+    if (!b || !b->valid || b->ot != CurrentOrderingTable) {
         st.fb_nolayer++;
         return 0;
     }
     Water water, *wp = NULL;
-    if (!fast && M32(G_TESTTHEWATER)) {
-        uint32_t cam = M32(G_CAMERA);
+    if (!fast && TestTheWater[0]) {
+        Addr cam = (Addr)pCurrentCamera;
         water.m0 = (float)S16(cam + 0x3a);   /* Transform.m[1][0..2] */
         water.m1 = (float)S16(cam + 0x3c);
         water.m2 = (float)S16(cam + 0x3e);
-        water.level = (float)S16(G_WATERNORM + 6);
-        water.keep_below = (M32(G_WATERCLIP) & 0xffff) == 0;
+        water.level = (float)((int16_t *)WaterNormal)[3];
+        water.keep_below = (WaterClipValue[0] & 0xffff) == 0;
         wp = &water;
     }
     if ((int32_t)M32(SCR(S_FADECOLOUR)) >= 0 &&
@@ -1075,10 +1082,10 @@ int R3d_ProcessPolys(int fast, uint32_t *list, int count)
         geom_load_vector(pc_geom.tr, 0, 0, 0);
         pc_geom.dqb = 0x10000000;
         pc_geom.dqa = 0;
-        M32(SCR(964)) = (uint32_t)(uintptr_t)ClippedFaceBuffer;
+        SCR_PTR(0x3c4) = (Addr)ClippedFaceBuffer;   /* SCR_CLIPWRITE */
         M16(SCR(676)) = 0;
     }
-    faces(b, (uint32_t)(uintptr_t)list, count, fast, wp);
+    faces(b, (Addr)list, count, fast, wp);
     return 1;
 }
 

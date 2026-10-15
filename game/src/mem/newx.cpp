@@ -29,16 +29,16 @@ void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 	/* the serial an allocated block keeps in its header's pNext: odd, so it can't be the free
 	   list's (aligned) pointer (Mem_GetHandle) */
 	UniqueIndentifier = ((UniqueIndentifier + 2) & 0x7fffffff) | 1;
-	size = (size + 3) & ~3;
+	size = MEM_ROUND(size);
 
 	if (Heap == -2) {
 		int avail;
 
 		if (!DAT_800d1b48) {
 			if (DAT_800d1b4c)
-				avail = (char *)DAT_800d1b4c - DAT_800d1b40 - 8;
+				avail = (char *)DAT_800d1b4c - DAT_800d1b40 - MEM_HEADER;
 			else
-				avail = DAT_800d1b44 - DAT_800d1b40 - 16;
+				avail = DAT_800d1b44 - DAT_800d1b40 - 2 * MEM_HEADER;
 
 			if (avail < size || avail < 0) {
 				if (AssertOnFailure)
@@ -48,12 +48,12 @@ void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 			}
 
 			DAT_800d1b48 = (SBlockHeader *)DAT_800d1b40;
-			((uint *)DAT_800d1b48)[1] = (size << 4) | 14;
-			DAT_800d1b48->pNext = (SBlockHeader *)UniqueIndentifier;
+			MEM_INFO(DAT_800d1b48) = (size << 4) | 14;
+			DAT_800d1b48->pNext = (SBlockHeader *)(uintptr_t)UniqueIndentifier;
 			return DAT_800d1b48 + 1;
 		} else {
 			int total = DAT_800d1b44 - DAT_800d1b40;
-			int used = DAT_800d1b48->Size + 16;
+			int used = DAT_800d1b48->Size + 2 * MEM_HEADER;
 
 			avail = total - used;
 
@@ -65,8 +65,8 @@ void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 			}
 
 			DAT_800d1b4c = (SBlockHeader *)(DAT_800d1b44 - size) - 1;
-			DAT_800d1b4c->pNext = (SBlockHeader *)UniqueIndentifier;
-			((uint *)DAT_800d1b4c)[1] = (size << 4) | 14;
+			DAT_800d1b4c->pNext = (SBlockHeader *)(uintptr_t)UniqueIndentifier;
+			MEM_INFO(DAT_800d1b4c) = (size << 4) | 14;
 			return DAT_800d1b4c + 1;
 		}
 	}
@@ -93,19 +93,19 @@ void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 		return 0;
 	}
 
-	if (pBlock->Size > size + 8) {
-		SBlockHeader *pLeftOver = (SBlockHeader *)((char *)pBlock + (size + 8));
+	if (pBlock->Size > size + MEM_HEADER) {
+		SBlockHeader *pLeftOver = (SBlockHeader *)((char *)pBlock + (size + MEM_HEADER));
 
-		pLeftOver->Size = pBlock->Size - size - 8;
+		pLeftOver->Size = pBlock->Size - size - MEM_HEADER;
 
 		if (pLast)
 			pLast->pNext = pBlock->pNext;
 		else
 			FirstFreeBlock[Heap] = pBlock->pNext;
 
-		((uint *)pBlock)[1] = (Heap & 15) | (size << 4);
-		pBlock->pNext = (SBlockHeader *)UniqueIndentifier;
-		Used[Heap] += pBlock->Size + 8;
+		MEM_INFO(pBlock) = (Heap & 15) | (size << 4);
+		pBlock->pNext = (SBlockHeader *)(uintptr_t)UniqueIndentifier;
+		Used[Heap] += pBlock->Size + MEM_HEADER;
 		AddToFreeList(pLeftOver, Heap);
 
 		if (Heap == 1) {
@@ -124,8 +124,8 @@ void *Mem_NewX(uint size, int Heap, int AssertOnFailure) {
 		FirstFreeBlock[Heap] = pBlock->pNext;
 
 	pBlock->ParentHeap = Heap;
-	pBlock->pNext = (SBlockHeader *)UniqueIndentifier;
-	Used[Heap] += pBlock->Size + 8;
+	pBlock->pNext = (SBlockHeader *)(uintptr_t)UniqueIndentifier;
+	Used[Heap] += pBlock->Size + MEM_HEADER;
 
 	if (Heap == 1) {
 		if (Used_4 >= CriticalBigHeapUsage)

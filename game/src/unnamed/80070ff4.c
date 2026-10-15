@@ -12,7 +12,7 @@ typedef struct {
 	int f14c, f150;
 	int pad154;
 	unsigned short t158, t15a;
-	char pad2[0x16c - 0x15c];
+	void *pButtons[4]; /* 0x15c pGrind, pFlip, pGrab, pOllie */
 } SControl;
 
 typedef struct {

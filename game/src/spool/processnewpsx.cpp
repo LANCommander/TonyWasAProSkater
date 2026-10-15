@@ -10,6 +10,7 @@
 #include "game/mem.h"
 #include "game/pal.h"
 #include "game/spool.h"
+#include "game/psyq.h"
 
 extern SPSXRegion PSXRegion[];
 
@@ -22,15 +23,16 @@ uint *Spool_SkipPackets(uint *);
 Texture *Spool_FindTextureEntry(uint);
 void Spool_RemoveUnusedTextures(void);
 void Pal_RemoveUnusedPalettes(void);
-int Pal_FindPaletteEntry(uint);
+tag_S_Pal *Pal_FindPaletteEntry(uint);
 void M3dInit_ParsePSX(int);
 int Spool_GetEnvIndex(int);
 void M3dZone_SetZone(int, uint *);
-void PreProcessAnimPacket(uint *, uint *);
+void PreProcessAnimPacket(Texture **, uint *);
 
 void ProcessNewPSX(int region) {
 	uint *pPSX;
 	int NumItems;
+	uint *pModelTable;
 	SModel **ppModels;
 	uint NumModels;
 	uint *ChecksumTable;
@@ -44,24 +46,35 @@ void ProcessNewPSX(int region) {
 	int PacketType;
 
 	pPSX = PSXRegion[region].pPSX;
-	ppModels = (SModel **)(pPSX[2] * 36 + (int)pPSX) + 4;
-	NumModels = ((uint *)ppModels)[-1];
+	/* the file's model table: offsets from its start, the count before them. Retail turned the
+	   offsets into pointers in place; the port keeps an array of its own (and frees the last) */
+	pModelTable = (uint *)((char *)pPSX + pPSX[2] * 36) + 4;
+	NumModels = pModelTable[-1];
 	pCurrentTexWibPacket = 0;
+	free(PSXRegion[region].ppModels);
+	ppModels = (SModel **)malloc((NumModels + 1) * sizeof *ppModels);
 
 	{
 		int i;
 
 		for (i = 0; i < NumModels; i++)
-			ppModels[i] = (SModel *)((uint)ppModels[i] + (uint)pPSX);
+			ppModels[i] = (SModel *)((char *)pPSX + pModelTable[i]);
 	}
 
 	PSXRegion[region].ppModels = ppModels;
+	PSXRegion[region].NumModels = NumModels;
 	PSXRegion[region].pModelChecksums = Spool_SkipPackets(pPSX);
 	ChecksumTable = PSXRegion[region].pModelChecksums + NumModels + 1;
 	NumChecksums = ChecksumTable[-1];
 
 	{
+		/* the texture table: retail turned the checksums into Texture pointers in place, and
+		   pointed textured faces at them; the port's faces keep the index (M3dInit_ParsePSX) */
+		Texture **ppTextures;
 		int i;
+
+		free(PSXRegion[region].ppTextures);
+		ppTextures = (Texture **)malloc((NumChecksums + 1) * sizeof *ppTextures);
 
 		for (i = 0; i < NumChecksums; i++) {
 			Texture *pTextureEntry = Spool_FindTextureEntry(ChecksumTable[i]);
@@ -70,28 +83,11 @@ void ProcessNewPSX(int region) {
 				pTextureEntry = NewTextureEntry(ChecksumTable[i]);
 
 			pTextureEntry->Usage++;
-			ChecksumTable[i] = (uint)pTextureEntry;
+			ppTextures[i] = pTextureEntry;
 		}
-	}
 
-	{
-		int m;
-
-		for (m = 0; m < NumModels; m++) {
-			SModel *pModel = ppModels[m];
-			uint NumVertices = pModel->NumVertices;
-			uint NumNormals = pModel->NumNormals;
-			uint NumFaces = pModel->NumFaces;
-			uint *pFace = (uint *)((char *)pModel + (NumVertices * 8 + 28) + NumNormals * 8);
-			int j;
-
-			for (j = 0; j < NumFaces; j++) {
-				if (pFace[0] & 1)
-					pFace[4] = ChecksumTable[pFace[4]];
-
-				pFace = (uint *)((char *)pFace + (pFace[0] >> 18) * 4);
-			}
-		}
+		PSXRegion[region].ppTextures = ppTextures;
+		PSXRegion[region].NumTextures = NumChecksums;
 	}
 
 	Spool_RemoveUnusedTextures();
@@ -171,7 +167,7 @@ void ProcessNewPSX(int region) {
 				M3dZone_SetZone(Spool_GetEnvIndex(region), pPacket);
 				break;
 			case 0x45:
-				PreProcessAnimPacket(pPSX, pPacket);
+				PreProcessAnimPacket(PSXRegion[region].ppTextures, pPacket);
 
 				AnimPacketFound = 1;
 				break;

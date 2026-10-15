@@ -23,7 +23,7 @@ void *Mem_NewTop(uint size) {
 	/* the serial an allocated block keeps in its header's pNext: odd, so it can't be the free
 	   list's (aligned) pointer (Mem_GetHandle) */
 	UniqueIndentifier = ((UniqueIndentifier + 2) & 0x7fffffff) | 1;
-	size = (size + 3) & ~3;
+	size = MEM_ROUND(size);
 	pBlock = FirstFreeBlock[Heap];
 	pLast = 0;
 	pChoice = pBlock;
@@ -50,16 +50,16 @@ void *Mem_NewTop(uint size) {
 		return 0;
 	}
 
-	if (size + 8 < pChoice->Size) {
+	if (size + MEM_HEADER < pChoice->Size) {
 		uint t;
-		uint *pMem = (uint *)((char *)pChoice + (t = pChoice->Size + 8) - size);
+		uint *pMem = (uint *)((char *)pChoice + (t = pChoice->Size + MEM_HEADER) - size);
 
-		pChoice->Size = pChoice->Size - size - 8;
+		pChoice->Size = pChoice->Size - size - MEM_HEADER;
 		pBlock = (SBlockHeader *)pMem - 1;
 		pBlock->Size = size;
-		pBlock->pNext = (SBlockHeader *)UniqueIndentifier;
+		pBlock->pNext = (SBlockHeader *)(uintptr_t)UniqueIndentifier;
 		pBlock->ParentHeap = 1;
-		Used[Heap] += pBlock->Size + 8;
+		Used[Heap] += pBlock->Size + MEM_HEADER;
 
 		if (Heap == 1) {
 			if (Used_4 >= CriticalBigHeapUsage)
@@ -79,8 +79,8 @@ void *Mem_NewTop(uint size) {
 		FirstFreeBlock[Heap] = pChoice->pNext;
 
 	pChoice->ParentHeap = 1;
-	pChoice->pNext = (SBlockHeader *)UniqueIndentifier;
-	Used[Heap] += pChoice->Size + 8;
+	pChoice->pNext = (SBlockHeader *)(uintptr_t)UniqueIndentifier;
+	Used[Heap] += pChoice->Size + MEM_HEADER;
 
 	if (Heap == 1) {
 		if (Used_4 >= CriticalBigHeapUsage)

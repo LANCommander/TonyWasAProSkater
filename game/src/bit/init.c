@@ -4,30 +4,30 @@
 #include <libgpu.h>
 
 int BitCount;
-int NonRenderedBitList;
-int FlatBitList;
-int Linked2EndedBitList;
-int PixelList;
-int PolyLineList;
-int GPolyLineList;
-int QuadBitList;
-int GenPolyList;
-int ChunkBitList;
-int GlowList;
-int GlassList;
-int GLineList;
-int SpecialDisplayList;
+void *NonRenderedBitList;
+void *FlatBitList;
+void *Linked2EndedBitList;
+void *PixelList;
+void *PolyLineList;
+void *GPolyLineList;
+void *QuadBitList;
+void *GenPolyList;
+void *ChunkBitList;
+void *GlowList;
+void *GlassList;
+void *GLineList;
+void *SpecialDisplayList;
 DR_TPAGE StoredTPagePrim; /* the draw-mode packet the bits copy (native: no retail address) */
-int pShadowTexture;
+void *pShadowTexture;
 
-extern int ButtonsAnim __attribute__((section(".data")));
+extern void *ButtonsAnim __attribute__((section(".data")));
 
 extern char *AnimNames[];
-extern int QuickAnimLookup[];
+extern void *QuickAnimLookup[];
 
 void FUN_80092f30(void *, int, int, int);
-int Spool_FindAnim(char *);
-int Spool_FindTextureEntry(unsigned);
+void *Spool_FindAnim(char *);
+void *Spool_FindTextureEntry(unsigned);
 
 void Bit_Init(void) {
 	int i;

@@ -26,10 +26,10 @@ void PREManager::spoolPRE(char *pre_name) {
 		printf("\nMemory error loading %s", pre_name);
 
 	{
-		char *d = (char *)(slot * 16 + (int)this);
+		char *d = (char *)(slot * 16 + (intptr_t)this);
 		char *s = pre_name;
 
-		d += 68;
+		d += (char *)mPreName - (char *)this;
 
 		while (*s)
 			*d++ = *s++;

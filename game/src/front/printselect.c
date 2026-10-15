@@ -2,7 +2,9 @@
 #include "names.h"
 
 typedef struct {
-	int pad[2];
+	signed char OffX, OffY;
+	unsigned char Width, Height;
+	void *pTexture;
 } SAnimFrame;
 
 SAnimFrame *ButtonsAnim;

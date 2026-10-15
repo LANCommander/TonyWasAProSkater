@@ -1,15 +1,17 @@
 /* FUN_800648c0 (0x800648c0) */
 #include "names.h"
 
+/* VerticalMenuItem / VerticalMenu (game/shellutils.h) */
 typedef struct {
-	int pad0;
+	void *erase_sprite;
 	char str[0x34];
 	int disabled;
 	int pad1;
 } Item;
 
 typedef struct {
-	char pad[16];
+	void *vt;
+	int pad[3];
 	int count;
 	int prev;
 	int cur;

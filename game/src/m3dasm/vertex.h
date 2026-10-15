@@ -69,7 +69,7 @@ struct SFastVertex {
 #define STITCH_TOP      3192        /* ... and of the others from ProjectedVertices + 3192 */
 
 /* where the last item-format transform stopped writing ProjectedVertices */
-#define SCR_PROJECTED_END (*(struct SProjectedVertex **)(SCRATCHPAD + 0x3d4))
+#define SCR_PROJECTED_END (*(struct SProjectedVertex **)&SCRATCH_PTR(0x3d4))
 
 /* super-model vertex flags (the high half of the vertex's second word) */
 #define VF_EXPORT 1 /* also copy the result to the stitch pool */

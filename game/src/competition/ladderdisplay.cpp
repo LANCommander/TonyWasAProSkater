@@ -5,12 +5,9 @@
 #include "game/mess.h"
 #include "game/psyq.h"
 
-struct SSkaterInfo {
-	char *pName;
-	char pad[0x154 - 4];
-};
+#include "game/career.h"
 
-extern SSkaterInfo Stats_2c[];
+extern SStats Stats[];
 extern char *GameText_180[];
 
 void Mess_DeleteAll();
@@ -41,7 +38,7 @@ void Competition_LadderDisplay() {
 	Mess_SetScale(160);
 
 	for (i = 0; i < 10; i++) {
-		sprintf(text_buf, "%s", Stats_2c[pComp->mCompetitorList[pComp->mOrdering[i]]].pName);
+		sprintf(text_buf, "%s", Stats[pComp->mCompetitorList[pComp->mOrdering[i]]].Name);
 
 		if (pComp->mOrdering[i] == pComp->our_skater_num)
 			Mess_SetRGB(182, 132, 36, 0);

@@ -373,9 +373,9 @@ void M3d_Render(void *p) {
 				             (double)pCurrentCamera->View.m[i][2] * farRel[2]) /
 				            4096;
 
-			Position.vx = (long)floor(farPos[0]);
-			Position.vy = (long)floor(farPos[1]);
-			Position.vz = (long)floor(farPos[2]);
+			Position.vx = (int)floor(farPos[0]);
+			Position.vy = (int)floor(farPos[1]);
+			Position.vz = (int)floor(farPos[2]);
 		}
 
 		if (pModel->zMax < 0) {
@@ -460,7 +460,7 @@ void M3d_Render(void *p) {
 		pColourTable = PSXRegion[pItem->Region].pColourTable;
 
 		if ((pModel->Flags & 1) || (pItem->Flags & 0x4000)) {
-			M3dAsm_GetReflectionMapping(&WorldTransform, (long *)&Position, (uint *)pModel);
+			M3dAsm_GetReflectionMapping(&WorldTransform, (int *)&Position, (uint *)pModel);
 		} else if ((pModel->Flags & 4) || (pItem->Flags & 0x80)) {
 			if (ANGLES_SET(pItem)) {
 				MulMatrix0((MATRIX *)pItem->pLight, &WorldTransform, &TempMatrix);

@@ -32,7 +32,7 @@ void CBruce::TrickObRail() {
 
 		pNode += (ushort)pNode[1] + 2;
 
-		if ((int)pNode & 3)
+		if ((intptr_t)pNode & 3)
 			pNode++;
 
 		uint Checksum = *(uint *)pNode;

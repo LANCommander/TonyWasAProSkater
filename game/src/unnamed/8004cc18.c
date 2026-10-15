@@ -5,8 +5,8 @@ typedef struct {
 	short x, y, w, h;
 } R;
 
-int LoadFromPRE, Loading, LastLoading, CurrentPos, FileSize, FileOpen, ReadSyncFailures, NumSectors,
-    Dest;
+int LoadFromPRE, Loading, LastLoading, CurrentPos, FileSize, FileOpen, ReadSyncFailures, NumSectors;
+char *Dest;
 char FileStart[8];
 
 extern R DAT_800d1b20[];

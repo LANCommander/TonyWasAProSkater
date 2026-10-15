@@ -516,13 +516,13 @@ void Front_Display() {
 				Mess_DrawText(StatsRight[1], Line++ * 18 + 60, Score2, 0, 0, 256, 0);
 
 				if (GGame == 1) {
-					sprintf(Tapes, "%ld of %ld", Career_LevelTapes(GLevel), 5);
+					sprintf(Tapes, "%ld of %ld", (long)Career_LevelTapes(GLevel), 5L);
 					Mess_DrawText(StatsRight[2], Line++ * 18 + 60, Tapes, 0, 0, 256, 0);
 				}
 
-				sprintf(Tricks, "%ld", pMan->mPanel.mNumTricksLanded);
+				sprintf(Tricks, "%ld", (long)pMan->mPanel.mNumTricksLanded);
 				Mess_DrawText(StatsRight[3], Line++ * 18 + 60, Tricks, 0, 0, 256, 0);
-				sprintf(Bails, "%ld", pMan->mPanel.mNumBails);
+				sprintf(Bails, "%ld", (long)pMan->mPanel.mNumBails);
 				Mess_DrawText(StatsRight[4], Line * 18 + 60, Bails, 0, 0, 256, 0);
 
 				if (StatsLeft[0] == 90) {

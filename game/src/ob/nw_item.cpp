@@ -5,7 +5,7 @@
 
 void *Mem_NewX(uint, int, int);
 
-void *CClass::operator new(uint size) throw() {
+void *CClass::operator new(__SIZE_TYPE__ size) throw() {
 	void *p = Mem_NewX(size, 0, 1);
 	int *q = (int *)p;
 

@@ -13,7 +13,7 @@ void CPlatform::SetVariable(ushort variable) {
 			mModel = *mpScript++;
 			break;
 		case 8495: {
-			uint *p_checksum = (uint *)(((int)mpScript + 3) & -4);
+			uint *p_checksum = (uint *)(((intptr_t)mpScript + 3) & -4);
 
 			mModel = Spool_GetModel(*p_checksum, mRegion);
 			mpScript = (ushort *)(p_checksum + 1);

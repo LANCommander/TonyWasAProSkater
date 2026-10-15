@@ -1,8 +1,13 @@
 /* CreateMessage__Fv (0x8001d550) */
 #include "names.h"
 
+/* the whole layout (Mess_Message, Mess_Update): in the 64-bit port text/prog are 8 bytes */
 typedef struct Message {
-	char pad[0x14];
+	const char *text;
+	unsigned short cnt, cnt2;
+	short x, y;
+	int flag;
+	void *prog;
 	struct Message *next;
 	struct Message *prev;
 } Message;
@@ -12,7 +17,7 @@ Message *pMessages;
 extern Message *Mem_NewX(int, int, int);
 
 void CreateMessage(void) {
-	Message *m = Mem_NewX(0x1c, 0, 1);
+	Message *m = Mem_NewX(sizeof(Message), 0, 1);
 	Message *h = pMessages;
 
 	m->prev = 0;

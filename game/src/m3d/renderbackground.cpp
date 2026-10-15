@@ -17,7 +17,7 @@ extern "C" {
 extern SPSXRegion PSXRegion[];
 
 SCamera *pCurrentCamera;
-int pColourTable;
+uint *pColourTable;
 ushort DpqMin;
 
 #include "pc_video.h"
@@ -58,7 +58,7 @@ void M3d_RenderBackground(void *p) {
 				M3dMaths_SetIdentityRotation(&WorldTransform);
 			}
 
-			pColourTable = (int)PSXRegion[pItem->Region].pColourTable;
+			pColourTable = PSXRegion[pItem->Region].pColourTable;
 			pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
 
 			if (!*(int *)&pItem->Angles && !pItem->Angles.vz)

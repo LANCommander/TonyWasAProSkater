@@ -58,7 +58,7 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 				mins = 0;
 			}
 
-			sprintf(time, "%ld:%02ld", mins, secs);
+			sprintf(time, "%ld:%02ld", (long)mins, (long)secs);
 			Mess_SetRGB(128, 0, 0, 0);
 			Mess_SetTextJustify(0);
 			Mess_SetScale(256);

@@ -16,9 +16,14 @@ struct SQueue {
 };
 
 /* an animation packet in the loaded-animation list (Spool_FindAnim) */
+struct SAnimFrame;
+
 struct AnimPacket {
 	uint *pPacket;     /* 0x00 */
 	AnimPacket *pNext; /* 0x04 */
+	/* the port's: the packet's frames, anim after anim, as SAnimFrames (retail put the Texture
+	   pointers into the file's 8-byte frames) */
+	SAnimFrame *pFrames; /* 0x08 */
 };
 
 /* functions */

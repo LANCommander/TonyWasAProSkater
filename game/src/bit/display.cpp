@@ -201,7 +201,7 @@ void Bit_Display() {
 						Ang = pGlow->mAngle;
 
 					int RadB = pSection->Radius * 400 / RotCoords.vz;
-					SSinCos *q = (SSinCos *)((Ang & 4095) * 4 + (uint)pTab);
+					SSinCos *q = (SSinCos *)((Ang & 4095) * 4 + (uintptr_t)pTab);
 
 					MSin = q->s * 400 / 256;
 					MCos = q->c;
@@ -518,7 +518,7 @@ void Bit_Display() {
 	CFlatBit *pFlatBit;
 
 	for (pFlatBit = FlatBitList; pFlatBit; pFlatBit = (CFlatBit *)pFlatBit->mNext) {
-		long zed;
+		int zed;
 		uint y0x0;
 
 		Temp.vx = (pFlatBit->mPos.vx >> 12) - camera_pos.vx;
@@ -691,7 +691,7 @@ void Bit_Display() {
 
 	while (pGlass) {
 		SVECTOR STemp;
-		long zed;
+		int zed;
 		int16_t tri[3][3];
 		GeomProj triProj[3];
 		POLY_F3 *aGou;
@@ -753,8 +753,8 @@ void Bit_Display() {
 	while (pGLine) {
 		uint y0x01;
 		uint y0x02;
-		long zed;
-		long zed2;
+		int zed;
+		int zed2;
 
 		Temp = (pGLine->mStart >> 12) - camera_pos;
 		proj = geom_project_lv(&Temp);
@@ -802,10 +802,10 @@ void Bit_Display() {
 
 	while (pQuad) {
 		if (pQuad->mpTexture) {
-			long ZedB;
-			long ZedC;
-			long ZedD;
-			long MaxZed;
+			int ZedB;
+			int ZedC;
+			int ZedD;
+			int MaxZed;
 			Texture *stored;
 			POLY_FT4 *apoly;
 			uchar *newppoly;
@@ -906,12 +906,12 @@ void Bit_Display() {
 
 	while (p_chunk) {
 		DR_TWIN *p_overflow2;
-		long opz;
-		long ZedA;
-		long ZedB;
-		long ZedC;
-		long ZedD;
-		long MaxZed;
+		int opz;
+		int ZedA;
+		int ZedB;
+		int ZedC;
+		int ZedD;
+		int MaxZed;
 		uint y0x0A;
 		uint y0x0B;
 		uint y0x0C;
@@ -1074,7 +1074,7 @@ void Bit_Display() {
 	pPixel = PixelList;
 
 	while (pPixel) {
-		long zed;
+		int zed;
 
 		Temp = (pPixel->mPos >> 12) - camera_pos;
 		proj = geom_project_lv(&Temp);
@@ -1169,7 +1169,7 @@ void Bit_Display() {
 
 	while (pLinked2EndedBit) {
 		Texture *stored;
-		long zed;
+		int zed;
 		uint Width;
 		int dA;
 		int Ax;

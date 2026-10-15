@@ -33,8 +33,8 @@ extern SOptions GPreferences;
 extern SPadMap DAT_800bf260[2];
 extern VerticalMenu *pVertMenu;
 
-int DAT_800d2358;
-int DAT_800d235c;
+Sprite *DAT_800d2358;
+Sprite *DAT_800d235c;
 
 int Mess_GetFontScale();
 void Mess_SetFontScale(uint);
@@ -68,7 +68,7 @@ int Front_MemCardScreen() {
 		ResetOT();
 
 		if (pVertMenu)
-			pVertMenu->setTriangles((Sprite *)DAT_800d2358, (Sprite *)DAT_800d235c);
+			pVertMenu->setTriangles(DAT_800d2358, DAT_800d235c);
 
 		Front_MemCardHiResDisplay();
 		HiRes_DrawOTag();

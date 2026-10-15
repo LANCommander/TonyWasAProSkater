@@ -57,7 +57,7 @@ void CTape::AI(int tape_no) {
 			if (i == 4) {
 				messages[4] = &mMessageTable[GTape[4]->mTapeNum];
 			} else {
-				STapeMessage *m = (STapeMessage *)((GTape[i]->mTapeNum << 4) + (int)mMessageTable);
+				STapeMessage *m = &mMessageTable[GTape[i]->mTapeNum];
 
 				if (m->essential == 1)
 					messages[i] = m;

@@ -11,12 +11,12 @@ int GNumberOfPlayers; /* number of players */
 
 extern SLevel Levels[]; /* Levels */
 
-unsigned long PolyBufferEnd; /* PolyBufferEnd */
+unsigned char *PolyBufferEnd; /* PolyBufferEnd */
 
 #define POLYBUFFERSIZE (Levels[GLevel].ExtraPolyBuffer[GNumberOfPlayers - 1] + 0x17c00)
 
 void CalcPolyBufferEnd(void) {
-	unsigned long Prims = (unsigned long)pDoubleBuffer->Polys;
+	unsigned char *Prims = pDoubleBuffer->Polys;
 	int Size = DB_PACKET_MEMORY(POLYBUFFERSIZE);
 
 	PolyBufferEnd = Prims + Size - 256;

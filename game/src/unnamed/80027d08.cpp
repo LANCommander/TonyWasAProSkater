@@ -7,7 +7,7 @@ int UseCacheForBits;
 
 void *Mem_NewX(unsigned int, int, int);
 
-void *CBit::operator new(uint Size) throw() {
+void *CBit::operator new(__SIZE_TYPE__ Size) throw() {
 	int *p;
 
 	if (UseCacheForBits)

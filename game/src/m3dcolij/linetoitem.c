@@ -14,7 +14,12 @@ typedef struct {
 	char _0[0x44];
 	int flag;
 	char mat[0x20];
-	char _68[0x8a - 0x68];
+	Item *pItem;
+	int pos[3];
+	SVECTOR normal;
+	unsigned int *pFace;
+	int model;
+	unsigned char rec, drop;
 	unsigned short inq;
 } SLineInfo;
 

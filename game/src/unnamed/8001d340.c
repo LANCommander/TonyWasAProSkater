@@ -1,7 +1,10 @@
 /* FUN_8001d340 (0x8001d340) */
+/* an SAnimFrame (game/m3d.h; BigFontAnim is Spool_FindAnim's): its texture pointer makes the
+   stride 16 bytes on x64 */
 typedef struct {
 	signed char a;
-	unsigned char b, c, d, e, f, g, h;
+	unsigned char b, c, d;
+	void *pTexture;
 } E;
 
 extern unsigned char BigFont_Mapping[];

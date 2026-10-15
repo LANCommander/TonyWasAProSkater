@@ -1,11 +1,12 @@
 /* CommonSwitchOnMenuCode__Fv (0x8001a128) */
+#include "game/padbuttons.h"
 #include "names.h"
 
 extern char Pad[];
 
-int pYesNoMenu;
+void *pYesNoMenu;
 
-extern int GameText_1b8[];
+extern char *GameText_1b8[];
 
 int GamePaused;
 
@@ -14,8 +15,8 @@ extern int DAT_800d1e48;
 int Front_OnTime;
 
 void Pad_ClearTriggers(char *p);
-int CMenu_FindEntry(int m, int c);
-void CMenu_SetLine(int m, unsigned char c);
+int CMenu_FindEntry(void *m, const char *c);
+void CMenu_SetLine(void *m, unsigned char c);
 void Mess_DeleteAll(void);
 void Pad_ActuatorOff(unsigned char a, unsigned char b);
 void SFX_Pause(void);
@@ -25,7 +26,7 @@ void CommonSwitchOnMenuCode(void) {
 	char *s = Pad;
 
 	Pad_ClearTriggers(s);
-	Pad_ClearTriggers(s + 364);
+	Pad_ClearTriggers(s + PAD_SIZE);
 
 	GamePaused = 1;
 	CMenu_SetLine(pYesNoMenu, CMenu_FindEntry(pYesNoMenu, GameText_1b8[0]));

@@ -3,14 +3,14 @@
 #include "pc_stream.h"
 
 int currentVlcBuffer;
-int vlcBuffer[2];
+unsigned int *vlcBuffer[2];
 
-int strNext(void);
-void DecDCTvlc3(int, int);
+unsigned int *strNext(void);
+int DecDCTvlc3(unsigned int *, unsigned int *);
 void FUN_8009144c(int);
 
 int strNextVlc(int f) {
-	int s = strNext();
+	unsigned int *s = strNext();
 
 	if (!s)
 		return 0;
@@ -18,6 +18,6 @@ int strNextVlc(int f) {
 	if (f)
 		DecDCTvlc3(s, vlcBuffer[currentVlcBuffer]);
 
-	PC_StreamFreeFrame((void *)s);
+	PC_StreamFreeFrame(s);
 	return f;
 }

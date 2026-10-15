@@ -4,10 +4,20 @@
 /* test_asm: gte_out none (no caller reads what retail left in the GTE's data registers) */
 #include "m3dmaths.h"
 
-/* Only the field this reads (see struct Item in decomp/include/game/m3d.h). */
+/* The fields up to the one this reads (see struct Item in game/include/game/m3d.h). */
 struct Item {
-	char _00[0x24];
-	short Scale[3]; /* 0x24: 4.12 per-axis scale */
+	ushort Flags;          /* 0x00 */
+	ushort Inquiry;        /* 0x02 */
+	int Position[3];       /* 0x04 */
+	short Angles[3];       /* 0x10 */
+	ushort Model;          /* 0x16 */
+	u_char Frame;          /* 0x18 */
+	u_char TintIndex;      /* 0x19 */
+	u_char Anim;           /* 0x1a */
+	u_char Region;         /* 0x1b */
+	struct Item *NextItem; /* 0x1c */
+	uint32_t RGB;          /* 0x20 */
+	short Scale[3];        /* 0x24: 4.12 per-axis scale */
 };
 
 /* Scales the columns of m's rotation by the item's per-axis scale: column c is multiplied by

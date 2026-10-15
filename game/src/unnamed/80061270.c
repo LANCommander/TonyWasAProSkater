@@ -3,12 +3,12 @@
 #include "pc_frame.h"
 
 int DAT_800d1d84;
-int DAT_800d1d88;
+void *DAT_800d1d88;
 short DAT_800d1d8c, DAT_800d1d8e;
 
 void HiRes_ClearOTag(void);
 void ResetOT(void);
-void Sprite_draw(int, int, int, int, int, int, int);
+void Sprite_draw(void *, int, int, int, int, int, int);
 void Mess_SetRGB(int, int, int, int);
 void Mess_SetTextJustify(int);
 void Mess_SetFontShadowOffset(int);

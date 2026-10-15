@@ -11,14 +11,15 @@ extern char SLOT_DIR[];
 int TimeStamp;
 
 int SyncToGoodState(void);
-int Mem_NewX(int, int, int);
+void *Mem_NewX(unsigned, int, int);
 void Card_SetSelectedFile(char *);
-int Card_Load(int, int, int);
-void Mem_Delete(int);
+int Card_Load(int, unsigned int *, unsigned int *);
+void Mem_Delete(void *);
 
 void Card_GetNextTimeStamp(void) {
 	struct B buf;
-	int i, p;
+	int i;
+	char *p;
 	char *name;
 	int *flag;
 
@@ -34,7 +35,7 @@ void Card_GetNextTimeStamp(void) {
 				p = Mem_NewX(3200, 1, 1);
 				Card_SetSelectedFile(name);
 
-				if (Card_Load(0, p, 0) == 0) {
+				if (Card_Load(0, (unsigned int *)p, 0) == 0) {
 					buf = *(struct B *)(p + 640);
 
 					if (((unsigned short *)&buf)[1047] >= TimeStamp)

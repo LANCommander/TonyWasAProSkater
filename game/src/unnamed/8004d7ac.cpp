@@ -25,7 +25,7 @@ SMemHandle Mem_GetHandle(void *p) {
 
 			if (pBlock->Size - 4 <= 0x1ffffc) {
 				h.p = p;
-				h.Serial = (int)pBlock->pNext;
+				h.Serial = (int)(uintptr_t)pBlock->pNext;
 			}
 		}
 	}

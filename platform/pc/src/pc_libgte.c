@@ -22,24 +22,29 @@
 #include "pc_runtime.h"
 
 /* rcossin_tbl: 4096 entries of {short sin, short cos} for angles 0..4095 (4096 = 360 degrees). */
-#define RCOSSIN_TBL PSX_DATA_ADDR(0x800c9670u)
+extern short rcossin_tbl[];
+#define RCOSSIN_TBL ((uintptr_t)rcossin_tbl)
 /* ratan_tbl: 1025 shorts, the angle (1024 = 90 degrees) whose tangent is i/1024. */
-#define RATAN_TBL PSX_DATA_ADDR(0x800ce704u)
+extern short ratan_tbl[];
+#define RATAN_TBL ((uintptr_t)ratan_tbl)
 /* K_cor_tbl: 12 longs, the angle of atan(2^-i) for the CORDIC steps of catan. */
-#define K_COR_TBL PSX_DATA_ADDR(0x800ce6d4u)
+extern int K_cor_tbl[];
+#define K_COR_TBL ((uintptr_t)K_cor_tbl)
 /* SquareRoot0's table: shorts for normalised inputs 64..255, 4096 * sqrt(n / 64)-ish values;
  * the entry for n is at this address + (n - 64) * 2. */
-#define SQRT_TBL PSX_DATA_ADDR(0x800d0a9cu)
+extern unsigned short sqrt_tbl[];
+#define SQRT_TBL ((uintptr_t)sqrt_tbl)
 /* VectorNormal's table: shorts for normalised squared lengths 64..255, 4096 / sqrt-ish values;
  * the entry for n is at this address + (n - 64) * 2. */
-#define RSQRT_TBL PSX_DATA_ADDR(0x800ce548u)
+extern unsigned short rsqrt_tbl[];
+#define RSQRT_TBL ((uintptr_t)rsqrt_tbl)
 
-static int16_t TableShort(uint32_t addr)
+static int16_t TableShort(uintptr_t addr)
 {
 	return *(const int16_t *)(uintptr_t)addr;
 }
 
-static int32_t TableLong(uint32_t addr)
+static int32_t TableLong(uintptr_t addr)
 {
 	return *(const int32_t *)(uintptr_t)addr;
 }

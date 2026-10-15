@@ -4,7 +4,7 @@
 #include "pc_screen.h"
 #include "pc_draw.h"
 
-extern int pBMR;
+extern void *pBMR;
 
 int DAT_800d1a38;
 

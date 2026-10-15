@@ -7,11 +7,11 @@ typedef struct {
 	unsigned short x, y, w, h;
 } RECT;
 
-extern int decodeSliceBuffer[];
+extern unsigned int *decodeSliceBuffer[];
 
-int GameFMV_Active, GameFMV_FrameBufferCopyActive, GameFMV_NumSoundSources, GameFMV_StartSector,
-    pRingBuffer;
-int vlcBuffer[2];
+int GameFMV_Active, GameFMV_FrameBufferCopyActive, GameFMV_NumSoundSources, GameFMV_StartSector;
+unsigned int *pRingBuffer;
+unsigned int *vlcBuffer[2];
 unsigned char GameFMV_SliceBuffers;
 short GameFMV_StartX;
 unsigned short GameFMV_StartY, GameFMV_Width, GameFMV_Height;
@@ -21,7 +21,7 @@ void DecDCToutCallback(int);
 void StUnSetRing(void);
 void FUN_800912bc(int, unsigned char *);
 void CdControl(int, unsigned char *, int);
-void Mem_Delete(int);
+void Mem_Delete(void *);
 void ClearImage(RECT *, int, int, int);
 
 void GameFMV_StopFMV(void) {

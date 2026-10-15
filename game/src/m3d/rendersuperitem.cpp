@@ -19,7 +19,7 @@ extern "C" {
 #include "../m3dasm/lastvec.h"
 
 /* a position (16 bits per coordinate) through the current rotation, >> 12, into three words */
-static void ViewPosition(const VECTOR *p, long *out) {
+static void ViewPosition(const VECTOR *p, int *out) {
 	int16_t v[3];
 	GeomAcc r;
 

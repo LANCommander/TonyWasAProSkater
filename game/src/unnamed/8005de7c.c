@@ -1,8 +1,10 @@
 /* Front_MainMenu__Fi (0x8005de7c) */
+#include "game/classsizes.h"
 #include "names.h"
 
 struct VT {
-	char pad[8];
+	short off0, i0; /* entry 0 (PsxVtEntry): zeros */
+	void *fn0;
 	short off;
 	short pad2;
 	void (*fn)(char *, int);
@@ -26,9 +28,9 @@ struct O *DAT_800d235c;
 extern void Pack_DefragmentFully(void);
 extern void FrontLoader_LoadSet(int);
 extern void FrontLoader_Defragment(void);
-extern int FrontLoader_TakeFile(char *);
-extern void DownloadBMP16x2(int);
-extern void Mess_LoadFont__FPcT0iii(char *, int, int, int, int);
+extern char *FrontLoader_TakeFile(char *);
+extern void DownloadBMP16x2(char *);
+extern void Mess_LoadFont__FPcT0iii(char *, char *, int, int, int);
 extern void Mess_SetFontScale(unsigned);
 extern struct O *__nw__6CClassUi(unsigned);
 extern struct O *__6SpritePciii(struct O *, char *, int, int, int);
@@ -64,13 +66,13 @@ int Front_MainMenu(int a) {
 	Mess_LoadFont__FPcT0iii("mainf.fnt", FrontLoader_TakeFile("mainf.fnt"), -1, -1, -1);
 	Mess_SetFontScale(200);
 
-	o = __nw__6CClassUi(24);
+	o = __nw__6CClassUi(SIZEOF_SPRITE);
 
 	if (o)
 		o = __6SpritePciii(o, "levbut2.bmp", 1, 32, 128);
 
 	DAT_800d2358 = o;
-	p = __nw__6CClassUi(24);
+	p = __nw__6CClassUi(SIZEOF_SPRITE);
 
 	if (p)
 		p = __6SpritePciii(p, "levbut1.bmp", 1, 32, 128);

@@ -19,7 +19,7 @@ int *Trig_GetPosition(CVector &pos, int node) {
 				while (*pFlags != 0xff)
 					pFlags++;
 
-				pLong = (int *)((int)(pFlags + 4) & ~3);
+				pLong = (int *)((intptr_t)(pFlags + 4) & ~3);
 				pos.vx = pLong[0] << 12;
 				pos.vy = pLong[1] << 12;
 				pos.vz = pLong[2] << 12;
@@ -32,14 +32,14 @@ int *Trig_GetPosition(CVector &pos, int node) {
 			case 1000:
 			case 1001:
 				pPos = pNode + 2 + pNode[1];
-				pLong = (int *)((int)((uchar *)pPos + 3) & ~3);
+				pLong = (int *)((intptr_t)((uchar *)pPos + 3) & ~3);
 				pos.vx = pLong[0] << 12;
 				pos.vy = pLong[1] << 12;
 				pos.vz = pLong[2] << 12;
 				break;
 			case 5:
 				pPos = pNode + 3 + pNode[2];
-				pLong = (int *)((int)((uchar *)pPos + 3) & ~3);
+				pLong = (int *)((intptr_t)((uchar *)pPos + 3) & ~3);
 				pos.vx = pLong[0] << 12;
 				pos.vy = pLong[1] << 12;
 				pos.vz = pLong[2] << 12;
@@ -47,7 +47,7 @@ int *Trig_GetPosition(CVector &pos, int node) {
 			case 500:
 			case 501:
 				pPos = pNode + 1;
-				pLong = (int *)((int)((uchar *)pPos + 3) & ~3);
+				pLong = (int *)((intptr_t)((uchar *)pPos + 3) & ~3);
 				pos.vx = pLong[0] << 12;
 				pos.vy = pLong[1] << 12;
 				pos.vz = pLong[2] << 12;

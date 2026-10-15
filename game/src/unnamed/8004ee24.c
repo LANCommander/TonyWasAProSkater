@@ -1,6 +1,7 @@
 /* FUN_8004ee24 (0x8004ee24) */
 struct VT {
-	char pad[8];
+	short off0, i0; /* entry 0 (unused) */
+	void *fn0;
 	short off;
 	short pad2;
 	void (*fn)(char *, int);

@@ -16,6 +16,7 @@ SAnimFrame *Spool_FindAnim(char *pName) {
 		uint NumAnims = *pPacketInfo->pPacket;
 		char *pAnimName = (char *)(pPacketInfo->pPacket + 1);
 		int found = 0;
+		uint FirstFrame = 1; /* (the port's: the anim's first frame in pFrames, after its count) */
 
 		{
 			int i;
@@ -49,11 +50,12 @@ SAnimFrame *Spool_FindAnim(char *pName) {
 
 				NumFrames = *(uint *)(pAnimName + 8);
 				pAnimName += NumFrames * 8 + 12;
+				FirstFrame += NumFrames + 1;
 			}
 		}
 
 		if (found) {
-			pAnim = (SAnimFrame *)(pAnimName + 12);
+			pAnim = pPacketInfo->pFrames + FirstFrame;
 			break;
 		}
 	}

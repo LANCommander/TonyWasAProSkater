@@ -32,7 +32,7 @@ extern SLevel Levels[];
 extern int DAT_800bf2a0[]; /* unlocked (this visit) */
 extern int DAT_800bf2c8[]; /* unlocked (saved) */
 extern SlicedImage *DAT_800bf2f0[];
-extern int DAT_800d3810[];
+extern void *DAT_800d3810[];
 extern int GGame; /* game mode */
 extern int DAT_800d1cb8;
 extern int Loading;

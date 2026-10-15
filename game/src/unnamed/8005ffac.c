@@ -9,32 +9,34 @@ typedef struct {
 } G;
 
 typedef struct {
-	char p[0xf0];
-	int f0;
-	int f4;
-	int f8;
-	int fc;
+	char *p[0xf0 / 4];
+	char *f0;
+	char *f4;
+	char *f8;
+	char *fc;
 } Z;
+
+struct VerticalMenu;
 
 extern unsigned char Pad[];
 extern G GPreferences;
 extern Z GameText;
 
-void FUN_800648c0(int, int, int);
-int VerticalMenu_getSelected(int);
+void FUN_800648c0(struct VerticalMenu *, int, int);
+int VerticalMenu_getSelected(struct VerticalMenu *);
 void SFX_PlayX(int, int, int);
-void sprintf(char *, char *, int, int);
-void VerticalMenu_setString(int, int, char *);
+void sprintf(char *, char *, char *, char *);
+void VerticalMenu_setString(struct VerticalMenu *, int, char *);
 void Pad_ClearTriggers(unsigned char *);
 
-int FUN_8005ffac(int a) {
+int FUN_8005ffac(struct VerticalMenu *a) {
 	char buf[32];
 	int s3, s1, t;
 	unsigned char *v;
 	unsigned char *s0;
 
 	s0 = Pad;
-	FUN_800648c0(a, 1, *(int *)(s0 + 0x2b8) == 0);
+	FUN_800648c0(a, 1, *(int *)(s0 + PAD_SIZE + 0x14c) == 0 /* Pad[1].Type */);
 
 	if (s0[PAD_MENU_LEFT + PAD_TRIGGERED] || s0[PAD_SIZE + PAD_MENU_LEFT + PAD_TRIGGERED] ||
 	    s0[PAD_MENU_RIGHT + PAD_TRIGGERED] || s0[PAD_SIZE + PAD_MENU_RIGHT + PAD_TRIGGERED]) {
@@ -44,7 +46,7 @@ int FUN_8005ffac(int a) {
 			s3 = 1;
 
 		Pad_ClearTriggers(Pad);
-		Pad_ClearTriggers(Pad + 364);
+		Pad_ClearTriggers(Pad + PAD_SIZE);
 
 		if (VerticalMenu_getSelected(a) == 3) {
 			if (s3 != GPreferences.f184)
@@ -75,7 +77,7 @@ int FUN_8005ffac(int a) {
 		if (t < 5) {
 			if (t >= 3) {
 				Pad_ClearTriggers(Pad);
-				Pad_ClearTriggers(Pad + 364);
+				Pad_ClearTriggers(Pad + PAD_SIZE);
 			}
 		}
 	}

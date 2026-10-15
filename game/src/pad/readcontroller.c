@@ -1,4 +1,6 @@
 /* ReadController__FP14ControllerDataPUc (0x80070e5c) */
+#include "game/padbuttons.h"
+
 typedef struct {
 	unsigned char b[8];
 } ControllerData;
@@ -26,7 +28,8 @@ void ReadController(ControllerData *d, unsigned char *s) {
 		FUN_80096070();
 		FUN_80096050();
 
+		/* both pads' AlignCalled (SControl +0x157; PAD_SIZE grows in the 64-bit port) */
 		Pad[0x157] = 0;
-		Pad[0x2c3] = 0;
+		Pad[PAD_SIZE + 0x157] = 0;
 	}
 }

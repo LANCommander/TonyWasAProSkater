@@ -9,13 +9,9 @@ extern "C" {
 #endif
 
 /* The memory the game's allocator manages (Init_ResetMemory: its heaps, Mem_NewX): one block from
- * the system, 8 MB (the PS1 had 2 MB for everything; the port's packets and the Dreamcast data's
- * files are bigger). */
+ * the system, 8 MB (16 in a 64-bit build; the PS1 had 2 MB for everything; the port's packets
+ * and the Dreamcast data's files are bigger). */
 void *PC_GameHeap(uint32_t *size);
-
-/* A 32-bit address as a native pointer (runtime code that still holds the game's pointers as
- * words). */
-#define PSX_PTR(a) ((void *)(uintptr_t)(uint32_t)(a))
 
 /* The game's data and .bss are native globals: the build's table of them, by retail address, ends
  * with {0, 0, 0}. */
@@ -25,25 +21,19 @@ typedef struct {
 } PcData;
 extern const PcData pc_data[];
 
-/* The global data at a retail address: where the native global holding it is (NULL if none). For
- * runtime code that reads a game global by address. */
+/* The global data at a retail address: where the native global holding it is (NULL if none), for
+ * THPS_POKE. (In an x64 build only a global's start is exact: what follows it in the retail layout
+ * moved where pointers grew.) */
 void *PC_Data(uint32_t addr);
-/* The same as a number for the PSX_PTR arithmetic runtime code does, looked up once per use. */
-#define PSX_DATA_ADDR(addr)                                                                        \
-    ({                                                                                             \
-        static uint32_t pc_data_addr_;                                                             \
-        if (!pc_data_addr_)                                                                        \
-            pc_data_addr_ = (uint32_t)(uintptr_t)PC_Data(addr);                                    \
-        pc_data_addr_;                                                                             \
-    })
 
 /* Logging: PC_Log always prints; PC_Trace only with THPS_TRACE=1. */
 void PC_Log(const char *fmt, ...);
 void PC_Trace(const char *fmt, ...);
 extern int pc_trace;
 void PC_Fatal(const char *fmt, ...);
-/* Bang(r, g, b), the game's fatal-error handler, which on the PS1 fills the screen with a colour and
- * spins: reports which heap ran out (and its free list) and exits instead of hanging silently. */
+/* The end of Bang(r, g, b), the game's fatal-error handler (which on the PS1 fills the screen with a
+ * colour and spins; the game's code has logged its heaps): a backtrace, and exit instead of hanging
+ * silently. */
 void PC_Bang(int r, int g, int b) __attribute__((noreturn));
 
 /* Called by generated stubs for functions with no implementation yet. Returns 0. */

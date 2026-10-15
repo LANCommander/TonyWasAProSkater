@@ -3,8 +3,8 @@
 
 extern char DAT_800bec34[];
 
-void FUN_80065f1c(char *p, int a);
+char *FUN_80065f1c(char *p, char *name);
 
-void FrontLoader_TakeFile(int a) {
-	FUN_80065f1c(DAT_800bec34, a);
+char *FrontLoader_TakeFile(char *name) {
+	return FUN_80065f1c(DAT_800bec34, name);
 }

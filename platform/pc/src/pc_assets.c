@@ -30,13 +30,13 @@
 
 #include "pc_assets.h"
 #include "pc_disc.h"
+#include "pc_gamedata.h"
 #include "pc_gdrom.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_sfd.h"
 
-#define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u) /* movieDetails[26], 32 bytes each */
-#define MOVIE_COUNT 26
+#define MOVIE_COUNT GAME_MOVIE_COUNT
 #define MUSIC_WIDTH 96            /* soundtrack entries carry a 96x64 video */
 #define STREAM_RATE 150           /* sectors/s: the songs stream at 2x */
 #define COPY_SECTORS 64
@@ -137,13 +137,11 @@ typedef struct {
 static int ListStrFiles(StrFile *e) {
     int i, n = 0;
     for (i = 0; i < MOVIE_COUNT; i++) {
-        const uint8_t *d = PSX_PTR(MOVIE_DETAILS + i * 32);
-        uint32_t name;
-        memcpy(&name, d, 4);
-        if (!name)
+        const GameMovieDetails *d = &movieDetails[i];
+        if (!d->name)
             continue;
-        BaseName(PSX_PTR(name), e[n].name, sizeof e[n].name);
-        e[n].music = (d[4] | d[5] << 8) == MUSIC_WIDTH;
+        BaseName(d->name, e[n].name, sizeof e[n].name);
+        e[n].music = d->width == MUSIC_WIDTH;
         n++;
     }
     return n;
@@ -385,9 +383,6 @@ static void ExtractWadFiles(void) {
 /* ---- the Dreamcast disc --------------------------------------------------------------------- */
 
 #define DC_MANIFEST_TAG "source: dreamcast"
-#define STATS PSX_DATA_ADDR(0x800a44fcu) /* Stats[]: skaters (SStats, 0x154 bytes): PSXName, PSXName2, FrontName */
-#define STATS_SIZE 0x154
-#define STATS_COUNT 14
 
 
 int PC_AssetsDreamcast(void) { return s_dc; }
@@ -655,17 +650,15 @@ static void ExtractDreamcast(const StrFile *str, int nstr) {
 static void DreamcastFixups(void) {
     char name[64], path[MAX_PATH];
     int i;
-    for (i = 0; i < STATS_COUNT; i++) {
-        uint32_t e = STATS + i * STATS_SIZE, full, front;
-        memcpy(&full, PSX_PTR(e), 4);
-        memcpy(&front, PSX_PTR(e + 8), 4);
-        if (!full || !front || !*(const char *)PSX_PTR(front))
+    for (i = 0; i < GAME_SKATERS; i++) {
+        GameStats *e = &Stats[i];
+        if (!e->PSXName || !e->FrontName || !*e->FrontName)
             continue;
-        snprintf(name, sizeof name, "%.50s.psx", (const char *)PSX_PTR(front));
+        snprintf(name, sizeof name, "%.50s.psx", e->FrontName);
         if (PC_AssetsFind(name, path, sizeof path))
             continue;
-        PC_Trace("dc: %s has no front-end model: using %s", name, (const char *)PSX_PTR(full));
-        memcpy(PSX_PTR(e + 8), &full, 4);
+        PC_Trace("dc: %s has no front-end model: using %s", name, e->PSXName);
+        e->FrontName = e->PSXName;
     }
 }
 

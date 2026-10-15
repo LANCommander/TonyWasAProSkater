@@ -1,10 +1,12 @@
 /* GotoStartOfTextureList__Fv (0x8006f094) */
 #include "names.h"
 
-int HashIndex;
-int pCurrentTex;
+struct Texture;
 
-extern int TextureChecksumHashTable[];
+int HashIndex;
+struct Texture *pCurrentTex;
+
+extern struct Texture *TextureChecksumHashTable[];
 
 void GotoStartOfTextureList(void) {
 	HashIndex = 0;

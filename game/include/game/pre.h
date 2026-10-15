@@ -3,8 +3,11 @@
 #ifndef GAME_PRE_H
 #define GAME_PRE_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
+#include "game/classsizes.h"
 #include "game/types.h"
 #include "game/class.h"
 
@@ -22,5 +25,6 @@ class PREManager : public CClass {
 	char *getFile(char *pName, int *pSize); /* 0x800663d8 */
 	char *parsePRE(char *pPre, char *pName, int *pSize); /* 0x80066460 */
 };
+CHECK_CLASS_SIZE(PREManager, SIZEOF_PREMANAGER);
 
 #endif

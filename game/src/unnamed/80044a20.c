@@ -16,8 +16,8 @@ typedef struct STrig {
 } STrig;
 
 extern STrig *HashTable[];
-extern int pCurrentPlayer;
-extern int GSkater;
+extern void *pCurrentPlayer;
+extern void *GSkater;
 
 void ExecuteCommandList(char *, int, int);
 

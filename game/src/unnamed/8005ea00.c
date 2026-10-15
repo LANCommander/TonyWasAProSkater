@@ -2,19 +2,25 @@
 #include "names.h"
 
 struct S {
+	char *a, *b, *c;
+};
+
+struct K {
 	int a, b, c;
 };
 
+struct VerticalMenu;
+
 extern struct S DAT_800a1cac;
 
-void Front_RunMenu(struct S *t, struct S *z, int a, int b, int *p, int c, int d, int e, int f);
+int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);
 
 void FUN_8005ea00(int a) {
 	struct S t = DAT_800a1cac;
-	struct S z;
+	struct K z;
 
 	z.a = 0;
 	z.b = 0;
 	z.c = 0;
-	Front_RunMenu(&t, &z, 3, 32, &a, 0, 0, 0, 0);
+	Front_RunMenu(&t.a, &z.a, 3, 32, &a, 0, 0, 0, 0);
 }

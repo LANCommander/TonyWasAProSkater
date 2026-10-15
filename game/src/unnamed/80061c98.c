@@ -2,14 +2,14 @@
 #include "names.h"
 #include "pc_texstore.h"
 
-int Mem_NewX(int a, int b, int c);
+void *Mem_NewX(int a, int b, int c);
 void StoreImage(short *r, int b);
 void LoadImage(short *r, int b);
-void Mem_Delete(int a);
+void Mem_Delete(void *a);
 
 void FUN_80061c98(int a, int b) {
 	short r[4];
-	int buf = Mem_NewX(512, 1, 1);
+	void *buf = Mem_NewX(512, 1, 1);
 	unsigned short *q;
 	int i;
 
@@ -17,9 +17,9 @@ void FUN_80061c98(int a, int b) {
 	r[1] = b;
 	r[2] = 256;
 	r[3] = 1;
-	PC_TexRead(r[0], r[1], r[2], r[3], (void *)buf);
+	PC_TexRead(r[0], r[1], r[2], r[3], buf);
 
-	q = (unsigned short *)buf;
+	q = buf;
 
 	for (i = 0; i < 256; i++) {
 		if (*q)
@@ -28,6 +28,6 @@ void FUN_80061c98(int a, int b) {
 		q++;
 	}
 
-	PC_TexUpload(r[0], r[1], r[2], r[3], (void *)buf);
+	PC_TexUpload(r[0], r[1], r[2], r[3], buf);
 	Mem_Delete(buf);
 }

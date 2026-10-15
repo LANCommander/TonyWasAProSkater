@@ -80,7 +80,7 @@ int CScriptOnlyBaddy::ExecuteCommand(ushort command) {
 			break;
 		case 17667: {
 			mWeatherData = GetScriptValue();
-			mpWeather = (SRainEntry *)Mem_New(mWeatherData * 16, 0, 1);
+			mpWeather = (SRainEntry *)Mem_New(mWeatherData * sizeof(SRainEntry), 0, 1);
 			CVector origin = MechList->mPos;
 
 			UseCacheForBits = 0;

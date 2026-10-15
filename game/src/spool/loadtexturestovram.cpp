@@ -37,9 +37,9 @@ void Spool_LoadTexturesToVRAM(int Region, int defrag) {
 
 	pPSX = PSXRegion[Region].pPSX;
 	pStuff = Spool_SkipPackets(pPSX);
-	pStuff += ((uint *)PSXRegion[Region].ppModels)[-1];
+	pStuff += PSXRegion[Region].NumModels;
 	Temp = *pStuff++;
-	TextureLookup = (Texture **)pStuff;
+	TextureLookup = PSXRegion[Region].ppTextures; /* (the file's texture table, as entries) */
 	pStuff += Temp;
 	Temp = *pStuff++;
 	pStuff += Temp * 9;

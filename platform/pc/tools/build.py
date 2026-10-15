@@ -20,6 +20,7 @@ turns into trampolines, virtual-dispatch thunks, stubs for anything not implemen
 everything with the runtime into build/pc/thps.exe (Linux: build/pc-linux/thps; see toolchain.py).
 """
 import argparse
+import bisect
 import concurrent.futures as cf
 import hashlib
 import json
@@ -37,13 +38,13 @@ GAME = os.path.join(ROOT, "game")      # the port's game code, data and headers
 sys.path.insert(0, HERE)
 import portsrc  # noqa: E402
 import toolchain  # noqa: E402
-from toolchain import OUT, TOOLBIN, WINDOWS, tool  # noqa: E402,F401
+from toolchain import MFLAG, OUT, TOOLBIN, USCORE, WINDOWS, X64, tool  # noqa: E402,F401
 
 GAME_CODE_END = 0x800858AC
 CODE_END = 0x8009D0E0  # hand-written assembly rewritten in C (reimpl.tsv) lies past the game code
 
 COMMON_FLAGS = [
-    "-m32", "-mabi=sysv", "-mno-ms-bitfields", "-malign-double", "-O1", "-g",
+    MFLAG, "-mno-ms-bitfields", "-O1", "-g",
     "-fno-strict-aliasing", "-fwrapv", "-fno-delete-null-pointer-checks", "-fno-builtin",
     "-fno-omit-frame-pointer", "-w", "-DPC_PORT=1",
     # outgoing args are stored, never pushed, so the only post-call %esp adjustment is the
@@ -55,12 +56,22 @@ COMMON_FLAGS = [
     "-I", os.path.join(GAME, "include"),
     "-include", os.path.join(PC, "include", "pc_game.h"),
 ]
+if not X64:
+    # i386: cdecl for C++ members too (no thiscall: C code calls them with `this` first), 8-byte
+    # aligned doubles as everywhere else
+    COMMON_FLAGS += ["-mabi=sysv", "-malign-double"]
+if not USCORE:
+    # x64 PE and ELF don't prefix C names with '_': have the compiler do it anyway, so the symbol
+    # pipeline below is the same everywhere (build_tu takes the '_' off again at the end)
+    COMMON_FLAGS += ["-fleading-underscore"]
+if X64 and WINDOWS:
+    # direct (RIP-relative) references: MinGW's default medium model reaches globals through
+    # `refptr.` pointers, which also lose -fleading-underscore's prefix
+    COMMON_FLAGS += ["-mcmodel=small"]
 if not WINDOWS:
-    # ELF: the same objects as MinGW's (symbols named `_name`, so the pipeline below is the same
-    # on every host; build_tu takes the '_' off again at the end), no position independence (the
-    # PS1 addresses are absolute), and small structs returned in registers as on Windows (the
-    # runtime is built the same way)
-    COMMON_FLAGS += ["-fleading-underscore", "-fno-pic", "-fno-pie", "-freg-struct-return"]
+    # ELF: no position independence, and (i386) small structs returned in registers as on Windows
+    # (the runtime is built the same way)
+    COMMON_FLAGS += ["-fno-pic", "-fno-pie"] + ([] if X64 else ["-freg-struct-return"])
 C_FLAGS = ["-std=gnu89", "-fpermissive", "-fcommon"]
 # -fno-lifetime-dse: egcs destructors re-store their class's vptr (portsrc adds the store); g++ would
 # drop stores into an object whose lifetime is ending, and those vptrs are read by the base dtors
@@ -144,6 +155,11 @@ def norm_sig(d):
     d = re.sub(r"\s+", "", d)
     d = d.replace("constchar", "charconst").replace("constCVector", "CVectorconst")
     d = re.sub(r"\bconst(\w+)&", r"\1const&", d)
+    # operator new takes a size_t: 64 bits in an x64 build, as retail's unsigned int
+    d = re.sub(r"(operatornew(?:\[\])?)\(unsignedlong(?:long)?\)", r"\1(unsignedint)", d)
+    # the port's 32-bit words are ints where retail had longs (an LP64 long is 64 bits)
+    d = re.sub(r"(?<![A-Za-z0-9_])(unsigned|signed)?long(?!long|double)(?![A-Za-z0-9_])",
+               lambda m: (m.group(1) or "") + "int", d)
     return d
 
 
@@ -198,6 +214,13 @@ class Ctx:
         off = 0x800D101C - 0x80010000 + 0x800
         self.static_ctors = [int.from_bytes(img[off + 4 * i:off + 4 * i + 4], "little")
                              for i in range(19)]
+        # where game/data's globals and .bss are (the TUs' definitions there are dropped)
+        import data_image  # noqa: E402
+        lay = data_image.build(data_image.OBJDIR)
+        cover = sorted([g["addr"], g["end"]] for g in lay.globals if not g["fixed"])
+        cover.append([data_image.BSS_START, data_image.BSS_END])
+        self.cover = sorted(cover)
+        self.cover_starts = [c[0] for c in self.cover]
         self.psyq = {}
         self.native_at = {}
         p = os.path.join(ROOT, "build", "psyq_names.tsv")
@@ -207,6 +230,11 @@ class Ctx:
                 t = NATIVE_RENAME.get(q[1]) or NATIVE_AT.get(q[1])
                 if t:  # every copy of a function linked more than once
                     self.native_at["_psx_%08x" % int(q[0], 16)] = "_" + t
+
+    def covered(self, addr):
+        """Whether a global of game/data (or .bss) holds the retail address."""
+        k = bisect.bisect_right(self.cover_starts, addr) - 1
+        return k >= 0 and addr < self.cover[k][1]
 
 
 BUILTIN_CXX = {
@@ -374,14 +402,15 @@ def build_tu(ctx, tu, flags_hash):
     asm_text = open(asm, encoding="utf-8").read()
     if is_cxx:
         asm_text = split_virtual_defs(asm_text, classes)
-    asm_text = caller_pops_sret(asm_text)
+    if not X64:
+        asm_text = caller_pops_sret(asm_text)
     # --- symbol resolution ----------------------------------------------------------------
     res = Resolver(ctx, tu, is_cxx, classes)
     asm_text, relocated = relocate_data_defs(asm_text, res)
     meta["relocated"] = relocated
     asm2 = base + ".fix.s"
     open(asm2, "w", encoding="utf-8").write(asm_text)
-    rc, so, se = run([tool("as"), "--32", asm2, "-o", base + ".raw.o"])
+    rc, so, se = run([tool("as"), "--64" if X64 else "--32", asm2, "-o", base + ".raw.o"])
     if rc:
         meta["errors"].append("assemble:\n" + se[-4000:])
         json.dump(meta, open(meta_path, "w"))
@@ -415,13 +444,15 @@ def build_tu(ctx, tu, flags_hash):
     meta["aliases"] = sorted(v for v in renames.values()
                              if not v.startswith("_psx_") and re.search(r"_a\d+$", v))
     globalize = info.get("globalize", [])
-    if not WINDOWS:
-        # -fleading-underscore named everything `_name`: back to the ELF names the runtime and
-        # the generated glue use (`_psx_80012345` -> `psx_80012345`, `_memcpy` -> `memcpy`)
+    if not USCORE:
+        # -fleading-underscore named everything `_name`: back to the names the runtime and the
+        # generated glue use (`_psx_80012345` -> `psx_80012345`, `_memcpy` -> `memcpy`)
         for line in so.splitlines():
             sym = line.split()[-1] if line.split() else ""
             new = renames.get(sym, sym)
-            if new.startswith("_"):
+            if new.startswith("__imp__"):
+                renames[sym] = "__imp_" + new[7:]  # a DLL import: __imp_ + the C name
+            elif new.startswith("_"):
                 renames[sym] = new[1:]
         globalize = [strip_us(s) for s in globalize]
     rn = base + ".rename"
@@ -472,8 +503,18 @@ DATA_SECT_RE = re.compile(r"^\s*\.(data|bss|section\s+\.(?:rdata|data|bss)\S*)",
 
 def relocate_data_defs(asm, res):
     """Drop the definition of every global data symbol that lives in the PS1 image, so references to
-    it become external (resolved to the retail address at link time)."""
+    it become external (resolved to the retail address at link time). A definition at an address
+    no global of game/data (nor .bss) holds stays: the TU's object is the storage (res.kept)."""
     relocated = []
+    kept = []
+
+    def drop(sym, addr):
+        if res.ctx.covered(addr):
+            relocated.append((sym, addr))
+            return True
+        kept.append((sym, addr))
+        return False
+
     globls = set(re.findall(r"^\s*\.globl\s+(\S+)", asm, re.M))
     # ELF spells a file-static .bss variable `.local x` + `.comm x,...` (COFF: `.lcomm x,...`)
     locals_ = set(re.findall(r"^\s*\.local\s+(\S+)", asm, re.M))
@@ -492,8 +533,7 @@ def relocate_data_defs(asm, res):
         if m:
             sym = m.group(1)
             addr = res.static_addr(sym) if sym in locals_ else res.data_addr(strip_us(sym))
-            if addr is not None:
-                relocated.append((sym, addr))
+            if addr is not None and drop(sym, addr):
                 continue
         # file statics (`static int x;`): the matching build placed them at retail addresses too,
         # listed in the TU's own .syms.json (never resolved through the global maps)
@@ -501,8 +541,7 @@ def relocate_data_defs(asm, res):
         if m:
             sym = m.group(1)
             addr = res.static_addr(sym)
-            if addr is not None:
-                relocated.append((sym, addr))
+            if addr is not None and drop(sym, addr):
                 continue
         m = re.match(r"^([^\s:]+):$", s)
         if m and not section.startswith(".text"):
@@ -511,8 +550,7 @@ def relocate_data_defs(asm, res):
                 addr = res.data_addr(strip_us(sym), cxx_sym=sym)
             else:
                 addr = res.static_addr(sym)
-            if addr is not None:
-                relocated.append((sym, addr))
+            if addr is not None and drop(sym, addr):
                 out_lines.append(line.replace(sym + ":", sym + "$pcdead:"))
                 continue
         out_lines.append(line)
@@ -523,6 +561,7 @@ def relocate_data_defs(asm, res):
     out = "\n".join(l for l in out_lines if not sym_dir.match(l) or
                     sym_dir.match(l).group(1) not in rel)
     res.relocated = dict(relocated)
+    res.kept = dict(kept)
     return out, relocated
 
 
@@ -531,6 +570,7 @@ class Resolver:
         self.ctx, self.tu, self.is_cxx, self.classes = ctx, tu, is_cxx, classes
         self.syms = {k: int(v, 16) for k, v in tu["syms"].items()}
         self.relocated = {}
+        self.kept = {}
         self.syms_by_sig = {}
         self.syms_by_qual = {}
         for k, a in self.syms.items():
@@ -646,6 +686,12 @@ class Resolver:
             if len(loose) == 1:
                 renames[loose[0]] = "_pcfn_%08x" % primary
                 info["defines"][hex(primary)] = strip_us(loose[0])
+        # data this TU's object holds (relocate_data_defs: no game/data global there): named by its
+        # retail address, for the other TUs' references
+        for sym, a in self.kept.items():
+            renames[sym] = "_psx_%08x" % a
+            info["globalize"].append("_psx_%08x" % a)
+            info.setdefault("kept", []).append(a)
         # ---- references
         for sym in undefined:
             name = strip_us(sym)
@@ -781,6 +827,7 @@ def main():
                          for h in sorted(os.listdir(os.path.join(PC, "include")))
                          if h.endswith(".h"))
     flags_hash = hashlib.sha1((json.dumps(COMMON_FLAGS + C_FLAGS + CXX_FLAGS) +
+                              json.dumps(ctx.cover) +
                               open(os.path.join(HERE, "portsrc.py")).read() +
                               open(__file__).read() + pc_headers).encode()).hexdigest()
     metas = []

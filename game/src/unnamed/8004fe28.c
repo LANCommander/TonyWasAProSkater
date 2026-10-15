@@ -123,7 +123,7 @@ void Credits_Roll(int a0, int a1) {
 	off = a0 * 4;
 	s4 = *(int *)((char *)DAT_800d1b98 + off);
 	Pad_ClearTriggers(Pad);
-	Pad_ClearTriggers(Pad + 364);
+	Pad_ClearTriggers(Pad + PAD_SIZE);
 	Db_Init();
 
 	tog = 0;
@@ -178,7 +178,7 @@ void Credits_Roll(int a0, int a1) {
 		    Pad[PAD_MENU_START + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_MENU_START + PAD_TRIGGERED] ||
 		    Pad[PAD_CAMERA + PAD_TRIGGERED] || Pad[PAD_SIZE + PAD_CAMERA + PAD_TRIGGERED]) {
 			Pad_ClearTriggers(Pad);
-			Pad_ClearTriggers(Pad + 364);
+			Pad_ClearTriggers(Pad + PAD_SIZE);
 			SFX_PlayX(145, 8192, 0);
 			break;
 		}

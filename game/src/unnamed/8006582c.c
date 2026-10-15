@@ -1,25 +1,29 @@
 /* FUN_8006582c (0x8006582c) */
 #include "names.h"
 
+/* SLoadEntry / FileLoader (game/shellutils.h) */
 typedef struct E {
-	int p;
+	void *p;
 	char s[16];
 	int i14, i18, i1c;
 	int used;
 } E;
 
 typedef struct C {
-	int f0, f4, f8, cur;
+	void *vt;
+	int f4, f8, cur;
 	E e[8];
 } C;
 
-extern int SpoolerBlocksFileIO;
+struct PREManager;
+
+extern struct PREManager *SpoolerBlocksFileIO;
 
 int FileIO_Open(char *);
-void FileIO_Load(int);
+void FileIO_Load(void *);
 void FileIO_Sync(void);
-int Mem_NewX(int, int, int);
-void PREManager_spoolPRE(int, char *);
+void *Mem_NewX(int, int, int);
+void PREManager_spoolPRE(struct PREManager *, char *);
 int Spool_PSX(char *, int, int);
 void printf(char *, char *);
 int strcmp(char *, char *);

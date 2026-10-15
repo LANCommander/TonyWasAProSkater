@@ -11,11 +11,11 @@
 
 typedef struct {
 	short m[3][3];
-	long t[3];
+	int t[3];
 } MATRIX;
 
 typedef struct {
-	long vx, vy, vz, pad;
+	int vx, vy, vz, pad;
 } VECTOR;
 
 typedef struct {
@@ -36,7 +36,7 @@ typedef struct {
 	DVECTOR sxy;
 	CVECTOR rgb;
 	short txuv, pad;
-	long chx, chy;
+	int chx, chy;
 } EVECTOR;
 
 typedef struct {
@@ -149,9 +149,9 @@ MATRIX *RotMatrixZYX(SVECTOR *r, MATRIX *m);
 MATRIX *RotMatrix_gte(SVECTOR *r, MATRIX *m);
 MATRIX *RotMatrixYXZ_gte(SVECTOR *r, MATRIX *m);
 MATRIX *RotMatrixZYX_gte(SVECTOR *r, MATRIX *m);
-MATRIX *RotMatrixX(long r, MATRIX *m);
-MATRIX *RotMatrixY(long r, MATRIX *m);
-MATRIX *RotMatrixZ(long r, MATRIX *m);
+MATRIX *RotMatrixX(int r, MATRIX *m);
+MATRIX *RotMatrixY(int r, MATRIX *m);
+MATRIX *RotMatrixZ(int r, MATRIX *m);
 MATRIX *RotMatrixC(SVECTOR *r, MATRIX *m);
 MATRIX *TransMatrix(MATRIX *m, VECTOR *v);
 MATRIX *ScaleMatrix(MATRIX *m, VECTOR *v);
@@ -175,37 +175,37 @@ void ReadRotMatrix(MATRIX *m);
 void ReadLightMatrix(MATRIX *m);
 void ReadColorMatrix(MATRIX *m);
 void SetRGBcd(CVECTOR *v);
-void SetBackColor(long rbk, long gbk, long bbk);
-void SetFarColor(long rfc, long gfc, long bfc);
-void SetGeomOffset(long ofx, long ofy);
-void SetGeomScreen(long h);
-void ReadSZfifo3(long *sz0, long *sz1, long *sz2);
-void ReadSZfifo4(long *szx, long *sz0, long *sz1, long *sz2);
-void ReadSXSYfifo(long *sxy0, long *sxy1, long *sxy2);
+void SetBackColor(int rbk, int gbk, int bbk);
+void SetFarColor(int rfc, int gfc, int bfc);
+void SetGeomOffset(int ofx, int ofy);
+void SetGeomScreen(int h);
+void ReadSZfifo3(int *sz0, int *sz1, int *sz2);
+void ReadSZfifo4(int *szx, int *sz0, int *sz1, int *sz2);
+void ReadSXSYfifo(int *sxy0, int *sxy1, int *sxy2);
 void ReadRGBfifo(CVECTOR *v0, CVECTOR *v1, CVECTOR *v2);
-void ReadGeomOffset(long *ofx, long *ofy);
-long ReadGeomScreen(void);
+void ReadGeomOffset(int *ofx, int *ofy);
+int ReadGeomScreen(void);
 
 /* transformation and lighting */
-void TransRot_32(VECTOR *v0, VECTOR *v1, long *flag);
-long TransRotPers(SVECTOR *v0, long *sxy, long *p, long *flag);
-long TransRotPers3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, long *sxy0, long *sxy1, long *sxy2,
-                   long *p, long *flag);
+void TransRot_32(VECTOR *v0, VECTOR *v1, int *flag);
+int TransRotPers(SVECTOR *v0, int *sxy, int *p, int *flag);
+int TransRotPers3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, int *sxy0, int *sxy1, int *sxy2,
+                   int *p, int *flag);
 void pers_map(int abuf, SVECTOR **vertex, int tex[4][2], u_short *dtext);
 void PhongLine(int istart_x, int iend_x, int p, int q, u_short **pixx, int fs, int ft, int i4,
                int det);
-long RotTransPers(SVECTOR *v0, long *sxy, long *p, long *flag);
-long RotTransPers3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, long *sxy0, long *sxy1, long *sxy2,
-                   long *p, long *flag);
-void RotTrans(SVECTOR *v0, VECTOR *v1, long *flag);
-void RotTransSV(SVECTOR *v0, SVECTOR *v1, long *flag);
+int RotTransPers(SVECTOR *v0, int *sxy, int *p, int *flag);
+int RotTransPers3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, int *sxy0, int *sxy1, int *sxy2,
+                   int *p, int *flag);
+void RotTrans(SVECTOR *v0, VECTOR *v1, int *flag);
+void RotTransSV(SVECTOR *v0, SVECTOR *v1, int *flag);
 void LocalLight(SVECTOR *v0, VECTOR *v1);
 void LightColor(VECTOR *v0, VECTOR *v1);
-void DpqColorLight(VECTOR *v0, CVECTOR *v1, long p, CVECTOR *v2);
-void DpqColor(CVECTOR *v0, long p, CVECTOR *v1);
-void DpqColor3(CVECTOR *v0, CVECTOR *v1, CVECTOR *v2, long p, CVECTOR *v3, CVECTOR *v4,
+void DpqColorLight(VECTOR *v0, CVECTOR *v1, int p, CVECTOR *v2);
+void DpqColor(CVECTOR *v0, int p, CVECTOR *v1);
+void DpqColor3(CVECTOR *v0, CVECTOR *v1, CVECTOR *v2, int p, CVECTOR *v3, CVECTOR *v4,
                CVECTOR *v5);
-void Intpl(VECTOR *v0, long p, CVECTOR *v1);
+void Intpl(VECTOR *v0, int p, CVECTOR *v1);
 VECTOR *Square12(VECTOR *v0, VECTOR *v1);
 VECTOR *Square0(VECTOR *v0, VECTOR *v1);
 VECTOR *SquareSL12(SVECTOR *v0, VECTOR *v1);
@@ -214,70 +214,70 @@ SVECTOR *SquareSS12(SVECTOR *v0, SVECTOR *v1);
 SVECTOR *SquareSS0(SVECTOR *v0, SVECTOR *v1);
 void NormalColor(SVECTOR *v0, CVECTOR *v1);
 void NormalColor3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *v3, CVECTOR *v4, CVECTOR *v5);
-void NormalColorDpq(SVECTOR *v0, CVECTOR *v1, long p, CVECTOR *v2);
-void NormalColorDpq3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *v3, long p, CVECTOR *v4,
+void NormalColorDpq(SVECTOR *v0, CVECTOR *v1, int p, CVECTOR *v2);
+void NormalColorDpq3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *v3, int p, CVECTOR *v4,
                      CVECTOR *v5, CVECTOR *v6);
 void NormalColorCol(SVECTOR *v0, CVECTOR *v1, CVECTOR *v2);
 void NormalColorCol3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *v3, CVECTOR *v4,
                      CVECTOR *v5, CVECTOR *v6);
-void ColorDpq(VECTOR *v0, CVECTOR *v1, long p, CVECTOR *v2);
+void ColorDpq(VECTOR *v0, CVECTOR *v1, int p, CVECTOR *v2);
 void ColorCol(VECTOR *v0, CVECTOR *v1, CVECTOR *v2);
-long NormalClip(long sxy0, long sxy1, long sxy2);
-long AverageZ3(long sz0, long sz1, long sz2);
-long AverageZ4(long sz0, long sz1, long sz2, long sz3);
+int NormalClip(int sxy0, int sxy1, int sxy2);
+int AverageZ3(int sz0, int sz1, int sz2);
+int AverageZ4(int sz0, int sz1, int sz2, int sz3);
 void OuterProduct12(VECTOR *v0, VECTOR *v1, VECTOR *v2);
 void OuterProduct0(VECTOR *v0, VECTOR *v1, VECTOR *v2);
-long Lzc(long data);
-long RotTransPers4(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, long *sxy0, long *sxy1,
-                   long *sxy2, long *sxy3, long *p, long *flag);
-void RotTransPersN(SVECTOR *v0, DVECTOR *v1, u_short *sz, u_short *p, u_short *flag, long n);
-void RotTransPers3N(SVECTOR *v0, DVECTOR *v1, u_short *sz, u_short *flag, long n);
+int Lzc(int data);
+int RotTransPers4(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, int *sxy0, int *sxy1,
+                   int *sxy2, int *sxy3, int *p, int *flag);
+void RotTransPersN(SVECTOR *v0, DVECTOR *v1, u_short *sz, u_short *p, u_short *flag, int n);
+void RotTransPers3N(SVECTOR *v0, DVECTOR *v1, u_short *sz, u_short *flag, int n);
 void RotMeshH(short *Yheight, DVECTOR *Vo, u_short *sz, u_short *flag, short Xoffset,
               short Zoffset, short m, short n, DVECTOR *base);
-long RotAverage3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, long *sxy0, long *sxy1, long *sxy2,
-                 long *p, long *flag);
-long RotAverage4(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, long *sxy0, long *sxy1,
-                 long *sxy2, long *sxy3, long *p, long *flag);
-long RotNclip3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, long *sxy0, long *sxy1, long *sxy2, long *p,
-               long *otz, long *flag);
-long RotNclip4(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, long *sxy0, long *sxy1,
-               long *sxy2, long *sxy3, long *p, long *otz, long *flag);
-long RotAverageNclip3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, long *sxy0, long *sxy1, long *sxy2,
-                      long *p, long *otz, long *flag);
-long RotAverageNclip4(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, long *sxy0, long *sxy1,
-                      long *sxy2, long *sxy3, long *p, long *otz, long *flag);
-long RotColorDpq(SVECTOR *v0, SVECTOR *v1, CVECTOR *v2, long *sxy, CVECTOR *v3, long *flag);
-long RotColorDpq3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, SVECTOR *v4, SVECTOR *v5,
-                  CVECTOR *v6, long *sxy0, long *sxy1, long *sxy2, CVECTOR *v7, CVECTOR *v8,
-                  CVECTOR *v9, long *flag);
-long RotAverageNclipColorDpq3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, SVECTOR *v4,
-                              SVECTOR *v5, CVECTOR *v6, long *sxy0, long *sxy1, long *sxy2,
-                              CVECTOR *v7, CVECTOR *v8, CVECTOR *v9, long *otz, long *flag);
-long RotAverageNclipColorCol3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, SVECTOR *v4,
-                              SVECTOR *v5, CVECTOR *v6, long *sxy0, long *sxy1, long *sxy2,
-                              CVECTOR *v7, CVECTOR *v8, CVECTOR *v9, long *otz, long *flag);
-long RotColorMatDpq(SVECTOR *v0, SVECTOR *v1, CVECTOR *v2, long *sxy, CVECTOR *v3, long matc,
-                    long flag);
-void ColorMatDpq(SVECTOR *v0, CVECTOR *v1, long p, CVECTOR *v2, long matc);
-void ColorMatCol(SVECTOR *v0, CVECTOR *v1, CVECTOR *v2, long matc);
-void LoadAverage12(VECTOR *v0, VECTOR *v1, long p0, long p1, VECTOR *v2);
-void LoadAverageShort12(SVECTOR *v0, SVECTOR *v1, long p0, long p1, SVECTOR *v2);
-void LoadAverage0(VECTOR *v0, VECTOR *v1, long p0, long p1, VECTOR *v2);
-void LoadAverageShort0(SVECTOR *v0, SVECTOR *v1, long p0, long p1, SVECTOR *v2);
-void LoadAverageByte(u_char *v0, u_char *v1, long p0, long p1, u_char *v2);
-void LoadAverageCol(u_char *v0, u_char *v1, long p0, long p1, u_char *v2);
+int RotAverage3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, int *sxy0, int *sxy1, int *sxy2,
+                 int *p, int *flag);
+int RotAverage4(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, int *sxy0, int *sxy1,
+                 int *sxy2, int *sxy3, int *p, int *flag);
+int RotNclip3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, int *sxy0, int *sxy1, int *sxy2, int *p,
+               int *otz, int *flag);
+int RotNclip4(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, int *sxy0, int *sxy1,
+               int *sxy2, int *sxy3, int *p, int *otz, int *flag);
+int RotAverageNclip3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, int *sxy0, int *sxy1, int *sxy2,
+                      int *p, int *otz, int *flag);
+int RotAverageNclip4(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, int *sxy0, int *sxy1,
+                      int *sxy2, int *sxy3, int *p, int *otz, int *flag);
+int RotColorDpq(SVECTOR *v0, SVECTOR *v1, CVECTOR *v2, int *sxy, CVECTOR *v3, int *flag);
+int RotColorDpq3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, SVECTOR *v4, SVECTOR *v5,
+                  CVECTOR *v6, int *sxy0, int *sxy1, int *sxy2, CVECTOR *v7, CVECTOR *v8,
+                  CVECTOR *v9, int *flag);
+int RotAverageNclipColorDpq3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, SVECTOR *v4,
+                              SVECTOR *v5, CVECTOR *v6, int *sxy0, int *sxy1, int *sxy2,
+                              CVECTOR *v7, CVECTOR *v8, CVECTOR *v9, int *otz, int *flag);
+int RotAverageNclipColorCol3(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, SVECTOR *v4,
+                              SVECTOR *v5, CVECTOR *v6, int *sxy0, int *sxy1, int *sxy2,
+                              CVECTOR *v7, CVECTOR *v8, CVECTOR *v9, int *otz, int *flag);
+int RotColorMatDpq(SVECTOR *v0, SVECTOR *v1, CVECTOR *v2, int *sxy, CVECTOR *v3, int matc,
+                    int flag);
+void ColorMatDpq(SVECTOR *v0, CVECTOR *v1, int p, CVECTOR *v2, int matc);
+void ColorMatCol(SVECTOR *v0, CVECTOR *v1, CVECTOR *v2, int matc);
+void LoadAverage12(VECTOR *v0, VECTOR *v1, int p0, int p1, VECTOR *v2);
+void LoadAverageShort12(SVECTOR *v0, SVECTOR *v1, int p0, int p1, SVECTOR *v2);
+void LoadAverage0(VECTOR *v0, VECTOR *v1, int p0, int p1, VECTOR *v2);
+void LoadAverageShort0(SVECTOR *v0, SVECTOR *v1, int p0, int p1, SVECTOR *v2);
+void LoadAverageByte(u_char *v0, u_char *v1, int p0, int p1, u_char *v2);
+void LoadAverageCol(u_char *v0, u_char *v1, int p0, int p1, u_char *v2);
 
 /* scalar math */
-long VectorNormal(VECTOR *v0, VECTOR *v1);
-long VectorNormalS(VECTOR *v0, SVECTOR *v1);
-long VectorNormalSS(SVECTOR *v0, SVECTOR *v1);
-long SquareRoot0(long a);
-long SquareRoot12(long a);
-void InvSquareRoot(long a, long *b, long *c);
-void gteMIMefunc(SVECTOR *otp, SVECTOR *dfp, long n, long p);
-void SetFogFar(long a, long h);
-void SetFogNear(long a, long h);
-void SetFogNearFar(long a, long b, long h);
+int VectorNormal(VECTOR *v0, VECTOR *v1);
+int VectorNormalS(VECTOR *v0, SVECTOR *v1);
+int VectorNormalSS(SVECTOR *v0, SVECTOR *v1);
+int SquareRoot0(int a);
+int SquareRoot12(int a);
+void InvSquareRoot(int a, int *b, int *c);
+void gteMIMefunc(SVECTOR *otp, SVECTOR *dfp, int n, int p);
+void SetFogFar(int a, int h);
+void SetFogNear(int a, int h);
+void SetFogNearFar(int a, int b, int h);
 void SubPol4(POL4 *p, SPOL *sp, int ndiv);
 void SubPol3(POL3 *p, SPOL *sp, int ndiv);
 int rcos(int a);
@@ -295,33 +295,33 @@ int catan(int a);
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
-long ratan2(long y, long x);
-long p2otz(long p, long projection);
-long otz2p(long otz, long projection);
+int ratan2(int y, int x);
+int p2otz(int p, int projection);
+int otz2p(int otz, int projection);
 
 /* packet (PMD/SMD/RMD) renderers */
-void RotPMD_F3(long *pa, u_long *ot, int otlen, int id, int backc);
-void RotPMD_G3(long *pa, u_long *ot, int otlen, int id, int backc);
-void RotPMD_FT3(long *pa, u_long *ot, int otlen, int id, int backc);
-void RotPMD_GT3(long *pa, u_long *ot, int otlen, int id, int backc);
-void RotPMD_F4(long *pa, u_long *ot, int otlen, int id, int backc);
-void RotPMD_G4(long *pa, u_long *ot, int otlen, int id, int backc);
-void RotPMD_FT4(long *pa, u_long *ot, int otlen, int id, int backc);
-void RotPMD_GT4(long *pa, u_long *ot, int otlen, int id, int backc);
-void RotPMD_SV_F3(long *pa, long *va, u_long *ot, int otlen, int id, int backc);
-void RotPMD_SV_G3(long *pa, long *va, u_long *ot, int otlen, int id, int backc);
-void RotPMD_SV_FT3(long *pa, long *va, u_long *ot, int otlen, int id, int backc);
-void RotPMD_SV_GT3(long *pa, long *va, u_long *ot, int otlen, int id, int backc);
-void RotPMD_SV_F4(long *pa, long *va, u_long *ot, int otlen, int id, int backc);
-void RotPMD_SV_G4(long *pa, long *va, u_long *ot, int otlen, int id, int backc);
-void RotPMD_SV_FT4(long *pa, long *va, u_long *ot, int otlen, int id, int backc);
-void RotPMD_SV_GT4(long *pa, long *va, u_long *ot, int otlen, int id, int backc);
+void RotPMD_F3(int *pa, u_long *ot, int otlen, int id, int backc);
+void RotPMD_G3(int *pa, u_long *ot, int otlen, int id, int backc);
+void RotPMD_FT3(int *pa, u_long *ot, int otlen, int id, int backc);
+void RotPMD_GT3(int *pa, u_long *ot, int otlen, int id, int backc);
+void RotPMD_F4(int *pa, u_long *ot, int otlen, int id, int backc);
+void RotPMD_G4(int *pa, u_long *ot, int otlen, int id, int backc);
+void RotPMD_FT4(int *pa, u_long *ot, int otlen, int id, int backc);
+void RotPMD_GT4(int *pa, u_long *ot, int otlen, int id, int backc);
+void RotPMD_SV_F3(int *pa, int *va, u_long *ot, int otlen, int id, int backc);
+void RotPMD_SV_G3(int *pa, int *va, u_long *ot, int otlen, int id, int backc);
+void RotPMD_SV_FT3(int *pa, int *va, u_long *ot, int otlen, int id, int backc);
+void RotPMD_SV_GT3(int *pa, int *va, u_long *ot, int otlen, int id, int backc);
+void RotPMD_SV_F4(int *pa, int *va, u_long *ot, int otlen, int id, int backc);
+void RotPMD_SV_G4(int *pa, int *va, u_long *ot, int otlen, int id, int backc);
+void RotPMD_SV_FT4(int *pa, int *va, u_long *ot, int otlen, int id, int backc);
+void RotPMD_SV_GT4(int *pa, int *va, u_long *ot, int otlen, int id, int backc);
 
 #define PSYQ_LIBGTE_XMD(name)                                                                      \
-	void name(long *pa, u_long *ot, int otlen, int id, int sclip, int hclip, int vclip,          \
+	void name(int *pa, u_long *ot, int otlen, int id, int sclip, int hclip, int vclip,          \
 	          int nclipmode);
 #define PSYQ_LIBGTE_XMD_SV(name)                                                                   \
-	void name(long *pa, long *va, u_long *ot, int otlen, int id, int sclip, int hclip, int vclip, \
+	void name(int *pa, int *va, u_long *ot, int otlen, int id, int sclip, int hclip, int vclip, \
 	          int nclipmode);
 PSYQ_LIBGTE_XMD(RotSMD_F3)
 PSYQ_LIBGTE_XMD(RotSMD_G3)
@@ -359,35 +359,35 @@ PSYQ_LIBGTE_XMD_SV(RotRMD_SV_GT4)
 #undef PSYQ_LIBGTE_XMD_SV
 
 /* polygon clipping */
-void InitClip(EVECTOR *evbfad, long hw, long vw, long h, long znear, long zfar);
-long Clip3F(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, EVECTOR **evmx);
-long Clip3FP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, EVECTOR **evmx);
-long Clip4F(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, EVECTOR **evmx);
-long Clip4FP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, EVECTOR **evmx);
-long Clip3FT(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, short *uv0, short *uv1, short *uv2,
+void InitClip(EVECTOR *evbfad, int hw, int vw, int h, int znear, int zfar);
+int Clip3F(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, EVECTOR **evmx);
+int Clip3FP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, EVECTOR **evmx);
+int Clip4F(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, EVECTOR **evmx);
+int Clip4FP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, EVECTOR **evmx);
+int Clip3FT(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, short *uv0, short *uv1, short *uv2,
              EVECTOR **evmx);
-long Clip3FTP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, short *uv0, short *uv1, short *uv2,
+int Clip3FTP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, short *uv0, short *uv1, short *uv2,
               EVECTOR **evmx);
-long Clip4FT(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, short *uv0, short *uv1,
+int Clip4FT(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, short *uv0, short *uv1,
              short *uv2, short *uv3, EVECTOR **evmx);
-long Clip4FTP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, short *uv0, short *uv1,
+int Clip4FTP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, short *uv0, short *uv1,
               short *uv2, short *uv3, EVECTOR **evmx);
-long Clip3G(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *rgb0, CVECTOR *rgb1, CVECTOR *rgb2,
+int Clip3G(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *rgb0, CVECTOR *rgb1, CVECTOR *rgb2,
             EVECTOR **evmx);
-long Clip3GP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *rgb0, CVECTOR *rgb1, CVECTOR *rgb2,
+int Clip3GP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *rgb0, CVECTOR *rgb1, CVECTOR *rgb2,
              EVECTOR **evmx);
-long Clip4G(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, CVECTOR *rgb0, CVECTOR *rgb1,
+int Clip4G(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, CVECTOR *rgb0, CVECTOR *rgb1,
             CVECTOR *rgb2, CVECTOR *rgb3, EVECTOR **evmx);
-long Clip4GP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, CVECTOR *rgb0, CVECTOR *rgb1,
+int Clip4GP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, CVECTOR *rgb0, CVECTOR *rgb1,
              CVECTOR *rgb2, CVECTOR *rgb3, EVECTOR **evmx);
-long Clip3GT(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, short *uv0, short *uv1, short *uv2,
+int Clip3GT(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, short *uv0, short *uv1, short *uv2,
              CVECTOR *rgb0, CVECTOR *rgb1, CVECTOR *rgb2, EVECTOR **evmx);
-long Clip3GTP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, short *uv0, short *uv1, short *uv2,
+int Clip3GTP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, short *uv0, short *uv1, short *uv2,
               CVECTOR *rgb0, CVECTOR *rgb1, CVECTOR *rgb2, EVECTOR **evmx);
-long Clip4GT(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, short *uv0, short *uv1,
+int Clip4GT(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, short *uv0, short *uv1,
              short *uv2, short *uv3, CVECTOR *rgb0, CVECTOR *rgb1, CVECTOR *rgb2, CVECTOR *rgb3,
              EVECTOR **evmx);
-long Clip4GTP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, short *uv0, short *uv1,
+int Clip4GTP(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, short *uv0, short *uv1,
               short *uv2, short *uv3, CVECTOR *rgb0, CVECTOR *rgb1, CVECTOR *rgb2, CVECTOR *rgb3,
               EVECTOR **evmx);
 
@@ -404,12 +404,12 @@ void RotAverageNclipColorDpq3_nom(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR
 void RotAverageNclipColorCol3_nom(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3,
                                   SVECTOR *v4, SVECTOR *v5, CVECTOR *v6);
 void RotColorDpq_nom(SVECTOR *v0, SVECTOR *v1, CVECTOR *v2);
-long RotColorDpq3_nom(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, SVECTOR *v4,
+int RotColorDpq3_nom(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, SVECTOR *v3, SVECTOR *v4,
                       SVECTOR *v5, CVECTOR *v6);
 void NormalColor_nom(SVECTOR *v0);
 void NormalColor3_nom(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2);
-void NormalColorDpq_nom(SVECTOR *v0, CVECTOR *v1, long p);
-void NormalColorDpq3_nom(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *v3, long p);
+void NormalColorDpq_nom(SVECTOR *v0, CVECTOR *v1, int p);
+void NormalColorDpq3_nom(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *v3, int p);
 void NormalColorCol_nom(SVECTOR *v0, CVECTOR *v1);
 void NormalColorCol3_nom(SVECTOR *v0, SVECTOR *v1, SVECTOR *v2, CVECTOR *v3);
 

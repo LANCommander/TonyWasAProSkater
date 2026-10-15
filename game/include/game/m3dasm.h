@@ -26,7 +26,7 @@ extern "C" {
 	void CompactOTagR(struct P_TAG *ot, int n); /* 0x80089ddc */
 }
 
-void M3dAsm_GetReflectionMapping(MATRIX *world, long *pos, uint *model);   /* 0x800866cc */
+void M3dAsm_GetReflectionMapping(MATRIX *world, int *pos, uint *model);   /* 0x800866cc */
 void M3dAsm_GetDynamicLighting(SVECTOR *normals, int n);                   /* 0x80086a4c */
 void M3dAsm_SetAmbient(int *rgb);                                          /* 0x80086f20 */
 void M3dAsm_SetTransVector(Vector *v);                                     /* 0x80089f54 */

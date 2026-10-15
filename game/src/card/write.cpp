@@ -8,10 +8,9 @@ extern char CARD_FNAME[];
 extern char CARD_VNAME[];
 
 extern SCareer GCareer;
-extern char Tape01IconPalette[];
-extern char Tape01IconTexture[];
-extern char Tony01IconPalette[];
-extern char Tony01IconTexture[];
+/* the card header's icon (Tony01Icon*, Tape01Icon* in retail): the port writes no card header
+   (pc_saves.c), so it has none of the art */
+static char NoIcon[128];
 
 extern SVideoInfo GVInfo1;
 extern SVideoInfo GVInfo2;
@@ -84,8 +83,8 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 			HeaderSize2 = 0;
 			pDataBuf2 = 0;
 			DataSize2 = 0;
-			pClut = Tony01IconPalette;
-			pIcon = Tony01IconTexture;
+			pClut = NoIcon;
+			pIcon = NoIcon;
 			break;
 		case 1:
 			FName = CARD_VNAME;
@@ -93,8 +92,8 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 			HeaderSize = 640;
 			pDataBuf = pHeaderBuf + 160;
 			DataSize = 23936;
-			pClut = Tape01IconPalette;
-			pIcon = Tape01IconTexture;
+			pClut = NoIcon;
+			pIcon = NoIcon;
 			pHeaderBuf2 = GVInfo2.pBlockStart;
 			HeaderSize2 = 640;
 			pDataBuf2 = pHeaderBuf2 + 160;

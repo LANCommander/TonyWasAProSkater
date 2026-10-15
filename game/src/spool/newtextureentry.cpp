@@ -7,7 +7,7 @@
 extern Texture *TextureChecksumHashTable[];
 
 Texture *NewTextureEntry(uint checksum) {
-	Texture *pNew = Mem_NewX(40, 0, 1);
+	Texture *pNew = (Texture *)Mem_NewX(sizeof(Texture), 0, 1);
 	uint Lower = checksum & 511;
 
 	pNew->pNext = TextureChecksumHashTable[Lower];

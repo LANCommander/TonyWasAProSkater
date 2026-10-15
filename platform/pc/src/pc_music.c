@@ -19,34 +19,14 @@
 #include <string.h>
 
 #include "pc_assets.h"
+#include "pc_gamedata.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
 #include "pc_stream.h"
 
-#define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u)
-#define MOVIE_COUNT 26
+#define MOVIE_COUNT GAME_MOVIE_COUNT
 #define MUSIC_WIDTH 96
 #define MAX_SONGS 256
-
-/* movieDetails entry (game/src/unnamed/80023168.c) */
-typedef struct {
-    uint32_t name;
-    uint16_t width, height, endFrame, pad;
-    int32_t vlcBufferSize, ringBufferSectors, is24Bit, startSector, musicScale;
-} MovieDetails;
-
-#define GameFMV_Active (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1634)))
-#define GameFMV_CurrentTrack (*(uint8_t *)PSX_PTR(PSX_DATA_ADDR(0x800d167d)))
-#define GameFMV_Width (*(uint16_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1672)))
-#define GameFMV_Height (*(uint16_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1674)))
-#define GameFMV_EndFrame (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1660)))
-#define GameFMV_VLCBufferSize (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1664)))
-#define GameFMV_RingBufferSectors (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1668)))
-#define GameFMV_Is24Bit (*(uint8_t *)PSX_PTR(PSX_DATA_ADDR(0x800d167c)))
-#define GameFMV_MusicScale (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1680)))
-#define GameFMV_StartSector (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d165c)))
-#define GameFMV_IsMovie (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d162c)))
-#define GameFMV_RewindSwitch (*(int32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1630)))
 
 static char *s_songs[MAX_SONGS];
 static int s_nsongs, s_next, s_loaded;
@@ -78,7 +58,7 @@ static void LoadPlaylist(void) {
     PC_Log("playlist %s: %d songs", path, s_nsongs);
 }
 
-static const MovieDetails *Entry(int i) { return PSX_PTR(MOVIE_DETAILS + i * sizeof(MovieDetails)); }
+static const GameMovieDetails *Entry(int i) { return &movieDetails[i]; }
 
 static int IsSfd(const char *name) {
     size_t n = strlen(name);
@@ -95,7 +75,7 @@ static int FindEntry(const char *song) {
             base = p + 1;
     len = (int)strlen(base) - (IsSfd(base) ? 4 : 0);
     for (i = 0; i < MOVIE_COUNT; i++) {
-        const char *n = Entry(i)->name ? PSX_PTR(Entry(i)->name) : "", *semi;
+        const char *n = Entry(i)->name ? Entry(i)->name : "", *semi;
         while (*n == '\\')
             n++;
         semi = strchr(n, ';');
@@ -115,7 +95,7 @@ int PC_MusicNextSong(void) {
     for (tries = 0; tries < s_nsongs; tries++) {
         const char *song = s_songs[s_next];
         char path[MAX_PATH];
-        const MovieDetails *m;
+        const GameMovieDetails *m;
         int entry, id;
         s_next = (s_next + 1) % s_nsongs;
         if (strchr(song, ':') || song[0] == '\\' || song[0] == '/') {
@@ -136,29 +116,29 @@ int PC_MusicNextSong(void) {
             if (i == MOVIE_COUNT)
                 return 0;
             m = Entry(i);
-            GameFMV_CurrentTrack = (uint8_t)i;
+            GameFMV_CurrentTrack[0] = (uint8_t)i;
             /* a film's song loops at the end of its audio (PC_MusicStreamEnded) */
-            GameFMV_EndFrame = IsSfd(song) ? 0x7fffffff : PC_StreamLastFrame(id);
-            GameFMV_MusicScale = 128;
+            GameFMV_EndFrame[0] = IsSfd(song) ? 0x7fffffff : PC_StreamLastFrame(id);
+            GameFMV_MusicScale[0] = 128;
         } else {
             m = Entry(entry);
-            GameFMV_CurrentTrack = (uint8_t)entry;
-            GameFMV_EndFrame = m->endFrame;
-            GameFMV_MusicScale = m->musicScale;
+            GameFMV_CurrentTrack[0] = (uint8_t)entry;
+            GameFMV_EndFrame[0] = m->endframe;
+            GameFMV_MusicScale[0] = m->musicScale;
         }
-        GameFMV_Width = m->width;
-        GameFMV_Height = m->height;
-        GameFMV_VLCBufferSize = m->vlcBufferSize;
-        GameFMV_RingBufferSectors = m->ringBufferSectors;
-        GameFMV_Is24Bit = (uint8_t)m->is24Bit;
-        GameFMV_StartSector = id; /* the stream, where the PS1 kept the file's position */
-        PC_Trace("playlist: %s (stream %d, end frame %d)", song, id, GameFMV_EndFrame);
+        GameFMV_Width[0] = m->width;
+        GameFMV_Height[0] = m->height;
+        GameFMV_VLCBufferSize[0] = m->vlcbuffersize;
+        GameFMV_RingBufferSectors[0] = m->ringbuffersectors;
+        GameFMV_Is24Bit[0] = (uint8_t)m->is24bit;
+        GameFMV_StartSector[0] = id; /* the stream, where the PS1 kept the file's position */
+        PC_Trace("playlist: %s (stream %d, end frame %d)", song, id, GameFMV_EndFrame[0]);
         return 1;
     }
     return 0;
 }
 
 void PC_MusicStreamEnded(void) {
-    if (GameFMV_Active && !GameFMV_IsMovie)
-        GameFMV_RewindSwitch = 1;
+    if (GameFMV_Active[0] && !GameFMV_IsMovie[0])
+        GameFMV_RewindSwitch[0] = 1;
 }

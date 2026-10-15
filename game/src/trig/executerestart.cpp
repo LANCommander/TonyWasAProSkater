@@ -42,7 +42,7 @@ void Trig_ExecuteRestart() {
 		pName++;
 
 	pName++;
-	pName += (int)pName & 1;
+	pName += (intptr_t)pName & 1;
 	ExecuteCommandList((ushort *)pName, RestartNode, 1);
 
 	if (GNumberOfPlayers == 2 && GGame != 7) {

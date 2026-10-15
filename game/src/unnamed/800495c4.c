@@ -3,7 +3,7 @@
 
 int TotSlots;
 
-int Mem_NewX(int a, int b, int c);
+void *Mem_NewX(int a, int b, int c);
 
 void Pack_GetSlot(void) {
 	Mem_NewX(20, 0, 1);

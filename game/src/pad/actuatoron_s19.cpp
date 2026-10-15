@@ -33,7 +33,7 @@ void Pad_ActuatorOn(uchar index, ushort time, uchar motor, uchar motor_value) {
 
 			*p_motor_value = motor_value;
 			q = &Pad[index].Motor0Timer;
-			p_motor_timer = (ushort *)((motor << 1) + (int)q);
+			p_motor_timer = (ushort *)((char *)q + (motor << 1));
 			*p_motor_timer = time;
 		}
 	}

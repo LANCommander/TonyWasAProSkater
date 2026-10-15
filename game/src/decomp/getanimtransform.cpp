@@ -28,7 +28,7 @@ SMatrix *Decomp_GetAnimTransform(CSuper *pSuper) {
 
 	pRegion = &PSXRegion[pSuper->mRegion];
 	pAnimFile = pRegion->pAnimFile;
-	NumModels = ((uint *)pRegion->ppModels)[-1];
+	NumModels = pRegion->NumModels;
 	NumItems = pRegion->pPSX[2];
 
 	switch (pAnimFile[-2]) {

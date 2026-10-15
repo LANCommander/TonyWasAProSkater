@@ -1,8 +1,8 @@
 /* Card_LoadReplayFromCD__FPUlT0Pc (0x80014c74) */
 #include "names.h"
 
-char *FileIO_Open(char *);
-char *Mem_NewX(char *, int, int);
+int FileIO_Open(char *);
+char *Mem_NewX(unsigned, int, int);
 void FileIO_Load(char *);
 void FileIO_Sync(void);
 void Mem_Delete(char *);

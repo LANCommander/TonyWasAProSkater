@@ -56,7 +56,7 @@ static void M3d_PreprocessWibblyTexturesDc(int Region, uint *pData, uint *pPSX) 
 		n = 0;
 
 		for (p = pData; *p; p = (uint *)((STexWibFaceInfo *)(p + 4) + p[3])) {
-			Item *pItem = (Item *)((char *)pPSX + *p);
+			Item *pItem = PSX_ITEM(Region, *p);
 			SModel *pModel = PSXRegion[pItem->Region].ppModels[pItem->Model];
 			uint *pFace = (uint *)(&pModel->Vertices[pModel->NumVertices] + pModel->NumNormals);
 			int i;
@@ -72,7 +72,7 @@ static void M3d_PreprocessWibblyTexturesDc(int Region, uint *pData, uint *pPSX) 
 	n = 0;
 
 	for (p = pData; *p; p = (uint *)((STexWibFaceInfo *)(p + 4) + p[3])) {
-		Item *pItem = (Item *)((char *)pPSX + *p);
+		Item *pItem = PSX_ITEM(Region, *p);
 		STexWibFaceInfo *pInfo = (STexWibFaceInfo *)(p + 4);
 		int NumFaces = p[3];
 		int i;
@@ -145,7 +145,7 @@ void M3d_PreprocessWibblyTextures(int Region) {
 	}
 
 	while (*pData) {
-		pItem = (Item *)((char *)pPSX + *pData);
+		pItem = PSX_ITEM(Region, *pData);
 		pTexWibFaceInfo = (STexWibFaceInfo *)(pData + 4);
 		NumFaces = pData[3];
 

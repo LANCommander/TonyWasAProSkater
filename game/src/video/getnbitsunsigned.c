@@ -2,7 +2,8 @@
 #include "names.h"
 
 typedef struct {
-	int state, f4, f8, fc;
+	int state;
+	unsigned *f4, *f8, *fc; /* pBlockStart, pStreamStart, pStreamEnd */
 	unsigned *p;
 	unsigned buf;
 	int n;

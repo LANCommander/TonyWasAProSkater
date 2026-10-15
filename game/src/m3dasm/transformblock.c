@@ -78,7 +78,7 @@ static int always_facing(const SVECTOR *v, int n, struct SProjectedVertex *pv,
 
 	/* Retail stores v0 here as the end of ProjectedVertices, as the other transforms do, but v0
 	 * then holds the last square root (the call clobbered it). Reproduced as it is. */
-	*(uint32_t *)&SCR_PROJECTED_END = (uint32_t)len;
+	SCR_PROJECTED_END = (struct SProjectedVertex *)(uintptr_t)(uint32_t)len;
 	return (int)all;
 }
 

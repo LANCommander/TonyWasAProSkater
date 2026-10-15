@@ -5,7 +5,7 @@ typedef struct {
 	short x, y, w, h;
 } RECT;
 
-extern int decodeSliceBuffer[];
+extern unsigned int *decodeSliceBuffer[];
 extern int StCdIntrFlag;
 
 int currentDecodeBuffer, GameFMV_IsMovie;
@@ -15,12 +15,12 @@ RECT decodeSlice;
 unsigned short GameFMV_EndX, decodeSlice_4;
 
 void FUN_8008f79c(void);
-void DecDCTout(int, int);
-void LoadImage(RECT *, int);
+void DecDCTout(unsigned int *, int);
+void LoadImage(RECT *, unsigned int *);
 
 void strCallback(void) {
 	RECT r;
-	int p;
+	unsigned int *p;
 
 	return;
 

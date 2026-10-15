@@ -2,14 +2,16 @@
 #include "names.h"
 
 typedef struct {
-	int a, b, c;
+	char *a, *b, *c;
 } V;
+
+struct VerticalMenu;
 
 extern V DAT_800a1c84;
 
 typedef struct {
-	char p[0xd4];
-	int f;
+	char *p[0xd4 / 4];
+	char *f;
 } Q;
 
 extern Q GameText;
@@ -17,14 +19,14 @@ extern int GHasCareerLoaded;
 
 int DAT_800d1d80;
 
-int Front_RunMenu(V *, int *, int, int, int *, int, int, int, int);
-void FUN_8005e4ec(int *, int, int);
+int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);
+void FUN_8005e4ec(char **, int, int);
 int Front_MemCardScreen(int);
 
 int FUN_8005e8e0(int a) {
 	V l;
 	int k[3];
-	int s;
+	char *s;
 	int v, r;
 
 	for (;;) {
@@ -32,7 +34,7 @@ int FUN_8005e8e0(int a) {
 		k[1] = 0;
 		k[2] = 0;
 		k[0] = DAT_800d1d80 ^ 1;
-		v = Front_RunMenu(&l, k, 3, 16, &a, 0, 0, 0, 0);
+		v = Front_RunMenu(&l.a, k, 3, 16, &a, 0, 0, 0, 0);
 
 		if (v == -1)
 			goto ret;
@@ -44,8 +46,7 @@ int FUN_8005e8e0(int a) {
 				v = Front_MemCardScreen(0);
 
 				if (v == 0) {
-					v = GameText.f;
-					s = v;
+					s = GameText.f;
 					FUN_8005e4ec(&s, 1, -1);
 
 					v = -1;

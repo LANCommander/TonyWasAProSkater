@@ -10,7 +10,9 @@
 #ifndef GAME_PANEL_H
 #define GAME_PANEL_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
 /* SDK headers wrapped as in m3d.h (Panel_DrawFlatShadedPoly returns a POLY_F4) */
 extern "C" {

@@ -40,8 +40,10 @@ FIXED = os.path.join(DATA, "fixed")
 sys.path.insert(0, HERE)
 import toolchain  # noqa: E402
 
-# the compiled data files (not build/pc/data: on Windows that is the game's Data folder)
-OBJDIR = os.path.join(toolchain.OUT, "dataobj")
+# the compiled data files (not build/pc/data: on Windows that is the game's Data folder): 32-bit
+# (the retail layout, which --check compares) and, for an x64 build, 64-bit (the native data)
+OBJDIR = os.path.join(toolchain.OUT, "dataobj32" if toolchain.X64 else "dataobj")
+OBJDIR64 = os.path.join(toolchain.OUT, "dataobj")
 
 BASE = 0x80010000
 END = 0x800DD000  # the retail image's extent (to the end of .bss's page)
@@ -58,8 +60,9 @@ class Coff:
     def __init__(self, path):
         d = open(path, "rb").read()
         machine, nsec, _, symptr, nsym, opt, _ = struct.unpack_from("<HHIIIHH", d, 0)
-        if machine != 0x14C:
-            raise SystemExit("%s: not an i386 object" % path)
+        if machine not in (0x14C, 0x8664):
+            raise SystemExit("%s: not an i386 or x86-64 object" % path)
+        self.bits = 64 if machine == 0x8664 else 32
         strtab = d[symptr + 18 * nsym:]
 
         def name(raw):
@@ -82,7 +85,10 @@ class Coff:
             else:
                 data = d[ptr:ptr + size]
             relocs = [struct.unpack_from("<IIH", d, rptr + 10 * k) for k in range(nrel)]
-            self.sections.append({"name": sname, "data": data, "relocs": relocs})
+            if self.bits == 64:  # IMAGE_REL_AMD64_ADDR64 -> 64, ADDR32 -> 6 (as i386's DIR32)
+                relocs = [(o, si, {1: 64, 2: 6}.get(t, 1000 + t)) for o, si, t in relocs]
+            align = 1 << (((flags >> 20) & 15) - 1) if (flags >> 20) & 15 else 1
+            self.sections.append({"name": sname, "data": data, "relocs": relocs, "align": align})
         self.symbols = []
         i = 0
         while i < nsym:
@@ -96,18 +102,27 @@ class Coff:
 
 
 class Elf:
-    """An i386 ELF relocatable object, read into Coff's shape: sections numbered from 1 (ELF
-    section indexes), relocations as (offset, symbol index, 6 = DIR32), symbols with the section
-    (0 undefined, -1 absolute) and class (2 global, 3 local). Sections that aren't loaded
-    (symbols, strings, relocations, notes) are empty."""
+    """An i386 or x86-64 ELF relocatable object, read into Coff's shape: sections numbered from 1
+    (ELF section indexes), relocations as (offset, symbol index, 6 = DIR32 / 64 = a 64-bit
+    address) with the addend in the section's bytes (x86-64's RELA addends are written there),
+    symbols with the section (0 undefined, -1 absolute) and class (2 global, 3 local). Sections
+    that aren't loaded (symbols, strings, relocations, notes) are empty."""
 
     def __init__(self, path):
         d = open(path, "rb").read()
-        if d[:4] != b"\x7fELF" or d[4] != 1 or struct.unpack_from("<H", d, 18)[0] != 3:
-            raise SystemExit("%s: not an i386 ELF object" % path)
-        shoff, = struct.unpack_from("<I", d, 32)
-        shentsize, shnum, shstrndx = struct.unpack_from("<HHH", d, 46)
-        sh = [struct.unpack_from("<IIIIIIIIII", d, shoff + shentsize * i) for i in range(shnum)]
+        machine = struct.unpack_from("<H", d, 18)[0]
+        if d[:4] != b"\x7fELF" or (d[4], machine) not in ((1, 3), (2, 62)):
+            raise SystemExit("%s: not an i386 or x86-64 ELF object" % path)
+        self.bits = 64 if d[4] == 2 else 32
+        if self.bits == 64:
+            shoff, = struct.unpack_from("<Q", d, 40)
+            shentsize, shnum, shstrndx = struct.unpack_from("<HHH", d, 58)
+            # (name, type, flags, addr, offset, size, link, info, addralign, entsize)
+            sh = [struct.unpack_from("<IIQQQQIIQQ", d, shoff + shentsize * i) for i in range(shnum)]
+        else:
+            shoff, = struct.unpack_from("<I", d, 32)
+            shentsize, shnum, shstrndx = struct.unpack_from("<HHH", d, 46)
+            sh = [struct.unpack_from("<IIIIIIIIII", d, shoff + shentsize * i) for i in range(shnum)]
 
         def cstr(off):
             return d[off:d.index(b"\0", off)].decode()
@@ -122,33 +137,58 @@ class Elf:
                 data = bytes(size)
             else:
                 data = d[off:off + size]
-            self.sections.append({"name": cstr(names + name), "data": data, "relocs": []})
+            self.sections.append({"name": cstr(names + name), "data": data, "relocs": [],
+                                  "align": max(1, sh[i][8])})
         self.symbols = []
         for i in range(1, shnum):
             name, typ, _, _, off, size, link, info = sh[i][:8]
             if typ == 2:  # SHT_SYMTAB
                 strs = sh[link][4]
-                for k in range(size // 16):
-                    st_name, value, _, st_info, _, shndx = struct.unpack_from(
-                        "<IIIBBH", d, off + 16 * k)
-                    sec = -1 if shndx == 0xFFF1 else (0 if shndx >= 0xFF00 else shndx)
-                    self.symbols.append({"name": cstr(strs + st_name), "value": value,
-                                         "sec": sec, "cls": 3 if st_info >> 4 == 0 else 2})
+                if self.bits == 64:
+                    for k in range(size // 24):
+                        st_name, st_info, _, shndx, value = struct.unpack_from(
+                            "<IBBHQ", d, off + 24 * k)
+                        sec = -1 if shndx == 0xFFF1 else (0 if shndx >= 0xFF00 else shndx)
+                        self.symbols.append({"name": cstr(strs + st_name), "value": value,
+                                             "sec": sec, "cls": 3 if st_info >> 4 == 0 else 2})
+                else:
+                    for k in range(size // 16):
+                        st_name, value, _, st_info, _, shndx = struct.unpack_from(
+                            "<IIIBBH", d, off + 16 * k)
+                        sec = -1 if shndx == 0xFFF1 else (0 if shndx >= 0xFF00 else shndx)
+                        self.symbols.append({"name": cstr(strs + st_name), "value": value,
+                                             "sec": sec, "cls": 3 if st_info >> 4 == 0 else 2})
             elif typ == 9 and sh[info][2] & 2:  # SHT_REL for a loaded section
                 for k in range(size // 8):
                     r_off, r_info = struct.unpack_from("<II", d, off + 8 * k)
                     typ_ = r_info & 0xFF
                     self.sections[info - 1]["relocs"].append(
                         (r_off, r_info >> 8, 6 if typ_ == 1 else 1000 + typ_))
+            elif typ == 4 and sh[info][2] & 2:  # SHT_RELA (x86-64) for a loaded section
+                sec = self.sections[info - 1]
+                data = bytearray(sec["data"])
+                for k in range(size // 24):
+                    r_off, r_info, addend = struct.unpack_from("<QQq", d, off + 24 * k)
+                    typ_ = r_info & 0xFFFFFFFF
+                    # R_X86_64_64 -> 64, R_X86_64_32/32S -> 6 (as i386's DIR32)
+                    t = {1: 64, 10: 6, 11: 6}.get(typ_, 1000 + typ_)
+                    if t == 64:
+                        struct.pack_into("<q", data, r_off, addend)
+                    elif t == 6:
+                        struct.pack_into("<i", data, r_off, addend)
+                    sec["relocs"].append((r_off, r_info >> 32, t))
+                sec["data"] = bytes(data)
 
 
 def read_object(path):
     return Elf(path) if open(path, "rb").read(4) == b"\x7fELF" else Coff(path)
 
 
-def c_name(name):
-    """The C name of an object symbol (PE prefixes '_', ELF doesn't)."""
-    return name[len(toolchain.USCORE):] if name.startswith(toolchain.USCORE) else name
+def c_name(name, bits=32):
+    """The C name of an object symbol (32-bit PE prefixes '_', x64 PE and ELF don't)."""
+    if bits == 32 and toolchain.WINDOWS and name.startswith("_"):
+        return name[1:]
+    return name
 
 
 # ------------------------------------------------------------------------------------- names
@@ -176,7 +216,7 @@ def name_table():
 
 
 # the game's headers (decomp/include) and the Psy-Q ones they use, as the decompiled code has them
-INCLUDES = ["-DPC_PORT=1", "-I", os.path.join(DECOMP, "include"),
+INCLUDES = ["-DPC_PORT=1", "-DGAME_DATA_TU", "-I", os.path.join(DECOMP, "include"),
             "-I", os.path.join(ROOT, "platform", "pc", "include", "psyq"),
             "-I", os.path.join(ROOT, "platform", "pc", "include")]
 
@@ -187,9 +227,9 @@ def data_sources():
            [(s, True) for s in sorted(glob.glob(os.path.join(FIXED, "*.cpp")))]
 
 
-def compile_all(objdir):
+def compile_all(objdir, bits=32):
     os.makedirs(objdir, exist_ok=True)
-    gxx = toolchain.tool("g++")
+    gxx = toolchain.tool("g++", bits)
     hdrs = glob.glob(os.path.join(DATA, "*.h")) + \
         glob.glob(os.path.join(DECOMP, "include", "**", "*.h"), recursive=True)
     # (and this script: the flags below)
@@ -202,12 +242,13 @@ def compile_all(objdir):
                                                                       newest_hdr)):
             # C++ (as Neversoft's sources were), for the game's struct types (decomp/include);
             # C++98: no narrowing errors in the word tables
-            r = subprocess.run([gxx, "-m32", "-std=gnu++98", "-O0", "-fno-common", "-fno-ident",
+            r = subprocess.run([gxx, "-m%d" % bits, "-std=gnu++98", "-O1", "-fno-common", "-fno-ident",
                                 "-fno-exceptions", "-w", "-funsigned-char", "-malign-data=abi",
                                 "-g"] +
                                ([] if toolchain.WINDOWS else ["-fno-pic"]) +
                                ["-I", DATA] + INCLUDES + [
-                                "-c", src, "-o", obj], capture_output=True, text=True)
+                                "-c", src, "-o", obj], capture_output=True, text=True,
+                               env=toolchain.env(bits))
             if r.returncode:
                 raise SystemExit("data_image: %s\n%s" % (src, r.stderr[-4000:]))
         return obj
@@ -230,14 +271,83 @@ def cstring(data, off):
 
 
 _var_sizes = {}
+_var_types = {}
 
 
-def var_sizes(objpath):
+def var_types(objpath, bits=32):
+    """(Layouts, {name: type DIE}) of the variables an object defines, from its debug
+    information."""
+    if objpath not in _var_types:
+        from layouts import Layouts, parse_dwarf, ref  # noqa: E402
+        dump = subprocess.run([toolchain.tool("objdump", bits), "--dwarf=info", objpath],
+                              capture_output=True, text=True, env=toolchain.env(bits)).stdout
+        dies = parse_dwarf(dump)
+        lay = Layouts(dies)
+        out = {}
+        for d in dies.values():
+            at = d["attrs"]
+            if d["tag"] != "DW_TAG_variable" or "DW_AT_declaration" in at:
+                continue
+            spec = dies.get(ref(at.get("DW_AT_specification")), {"attrs": {}})["attrs"]
+            typ = dies.get(ref(at.get("DW_AT_type") or spec.get("DW_AT_type")))
+            if typ is None:
+                continue
+            for k in ("DW_AT_name", "DW_AT_linkage_name"):
+                for a in (at, spec):
+                    if k in a:
+                        out[a[k].split()[-1]] = typ
+        _var_types[objpath] = (lay, out)
+    return _var_types[objpath]
+
+
+def map_offset(l32, t32, l64, t64, off):
+    """The 64-bit offset of the byte at `off` in a variable of type t32 (32-bit layout l32) and
+    t64 (the same type's 64-bit layout), or None: through struct members (by position), array
+    elements and union members; the start of a scalar maps to itself, a byte inside a pointer to
+    nothing."""
+    t32, t64 = l32.strip(t32["off"]), l64.strip(t64["off"])
+    if t32 is None or t64 is None:
+        return None
+    if off == 0:
+        return 0
+    from layouts import intval, ref  # noqa: E402
+    tag = t32["tag"]
+    if tag in ("DW_TAG_structure_type", "DW_TAG_class_type", "DW_TAG_union_type"):
+        def members(l, t):
+            return [c for c in t["children"] if c["tag"] in ("DW_TAG_member", "DW_TAG_inheritance")
+                    and ("DW_AT_data_member_location" in c["attrs"] or tag == "DW_TAG_union_type")]
+        for c32, c64 in zip(members(l32, t32), members(l64, t64)):
+            o32 = intval(c32["attrs"].get("DW_AT_data_member_location")) or 0
+            o64 = intval(c64["attrs"].get("DW_AT_data_member_location")) or 0
+            m32 = l32.d.get(ref(c32["attrs"].get("DW_AT_type")))
+            m64 = l64.d.get(ref(c64["attrs"].get("DW_AT_type")))
+            if m32 is None or m64 is None:
+                continue
+            if o32 <= off < o32 + l32.size(l32.strip(m32["off"])):
+                r = map_offset(l32, m32, l64, m64, off - o32)
+                if r is not None:
+                    return o64 + r
+        return None
+    if tag == "DW_TAG_array_type":
+        e32 = l32.d.get(ref(t32["attrs"].get("DW_AT_type")))
+        e64 = l64.d.get(ref(t64["attrs"].get("DW_AT_type")))
+        s32, s64 = l32.size(l32.strip(e32["off"])), l64.size(l64.strip(e64["off"]))
+        if not s32:
+            return None
+        i, r = divmod(off, s32)
+        r = map_offset(l32, e32, l64, e64, r)
+        return None if r is None else i * s64 + r
+    if l32.kind(t32) == "ptr":
+        return None
+    return off
+
+
+def var_sizes(objpath, bits=32):
     """{name: size} of the variables an object defines, from its debug information."""
     if objpath not in _var_sizes:
         from layouts import Layouts, parse_dwarf, ref  # noqa: E402
-        dump = subprocess.run([toolchain.tool("objdump"), "--dwarf=info", objpath],
-                              capture_output=True, text=True).stdout
+        dump = subprocess.run([toolchain.tool("objdump", bits), "--dwarf=info", objpath],
+                              capture_output=True, text=True, env=toolchain.env(bits)).stdout
         dies = parse_dwarf(dump)
         lay = Layouts(dies)
         out = {}
@@ -389,6 +499,7 @@ def build(objdir):
     return lay
 
 
+C_IDENT = re.compile(r"^(?!__)[A-Za-z_]\w*$")  # (not the toolchain's reserved names)
 CHUNK_GAP = 0x1000  # native globals closer than this share a block (the gap kept, zero)
 
 
@@ -448,6 +559,12 @@ def native_asm(lay, out_s):
         if pos < len(img):
             asm.append('\t.incbin "%s", %d, %d' % (binname, len(blob) + pos, len(img) - pos))
         blob += img
+        # each global by its own name too (the runtime's way to them)
+        for g in gs:
+            if C_IDENT.match(g["name"]):
+                asm += ["\t.globl %s%s" % (us, g["name"]),
+                        "\t.set %s%s, %spc_data_%08x + %d" % (us, g["name"], us, start,
+                                                           g["addr"] - start)]
     # the tables' strings: writable, as all of the PS1's data was
     for text, label in strs.items():
         asm.append("%s:\n\t.byte %s" % (label, ", ".join(str(b) for b in text + b"\0")))
@@ -460,6 +577,142 @@ def native_asm(lay, out_s):
     if not os.path.exists(out_s) or open(out_s).read() != text:
         open(out_s, "w").write(text)
     return [[s, e] for s, e, _ in blocks], sorted(refs)
+
+
+def build64(lay, objdir32, objdir64):
+    """The x64 build's data: every native global of `lay` (the 32-bit build) compiled for x64,
+    in its native layout. -> {retail address: {name, data, align, ptrs [(off, target address,
+    addend)], lits [(off, text)], map (32-bit offset -> 64-bit offset, by DWARF), t32, t64}}."""
+    srcs = data_sources()
+    objpaths64 = compile_all(objdir64, 64)
+    objpaths32 = [os.path.join(objdir32, ("fixed_" if f else "") + os.path.basename(s)[:-4] + ".o")
+                  for s, f in srcs]
+    by_name = {g["name"]: g for g in lay.globals}
+    names = None
+    out = {}
+    for (path, fixed), op32, op64 in zip(srcs, objpaths32, objpaths64):
+        if fixed:
+            raise SystemExit("data_image: %s: no fixed data in an x64 build" % path)
+        o = read_object(op64)
+        for k, s in enumerate(o.sections):
+            if not NATIVE_SEC.match(s["name"]):
+                continue
+            gsym = next((sym["name"] for sym in o.symbols
+                         if sym and sym["sec"] == k + 1 and sym["cls"] == 2), None)
+            name = c_name(gsym, 64)
+            g32 = by_name[name]
+            data = bytearray(s["data"])
+            ptrs, lits = [], []
+            for off, si, typ in s["relocs"]:
+                sym = o.symbols[si]
+                if typ != 64:
+                    raise SystemExit("data_image: %s: %s: a 32-bit pointer (relocation %d at "
+                                     "+%d): give it a pointer type" % (path, name, typ, off))
+                v = struct.unpack_from("<q", data, off)[0]
+                struct.pack_into("<q", data, off, 0)
+                if sym["sec"] > 0:
+                    tsec = o.sections[sym["sec"] - 1]
+                    m = NATIVE_SEC.match(tsec["name"])
+                    if m:
+                        ptrs.append((off, int(m.group(1), 16), sym["value"] + v))
+                    else:
+                        lits.append((off, cstring(tsec["data"], sym["value"] + v)))
+                    continue
+                n = c_name(sym["name"], 64)
+                if n in by_name:
+                    t = by_name[n]["addr"]
+                else:
+                    if names is None:
+                        names = name_table()
+                    cand = names.get(n, set())
+                    m = ADDR_SUFFIX.search(n)
+                    t = next(iter(cand)) if len(cand) == 1 else int(m.group(1), 16)
+                ptrs.append((off, t, v))
+            l64, types64 = var_types(op64, 64)
+            l32, types32 = var_types(op32, 32)
+            size = var_sizes(op64, 64).get(name)
+            if size is not None and size < len(data):
+                data = data[:size]
+            out[g32["addr"]] = {"name": name, "end32": g32["end"], "data": bytes(data),
+                                "align": s["align"], "ptrs": ptrs, "lits": lits,
+                                "types": (l32, types32.get(name), l64, types64.get(name))}
+    return out
+
+
+def offset64(g, off32):
+    """The 64-bit offset of the byte at retail offset off32 in global g (build64), or None."""
+    l32, t32, l64, t64 = g["types"]
+    if t32 is None or t64 is None:
+        return None
+    return map_offset(l32, t32, l64, t64, off32)
+
+
+def native_asm64(lay, out_s, objdir32, objdir64, extra_refs=()):
+    """The x64 build's native data as assembly (cf. native_asm): every global on its own, in
+    retail order, in its native layout, labelled pc_data_<addr>; pointers `psx_<addr> + addend`.
+    -> ({retail address: [end, label offset of each referenced address inside it]}, refs)."""
+    us = toolchain.USCORE
+    gs = build64(lay, objdir32, objdir64)
+    starts = sorted(gs)
+    refs = set(extra_refs)
+    for g in gs.values():
+        refs.update(t for _, t, _ in g["ptrs"])
+    inner = {}
+    bad = []
+    for a in sorted(refs):
+        k = bisect.bisect_right(starts, a) - 1
+        if k < 0 or a >= gs[starts[k]]["end32"] or a == starts[k]:
+            continue
+        o = offset64(gs[starts[k]], a - starts[k])
+        if o is None:
+            bad.append("0x%08x (%s+0x%x)" % (a, gs[starts[k]]["name"], a - starts[k]))
+            if os.environ.get("THPS_X64_LOOSE"):
+                inner.setdefault(starts[k], {})[a] = a - starts[k]
+        else:
+            inner.setdefault(starts[k], {})[a] = o
+    if bad:
+        msg = ("data_image: addresses inside globals with no 64-bit place: " + ", ".join(bad))
+        if not os.environ.get("THPS_X64_LOOSE"):
+            raise SystemExit(msg)
+        print(msg + " (THPS_X64_LOOSE: their retail offsets)")
+    blob = bytearray()
+    asm = ["\t.data"]
+    strs = {}
+    binname = os.path.basename(out_s)[:-2] + ".bin"
+    for a in starts:
+        g = gs[a]
+        words = {}
+        for off, t, v in g["ptrs"]:
+            words[off] = "%spsx_%08x%s" % (us, t, " + %d" % v if v else "")
+        for off, text in g["lits"]:
+            if text not in strs:
+                strs[text] = ".Lpcs%d" % len(strs)
+            words[off] = strs[text]
+        asm += ["\t.p2align %d" % max(0, g["align"].bit_length() - 1),
+                "\t.globl %spc_data_%08x" % (us, a), "%spc_data_%08x:" % (us, a)]
+        if C_IDENT.match(g["name"]):  # (by its own name too, for the runtime)
+            asm += ["\t.globl %s%s" % (us, g["name"]), "%s%s:" % (us, g["name"])]
+        pos = 0
+        for w in sorted(words):
+            if w > pos:
+                asm.append('\t.incbin "%s", %d, %d' % (binname, len(blob) + pos, w - pos))
+            asm.append("\t.quad %s" % words[w])
+            pos = w + 8
+        if pos < len(g["data"]):
+            asm.append('\t.incbin "%s", %d, %d' % (binname, len(blob) + pos, len(g["data"]) - pos))
+        blob += g["data"]
+    for text, label in strs.items():
+        asm.append("%s:\n\t.byte %s" % (label, ", ".join(str(b) for b in text + b"\0")))
+    if not toolchain.WINDOWS:
+        asm.append("\t.section .note.GNU-stack,\"\",@progbits")
+    text = "\n".join(asm) + "\n"
+    binpath = os.path.join(os.path.dirname(out_s), binname)
+    if not os.path.exists(binpath) or open(binpath, "rb").read() != blob:
+        open(binpath, "wb").write(blob)
+    if not os.path.exists(out_s) or open(out_s).read() != text:
+        open(out_s, "w").write(text)
+    globs = {a: [gs[a]["end32"], inner.get(a, {})] for a in starts}
+    return globs, sorted(refs)
 
 
 def code_words():
@@ -628,6 +881,8 @@ def main():
     ap.add_argument("out")
     ap.add_argument("--check", metavar="SLUS_008.60")
     ap.add_argument("--objdir", default=OBJDIR)
+    ap.add_argument("--refs", help="x64: a file of more retail addresses (hex) the code refers to, "
+                    "to place in the native data")
     ap.add_argument("--asm", help="write the native data as assembly (native_asm) and, next to "
                     "it, <name>.json: its blocks, the fixed globals and what its pointers name")
     a = ap.parse_args()
@@ -640,7 +895,17 @@ def main():
     print("data_image: %d globals (%d fixed in the image), %d bytes of data, %d literals" % (
         len(lay.globals), len(fixed), sum(g["end"] - g["addr"] for g in lay.globals),
         len(lay.literals)))
-    if a.asm:
+    if a.asm and toolchain.X64:
+        extra = [int(x, 16) for x in open(a.refs).read().split()] if a.refs else []
+        globs, refs = native_asm64(lay, a.asm, a.objdir, OBJDIR64, extra)
+        man = {"globals": [[s, e, {"%d" % k: v for k, v in inner.items()}]
+                           for s, (e, inner) in sorted(globs.items())],
+               "fixed": [[g["addr"], g["end"]] for g in fixed], "refs": refs}
+        text = json.dumps(man, indent=0)
+        mpath = a.asm[:-2] + ".json"
+        if not os.path.exists(mpath) or open(mpath).read() != text:
+            open(mpath, "w").write(text)
+    elif a.asm:
         blocks, refs = native_asm(lay, a.asm)
         man = {"blocks": blocks, "fixed": [[g["addr"], g["end"]] for g in fixed], "refs": refs}
         text = json.dumps(man, indent=0)

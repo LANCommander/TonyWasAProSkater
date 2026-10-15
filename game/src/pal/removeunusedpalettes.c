@@ -5,8 +5,10 @@ typedef struct SPalette {
 	char pad[2];
 	unsigned char slot, flags;
 	unsigned short usage;
-	char pad6[10];
-	struct SPalette *next;
+	char pad6[2];
+	unsigned checksum;
+	int m0c;
+	struct SPalette *next; /* the entry made before (tag_S_Pal pPrevious) */
 } SPalette;
 
 SPalette *DAT_800d1a80;

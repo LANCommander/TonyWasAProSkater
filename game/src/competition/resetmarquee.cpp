@@ -120,8 +120,8 @@ void Competition_ResetMarquee() {
 
 	c->mMarqueeTimer = 0;
 	c->mMarqueeText = 0;
-	sprintf(c->mMarqueeTextBuf, "%s %s - HEAT %d", (int)Levels[GLevel].pLevelName,
-	        (int)Levels[GLevel].pCityName, c->mCurrentHeat + 1);
+	sprintf(c->mMarqueeTextBuf, "%s %s - HEAT %d", Levels[GLevel].pLevelName,
+	        Levels[GLevel].pCityName, c->mCurrentHeat + 1);
 
 	c->mMarqueeText = c->mMarqueeTextBuf;
 }

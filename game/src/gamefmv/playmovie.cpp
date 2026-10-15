@@ -22,12 +22,6 @@ struct CdlATV {
 	uchar val0, val1, val2, val3;
 };
 
-struct SMovie {
-	char pad0[24];
-	char *pName; /* 24 */
-	char pad1c[32 - 28];
-};
-
 int GameFMV_IsMovie;
 int GameFMV_RewindSwitch;
 int GameFMV_Active;
@@ -51,7 +45,7 @@ short decodeSlice_6;
 u_long *vlcBuffer[2];
 u_long *pRingBuffer;
 
-extern SMovie movieDetails[];
+extern SMovieDetails movieDetails[];
 extern int MIDILEVEL;
 extern u_long *decodeSliceBuffer[];
 extern SControl Pad[];
@@ -87,7 +81,7 @@ void GameFMV_PlayMovie(int track) {
 	GameFMV_StartY = (240 - GameFMV_Height) / 2;
 	GameFMV_RewindSwitch = 0;
 
-	if (!movieDetails[GameFMV_CurrentTrack].pName)
+	if (!movieDetails[GameFMV_CurrentTrack].startsector)
 		return;
 
 	decodeSlice = GameFMV_StartX;

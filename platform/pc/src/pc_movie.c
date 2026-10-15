@@ -18,6 +18,7 @@
 
 #include "pc_assets.h"
 #include "pc_frame.h"
+#include "pc_gamedata.h"
 #include "pc_movie.h"
 #include "pc_platform.h"
 #include "pc_runtime.h"
@@ -26,9 +27,7 @@
 #include "pc_stream.h"
 #include "pc_vdec.h"
 
-#define MOVIE_DETAILS PSX_DATA_ADDR(0x800a63e8u)
-#define MOVIE_COUNT 26
-#define GAMEFMV_START_SECTOR PSX_DATA_ADDR(0x800d165cu)
+#define MOVIE_COUNT GAME_MOVIE_COUNT
 #define SCREEN_W 320
 #define SCREEN_H 240
 #define AUDIO_STALL 30      /* frames without audio progress before the frame clock takes over */
@@ -87,13 +86,10 @@ static int s_stall;
 
 int PC_MoviePlays(int track) {
     const char *e = getenv("THPS_MOVIES");
-    const uint8_t *d;
-    uint32_t name;
     char path[260];
     if ((!e || atoi(e) != 0) && track < 0 && ~track < MOVIE_COUNT) {
-        d = PSX_PTR(MOVIE_DETAILS + (uint32_t)~track * 32);
-        memcpy(&name, d, 4);
-        if (name && PC_AssetsFindFilm(PSX_PTR(name), path, sizeof path))
+        const char *name = movieDetails[~track].name;
+        if (name && PC_AssetsFindFilm(name, path, sizeof path))
             return 1;
     }
     PC_Log("movie %d skipped", track);
@@ -123,7 +119,7 @@ static void LoadVideo(plm_buffer_t *b, void *user) {
 }
 
 int PC_MovieOpen(void) {
-    int id = *(int32_t *)PSX_PTR(GAMEFMV_START_SECTOR); /* the stream (pc_stream.h) */
+    int id = GameFMV_StartSector[0]; /* the stream (pc_stream.h) */
     const char *path = PC_StreamPath(id);
     if (!PC_StreamIsFilm(id) || !(s_sfd = PC_SfdOpen(path)))
         return 0;

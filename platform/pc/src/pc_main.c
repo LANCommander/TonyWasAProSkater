@@ -22,6 +22,7 @@
 #include <SDL2/SDL.h>
 
 #include "pc_assets.h"
+#include "pc_gamedata.h"
 #include "pc_geom.h"
 #include "pc_input.h"
 #include "pc_platform.h"
@@ -144,9 +145,12 @@ uint32_t PC_MissingFunction(uint32_t addr) {
 void *pc_delete_marked, *pc_delete_freed;
 
 void pc_vdelete(void *vtable, int slot, void *obj) {
-    uint8_t *e = (uint8_t *)vtable + 8 + 8 * slot;
-    void (*dtor)(void *, int) = *(void (**)(void *, int))(e + 4);
-    dtor((uint8_t *)obj + *(int16_t *)e, 3);
+    /* an egcs vtable: {delta, index, function} entries after an all-zero one */
+    const struct {
+        int16_t delta, index;
+        void (*fn)(void *, int);
+    } *e = (const void *)vtable;
+    e[1 + slot].fn((uint8_t *)obj + e[1 + slot].delta, 3);
 }
 
 void pc_delete_mark(void *p) {
@@ -165,9 +169,12 @@ void pc_delete_unowned(void *p) {
 
 /* The PS1's scratchpad, the 1 KB of fast RAM the game uses as working memory (game/scratchpad.h);
  * 4 KB, as code that ran past its end on the PS1 reached I/O registers. */
-unsigned char Scratchpad[4096] __attribute__((aligned(64)));
+unsigned char Scratchpad[4096] __attribute__((aligned(4096))); /* aligned as the PS1's (0x1f800000): the game's code relies on it */
+/* the pointers the game keeps in the scratchpad, by retail offset / 4 (game/scratchpad.h) */
+uintptr_t ScratchPointers[1024 / 4];
 
-#define GAME_HEAP_SIZE (8u << 20)
+/* (16 MB in a 64-bit build: its pointers, and so its structures and packets, are bigger) */
+#define GAME_HEAP_SIZE ((sizeof(void *) == 8 ? 16u : 8u) << 20)
 
 void *PC_GameHeap(uint32_t *size)
 {
@@ -234,55 +241,196 @@ const char *PC_UserDir(void) {
 }
 #endif
 
-/* The game's static constructors, once (what libsn's __main does on the PS1): the 19 entries of
- * the retail constructor table. */
+/* The game's static constructors, once (what libsn's __main does on the PS1): the constructor
+ * entries of the retail table. */
 void PC_RunStaticCtors(void) {
     static int done;
     int i;
     if (done)
         return;
     done = 1;
-    for (i = 0; i < 19; i++)
-        ((void (**)(void))PC_Data(0x800d101cu))[i]();
+    for (i = 0; i < GAME_CTORS; i++)
+        GameCtorList[i]();
 }
 
 /* ---- crash diagnostics ---------------------------------------------------------------------- */
 
 /* The interrupted thread's registers, as the fault handlers below see them (Windows CONTEXT,
- * POSIX ucontext): eax ecx edx ebx esp ebp esi edi in x86 encoding order. */
+ * POSIX ucontext), in x86 encoding order: ax cx dx bx sp bp si di (r8-r15 on x64). */
+typedef uintptr_t Reg;
+#ifdef __x86_64__
+#define NREGS 16
+#else
+#define NREGS 8
+#endif
 typedef struct {
-    uint32_t *r[8];
-    uint32_t *eip, *eflags;
+    Reg *r[NREGS];
+    Reg *ip;
+    uint32_t *flags;
 } Cpu;
 
 #ifdef _WIN32
+#ifdef __x86_64__
+#define CTX_IP(c) ((c)->Rip)
+#define CTX_BP(c) ((c)->Rbp)
+#else
+#define CTX_IP(c) ((c)->Eip)
+#define CTX_BP(c) ((c)->Ebp)
+#endif
 static void CpuOf(CONTEXT *c, Cpu *cpu) {
-    cpu->r[0] = (uint32_t *)&c->Eax;
-    cpu->r[1] = (uint32_t *)&c->Ecx;
-    cpu->r[2] = (uint32_t *)&c->Edx;
-    cpu->r[3] = (uint32_t *)&c->Ebx;
-    cpu->r[4] = (uint32_t *)&c->Esp;
-    cpu->r[5] = (uint32_t *)&c->Ebp;
-    cpu->r[6] = (uint32_t *)&c->Esi;
-    cpu->r[7] = (uint32_t *)&c->Edi;
-    cpu->eip = (uint32_t *)&c->Eip;
-    cpu->eflags = (uint32_t *)&c->EFlags;
+#ifdef __x86_64__
+    DWORD64 *g[NREGS] = {&c->Rax, &c->Rcx, &c->Rdx, &c->Rbx, &c->Rsp, &c->Rbp, &c->Rsi, &c->Rdi,
+                         &c->R8,  &c->R9,  &c->R10, &c->R11, &c->R12, &c->R13, &c->R14, &c->R15};
+#else
+    DWORD *g[NREGS] = {&c->Eax, &c->Ecx, &c->Edx, &c->Ebx, &c->Esp, &c->Ebp, &c->Esi, &c->Edi};
+#endif
+    int i;
+    for (i = 0; i < NREGS; i++)
+        cpu->r[i] = (Reg *)g[i];
+    cpu->ip = (Reg *)&CTX_IP(c);
+    cpu->flags = (uint32_t *)&c->EFlags;
 }
 #else
+#ifdef __x86_64__
+#define UC_IP REG_RIP
+#define UC_BP REG_RBP
+static const int kRegs[NREGS] = {REG_RAX, REG_RCX, REG_RDX, REG_RBX, REG_RSP, REG_RBP,
+                                 REG_RSI, REG_RDI, REG_R8,  REG_R9,  REG_R10, REG_R11,
+                                 REG_R12, REG_R13, REG_R14, REG_R15};
+#else
+#define UC_IP REG_EIP
+#define UC_BP REG_EBP
+static const int kRegs[NREGS] = {REG_EAX, REG_ECX, REG_EDX, REG_EBX,
+                                 REG_UESP, REG_EBP, REG_ESI, REG_EDI};
+#endif
 static void CpuOf(ucontext_t *uc, Cpu *cpu) {
     greg_t *g = uc->uc_mcontext.gregs;
-    cpu->r[0] = (uint32_t *)&g[REG_EAX];
-    cpu->r[1] = (uint32_t *)&g[REG_ECX];
-    cpu->r[2] = (uint32_t *)&g[REG_EDX];
-    cpu->r[3] = (uint32_t *)&g[REG_EBX];
-    cpu->r[4] = (uint32_t *)&g[REG_UESP];
-    cpu->r[5] = (uint32_t *)&g[REG_EBP];
-    cpu->r[6] = (uint32_t *)&g[REG_ESI];
-    cpu->r[7] = (uint32_t *)&g[REG_EDI];
-    cpu->eip = (uint32_t *)&g[REG_EIP];
-    cpu->eflags = (uint32_t *)&g[REG_EFL];
+    int i;
+    for (i = 0; i < NREGS; i++)
+        cpu->r[i] = (Reg *)&g[kRegs[i]];
+    cpu->ip = (Reg *)&g[UC_IP];
+    cpu->flags = (uint32_t *)&g[REG_EFL];
 }
 #endif
+
+/* An instruction's prefixes: legacy ones skipped, REX (x64) decoded. */
+typedef struct {
+    const uint8_t *p; /* the opcode */
+    int opsize16, rex;
+} Prefixes;
+
+static Prefixes ReadPrefixes(const uint8_t *p) {
+    Prefixes x = {0, 0, 0};
+    while (*p == 0x66 || *p == 0x67 || *p == 0xf2 || *p == 0xf3 || *p == 0x2e || *p == 0x3e ||
+           *p == 0x26 || *p == 0x36 || *p == 0x64 || *p == 0x65) {
+        if (*p == 0x66)
+            x.opsize16 = 1;
+        p++;
+    }
+#ifdef __x86_64__
+    if ((*p & 0xf0) == 0x40)
+        x.rex = *p++;
+#endif
+    x.p = p;
+    return x;
+}
+
+/* A ModRM memory operand: base and index registers (-1: none), scale, displacement, whether it
+ * is RIP-relative, and the length of ModRM + SIB + displacement. */
+typedef struct {
+    int base, index, scale, riprel, len;
+    int32_t disp;
+} MemOperand;
+
+static int DecodeModRM(const uint8_t *m, int rex, MemOperand *o) {
+    int mod = m[0] >> 6, rm = m[0] & 7;
+    const uint8_t *q = m + 1;
+    o->base = o->index = -1;
+    o->scale = 1;
+    o->riprel = 0;
+    o->disp = 0;
+    if (mod == 3) {
+        o->base = rm | (rex & 1) << 3;
+        o->len = 1;
+        return 0; /* a register */
+    }
+    if (rm == 4) {
+        uint8_t sib = *q++;
+        int index = ((sib >> 3) & 7) | (rex & 2) << 2, base = sib & 7;
+        o->scale = 1 << (sib >> 6);
+        if (index != 4)
+            o->index = index;
+        if (base == 5 && mod == 0) {
+            memcpy(&o->disp, q, 4);
+            q += 4;
+        } else {
+            o->base = base | (rex & 1) << 3;
+        }
+    } else if (rm == 5 && mod == 0) {
+#ifdef __x86_64__
+        o->riprel = 1;
+#endif
+        memcpy(&o->disp, q, 4);
+        q += 4;
+    } else {
+        o->base = rm | (rex & 1) << 3;
+    }
+    if (mod == 1) {
+        o->disp = (int8_t)*q++;
+    } else if (mod == 2) {
+        memcpy(&o->disp, q, 4);
+        q += 4;
+    }
+    o->len = (int)(q - m);
+    return 1;
+}
+
+/* The return addresses up the stack, for symbolize.py: a frame-pointer walk (everything is built
+ * with -fno-omit-frame-pointer), or on 64-bit Windows, whose frame pointers make no chain, the
+ * unwind tables from the context `wctx` (a CONTEXT *; NULL: walk from ip/fp). The first is ip.
+ * -> how many. */
+static int StackWalk(Reg ip, Reg fp, void *wctx, Reg *out, int max) {
+    Reg *bp = (Reg *)fp;
+    int n = 0;
+#if defined(_WIN32) && defined(__x86_64__)
+    if (wctx) {
+        CONTEXT c = *(CONTEXT *)wctx;
+        while (n < max && c.Rip) {
+            DWORD64 base, frame;
+            PRUNTIME_FUNCTION f;
+            void *data;
+            out[n++] = c.Rip;
+            f = RtlLookupFunctionEntry(c.Rip, &base, NULL);
+            if (!f) { /* a leaf function: the return address is on top of the stack */
+                if (!PC_Readable((void *)c.Rsp, 8))
+                    break;
+                c.Rip = *(DWORD64 *)c.Rsp;
+                c.Rsp += 8;
+                continue;
+            }
+            RtlVirtualUnwind(UNW_FLAG_NHANDLER, base, c.Rip, f, &c, &data, &frame, NULL);
+        }
+        return n;
+    }
+#else
+    (void)wctx;
+#endif
+    if (ip && n < max)
+        out[n++] = ip;
+    while (n < max && bp && PC_Readable(bp, 2 * sizeof(Reg))) {
+        out[n++] = bp[1];
+        bp = (Reg *)bp[0];
+    }
+    return n;
+}
+
+static void Backtrace(Reg ip, Reg fp, int depth, void *wctx) {
+    Reg a[64];
+    int i, n = StackWalk(ip, fp, wctx, a, depth + 1 < 64 ? depth + 1 : 64);
+    for (i = 0; i < n; i++)
+        fprintf(stderr, "      %08llx\n", (unsigned long long)a[i]);
+    fflush(stderr);
+}
 
 /* On the PS1, 0x00000000-0x001fffff is main RAM too, so the game's NULL-ish pointers read and
  * write harmless low memory. Such an access faults here; it is redone against s_lowpage (64 KB,
@@ -293,7 +441,7 @@ static uint8_t *s_lowpage;
 static struct {
     int active;
     int reg;
-    uint32_t bias;
+    Reg bias;
 } s_fix;
 
 /* Opcodes (one byte) that take a ModRM byte. */
@@ -305,14 +453,13 @@ static int HasModRM1(uint8_t op) {
            (op >= 0xd8 && op <= 0xdf) || op == 0xf6 || op == 0xf7 || op == 0xfe || op == 0xff;
 }
 
-static int FixLowAccess(Cpu *c, uint32_t addr) {
-    uint8_t *p = (uint8_t *)(uintptr_t)*c->eip;
-    uint8_t op, modrm;
-    int mod, rm, reg, base = -1, index = -1, scale = 1, writesReg = 0, two = 0;
-    uint32_t *br;
-    while (*p == 0x66 || *p == 0x67 || *p == 0xf2 || *p == 0xf3 || *p == 0x2e || *p == 0x3e ||
-           *p == 0x26 || *p == 0x36 || *p == 0x64 || *p == 0x65)
-        p++;
+static int FixLowAccess(Cpu *c, uintptr_t addr, void *wctx) {
+    Prefixes x = ReadPrefixes((const uint8_t *)*c->ip);
+    const uint8_t *p = x.p;
+    uint8_t op;
+    int reg, writesReg = 0, two = 0;
+    MemOperand mo;
+    Reg *br;
     op = *p++;
     if (op == 0x0f) {
         two = 1;
@@ -320,36 +467,19 @@ static int FixLowAccess(Cpu *c, uint32_t addr) {
     } else if (!HasModRM1(op)) {
         return 0;
     }
-    modrm = *p++;
-    mod = modrm >> 6;
-    reg = (modrm >> 3) & 7;
-    rm = modrm & 7;
-    if (mod == 3)
+    reg = ((p[0] >> 3) & 7) | (x.rex & 4) << 1;
+    if (!DecodeModRM(p, x.rex, &mo) || mo.riprel)
         return 0;
-    if (rm == 4) {
-        uint8_t sib = *p++;
-        scale = 1 << (sib >> 6);
-        index = (sib >> 3) & 7;
-        base = sib & 7;
-        if (index == 4)
-            index = -1;
-        if (base == 5 && mod == 0)
-            base = -1;
-    } else if (rm == 5 && mod == 0) {
-        base = -1;
-    } else {
-        base = rm;
-    }
     /* loads into a general register overwrite `reg`; don't restore it then */
     if (!two)
         writesReg = op == 0x8a || op == 0x8b || (op < 0x40 && (op & 7) >= 2 && (op & 7) <= 3 &&
                                                  (op & 0x38) != 0x38);
     else
         writesReg = op == 0xb6 || op == 0xb7 || op == 0xbe || op == 0xbf || op == 0xaf;
-    if (base >= 0 && *c->r[base] < LOW_PAGE)
-        s_fix.reg = base, s_fix.bias = (uint32_t)(uintptr_t)s_lowpage;
-    else if (index >= 0 && *c->r[index] * (uint32_t)scale < LOW_PAGE)
-        s_fix.reg = index, s_fix.bias = (uint32_t)(uintptr_t)s_lowpage / (uint32_t)scale;
+    if (mo.base >= 0 && *c->r[mo.base] < LOW_PAGE)
+        s_fix.reg = mo.base, s_fix.bias = (Reg)s_lowpage;
+    else if (mo.index >= 0 && *c->r[mo.index] * (Reg)mo.scale < LOW_PAGE)
+        s_fix.reg = mo.index, s_fix.bias = (Reg)s_lowpage / (Reg)mo.scale;
     else
         return 0;
     br = c->r[s_fix.reg];
@@ -357,21 +487,23 @@ static int FixLowAccess(Cpu *c, uint32_t addr) {
     s_fix.active = 1;
     if (writesReg && reg == s_fix.reg)
         s_fix.active = 2; /* the instruction replaces the register: nothing to undo */
-    *c->eflags |= 0x100;  /* trap flag: come back after this one instruction */
+    *c->flags |= 0x100;   /* trap flag: come back after this one instruction */
     {
-        static uint32_t seen[256];
+        static Reg seen[256];
         static int nseen;
         int i, known = 0;
         for (i = 0; i < nseen; i++)
-            known |= seen[i] == *c->eip;
+            known |= seen[i] == *c->ip;
         if (!known && nseen < 256) {
-            seen[nseen++] = *c->eip;
-            uint32_t *bp = (uint32_t *)(uintptr_t)*c->r[5];
-            char callers[64] = "";
-            for (i = 0; i < 4 && bp && PC_Readable(bp, 8); i++, bp = (uint32_t *)(uintptr_t)bp[0])
-                snprintf(callers + strlen(callers), sizeof callers - strlen(callers), " %08x", bp[1]);
-            PC_Log("low-memory access at eip=%08x (address %08x) redirected; callers%s", *c->eip,
-                   addr, callers);
+            Reg a[5];
+            char callers[128] = "";
+            int n = StackWalk(*c->ip, *c->r[5], wctx, a, 5);
+            seen[nseen++] = *c->ip;
+            for (i = 1; i < n; i++)
+                snprintf(callers + strlen(callers), sizeof callers - strlen(callers), " %08llx",
+                         (unsigned long long)a[i]);
+            PC_Log("low-memory access at ip=%08llx (address %08llx) redirected; callers%s",
+                   (unsigned long long)*c->ip, (unsigned long long)addr, callers);
         }
     }
     return 1;
@@ -382,82 +514,58 @@ static void FixLowAccessDone(Cpu *c) {
     if (s_fix.active == 1)
         *c->r[s_fix.reg] -= s_fix.bias;
     s_fix.active = 0;
-    *c->eflags &= ~0x100u;
+    *c->flags &= ~0x100u;
 }
 
 /* A breakpoint target for debuggers: called once for a genuine crash, before the report. */
 void __attribute__((noinline)) PC_CrashHook(void) { __asm__ volatile(""); }
 
-/* The 32-bit operand of the instruction whose ModRM byte is at m. */
-static uint32_t Operand(Cpu *c, const uint8_t *m) {
-    int mod = m[0] >> 6, rm = m[0] & 7;
-    const uint8_t *q = m + 1;
-    uint32_t ea = 0, d;
-    if (mod == 3)
-        return *c->r[rm];
-    if (rm == 4) {
-        uint8_t sib = *q++;
-        int index = (sib >> 3) & 7, base = sib & 7;
-        if (index != 4)
-            ea += *c->r[index] << (sib >> 6);
-        if (base == 5 && mod == 0) {
-            memcpy(&d, q, 4);
-            ea += d;
-            q += 4;
-        } else {
-            ea += *c->r[base];
-        }
-    } else if (rm == 5 && mod == 0) {
-        memcpy(&ea, q, 4);
-        q += 4;
-    } else {
-        ea = *c->r[rm];
-    }
-    if (mod == 1) {
-        ea += (uint32_t)(int32_t)(int8_t)*q;
-    } else if (mod == 2) {
-        memcpy(&d, q, 4);
-        ea += d;
-    }
-    return *(const uint32_t *)(uintptr_t)ea;
-}
-
 /* The R3000 never traps on division: `div` by zero leaves LO = (dividend < 0 ? 1 : -1) (or all
  * ones unsigned) and HI = dividend, and INT_MIN / -1 gives LO = INT_MIN, HI = 0. The game relies
  * on that (retail uses unchecked div). x86 div/idiv trap instead: give the MIPS result in
- * eax/edx and step over the instruction. overflow: -1 if the caller can't tell a division by
- * zero from INT_MIN / -1 (POSIX reports both as FPE_INTDIV). Each site is logged once. */
+ * eax/edx (rax/rdx for a 64-bit division) and step over the instruction. overflow: -1 if the
+ * caller can't tell a division by zero from INT_MIN / -1 (POSIX reports both as FPE_INTDIV). Each
+ * site is logged once. */
 static int FixDivide(Cpu *c, int overflow) {
-    uint8_t *p = (uint8_t *)(uintptr_t)*c->eip, modrm;
-    int mod, rm, len, sgn;
-    int opsize16 = 0;
-    while (*p == 0x66 || *p == 0x67 || *p == 0x2e || *p == 0x3e || *p == 0x26 || *p == 0x36 ||
-           *p == 0x64 || *p == 0x65) {
-        if (*p == 0x66)
-            opsize16 = 1;
-        p++;
+    Prefixes x = ReadPrefixes((const uint8_t *)*c->ip);
+    const uint8_t *p = x.p;
+    int sgn, wide = (x.rex & 8) != 0;
+    MemOperand mo;
+    if (*p != 0xf7 || x.opsize16)
+        return 0;
+    if (((p[1] >> 3) & 7) != 6 && ((p[1] >> 3) & 7) != 7)
+        return 0;
+    sgn = ((p[1] >> 3) & 7) == 7;
+    DecodeModRM(p + 1, x.rex, &mo);
+    if (overflow < 0) {
+        /* the divisor: a register or memory */
+        uint64_t d;
+        if ((p[1] >> 6) == 3) {
+            d = *c->r[mo.base];
+        } else {
+            uintptr_t ea = (uintptr_t)(intptr_t)mo.disp;
+            if (mo.riprel)
+                ea += (uintptr_t)(p + 1 + mo.len);
+            if (mo.base >= 0)
+                ea += *c->r[mo.base];
+            if (mo.index >= 0)
+                ea += *c->r[mo.index] * mo.scale;
+            d = wide ? *(const uint64_t *)ea : *(const uint32_t *)ea;
+        }
+        overflow = (wide ? d : (uint32_t)d) != 0;
     }
-    if (*p != 0xf7 || opsize16)
-        return 0;
-    modrm = p[1];
-    if (((modrm >> 3) & 7) != 6 && ((modrm >> 3) & 7) != 7)
-        return 0;
-    sgn = ((modrm >> 3) & 7) == 7;
-    mod = modrm >> 6;
-    rm = modrm & 7;
-    len = 2;
-    if (mod != 3 && rm == 4)
-        len++; /* SIB */
-    if (mod == 1)
-        len += 1;
-    else if (mod == 2 || (mod == 0 && rm == 5))
-        len += 4;
-    if (mod == 0 && rm == 4 && (p[2] & 7) == 5)
-        len += 4; /* SIB with no base: disp32 */
-    if (overflow < 0)
-        overflow = Operand(c, p + 1) != 0;
-    {
-        uint32_t dividend = *c->r[0];
+    if (wide) {
+        uint64_t dividend = *c->r[0];
+        if (overflow) {
+            *c->r[0] = (Reg)1 << (8 * sizeof(Reg) - 1);
+            *c->r[2] = 0;
+        } else {
+            *c->r[0] = sgn && (int64_t)dividend < 0 ? 1 : ~(uint64_t)0;
+            *c->r[2] = dividend;
+        }
+    } else {
+        /* (32-bit results zero the upper halves, as x64 does) */
+        uint32_t dividend = (uint32_t)*c->r[0];
         if (overflow) {
             *c->r[0] = 0x80000000u;
             *c->r[2] = 0;
@@ -467,34 +575,32 @@ static int FixDivide(Cpu *c, int overflow) {
         }
     }
     {
-        static uint32_t seen[64];
+        static Reg seen[64];
         static int nseen;
         int i, known = 0;
         for (i = 0; i < nseen; i++)
-            known |= seen[i] == *c->eip;
+            known |= seen[i] == *c->ip;
         if (!known && nseen < 64) {
-            seen[nseen++] = *c->eip;
-            PC_Log("division by zero at eip=%08x given the MIPS result", *c->eip);
+            seen[nseen++] = *c->ip;
+            PC_Log("division by zero at ip=%08llx given the MIPS result",
+                   (unsigned long long)*c->ip);
         }
     }
-    *c->eip = (uint32_t)(uintptr_t)(p + len);
+    *c->ip = (Reg)(p + 1 + mo.len);
     return 1;
 }
 
-/* The crash report: registers and a frame-pointer walk (everything is built with
- * -fno-omit-frame-pointer). */
-static void CrashReport(Cpu *c) {
-    uint32_t *bp = (uint32_t *)(uintptr_t)*c->r[5];
+/* The crash report: registers and a backtrace. */
+static void CrashReport(Cpu *c, void *wctx) {
+    static const char *const names[16] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di",
+                                          "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"};
     int i;
-    fprintf(stderr, "\n    eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
-                    "    esp=%08x ebp=%08x\n",
-            *c->r[0], *c->r[3], *c->r[1], *c->r[2], *c->r[6], *c->r[7], *c->r[4], *c->r[5]);
-    fprintf(stderr, "    backtrace (run tools/symbolize.py on these):\n      %08x\n", *c->eip);
-    for (i = 0; i < 32 && bp && PC_Readable(bp, 8); i++) {
-        fprintf(stderr, "      %08x\n", bp[1]);
-        bp = (uint32_t *)(uintptr_t)bp[0];
-    }
-    fflush(stderr);
+    fprintf(stderr, "\n   ");
+    for (i = 0; i < NREGS; i++)
+        fprintf(stderr, " %s=%0*llx%s", names[i], (int)(2 * sizeof(Reg)),
+                (unsigned long long)*c->r[i], i % 6 == 5 ? "\n   " : "");
+    fprintf(stderr, "\n    backtrace (run tools/symbolize.py on these):\n");
+    Backtrace(*c->ip, *c->r[5], 32, wctx);
     if (!getenv("THPS_HEADLESS"))
         PC_ErrorBox("The game crashed; see the console log.");
     PC_ExitProcess(3);
@@ -513,17 +619,12 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
     if (code == EXCEPTION_SINGLE_STEP && (c->Dr6 & 1)) {
         /* THPS_WATCH hit: log the write */
         static int hits;
-        DWORD *bp = (DWORD *)c->Ebp;
-        int i;
         c->Dr6 = 0;
         if (hits++ < 200) {
-            fprintf(stderr, "watch: [%08lx] = %08x at eip=%08lx, frame %u; callers", c->Dr0,
-                    *(uint32_t *)c->Dr0, c->Eip, pc_heartbeat);
-            for (i = 0; i < 6 && bp && !IsBadReadPtr(bp, 8); i++) {
-                fprintf(stderr, " %08lx", bp[1]);
-                bp = (DWORD *)bp[0];
-            }
-            fputc('\n', stderr);
+            fprintf(stderr, "watch: [%08llx] = %08x at ip=%08llx, frame %u; callers\n",
+                    (unsigned long long)c->Dr0, *(uint32_t *)c->Dr0,
+                    (unsigned long long)CTX_IP(c), pc_heartbeat);
+            Backtrace(0, CTX_BP(c), 6, NULL);
         }
         if (!s_fix.active)
             return EXCEPTION_CONTINUE_EXECUTION;
@@ -534,20 +635,21 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS *ep) {
     }
     if (code == EXCEPTION_ACCESS_VIOLATION && r->ExceptionInformation[0] != 8 &&
         r->ExceptionInformation[1] < LOW_PAGE && !s_fix.active &&
-        FixLowAccess(&cpu, (uint32_t)r->ExceptionInformation[1]))
+        FixLowAccess(&cpu, (uintptr_t)r->ExceptionInformation[1], c))
         return EXCEPTION_CONTINUE_EXECUTION;
     if (code != EXCEPTION_ACCESS_VIOLATION && code != EXCEPTION_ILLEGAL_INSTRUCTION &&
         code != EXCEPTION_INT_DIVIDE_BY_ZERO && code != EXCEPTION_STACK_OVERFLOW &&
         code != EXCEPTION_PRIV_INSTRUCTION)
         return EXCEPTION_CONTINUE_SEARCH;
     PC_CrashHook();
-    fprintf(stderr, "\n*** crash: exception %08lx at eip=%08lx", code, c->Eip);
+    fprintf(stderr, "\n*** crash: exception %08lx at ip=%08llx", code,
+            (unsigned long long)CTX_IP(c));
     if (code == EXCEPTION_ACCESS_VIOLATION)
-        fprintf(stderr, " (%s %08lx)", r->ExceptionInformation[0] == 8   ? "execute"
-                                       : r->ExceptionInformation[0] ? "write"
-                                                                    : "read",
-                (unsigned long)r->ExceptionInformation[1]);
-    CrashReport(&cpu);
+        fprintf(stderr, " (%s %08llx)", r->ExceptionInformation[0] == 8   ? "execute"
+                                        : r->ExceptionInformation[0] ? "write"
+                                                                     : "read",
+                (unsigned long long)r->ExceptionInformation[1]);
+    CrashReport(&cpu, c);
     return EXCEPTION_CONTINUE_SEARCH;
 }
 #else
@@ -565,17 +667,18 @@ static void CrashSignal(int sig, siginfo_t *si, void *ctx) {
     /* page-fault error code bit 4: instruction fetch */
     if ((sig == SIGSEGV || sig == SIGBUS) && !(uc->uc_mcontext.gregs[REG_ERR] & 0x10) &&
         (uintptr_t)si->si_addr < LOW_PAGE && !s_fix.active &&
-        FixLowAccess(&cpu, (uint32_t)(uintptr_t)si->si_addr))
+        FixLowAccess(&cpu, (uintptr_t)si->si_addr, NULL))
         return;
     PC_CrashHook();
-    fprintf(stderr, "\n*** crash: signal %d (%s) at eip=%08x", sig, strsignal(sig), *cpu.eip);
+    fprintf(stderr, "\n*** crash: signal %d (%s) at ip=%08llx", sig, strsignal(sig),
+            (unsigned long long)*cpu.ip);
     if (sig == SIGSEGV || sig == SIGBUS)
-        fprintf(stderr, " (%s %08x)",
+        fprintf(stderr, " (%s %08llx)",
                 uc->uc_mcontext.gregs[REG_ERR] & 0x10  ? "execute"
                 : uc->uc_mcontext.gregs[REG_ERR] & 2 ? "write"
                                                      : "read",
-                (uint32_t)(uintptr_t)si->si_addr);
-    CrashReport(&cpu);
+                (unsigned long long)(uintptr_t)si->si_addr);
+    CrashReport(&cpu, NULL);
 }
 
 static void InstallCrashHandler(void) {
@@ -599,29 +702,25 @@ static void InstallCrashHandler(void) {
 
 /* Print the caller's native backtrace (frame-pointer walk) for symbolize.py. */
 void PC_Backtrace(const char *why) {
-    uint32_t *bp = (uint32_t *)__builtin_frame_address(0);
-    int i;
     fprintf(stderr, "*** %s\n    backtrace:\n", why);
-    for (i = 0; i < 24 && bp && PC_Readable(bp, 8); i++) {
-        fprintf(stderr, "      %08x\n", bp[1]);
-        bp = (uint32_t *)(uintptr_t)bp[0];
+#if defined(_WIN32) && defined(__x86_64__)
+    {
+        CONTEXT c;
+        RtlCaptureContext(&c);
+        Backtrace(0, 0, 24, &c);
     }
-    fflush(stderr);
+#else
+    Backtrace(0, (Reg)__builtin_frame_address(0), 24, NULL);
+#endif
 }
 
 /* ---- hang watchdog ----------------------------------------------------------------------------- */
 
 volatile uint32_t pc_heartbeat; /* bumped by every presented frame */
 
-static void DumpStack(uint32_t eip, uint32_t ebp) {
-    uint32_t *bp = (uint32_t *)(uintptr_t)ebp;
-    int i;
-    fprintf(stderr, "    eip=%08x\n    backtrace:\n      %08x\n", eip, eip);
-    for (i = 0; i < 24 && bp && PC_Readable(bp, 8); i++) {
-        fprintf(stderr, "      %08x\n", bp[1]);
-        bp = (uint32_t *)(uintptr_t)bp[0];
-    }
-    fflush(stderr);
+static void DumpStack(Reg ip, Reg fp, void *wctx) {
+    fprintf(stderr, "    ip=%08llx\n    backtrace:\n", (unsigned long long)ip);
+    Backtrace(ip, fp, 24, wctx);
 }
 
 #ifdef _WIN32
@@ -633,7 +732,7 @@ static void DumpMainThread(void) {
     c.ContextFlags = CONTEXT_FULL;
     SuspendThread(s_mainThread);
     if (GetThreadContext(s_mainThread, &c))
-        DumpStack(c.Eip, c.Ebp);
+        DumpStack(CTX_IP(&c), CTX_BP(&c), &c);
     ResumeThread(s_mainThread);
 }
 #else
@@ -644,7 +743,7 @@ static void DumpSignal(int sig, siginfo_t *si, void *ctx) {
     ucontext_t *uc = ctx;
     (void)sig;
     (void)si;
-    DumpStack((uint32_t)uc->uc_mcontext.gregs[REG_EIP], (uint32_t)uc->uc_mcontext.gregs[REG_EBP]);
+    DumpStack((Reg)uc->uc_mcontext.gregs[UC_IP], (Reg)uc->uc_mcontext.gregs[UC_BP], NULL);
 }
 
 static void DumpMainThread(void) { pthread_kill(s_mainThread, SIGUSR2); }
@@ -756,12 +855,12 @@ int main(int argc, char **argv) {
         CONTEXT c;
         memset(&c, 0, sizeof c);
         c.ContextFlags = CONTEXT_DEBUG_REGISTERS;
-        c.Dr0 = strtoul(getenv("THPS_WATCH"), NULL, 16) & ~3u;
+        c.Dr0 = strtoull(getenv("THPS_WATCH"), NULL, 16) & ~(uintptr_t)3;
         c.Dr7 = 1 | (1u << 16) | (3u << 18); /* L0, write, 4 bytes */
         if (!SetThreadContext(GetCurrentThread(), &c))
             PC_Log("THPS_WATCH: SetThreadContext failed (%lu)", GetLastError());
         else
-            PC_Log("watching writes to %08lx", c.Dr0);
+            PC_Log("watching writes to %08llx", (unsigned long long)c.Dr0);
 #else
         PC_Log("THPS_WATCH: only on Windows (use a gdb watchpoint)");
 #endif

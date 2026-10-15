@@ -23,26 +23,27 @@ extern char DAT_800a681c[];
 extern char DAT_800a6830[];
 extern int Status;
 extern int GamePaused;
-extern unsigned pPoly;
-extern int CameraList;
+extern unsigned char *pPoly;
+extern void *CameraList;
 extern int camDist;
 extern int camPitch;
 extern int camYOffset;
 
-int GGame, DAT_800d16dc, GameFrozen, Cheat_ScreenShots, PolyBufferBytesUsed, Mick_Darkness,
+char *DAT_800d16dc;
+int GGame, GameFrozen, Cheat_ScreenShots, PolyBufferBytesUsed, Mick_Darkness,
     ViewportMode, DAT_800d1748, GNumberOfPlayers, CloseCam;
 
 void BlackOut(int, int, int, int);
 void Front_Display(void);
 void Mess_SetTextJustify(int);
-void Mess_DrawText(int, int, int, int, int, int, int);
+void Mess_DrawText(int, int, const char *, int, int, int, int);
 void Flash_Display(void);
 void Mick_Darken(void);
 void Display_Viewport(char *, int);
-void Ob_AI(int *, int);
+void Ob_AI(void **, int);
 void Font_Display(void);
 void FUN_8006dc78(void);
-short FUN_8007b0fc(int);
+short FUN_8007b0fc(void *);
 void Mess_Display(void);
 void Mess_SetRGB(int, int, int, int);
 void Mess_SetScale(int);
@@ -180,13 +181,13 @@ L90:
 
 	Flash_Display();
 
-	PolyBufferBytesUsed = pPoly - (unsigned)pDoubleBuffer->Polys;
+	PolyBufferBytesUsed = pPoly - pDoubleBuffer->Polys;
 
 	if (getenv("THPS_TRACE_CULL")) {
 		extern volatile unsigned pc_heartbeat;
-		extern unsigned long PolyBufferEnd;
-		fprintf(stderr, "polybuf f%u used=%d cap=%ld remaining=%ld\n", pc_heartbeat,
+		extern unsigned char *PolyBufferEnd;
+		fprintf(stderr, "polybuf f%u used=%d cap=%d remaining=%d\n", pc_heartbeat,
 		        PolyBufferBytesUsed,
-		        (long)PolyBufferEnd - (long)pDoubleBuffer->Polys, (long)PolyBufferEnd - (long)pPoly);
+		        (int)(PolyBufferEnd - pDoubleBuffer->Polys), (int)(PolyBufferEnd - pPoly));
 	}
 }

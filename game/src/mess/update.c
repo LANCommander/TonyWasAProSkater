@@ -9,9 +9,10 @@ typedef struct Prog {
 } Prog;
 
 typedef struct Message {
-	char pad[4];
+	const char *text; /* (a pointer: 8 bytes in the 64-bit port) */
 	unsigned short cnt, cnt2;
-	char pad2[8];
+	short x, y;
+	int flag;
 	Prog *prog;
 	struct Message *next;
 	struct Message *prev;

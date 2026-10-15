@@ -17,7 +17,7 @@ CTrickOb::CTrickOb(unsigned short Node) {
 
 		pNode += pNode[1] + 2;
 
-		if ((int)pNode & 3)
+		if ((intptr_t)pNode & 3)
 			pNode++;
 
 		mChecksum = *(unsigned int *)pNode;

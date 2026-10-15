@@ -7,7 +7,7 @@ typedef struct {
 } V;
 
 extern V *__ars__7CVectorRCi(V *, const int *);
-extern long SquareRoot0(long);
+extern int SquareRoot0(int);
 
 void M3dUtils_NormaliseVector(V *v) {
 	VECTOR t;

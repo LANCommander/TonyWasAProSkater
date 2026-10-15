@@ -48,14 +48,14 @@ ushort *SkipCommand(ushort *pCommand) {
 			break;
 
 		case 0xab: {
-			uint *p_checksum = (uint *)(((int)pCommand + 3) & ~3);
+			uint *p_checksum = (uint *)(((intptr_t)pCommand + 3) & ~3);
 
 			pCommand = (ushort *)p_checksum + 5;
 			break;
 		}
 
 		case 0xc9: {
-			uint *p_checksum = (uint *)(((int)pCommand + 3) & ~3);
+			uint *p_checksum = (uint *)(((intptr_t)pCommand + 3) & ~3);
 
 			pCommand = (ushort *)p_checksum + 3;
 			break;
@@ -65,7 +65,7 @@ ushort *SkipCommand(ushort *pCommand) {
 			pCommand += 2;
 		case 0x85: {
 			while (*pCommand != 0xff) {
-				int *p_pos = (int *)(((int)pCommand + 3) & ~3);
+				int *p_pos = (int *)(((intptr_t)pCommand + 3) & ~3);
 
 				p_pos += 6;
 				pCommand = (ushort *)p_pos;

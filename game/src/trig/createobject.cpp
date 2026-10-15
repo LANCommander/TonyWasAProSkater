@@ -43,7 +43,7 @@ CBody *Trig_CreateObject(int NodeIndex) {
 			pInfo += *pInfo + 1;
 			NotSuspendedAtStart = GetFlag(2, (uchar *)pInfo);
 			ManualSuspendControl = GetFlag(4, (uchar *)pInfo);
-			pInfo = (short *)(((int)SkipFlags((uchar *)pInfo) + 3) & ~3);
+			pInfo = (short *)(((intptr_t)SkipFlags((uchar *)pInfo) + 3) & ~3);
 
 			switch (Type) {
 				case 203:

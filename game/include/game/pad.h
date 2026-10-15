@@ -67,6 +67,7 @@ struct SControl {
 	SButton *pOllie;                           /* 0x168 */
 	                                           /* sizeof(SControl) == 0x16c */
 };
+typedef char SControl_is_PAD_SIZE[sizeof(SControl) == PAD_SIZE ? 1 : -1];
 
 /* The front end's Start: its "press Start" prompts, and the "Start or X" tests. On PC that is
    MenuAccept; Pause is a binding of its own there (often the Back key), so it doesn't accept. */

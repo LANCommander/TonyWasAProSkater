@@ -13,7 +13,9 @@
 #ifndef GAME_BIT_H
 #define GAME_BIT_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
 /* CPPPSX doesn't define __cplusplus: wrap the SDK headers (SVECTOR) as the TUs do */
 extern "C" {
@@ -21,6 +23,7 @@ extern "C" {
 	#include <libgte.h>
 }
 
+#include "game/classsizes.h"
 #include "game/types.h"
 #include "game/vector.h"
 
@@ -95,7 +98,7 @@ class CBit {
 	uchar mType;        /* 0x43 */
 	/* 0x44: vptr; sizeof(CBit) == 0x48 */
 
-	static void *operator new(uint size) throw(); /* 0x80027d08 (zeroes the block) */
+	static void *operator new(__SIZE_TYPE__ size) throw(); /* 0x80027d08 (zeroes the block) */
 	void operator delete(void *);                 /* 0x80027d70 */
 	void AttachTo(void *);                        /* 0x80027d90 */
 	void DeleteFrom(void *);                      /* 0x80027dbc */
@@ -645,6 +648,7 @@ class CLight : public CNonRenderedBit {
 	virtual ~CLight();   /* slot 0: 0x8001f718 */
 	virtual void Move(); /* slot 1: 0x8001f794 */
 };
+CHECK_CLASS_SIZE(CLight, SIZEOF_CLIGHT);
 
 /* functions */
 void Bit_RemoveDeadBits();                          /* 0x80027c54 */

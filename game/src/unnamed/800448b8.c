@@ -1,22 +1,32 @@
 /* FUN_800448b8 (0x800448b8) */
 #include "names.h"
 
-extern int HashTable[];
+/* SCommandPoint (game/trig.h) */
+typedef struct CP {
+	unsigned short *pCommands;
+	unsigned char b4[4];
+	unsigned short h8[2];
+	unsigned int Checksum;
+	struct CP *pNextSimilar;
+	struct CP *pNext;
+} CP;
 
-int *CommandPoints;
+extern CP *HashTable[];
 
-void Mem_Delete(int *p);
+CP *CommandPoints;
+
+void Mem_Delete(void *p);
 
 void FUN_800448b8(void) {
 	int i;
-	int *p;
-	int *n;
+	CP *p;
+	CP *n;
 
 	for (i = 0; i < 256; i++)
 		HashTable[i] = 0;
 
 	for (p = CommandPoints; p; p = n) {
-		n = (int *)p[5];
+		n = p->pNext;
 		Mem_Delete(p);
 	}
 

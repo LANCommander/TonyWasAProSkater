@@ -39,7 +39,9 @@ extern SVECTOR WaterNormal; /* the water surface's normal (view space); .pad: it
 /* WaterClip's output: faces made by clipping, drawn after the model's own (retail kept this
  * buffer in the code segment, right after the subdivision code). */
 uint32_t ClippedFaceBuffer[16384];
-#define CLIPPED_FACE_BUFFER ((uint32_t)(uintptr_t)ClippedFaceBuffer)
+#define CLIPPED_FACE_BUFFER ((uintptr_t)ClippedFaceBuffer)
+/* a scratchpad word that holds an address (WaterClip's cursors) */
+#define SCRPTR(o) SCRATCH_PTR(o)
 
 typedef struct {
 	PolyState ps;
@@ -156,15 +158,15 @@ static void subdiv_setup(PP *pp, Sub *s, uint32_t area) {
 	/* retail's registers, in words the grid leaves alone (+4 of cells 1-11), reloaded by
 	 * SubdivisionDone: face, ordering table, a2, faces left, packet, scratchpad base, depth,
 	 * flags, (s6, s5: the caller's), colour table */
-	SCR32(0x14) = (uint32_t)pp->ps.face;
-	SCR32(0x24) = (uint32_t)pp->ps.ot;
+	SCR32(0x14) = (uint32_t)(uintptr_t)pp->ps.face;
+	SCR32(0x24) = (uint32_t)(uintptr_t)pp->ps.ot;
 	SCR32(0x34) = pp->a2;
 	SCR32(0x44) = (uint32_t)pp->left;
 	SCR32(0x54) = (uint32_t)pp->ps.pkt;
 	SCR32(0x64) = SCRATCHPAD;
 	SCR32(0x74) = (uint32_t)pp->ps.zmax;
 	SCR32(0x84) = pp->ps.flags;
-	SCR32(0xb4) = (uint32_t)pp->colours;
+	SCR32(0xb4) = (uint32_t)(uintptr_t)pp->colours;
 	/* the colour words below carry this code into the cells: the quad version of the face's */
 	s->rgbc = PKT(pp->ps.pkt)[1] | CODE_QUAD_BIT;
 	M3dAsm_ColourCode = s->rgbc;
@@ -222,12 +224,13 @@ static void setup_xys(PP *pp, uint32_t a, uint32_t b, uint32_t c) {
  * (rows .. 0 counting down) has segs - rows + 1 vertices, dcol bytes apart, from corner c's
  * weight w toward corner a; rows are drow bytes apart, w falling by step each row (0 on the
  * last). The last row's last vertex is exactly corner b. */
-static void subdiv_grid(const Sub *s, uint32_t out, int w, int dcol, int drow, int rows) {
+static void subdiv_grid(const Sub *s, uintptr_t out, int w, int dcol, int drow, int rows) {
 	int rgb = s->kind & SUB_COL;
 	uint8_t code = (uint8_t)(s->rgbc >> 24);
 
 	do {
-		uint32_t row = out, next, wxy;
+		uintptr_t row = out;
+		uint32_t next, wxy;
 		int a, b, cols;
 
 		if (rows == 0)
@@ -328,19 +331,19 @@ static void subdiv_half2(PP *pp, Sub *s, const int *col, const int *uv) {
 /* ExpandEdge (0x80087ee8): moves the grid vertices inside one edge (from a to b) a pixel
  * outward, so the pieces of neighbouring faces overlap instead of leaving gaps; the cursor walks
  * the edge's cells by stride and is returned past them. */
-static uint32_t expand_edge(uint32_t cur, uint32_t a, uint32_t b, int stride, int segs) {
+static uintptr_t expand_edge(uintptr_t cur, uint32_t a, uint32_t b, int stride, int segs) {
 	uint32_t d = b - a;
 	uint32_t dy = ((d & 0x2000) - 4096) << 4;   /* +-1 in y */
 	uint32_t dx = (((int32_t)d >> 28) & 2) - 1; /* +-1 in x */
 	uint32_t adj = dy - dx;
 	int n = segs - 1;
 
-	cur += (uint32_t)stride;
+	cur += stride;
 
 	do {
 		CELL(cur, 0) += adj;
 		n--;
-		cur += (uint32_t)stride;
+		cur += stride;
 	} while (n > 0);
 
 	return cur;
@@ -349,7 +352,7 @@ static uint32_t expand_edge(uint32_t cur, uint32_t a, uint32_t b, int stride, in
 /* ExpandTri (0x80087f30), ExpandQuad (0x80087f74): the edges of the grid, given the corners'
  * screen words; one cursor walks all of them in turn. */
 static void expand_tri(uint32_t xy0, uint32_t xy1, uint32_t xy2, int segs) {
-	uint32_t cur = GRID;
+	uintptr_t cur = GRID;
 
 	cur = expand_edge(cur, xy1, xy2, 144, segs);
 	cur = expand_edge(cur, xy2, xy0, -16, segs);
@@ -357,7 +360,7 @@ static void expand_tri(uint32_t xy0, uint32_t xy1, uint32_t xy2, int segs) {
 }
 
 static void expand_quad(uint32_t xy0, uint32_t xy1, uint32_t xy2, uint32_t xy3, int segs) {
-	uint32_t cur = GRID;
+	uintptr_t cur = GRID;
 
 	cur = expand_edge(cur, xy1, xy3, 16, segs);
 	cur = expand_edge(cur, xy3, xy2, 128, segs);
@@ -370,7 +373,7 @@ typedef struct {
 	uint32_t xy, col, uv;
 } GridVertex;
 
-static GridVertex grid_vertex(uint32_t cell) {
+static GridVertex grid_vertex(uintptr_t cell) {
 	GridVertex v;
 
 	v.xy = CELL(cell, 0);
@@ -423,7 +426,7 @@ static int put_left(uint32_t *p, Sub *s, GridVertex *b, const GridVertex *t, uin
 /* One row's quads (0x80087fc8, 0x80088140, 0x8008830c, 0x80088518 for the four kinds): n pieces
  * from the cursor's cells (row r: t, row r + 1: b) rightward. Returns 0 when the packet buffer
  * fills up. */
-static int subdiv_quads(PP *pp, Sub *s, uint32_t *cur, GridVertex *b, GridVertex *t, int n) {
+static int subdiv_quads(PP *pp, Sub *s, uintptr_t *cur, GridVertex *b, GridVertex *t, int n) {
 	int len = (s->kind & SUB_COL ? 0 : 1) +
 	          4 * (1 + (s->kind & SUB_COL ? 1 : 0) + (s->kind & SUB_UV ? 1 : 0));
 
@@ -463,7 +466,7 @@ static int subdiv_quads(PP *pp, Sub *s, uint32_t *cur, GridVertex *b, GridVertex
 }
 
 /* A row's last piece of a triangle grid: a triangle up to the next row's last vertex. */
-static void subdiv_row_tri(PP *pp, Sub *s, uint32_t cur, GridVertex *b, const GridVertex *t) {
+static void subdiv_row_tri(PP *pp, Sub *s, uintptr_t cur, GridVertex *b, const GridVertex *t) {
 	uint32_t *p = PKT(pp->ps.pkt);
 	GridVertex d = grid_vertex(cur + 144);
 	int i = put_left(p, s, b, t, CODE_QUAD_BIT), len;
@@ -494,11 +497,11 @@ static void subdiv_row_tri(PP *pp, Sub *s, uint32_t cur, GridVertex *b, const Gr
 
 /* The pieces, row by row (0x80088024 ... SubdivideGT4). Returns 0 when the buffer fills up. */
 static int subdiv_rows(PP *pp, Sub *s) {
-	uint32_t row = GRID;
+	uintptr_t row = GRID;
 	int r;
 
 	for (r = 0; r < s->segs; r++) {
-		uint32_t cur = row;
+		uintptr_t cur = row;
 		GridVertex t, b;
 
 		if (pp->ps.pkt >= pp->ps.limit)
@@ -577,8 +580,8 @@ static uint32_t subdivide(PP *pp, int kind, int tri, uint32_t area, const int *x
 typedef struct {
 	PP *pp;
 	const uint32_t *face;
-	uint32_t out;    /* the next record in ClippedFaceBuffer */
-	uint32_t vtx;    /* the next free ProjectedVertices slot */
+	uintptr_t out;   /* the next record in ClippedFaceBuffer */
+	uintptr_t vtx;   /* the next free ProjectedVertices slot */
 	uint32_t size;   /* the face record's size */
 	uint32_t uv[2];  /* the uvs where the last two edges met the water, as colour words */
 } Clip;
@@ -684,7 +687,7 @@ static void set_verts(Clip *c, uint32_t a, uint32_t b, uint32_t cc, uint32_t d) 
 
 /* the index of the n-th new vertex from the end (1: the last made) */
 static uint32_t new_vertex(Clip *c, int n) {
-	return (c->vtx - (uint32_t)c->pp->pv - 8 * (uint32_t)n) >> 3;
+	return (uint32_t)((c->vtx - (uintptr_t)c->pp->pv - 8 * (uint32_t)n) >> 3);
 }
 
 /* CopyTri (0x800896a0): a record for the kept triangle of a quad with one corner dropped. */
@@ -745,8 +748,8 @@ static void water_clip(PP *pp, const uint32_t *face, const uint32_t *w1) {
 
 	c.pp = pp;
 	c.face = face;
-	c.vtx = SCR32(SCR_CLIPVERTEX);
-	c.out = SCR32(SCR_CLIPWRITE);
+	c.vtx = SCRPTR(SCR_CLIPVERTEX);
+	c.out = SCRPTR(SCR_CLIPWRITE);
 	c.size = f >> 16;
 
 	if (f & FF_TRIANGLE) {
@@ -858,9 +861,9 @@ done:
 	/* (0x80089768) */
 	SCR16(SCR_CLIPCOUNT)++;
 	c.out += c.size;
-	SCR32(SCR_CLIPVERTEX) = c.vtx;
-	SCR32(SCR_CLIPWRITE) = c.out;
-	pp->a2 = c.out;
+	SCRPTR(SCR_CLIPVERTEX) = c.vtx;
+	SCRPTR(SCR_CLIPWRITE) = c.out;
+	pp->a2 = (uint32_t)c.out;
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -1215,7 +1218,7 @@ void M3dAsm_ProcessPolys__FPUiP7SVECTORi(uint32_t *faces, SVECTOR *normals, int 
 	pc_geom.dqb = 0x10000000; /* the subdivision's projections: a depth cue of 4096 */
 	pc_geom.dqa = 0;
 
-	SCR32(SCR_CLIPWRITE) = CLIPPED_FACE_BUFFER;
+	SCRPTR(SCR_CLIPWRITE) = CLIPPED_FACE_BUFFER;
 	SCR16(SCR_CLIPCOUNT) = 0;
 
 	for (;;) {

@@ -2,8 +2,9 @@
 #include "names.h"
 #include "pc_fileio.h"
 
+/* SHeapRange (game/mem.h) */
 typedef struct {
-	int a, b;
+	char *a, *b;
 } R;
 
 extern R DAT_800be09c[];
@@ -14,12 +15,12 @@ extern int Redbook_XACheckSectorOnVSync;
 extern int DAT_800d169c;
 extern int Redbook_XAModeSet;
 
-int SpoolerBlocksFileIO;
+void *SpoolerBlocksFileIO;
 int LoadFromPRE;
-int ThePREFile;
+char *ThePREFile;
 int ThePREFileSize;
 int FileOpen;
-int Dest;
+void *Dest;
 int Start;
 int WadStart;
 char FileStart[8];
@@ -37,7 +38,7 @@ void FileIO_Load(char *p) {
 	int a3, a2;
 
 	if (SpoolerBlocksFileIO && LoadFromPRE) {
-		Mem_Copy(p, (void *)ThePREFile, ThePREFileSize);
+		Mem_Copy(p, ThePREFile, ThePREFileSize);
 
 		FileOpen = 0;
 		return;
@@ -51,7 +52,7 @@ void FileIO_Load(char *p) {
 
 	GameFMV_StopFMV();
 
-	Dest = (int)p;
+	Dest = p;
 	/* the whole file at once (pc_fileio.h): the load is over when this returns */
 	PC_FileRead(p, FileSize);
 

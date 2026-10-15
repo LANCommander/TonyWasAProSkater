@@ -1,9 +1,11 @@
 /* Front_TitleScreen__Fv (0x80060e98) */
+#include "game/classsizes.h"
 #include "names.h"
 #include "game/padbuttons.h"
 
 struct VT {
-	char pad[8];
+	short off0, i0; /* entry 0 (PsxVtEntry): zeros */
+	void *fn0;
 	short off;
 	short pad2;
 	void (*fn)(char *, int);
@@ -22,7 +24,7 @@ struct C28 {
 };
 
 struct X {
-	char pad[0x38];
+	char *pad[0x38 / 4];
 	char *s;
 };
 
@@ -46,10 +48,10 @@ void Pack_DefragmentFully(void);
 void Mess_LoadFont__FPciii(char *, int, int, int);
 void Mess_SetFontScale(unsigned);
 int FileIO_Open(char *);
-void FileIO_Load(int);
+void FileIO_Load(void *);
 void FileIO_Sync(void);
-int Mem_NewX(int, int, int);
-void DownloadBMP16x2(int);
+char *Mem_NewX(int, int, int);
+void DownloadBMP16x2(char *);
 void Pad_ClearTriggers(char *);
 char *__nw__6CClassUi(unsigned);
 char *__6Spriteiiiiiii(char *, int, int, int, int, int, int, int);
@@ -73,7 +75,8 @@ void HiRes_DrawOTag(void);
 void SFX_PlayX(int, int, int);
 
 void Front_TitleScreen(void) {
-	int v, w;
+	char *v;
+	int w;
 	int s0;
 	char *p;
 
@@ -90,13 +93,13 @@ void Front_TitleScreen(void) {
 
 	DownloadBMP16x2(v);
 	Pad_ClearTriggers(Pad);
-	Pad_ClearTriggers(Pad + 364);
+	Pad_ClearTriggers(Pad + PAD_SIZE);
 
 	DAT_800d1d8c = 0;
 	DAT_800d1d8e = 293;
 	DAT_800d1d90 = 640;
 	DAT_800d1d92 = 128;
-	p = __nw__6CClassUi(24);
+	p = __nw__6CClassUi(SIZEOF_SPRITE);
 
 	if (p)
 		p = __6Spriteiiiiiii(p, DAT_800d1d8c, DAT_800d1d8e, DAT_800d1d90, DAT_800d1d92, 1, 32, 128);

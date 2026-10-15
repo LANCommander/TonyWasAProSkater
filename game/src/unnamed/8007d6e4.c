@@ -1,6 +1,7 @@
 /* FUN_8007d6e4 (0x8007d6e4) */
 typedef struct {
-	int a, b, c, d, e;
+	void *a; /* vptr */
+	int b, c, d, e;
 } Q;
 
 typedef struct {
@@ -30,7 +31,7 @@ static inline void VI(V *p, int x, int y, int z) {
 }
 
 static inline void QI(Q *p, char *a, int b, int c, int d, int e) {
-	p->a = (int)a;
+	p->a = a;
 	p->b = b;
 	p->c = c;
 	p->d = d;

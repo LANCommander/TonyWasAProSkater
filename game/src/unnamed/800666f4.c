@@ -10,8 +10,8 @@ int DAT_800d2390;
 int DAT_800d237c;
 int DAT_800d2384;
 
-extern int DAT_800bf2f0[];
-extern int DAT_800d3810[];
+extern void *DAT_800bf2f0[]; /* SlicedImage *[10] */
+extern void *DAT_800d3810[];
 extern int DAT_800d3840[];
 
 void LevelSelect_StartPicLoad(int a) {

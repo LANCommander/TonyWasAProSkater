@@ -169,7 +169,7 @@ int CPlatform::ExecuteCommand(ushort command) {
 			int *p_pos;
 			CVector pos;
 
-			p_pos = (int *)(((int)mpScript + 3) & ~3);
+			p_pos = (int *)(((intptr_t)mpScript + 3) & ~3);
 			pos.vx = *p_pos++;
 			pos.vy = *p_pos++;
 			pos.vz = *p_pos++;
@@ -193,7 +193,7 @@ int CPlatform::ExecuteCommand(ushort command) {
 			int *p_pos;
 			CVector pos;
 
-			p_pos = (int *)(((int)mpScript + 3) & ~3);
+			p_pos = (int *)(((intptr_t)mpScript + 3) & ~3);
 			pos.vx = *p_pos++;
 			pos.vy = *p_pos++;
 			pos.vz = *p_pos++;

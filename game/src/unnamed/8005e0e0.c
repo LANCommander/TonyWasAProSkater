@@ -1,9 +1,11 @@
 /* Front_RunMenu__FPPcPiiiT1PFP12VerticalMenu_vT1T1i (0x8005e0e0) */
+#include "game/classsizes.h"
 #include "names.h"
 #include "game/padbuttons.h"
 
 struct VT {
-	char pad[8];
+	short off0, i0; /* entry 0 (PsxVtEntry): zeros */
+	void *fn0;
 	short off;
 	short p;
 	void (*fn)(char *, int);
@@ -20,34 +22,35 @@ extern char Pad[];
 extern int DemoTimer;
 extern int DAT_800d1cb8;
 
-int DAT_800d2358, DAT_800d235c, DAT_800d1d28;
+O *DAT_800d2358, *DAT_800d235c;
+int DAT_800d1d28;
 
-extern int Front_ControllerOptionsHandler();
+void Front_ControllerOptionsHandler(O *);
 void PollHost(void);
 void SFX_PlayX(int, int, int);
 void Front_CheckSoftReset(void);
 void Front_UpdateMusicLoop(void);
 void FrontLoader_Continue(void);
-int FUN_8005e09c(int);
+int FUN_8005e09c(int *);
 void ResetOT(void);
 O *PadBuffer_ctor(O *, int);
 void PadBuffer_update(O *);
 int PadBuffer_getPress(O *);
-O *VerticalMenu_ctor(O *, int, int, int, int *, int, int, int, int);
-void VerticalMenu_setTriangles(O *, int, int);
+O *VerticalMenu_ctor(O *, int, int, int, char **, int, int *, int *, int);
+void VerticalMenu_setTriangles(O *, O *, O *);
 void FUN_800648c0(O *, int, int);
 int VerticalMenu_getSelected(O *);
 void HiRes_ClearOTag(void);
 void HiRes_DrawOTag(void);
 void Pad_Update(void);
-int strcmp(int, char *);
+int strcmp(char *, char *);
 void Pad_ClearTriggers(char *);
 O *__nw__6CClassUi(int);
 void VerticalMenu_down(O *);
 void VerticalMenu_erase(O *);
 void VerticalMenu_up(O *);
 
-int Front_RunMenu(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int a6, int a7,
+int Front_RunMenu(char **a0, int *a1, int a2, int a3, int *a4, void (*a5)(O *), int *a6, int *a7,
                   int a8) {
 	O *s2;
 	O *s1;
@@ -55,14 +58,14 @@ int Front_RunMenu(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int
 	char *P;
 
 	Pad_ClearTriggers(Pad);
-	Pad_ClearTriggers(Pad + 364);
+	Pad_ClearTriggers(Pad + PAD_SIZE);
 
 	s3 = FUN_8005e09c(a4);
 
 	if (s3)
 		return s3 + a3;
 
-	s2 = __nw__6CClassUi(820);
+	s2 = __nw__6CClassUi(SIZEOF_VERTICALMENU);
 
 	if (s2)
 		s2 = VerticalMenu_ctor(s2, 100, 398, 15, a0, a2, a6, a7, a8);
@@ -76,10 +79,10 @@ int Front_RunMenu(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int
 
 	s0 = -1;
 
-	if (a5 && (int)a5 == (int)Front_ControllerOptionsHandler)
+	if (a5 && a5 == Front_ControllerOptionsHandler)
 		s0 = DAT_800d1d28;
 
-	s1 = __nw__6CClassUi(284);
+	s1 = __nw__6CClassUi(SIZEOF_PADBUFFER);
 
 	if (s1)
 		s1 = PadBuffer_ctor(s1, s0);
@@ -136,7 +139,7 @@ int Front_RunMenu(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int
 		    Pad[PAD_MENU_ACCEPT + PAD_TRIGGERED] ||
 		    Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED]) {
 			Pad_ClearTriggers(Pad);
-			Pad_ClearTriggers(Pad + 364);
+			Pad_ClearTriggers(Pad + PAD_SIZE);
 			SFX_PlayX(145, 8192, 0);
 
 			t = VerticalMenu_getSelected(s2) + 1;
@@ -147,7 +150,7 @@ int Front_RunMenu(int *a0, int *a1, int a2, int a3, int a4, void (*a5)(O *), int
 
 		if (P[PAD_MENU_BACK + PAD_TRIGGERED] || P[PAD_SIZE + PAD_MENU_BACK + PAD_TRIGGERED]) {
 			Pad_ClearTriggers(P);
-			Pad_ClearTriggers(P + 364);
+			Pad_ClearTriggers(P + PAD_SIZE);
 			SFX_PlayX(147, 8192, 0);
 
 			s3 = -1;

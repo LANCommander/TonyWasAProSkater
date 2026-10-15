@@ -12,7 +12,9 @@
 #ifndef GAME_OB_H
 #define GAME_OB_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
 /* CPPPSX doesn't define __cplusplus, so the SDK headers' own extern "C" guards are inactive under
    egcs: wrap them, as the TUs do */
@@ -58,7 +60,7 @@ class CItem {
 	short mFlash_dB;           /* 0x46 */
 	/* 0x48: vptr; sizeof(CItem) == 0x4c */
 
-	static void *operator new(uint size) throw(); /* 0x800434d4 */
+	static void *operator new(__SIZE_TYPE__ size) throw(); /* 0x800434d4 */
 	void operator delete(void *);                 /* 0x80043530 */
 	CItem();                                      /* 0x80043550 */
 	virtual ~CItem();                             /* slot 0: 0x80043584 */

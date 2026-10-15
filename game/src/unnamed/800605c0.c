@@ -6,13 +6,15 @@ typedef struct {
 } R;
 
 typedef struct {
-	int w[7];
+	char *w[7];
 } T;
+
+struct VerticalMenu;
 
 extern R GCareer_c[];
 extern T DAT_800a1eb4;
 
-int Front_RunMenu(T *, int *, int, int, int *, int, int, int, int);
+int Front_RunMenu(char **, int *, int, int, int *, void (*)(struct VerticalMenu *), int *, int *, int);
 int FUN_80060738(int, int *);
 
 int FUN_800605c0(int a) {
@@ -38,7 +40,7 @@ int FUN_800605c0(int a) {
 		k[3] = cnt[2] < 3;
 		k[4] = cnt[3] < 3;
 		k[5] = cnt[4] < 3;
-		v = Front_RunMenu(&t, k, 7, 0x620, &a, 0, 0, 0, 0);
+		v = Front_RunMenu(t.w, k, 7, 0x620, &a, 0, 0, 0, 0);
 
 		if (v != -1) {
 			if (v == 0x627)

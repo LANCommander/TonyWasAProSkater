@@ -6,7 +6,7 @@
 #include "game/padbuttons.h"
 
 typedef struct {
-	unsigned char b[0x16c];
+	unsigned char b[PAD_SIZE];
 } SControl;
 
 extern SControl Pad[];

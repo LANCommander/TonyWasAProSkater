@@ -3,13 +3,15 @@
 
 int DAT_800d1c5c;
 
-extern int Pack_pFree;
-extern int Pack_pFull;
+struct TSPack;
 
-int DAT_800d1c8c;
-int DAT_800d1c90;
-int DAT_800d1c84;
-int DAT_800d1c88;
+extern struct TSPack *Pack_pFree;
+extern struct TSPack *Pack_pFull;
+
+struct TSPack *DAT_800d1c8c;
+struct TSPack *DAT_800d1c90;
+struct TSPack *DAT_800d1c84;
+struct TSPack *DAT_800d1c88;
 
 void Front_SelectSkaterPack(int a) {
 	if (DAT_800d1c5c == -1) {

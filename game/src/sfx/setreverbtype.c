@@ -5,16 +5,16 @@ typedef struct {
 } VOL;
 
 typedef struct {
-	long mask;
-	long mode;
+	int mask;
+	int mode;
 	VOL depth;
-	long delay;
-	long feedback;
+	int delay;
+	int feedback;
 } ATTR;
 
-extern long FUN_80093914(ATTR *);
-extern long FUN_80094ca4(long);
-extern long FUN_80094c74(long, long);
+extern int FUN_80093914(ATTR *);
+extern int FUN_80094ca4(int);
+extern int FUN_80094c74(int, int);
 
 int SFX_ReverbDepthSetTimer;
 

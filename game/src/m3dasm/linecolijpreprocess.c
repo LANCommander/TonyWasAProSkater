@@ -27,9 +27,9 @@ void M3dMaths_RotMatrixYXZ__FP7SVECTORP6MATRIX(SVECTOR *angles, MATRIX *m);
 void M3dMaths_TransposeMatrix__FP6MATRIX(MATRIX *m);
 
 /* scratchpad words the retail code leaves behind */
-#define SCR_MODEL   (*(SModel **)(SCRATCHPAD + 0x18)) /* last rotated item's model, item, &PSXRegion */
-#define SCR_ITEM    (*(Item **)(SCRATCHPAD + 0x1c))
-#define SCR_REGIONS (*(SPSXRegion **)(SCRATCHPAD + 0x20))
+#define SCR_MODEL   (*(SModel **)&SCRATCH_PTR(0x18)) /* last rotated item's model, item, &PSXRegion */
+#define SCR_ITEM    (*(Item **)&SCRATCH_PTR(0x1c))
+#define SCR_REGIONS (*(SPSXRegion **)&SCRATCH_PTR(0x20))
 #define SCR_MATRIX  ((MATRIX *)(SCRATCHPAD + 0x28))  /* the item rotation, transposed */
 #define SCR_LINE    ((LineSeg *)(SCRATCHPAD + 0x3c)) /* the sorted query line, world model units */
 

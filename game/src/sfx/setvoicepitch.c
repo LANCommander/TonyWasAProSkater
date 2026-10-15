@@ -5,8 +5,8 @@ typedef struct {
 } VOL;
 
 typedef struct {
-	unsigned long voice;
-	unsigned long mask;
+	unsigned int voice;
+	unsigned int mask;
 	VOL volume;
 	VOL volmode;
 	VOL volumex;
@@ -14,11 +14,11 @@ typedef struct {
 	unsigned short note;
 	unsigned short sample_note;
 	short envx;
-	unsigned long addr;
-	unsigned long loop_addr;
-	long a_mode;
-	long s_mode;
-	long r_mode;
+	unsigned int addr;
+	unsigned int loop_addr;
+	int a_mode;
+	int s_mode;
+	int r_mode;
 	unsigned short ar, dr, sr, rr, sl, adsr1, adsr2;
 } VATTR;
 

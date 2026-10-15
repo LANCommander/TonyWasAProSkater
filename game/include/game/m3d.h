@@ -32,9 +32,10 @@ struct tag_S_Pal {
 	uchar InVRAM;         /* 0x06 */
 	uchar RemapIndex;     /* 0x07 */
 	uint Checksum;        /* 0x08 */
-	tag_S_Pal *pNext;     /* 0x0c */
-	tag_S_Pal *pPrevious; /* 0x10 */
-	                      /* sizeof == 0x14 */
+	int m0c;              /* 0x0c */
+	tag_S_Pal *pPrevious; /* 0x10: the entry made before (the list runs from the newest, DAT_800d1a80) */
+	tag_S_Pal *pNext;     /* 0x14: the one made after */
+	                      /* sizeof == 0x18 (NewPaletteEntry) */
 };
 
 /* a texture entry (SPOOL.CPP; NewTextureEntry allocates 40 bytes). The first 16 bytes are the
@@ -95,7 +96,9 @@ struct SFace {
 	uint Colour;         /* 0x08 */
 	ushort NormalOffset; /* 0x0c */
 	ushort Flags2;       /* 0x0e: terrain/collision flags (the physics TUs' "Flags") */
-	Texture *pTexture;   /* 0x10: or the texture itself when Flags & 2 */
+	uint TexWord;        /* 0x10: textured (Flags & 1): the index in the region's texture table
+	                        (SPSXRegion::ppTextures); from M3dInit_ParsePSX on, with Flags & 2, the
+	                        texture itself (its uv/clut word; a Dreamcast face's PC_DC_FACE_TEX) */
 };
 
 /* a hook point on a super item's part (SPSXRegion::pHooks) */
@@ -155,7 +158,7 @@ struct SPSXRegion {
 	uchar Usable;            /* 0x0a */
 	uchar Protected;         /* 0x0b */
 	uint *pModelChecksums;   /* 0x0c */
-	SModel **ppModels;       /* 0x10: count at [-1] */
+	SModel **ppModels;       /* 0x10: the port's own array of the file's models (ProcessNewPSX) */
 	uint *pPSX;              /* 0x14 */
 	uint *pAnimFile;         /* 0x18 */
 	ushort *pHierarchy;      /* 0x1c */
@@ -167,12 +170,19 @@ struct SPSXRegion {
 	uchar Fastable;          /* 0x32 */
 	uchar TexturesInRAM;     /* 0x33 */
 	uchar KeepTexturesInRAM; /* 0x34 */
-	char pad35[0x40 - 0x35];
+	char pad35[0x38 - 0x35];
+	/* the port's: the textures of the file's texture table (its faces name them by index until
+	   M3dInit_ParsePSX), and the counts; retail patched pointers into the file's 32-bit slots */
+	Texture **ppTextures; /* 0x38 */
+	ushort NumModels;     /* 0x3c */
+	ushort NumTextures;   /* 0x3e */
 	/* sizeof == 0x40 */
 };
 
 /* M3D's plain view of a world item: CItem's data (game/ob.h) without the class. M3D/SPOOL code
-   walks item lists through it; CBody/CSuper fields are reached through those classes. */
+   walks item lists through it; CBody/CSuper fields are reached through those classes. A PSX file's
+   environment items (36-byte records after its header) become Items of their own in the port:
+   PSXRegionItems. */
 struct Item {
 	ushort Flags;    /* 0x00 */
 	ushort Inquiry;  /* 0x02 */
@@ -200,6 +210,13 @@ struct Item {
 	short Flash_dB;           /* 0x46 */
 	                          /* 0x48: CItem's vptr */
 };
+
+/* the port's: each region's items (its PSX file's records) as Items, linked through NextItem in
+   file order (M3dInit_ParsePSX; retail used the file's records themselves) */
+extern Item *PSXRegionItems[40];
+/* the Item of the record at byte offset `offset` of region r's PSX file (12 + 36 * index), as the
+   file's other packets refer to them */
+#define PSX_ITEM(r, offset) (PSXRegionItems[r] + ((offset) - 12) / 36)
 
 /* the camera's view rectangle and clip planes (pCurrentViewport) */
 struct SViewport {

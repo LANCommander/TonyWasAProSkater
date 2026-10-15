@@ -1,4 +1,5 @@
 /* Front_LoadSpritesPRE__Fv (0x8005ca88) */
+#include "game/classsizes.h"
 #include "names.h"
 
 extern char *SpoolerBlocksFileIO;
@@ -14,7 +15,7 @@ void Front_LoadSpritesPRE(void) {
 	if (SpoolerBlocksFileIO)
 		printf("\nPREMgr already loaded");
 
-	p = __nw__6CClassUi(324);
+	p = __nw__6CClassUi(SIZEOF_PREMANAGER);
 
 	if (p)
 		p = FUN_8006613c(p);

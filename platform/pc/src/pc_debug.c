@@ -7,21 +7,6 @@
 void PC_Backtrace(const char *why);
 
 void PC_Bang(int r, int g, int b) {
-    uint32_t heap;
-    PC_Log("Bang(%d, %d, %d): the game hit a fatal error (out of memory if from Mem_New*)", r, g, b);
-    for (heap = 0; heap < 2; heap++) {
-        uint32_t blk = *(uint32_t *)PSX_PTR(PSX_DATA_ADDR(0x800d1b64) + heap * 4), total = 0, n = 0, big = 0;
-        while (blk && n < 100000) {
-            uint32_t size = *(uint32_t *)PSX_PTR(blk + 4) >> 4;
-            total += size;
-            if (size > big)
-                big = size;
-            blk = *(uint32_t *)PSX_PTR(blk);
-            n++;
-        }
-        PC_Log("  heap %u: %u free blocks, %u bytes free, largest %u; used %d", heap, n, total, big,
-               *(int *)PSX_PTR(PSX_DATA_ADDR(0x800d1b5c) + heap * 4));
-    }
     PC_Backtrace("Bang");
     PC_Fatal("Bang(%d, %d, %d)", r, g, b);
 }

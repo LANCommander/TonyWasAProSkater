@@ -4,10 +4,11 @@
 extern int StringBuffer[];
 extern char NumberStrings[];
 
-int BufferPos, pNumberStrings;
+void *BufferPos;
+char *pNumberStrings;
 
 void Font_Reset(void) {
-	BufferPos = (int)StringBuffer;
+	BufferPos = StringBuffer;
 	StringBuffer[0] = 1;
-	pNumberStrings = (int)NumberStrings;
+	pNumberStrings = NumberStrings;
 }

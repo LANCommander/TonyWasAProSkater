@@ -11,13 +11,16 @@
 #ifndef GAME_BRUCE_H
 #define GAME_BRUCE_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
 extern "C" {
 	#include <sys/types.h>
 	#include <libgte.h>
 }
 
+#include "game/classsizes.h"
 #include "game/types.h"
 #include "game/vector.h"
 #include "game/mem.h"
@@ -59,7 +62,7 @@ class CBruce : public CSuper {
 	int m1E8;              /* 0x1e8 */
 	int m1EC;              /* 0x1ec */
 	int mGraffitiCount;    /* 0x1f0 */
-	char pad1f4[0x1f8 - 0x1f4];
+	int mGraffitiSteals;   /* 0x1f4 */
 	int m1F8;    /* 0x1f8 */
 	int m1FC;    /* 0x1fc */
 	int m200;    /* 0x200 */
@@ -330,5 +333,6 @@ class CBruce : public CSuper {
 		m8A8 = b;
 	}
 };
+CHECK_CLASS_SIZE(CBruce, SIZEOF_CBRUCE);
 
 #endif

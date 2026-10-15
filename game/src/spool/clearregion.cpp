@@ -2,6 +2,7 @@
 /* C++ (SPOOL.CPP). Demo twin; locals and blocks from its MAIN.SYM. Releases a loaded region: drops
    its texture usage counts and, unless it stays in memory, clears the region record, detaches its
    environment and frees the PSX file. Optionally purges unused textures. */
+#include "game/psyq.h"
 #include "game/m3d.h"
 #include "game/mem.h"
 
@@ -30,7 +31,10 @@ void ClearRegion(int Region, int cleanuptextures, int KeepInMemory) {
 		PSXRegion[Region].Protected = 0;
 		PSXRegion[Region].Usable = 0;
 		PSXRegion[Region].pHooks = 0;
+		free(PSXRegion[Region].ppModels);
+		free(PSXRegion[Region].ppTextures);
 		PSXRegion[Region].ppModels = 0;
+		PSXRegion[Region].ppTextures = 0;
 		PSXRegion[Region].Filename[0] = 0;
 		PSXRegion[Region].TexturesInRAM = 0;
 		PSXRegion[Region].KeepTexturesInRAM = 0;
@@ -47,6 +51,8 @@ void ClearRegion(int Region, int cleanuptextures, int KeepInMemory) {
 		}
 
 		Mem_Delete(PSXRegion[Region].pPSX);
+		free(PSXRegionItems[Region]);
+		PSXRegionItems[Region] = 0;
 
 		PSXRegion[Region].pPSX = 0;
 	}

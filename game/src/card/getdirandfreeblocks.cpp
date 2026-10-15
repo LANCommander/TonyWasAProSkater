@@ -12,10 +12,10 @@
 
 struct DIRENTRY {
 	char name[20];
-	long attr;
-	long size;
+	int attr;
+	int size;
 	struct DIRENTRY *next;
-	long head;
+	int head;
 	char system[4];
 };
 
@@ -26,14 +26,16 @@ extern "C" {
 
 int Utils_CompareStrings(const char *, const char *, unsigned int);
 
-extern long FileType[];
+extern int FileType[];
 extern char CARD_FNAME_5[];
 extern char CARD_VNAME_5[];
-extern struct DIRENTRY SLOT_DIR[];
+/* the directory, 40 bytes an entry (in the port PC_SaveListDir fills it with the saves' names;
+   firstfile and nextfile, the PS1 card's, are stubs that find nothing) */
+extern char SLOT_DIR[][40];
 
 int Card_GetDirAndFreeBlocks(int cnct, int slot) {
-	long i;
-	long size = 0;
+	int i;
+	int size = 0;
 	char key[32];
 	struct DIRENTRY *d;
 
@@ -42,7 +44,7 @@ int Card_GetDirAndFreeBlocks(int cnct, int slot) {
 
 	sprintf(key, "bu%1d%1d:*", cnct, slot);
 
-	d = SLOT_DIR;
+	d = (struct DIRENTRY *)SLOT_DIR[0];
 	i = 0;
 
 	if (firstfile(key, d) == d) {
@@ -55,7 +57,7 @@ int Card_GetDirAndFreeBlocks(int cnct, int slot) {
 				FileType[i] = 1;
 
 			i++;
-			d++;
+			d = (struct DIRENTRY *)SLOT_DIR[i];
 		} while (nextfile(d) == d);
 	}
 

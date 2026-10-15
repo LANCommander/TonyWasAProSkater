@@ -48,7 +48,7 @@ static int scale_5_8(int m) {
  * vector projected is (r.x - e.x, -e.y, r.z - e.z) with the eye vector's halves subtracted as one
  * packed word. That is what the game shows, so it is kept.
  * test_asm: gte_out none */
-void M3dAsm_GetReflectionMapping__FP6MATRIXPlPUi(MATRIX *world, long *pos, uint32_t *model) {
+void M3dAsm_GetReflectionMapping__FP6MATRIXPlPUi(MATRIX *world, int *pos, uint32_t *model) {
 	struct SavedGte *s = SAVED;
 	GeomState g = pc_geom;
 	const int16_t(*r)[3] = pc_geom.rot;

@@ -2,11 +2,13 @@
 #include "names.h"
 
 extern int GGame;
-extern int GSkater;
+struct CBruce;
+
+extern struct CBruce *GSkater;
 
 void Mess_SetRGB(unsigned char r, unsigned char g, unsigned char b, int a);
 
-void GraffitiColor(int a) {
+void GraffitiColor(struct CBruce *a) {
 	if (GGame == 8) {
 		if (a == GSkater)
 			Mess_SetRGB(80, 80, 128, 0);

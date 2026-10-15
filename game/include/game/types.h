@@ -7,6 +7,10 @@
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
+#if __SIZEOF_LONG__ == 8
+typedef unsigned int ulong; /* (32 bits, as on the PS1; an LP64 system's long is 64) */
+#else
 typedef unsigned long ulong;
+#endif
 
 #endif

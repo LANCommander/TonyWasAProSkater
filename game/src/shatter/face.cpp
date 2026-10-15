@@ -76,12 +76,12 @@ int Shatter_Face(Item *pItem, uint *pFace, int NumSplits, int MakeFlash, int Use
 	if (f->Flags & 1) {
 		/* a Dreamcast face names its Texture entry (pc_dctex.h); the shards use the whole
 		   texture */
-		if ((f->Flags & 2) && ((uint)f->pTexture & PC_DC_FACE_TEX))
-			pTexture = (Texture *)PC_DcFaceTex((uint)f->pTexture);
+		if ((f->Flags & 2) && (f->TexWord & PC_DC_FACE_TEX))
+			pTexture = (Texture *)PC_DcFaceTex(f->TexWord);
 		else if (f->Flags & 2)
-			pTexture = (Texture *)&f->pTexture;
+			pTexture = (Texture *)&f->TexWord;
 		else
-			pTexture = f->pTexture;
+			pTexture = PSXRegion[pItem->Region].ppTextures[f->TexWord];
 
 		{
 			int clut = pTexture->clut;

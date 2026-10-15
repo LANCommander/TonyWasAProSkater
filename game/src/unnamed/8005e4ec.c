@@ -1,9 +1,11 @@
 /* FUN_8005e4ec (0x8005e4ec) */
+#include "game/classsizes.h"
 #include "names.h"
 #include "game/padbuttons.h"
 
 struct VT {
-	char pad[8];
+	short off0, i0; /* entry 0 (unused) */
+	void *fn0;
 	short off;
 	short pad2;
 	void (*fn)(char *, int);
@@ -20,7 +22,7 @@ extern unsigned char Pad[];
 
 void Pad_ClearTriggers(unsigned char *);
 O *__nw__6CClassUi(int);
-O *FUN_800652e4(O *, int, int, int, int, int, int, int, int);
+O *FUN_800652e4(O *, int, int, int, char **, int, int *, int *, int);
 O *PadBuffer_ctor(O *, int);
 void FrontLoader_Continue(void);
 void Pad_Update(void);
@@ -31,21 +33,21 @@ void HiRes_DrawOTag(void);
 void SFX_PlayX(int, int, int);
 void VerticalMenu_erase(O *);
 
-int FUN_8005e4ec(int a, int b, int c) {
+int FUN_8005e4ec(char **a, int b, int c) {
 	int r, i;
 	O *m;
 	O *n;
 
 	r = 0;
 	Pad_ClearTriggers(Pad);
-	Pad_ClearTriggers(Pad + 364);
+	Pad_ClearTriggers(Pad + PAD_SIZE);
 
-	m = __nw__6CClassUi(820);
+	m = __nw__6CClassUi(SIZEOF_VERTICALMENU);
 
 	if (m)
 		m = FUN_800652e4(m, 100, 398, 15, a, b, 0, 0, 0);
 
-	n = __nw__6CClassUi(284);
+	n = __nw__6CClassUi(SIZEOF_PADBUFFER);
 
 	if (n)
 		n = PadBuffer_ctor(n, -1);
@@ -64,7 +66,7 @@ int FUN_8005e4ec(int a, int b, int c) {
 		    Pad[PAD_SIZE + PAD_MENU_ACCEPT + PAD_TRIGGERED] || Pad[PAD_MENU_BACK + PAD_TRIGGERED] ||
 		    Pad[PAD_SIZE + PAD_MENU_BACK + PAD_TRIGGERED]) {
 			Pad_ClearTriggers(Pad);
-			Pad_ClearTriggers(Pad + 364);
+			Pad_ClearTriggers(Pad + PAD_SIZE);
 			SFX_PlayX(145, 0x2000, 0);
 
 			r = -1;

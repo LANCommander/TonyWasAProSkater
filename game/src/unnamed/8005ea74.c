@@ -2,7 +2,7 @@
 #include "names.h"
 
 typedef struct {
-	int a, b, c, d, e;
+	char *a, *b, *c, *d, *e;
 } S;
 
 typedef struct {
@@ -15,7 +15,7 @@ extern T GPreferences;
 
 int DAT_800d1d28;
 
-int Front_GetPadFunctionName(int i) {
+char *Front_GetPadFunctionName(int i) {
 	int cur = DAT_800d1d28;
 
 	switch (i) {

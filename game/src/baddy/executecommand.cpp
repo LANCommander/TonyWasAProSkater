@@ -159,7 +159,7 @@ int CBaddy::ExecuteCommand(ushort command) {
 			GameFMV_SetStartTrack(*mpScript++);
 			break;
 		case 17043: {
-			int *p = (int *)(((int)mpScript + 3) & ~3);
+			int *p = (int *)(((intptr_t)mpScript + 3) & ~3);
 
 			GameFMV_SetScreenTexture(*p++);
 
@@ -242,7 +242,7 @@ int CBaddy::ExecuteCommand(ushort command) {
 			while (*p_string)
 				p_string++;
 
-			if ((int)p_string & 1)
+			if ((intptr_t)p_string & 1)
 				mpScript = (ushort *)(p_string + 1);
 			else
 				mpScript = (ushort *)(p_string + 2);
@@ -259,7 +259,7 @@ int CBaddy::ExecuteCommand(ushort command) {
 			while (*p_string)
 				p_string++;
 
-			if ((int)p_string & 1)
+			if ((intptr_t)p_string & 1)
 				mpScript = (ushort *)(p_string + 1);
 			else
 				mpScript = (ushort *)(p_string + 2);

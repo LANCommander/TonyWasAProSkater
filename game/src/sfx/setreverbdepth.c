@@ -5,11 +5,11 @@ typedef struct {
 } VOL;
 
 typedef struct {
-	long mask;
-	long mode;
+	int mask;
+	int mode;
 	VOL depth;
-	long delay;
-	long feedback;
+	int delay;
+	int feedback;
 } ATTR;
 
 extern void FUN_80093914(ATTR *);

@@ -1,10 +1,10 @@
 /* PrintPaused__Fv (0x80017898) */
 #include "names.h"
 
-extern int DAT_800d1858;
+extern void *DAT_800d1858;
 extern int OT_entry;
 
-void Sprite_draw(int a, int b, int c, int d, int e, int f, int g);
+void Sprite_draw(void *a, int b, int c, int d, int e, int f, int g);
 
 void PrintPaused(void) {
 	OT_entry = 1;

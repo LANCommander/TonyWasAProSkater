@@ -1,7 +1,8 @@
 /* Init_Restart__F13EPackInitTypei (0x80071e88) */
 #include "names.h"
 
-extern int pBMR, pCompressedBMR, TitleTimeout;
+extern void *pBMR, *pCompressedBMR;
+extern int TitleTimeout;
 
 void Init_Cleanup(int);
 void Init_ResetMemory(int);

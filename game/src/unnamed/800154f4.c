@@ -20,12 +20,12 @@ void Career_Init(void);
 int SyncToGoodState(void);
 void FUN_80061270(int);
 void Card_GetDirAndFreeBlocks(int, int);
-int Mem_NewX(int, int, int);
+void *Mem_NewX(unsigned, int, int);
 void Card_SetSelectedFile(E *);
-int Card_Load(int, int, int);
+int Card_Load(int, unsigned int *, unsigned int *);
 int VSync(int);
 void Front_ExtractASCIINameFromSJIS(char *, char *);
-void Mem_Delete(int);
+void Mem_Delete(void *);
 void Options_GetPreferences(void);
 void Options_SetPreferences(void);
 
@@ -34,7 +34,8 @@ void Options_SetPreferences(void);
 
 int FUN_800154f4(void) {
 	struct B buf;
-	int i, r, s2, s4, p;
+	int i, r, s2, s4;
+	char *p;
 	E *name;
 	struct B *d;
 
@@ -54,7 +55,7 @@ int FUN_800154f4(void) {
 				p = Mem_NewX(3200, 1, 1);
 				Card_SetSelectedFile(&SLOT_DIR[i]);
 
-				if (Card_Load(0, p, 0) == 0) {
+				if (Card_Load(0, (unsigned int *)p, 0) == 0) {
 
 					GHasCareerLoaded = 1;
 					GLoadedCareerIsSaved = 0;
@@ -65,7 +66,7 @@ int FUN_800154f4(void) {
 					if (((unsigned short *)&buf)[1047] >= ((unsigned short *)d)[1047]) {
 						*d = buf;
 						s4 = i;
-						Front_ExtractASCIINameFromSJIS((char *)(p + 32), StoredCareerName);
+						Front_ExtractASCIINameFromSJIS(p + 32, StoredCareerName);
 					}
 				}
 

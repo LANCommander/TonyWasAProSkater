@@ -6,7 +6,7 @@ typedef struct {
 
 typedef struct {
 	char *vt;
-	int a[16];
+	char *a[16];
 	E e[16];
 } X;
 

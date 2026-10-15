@@ -11,8 +11,8 @@ struct S {
 	int l, m;
 };
 
-int pSFXVABHeader;
-int pLevelSpecificSFXVABHeader;
+char *pSFXVABHeader;
+char *pLevelSpecificSFXVABHeader;
 int DAT_800d1a94;
 int DAT_800d1a98;
 

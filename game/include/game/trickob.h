@@ -3,8 +3,11 @@
 #ifndef GAME_TRICKOB_H
 #define GAME_TRICKOB_H
 
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface /* see class.h */
+#endif
 
+#include "game/classsizes.h"
 #include "game/types.h"
 #include "game/class.h"
 #include "game/vector.h"
@@ -15,16 +18,18 @@ struct Item;
 class CRail : public CClass {
   public:
 	/* 0x00: vptr (vtable 0x800a1340) */
-	short mStartNode;  /* 0x04 */
-	ushort mType;      /* 0x06 */
+	int mStartNode;    /* 0x04 (retail: a word; the demo's short + ushort mType) */
 	CVector mBBoxMin;  /* 0x08 */
 	CVector mBBoxMax;  /* 0x14 */
 	CRail *mpPrevious; /* 0x20 */
 	CRail *mpNext;     /* 0x24 */
-	/* sizeof(CRail) == 0x28 */
+	int mNodeParam;    /* 0x28 THPS1: the start node's position word +6 (0 if -1); a grinding
+	                      skater copies it to CBruce::m210 (Rail_Update) */
+	/* sizeof(CRail) == 0x2c (Trig_SendPulseToNode allocates 44) */
 
 	virtual ~CRail(); /* slot 0: 0x8004f814 */
 };
+CHECK_CLASS_SIZE(CRail, SIZEOF_CRAIL);
 
 /* a scoring object (TrickObList): node + checksum, state/owner for the trick-attack modes */
 class CTrickOb : public CClass {
@@ -43,6 +48,7 @@ class CTrickOb : public CClass {
 	CTrickOb(ushort);    /* 0x8004ef08 */
 	virtual ~CTrickOb(); /* slot 0: 0x8004ef80 */
 };
+CHECK_CLASS_SIZE(CTrickOb, SIZEOF_CTRICKOB);
 
 /* functions */
 int TrickOb_TrickedOnItem(Item *, void *, int); /* 0x8004f000 */

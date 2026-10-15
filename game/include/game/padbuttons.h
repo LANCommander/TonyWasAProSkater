@@ -5,7 +5,12 @@
 #ifndef GAME_PADBUTTONS_H
 #define GAME_PADBUTTONS_H
 
+/* sizeof(SControl): its last fields are four pointers (pad.h checks it) */
+#if __SIZEOF_POINTER__ == 8
+#define PAD_SIZE      0x180
+#else
 #define PAD_SIZE      0x16c
+#endif
 #define PAD_PRESSED   0
 #define PAD_TRIGGERED 1
 

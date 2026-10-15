@@ -2,24 +2,28 @@
 #include "names.h"
 
 typedef struct {
-	char pad[0x18];
+	char *name;
+	unsigned short width, height, endframe, pad0a;
+	unsigned int vlcbuffersize, ringbuffersectors;
+	int is24bit;
 	int p;
 	int pad2;
 } FE;
 
 extern FE movieDetails[];
-extern int decodeSliceBuffer[];
+extern unsigned int *decodeSliceBuffer[];
 
 int GameFMV_Active, GameFMV_IsMovie, currentDecodeBuffer, currentVlcBuffer, sendVLC,
     alreadyHandledPause, GameFMV_RewindSwitch;
-int vlcBuffer[2];
-int GameFMV_VLCBufferSize, GameFMV_RingBufferSectors, pRingBuffer;
+unsigned int *vlcBuffer[2];
+int GameFMV_VLCBufferSize, GameFMV_RingBufferSectors;
+unsigned int *pRingBuffer;
 unsigned char GameFMV_Is24Bit, GameFMV_SliceBuffers;
 unsigned short GameFMV_StartX, GameFMV_StartY, GameFMV_Width, GameFMV_Height, decodeSlice,
     decodeSlice_2, decodeSlice_4, decodeSlice_6;
 unsigned char GameFMV_CurrentTrack;
 
-int Mem_NewX(int, int, int);
+void *Mem_NewX(unsigned int, int, int);
 void DecDCTvlcBuild3(void);
 void strInit(void);
 int strNextVlc(int);

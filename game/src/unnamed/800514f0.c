@@ -1,26 +1,20 @@
 /* Front_FreeBoardPictures2P__Fv (0x800514f0) */
 #include "names.h"
 
-struct VT {
-	char pad[8];
-	short off;
-	short pad2;
-	void (*fn)(char *, int);
-};
-
+/* a CClass object: its vptr at +0 (deleted through its vtable, pc_vdelete) */
 typedef struct {
-	struct VT *vt;
+	void *vt;
 } O;
 
 extern int Loading;
 extern int DAT_800d2c1c[];
 extern O *DAT_800d31cc[][3][15];
 
-int DAT_800d22c0[2];
+void *DAT_800d22c0[2];
 O *DAT_800d22b0;
 
 void FileIO_Sync(void);
-void Mem_Delete(int);
+void Mem_Delete(void *);
 
 void Front_FreeBoardPictures2P(void) {
 	int k, i, j;
@@ -35,7 +29,7 @@ void Front_FreeBoardPictures2P(void) {
 				o = DAT_800d31cc[k][i][j];
 
 				if (o) {
-					o->vt->fn((char *)o + o->vt->off, 3);
+					pc_vdelete(o->vt, 0, o);
 
 					DAT_800d31cc[k][i][j] = 0;
 				}
@@ -49,5 +43,5 @@ void Front_FreeBoardPictures2P(void) {
 	o = DAT_800d22b0;
 
 	if (o)
-		o->vt->fn((char *)o + o->vt->off, 3);
+		pc_vdelete(o->vt, 0, o);
 }

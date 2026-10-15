@@ -174,7 +174,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				CVector min, max;
 
 				while (*pCommands != 0xff) {
-					int *p_pos = (int *)(((int)pCommands + 3) & ~3);
+					int *p_pos = (int *)(((intptr_t)pCommands + 3) & ~3);
 
 					min.vx = *p_pos++ << 12;
 					min.vy = *p_pos++ << 12;
@@ -201,7 +201,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				CVector min, max;
 
 				while (*pCommands != 0xff) {
-					int *p_pos = (int *)(((int)pCommands + 3) & ~3);
+					int *p_pos = (int *)(((intptr_t)pCommands + 3) & ~3);
 
 					min.vx = *p_pos++ << 12;
 					min.vy = *p_pos++ << 12;
@@ -227,7 +227,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 
 			case 0xab: {
-				uint *p_checksum = (uint *)(((int)pCommands + 3) & ~3);
+				uint *p_checksum = (uint *)(((intptr_t)pCommands + 3) & ~3);
 				uint checksum = *p_checksum++;
 				CSVector ang_vel;
 
@@ -272,7 +272,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 			}
 
 			case 0xc9: {
-				uint *pChecksum = (uint *)(((int)pCommands + 3) & ~3);
+				uint *pChecksum = (uint *)(((intptr_t)pCommands + 3) & ~3);
 				uint Checksum = *pChecksum++;
 				int GapType;
 

@@ -1,5 +1,6 @@
 /* Trig_SendPulseToNode__Fi (0x80045538) */
 #include "names.h"
+#include "game/classsizes.h"
 
 typedef struct {
 	int x, y, z, pad;
@@ -11,7 +12,7 @@ typedef struct {
 } P;
 
 typedef struct {
-	int a;
+	unsigned short *a;
 	char p[3];
 	unsigned char f7;
 } CP;
@@ -22,19 +23,19 @@ extern int UseCacheForBits;
 
 void Trig_CreateObject(int, short **);
 CP *GetCommandPoint(int, short **);
-void ExecuteCommandList(int, int, int);
+void ExecuteCommandList(unsigned short *, int, int);
 P *Trig_GetPosition(V *, int);
-int __nw__4CBitUi(int);
-void CLight_ctor(int, V *, int, int, int, int, int, int, int, int, int, int, int);
+void *__nw__4CBitUi(int);
+void CLight_ctor(void *, V *, int, int, int, int, int, int, int, int, int, int, int);
 void TrickOb_DarkenNode(int, short **);
-int __nw__6CClassUi(int, short **);
-void FUN_8004f684(int, int);
+void *__nw__6CClassUi(int, short **);
+void FUN_8004f684(void *, int);
 
 void Trig_SendPulseToNode(int idx) {
 	V v;
 	P *p;
 	CP *cp;
-	int o, o2;
+	void *o, *o2;
 
 	switch (*OffsetList[idx]) {
 		case 5:
@@ -50,7 +51,7 @@ void Trig_SendPulseToNode(int idx) {
 		case 501:
 			p = Trig_GetPosition(&v, idx);
 			UseCacheForBits = 0;
-			o = __nw__4CBitUi(100);
+			o = __nw__4CBitUi(SIZEOF_CLIGHT);
 
 			if (o)
 				CLight_ctor(o, &v, idx, p->w0, p->w2, p->w4, p->w6, p->b8, p->b10, p->b12, p->b14,
@@ -60,7 +61,7 @@ void Trig_SendPulseToNode(int idx) {
 			break;
 		case 10:
 		case 11:
-			o2 = __nw__6CClassUi(44, OffsetList);
+			o2 = __nw__6CClassUi(SIZEOF_CRAIL, OffsetList);
 
 			if (o2)
 				FUN_8004f684(o2, idx);

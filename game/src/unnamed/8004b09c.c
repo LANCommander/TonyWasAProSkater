@@ -4,16 +4,16 @@
 
 extern char DAT_800b9014[];
 
-char pSFXVABHeader[8];
+char *pSFXVABHeader;
 int DAT_800d1a94;
 
 void FUN_80093854(int a, char *b);
 void SFX_SetReverbType(unsigned char a);
-int FUN_8004b188(int a, char *b);
+int FUN_8004b188(char *a, char **b);
 
-void SFX_Init(int a) {
+void SFX_Init(char *a) {
 	PC_SoundBanksReset();
 	SFX_SetReverbType(0);
 
-	DAT_800d1a94 = FUN_8004b188(a, pSFXVABHeader);
+	DAT_800d1a94 = FUN_8004b188(a, &pSFXVABHeader);
 }

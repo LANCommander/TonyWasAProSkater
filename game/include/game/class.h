@@ -8,16 +8,19 @@
 #ifndef GAME_CLASS_H
 #define GAME_CLASS_H
 
-/* egcs: the inline members and vtables of this header's classes are not emitted in every TU that
-   uses them (byte-exact TUs hold one function each); the port build drops the pragma */
+/* The inline members and vtables of the game headers' classes are not emitted in every TU that
+   uses them: the TUs refer to the vtables in game/data (egcs layout). The data files themselves
+   build without it (GAME_DATA_TU), which gives their objects the classes' full debug types. */
+#ifndef GAME_DATA_TU /* (the data files: full debug types, for data_image.py) */
 #pragma interface
+#endif
 
 #include "game/types.h"
 
 class CClass {
   public:
 	virtual ~CClass() {}                          /* slot 0 */
-	static void *operator new(uint size) throw(); /* 0x800241dc */
+	static void *operator new(__SIZE_TYPE__ size) throw(); /* 0x800241dc */
 	void operator delete(void *);                 /* 0x80024238 */
 };
 

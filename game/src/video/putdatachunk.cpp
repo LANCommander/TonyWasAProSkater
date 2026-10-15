@@ -17,8 +17,8 @@ extern volatile int Xblanks;
 
 int Splat1, Splat2, TrickOb1, TrickOb2;
 
-int BitsRequired(long);
-void PutNBits(SVideoInfo *, long, int);
+int BitsRequired(int);
+void PutNBits(SVideoInfo *, int, int);
 void Video_Stop(CBruce *);
 void Matrix2Euler(MATRIX *, SVECTOR *);
 void DequeueSoundCmd(ESoundCmdType &, int &);

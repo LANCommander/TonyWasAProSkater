@@ -21,7 +21,7 @@ extern volatile int Xblanks;
 extern CTrickOb *TrickObList;
 extern int TrickPlayer;
 extern CBruce *pCurrentPlayer;
-extern int PowerUpList;
+extern CBody *PowerUpList;
 extern SStats Stats[];
 
 int ReplaySoundLockout;
@@ -39,7 +39,7 @@ void M3dColij_InitLineInfo(SLineInfo *);
 void Trig_ResetCPCollisionFlags(int);
 void Trig_ResetCPExecutedFlags(int);
 void M3dZone_LineToItem(SLineInfo *, int);
-CBody *M3dColij_LineToSphere(const CVector &, const CVector &, CVector &, int, int);
+CBody *M3dColij_LineToSphere(const CVector &, const CVector &, CVector &, CBody *, CBody *); /* ScaleFactor unused */
 
 void GetDataChunk(CBruce *pSkater, int NChunks) {
 	int i;

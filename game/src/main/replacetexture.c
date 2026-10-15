@@ -11,8 +11,8 @@ extern int Pal256Y;
 extern int Pal256X;
 
 STexEntry *Spool_FindTextureEntry(unsigned);
-void *FileIO_Open(char *);
-char *Mem_NewX(void *, int, int);
+int FileIO_Open(const char *);
+void *Mem_NewX(unsigned, int, int);
 void FileIO_Load(char *);
 void FileIO_Sync(void);
 void DownloadBMP(char *, int, int, int, int);
@@ -31,7 +31,7 @@ void ReplaceTexture(unsigned id, char *name) {
 
 		pal += info[2];
 		k = Pal256X;
-		bmp = Mem_NewX(FileIO_Open(name), 1, 1);
+		bmp = (char *)Mem_NewX(FileIO_Open(name), 1, 1);
 		FileIO_Load(bmp);
 		FileIO_Sync();
 		DownloadBMP(bmp, w, h, k, pal);

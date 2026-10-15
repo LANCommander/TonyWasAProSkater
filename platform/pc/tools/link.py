@@ -24,7 +24,7 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from toolchain import EXE_NAME, USCORE, WINDOWS, tool  # noqa: E402
+from toolchain import EXE_NAME, MFLAG, USCORE, WINDOWS, X64, tool  # noqa: E402
 PC = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(PC))
 EXE = os.path.join(ROOT, "extern", "thps1_retail", "SLUS_008.60")
@@ -158,6 +158,164 @@ def sdl_flags():
     return shlex.split(cflags), shlex.split(libs)
 
 
+def thunks_x64(metas, unowned):
+    """link()'s thunks for x86-64 (Windows or System V calling convention): the same jobs, with
+    the arguments in registers. egcs vtable entries are 16 bytes here ({delta, index, function},
+    the first all zeros), so slot k's delta is at 16 + 16k and its function at 24 + 16k."""
+    this, arg2, arg2d = ("%rcx", "%rdx", "%edx") if WINDOWS else ("%rdi", "%rsi", "%esi")
+
+    def delete_flag():
+        # in_chrg (arg2): 3 for the object a delete statement marked, else 0
+        return ["\txorl %s, %s" % (arg2d, arg2d),
+                "\tcmpq _pc_delete_marked(%%rip), %s" % this,
+                "\tjne 1f",
+                "\tmovq %s, _pc_delete_freed(%%rip)" % this,
+                "\tmovq $0, _pc_delete_marked(%rip)",
+                "\tmovl $3, %s" % arg2d,
+                "1:"]
+
+    def jump_to(a):
+        return ["\tjmp _pc_delete_unowned" if a == unowned else "\tjmp _psx_%08x" % a]
+
+    asm, done = [], set()
+    for m in metas:
+        for t in m.get("thunks", []):
+            if t["key"] in done:
+                continue
+            done.add(t["key"])
+            slot = t["slot"]
+            asm += ["\t.globl _pcvt_%s" % t["key"], "_pcvt_%s:" % t["key"]]
+            if t["dtor"]:
+                asm += delete_flag()
+            asm += ["\tmovslq _%s(%%rip), %%rax" % t["off"],
+                    "\tmovq (%s,%%rax), %%r11" % this,
+                    "\tmovswq %d(%%r11), %%rax" % (16 + 16 * slot),
+                    "\taddq %%rax, %s" % this,
+                    "\tjmp *%d(%%r11)" % (24 + 16 * slot)]
+        for a in m.get("dtor_calls", []):
+            if ("d", a) not in done:
+                done.add(("d", a))
+                asm += ["\t.globl _pcdtorcall_%08x" % a, "_pcdtorcall_%08x:" % a,
+                        "\txorl %s, %s" % (arg2d, arg2d), "\tjmp _psx_%08x" % a]
+        for a in m.get("dtor_calls_d", []):
+            if ("dd", a) not in done:
+                done.add(("dd", a))
+                asm += ["\t.globl _pcdtorcalld_%08x" % a, "_pcdtorcalld_%08x:" % a] + \
+                    delete_flag() + ["\tjmp _psx_%08x" % a]
+        for a in m.get("del_wrappers", []):
+            if ("del", a) not in done:
+                done.add(("del", a))
+                asm += ["\t.globl _pcdel_%08x" % a, "_pcdel_%08x:" % a,
+                        "\tcmpq _pc_delete_freed(%%rip), %s" % this,
+                        "\tjne 1f",
+                        "\tmovq $0, _pc_delete_freed(%rip)",
+                        "\tret",
+                        "1:",
+                        "\tmovq $0, _pc_delete_marked(%rip)"] + jump_to(a)
+    # constructors: call the native one with the same arguments (the register ones untouched, 8
+    # stack ones copied), return `this`
+    for m in metas:
+        for a in m.get("ctor_defs", []):
+            if ("ctor", a) in done:
+                continue
+            done.add(("ctor", a))
+            asm += ["\t.globl _pcfn_%08x" % a, "_pcfn_%08x:" % a, "\tpushq %rbx",
+                    "\tmovq %s, %%rbx" % this]
+            if WINDOWS:  # 32 bytes of home space, then the stack arguments
+                asm += ["\tsubq $96, %rsp"]
+                for i in range(8):
+                    asm += ["\tmovq %d(%%rsp), %%rax" % (144 + 8 * i),
+                            "\tmovq %%rax, %d(%%rsp)" % (32 + 8 * i)]
+            else:
+                asm += ["\tsubq $64, %rsp"]
+                for i in range(8):
+                    asm += ["\tmovq %d(%%rsp), %%rax" % (80 + 8 * i),
+                            "\tmovq %%rax, %d(%%rsp)" % (8 * i)]
+            asm += ["\tcall _pcctor_%08x" % a,
+                    "\taddq $%d, %%rsp" % (96 if WINDOWS else 64),
+                    "\tmovq %rbx, %rax", "\tpopq %rbx", "\tret"]
+    # destructors: the egcs one is (this, in_chrg): the native base-object destructor, then
+    # free if in_chrg bit 0 is set
+    for m in metas:
+        for a, cls, dl in m.get("dtor_defs", []):
+            if ("dtor", a) in done:
+                continue
+            done.add(("dtor", a))
+            if not dl:
+                raise SystemExit("no operator delete for %s (destructor 0x%08x)" % (cls, a))
+            asm += ["\t.globl _pcfn_%08x" % a, "_pcfn_%08x:" % a,
+                    "\tpushq %rbx", "\tpushq %r12", "\tsubq $40, %rsp",
+                    "\tmovq %s, %%rbx" % this, "\tmovl %s, %%r12d" % arg2d,
+                    "\tcall _pcdtor_%08x" % a,
+                    "\tmovq %%rbx, %s" % this, "\tmovl %r12d, %eax",
+                    "\taddq $40, %rsp", "\tpopq %r12", "\tpopq %rbx",
+                    "\ttestb $1, %al", "\tjz 1f"] + jump_to(dl) + ["1:", "\tret"]
+    return asm
+
+
+BSS_START, BSS_END = 0x800D21C8, 0x800DC94C
+
+
+def x64_symbols(ctx, data, syms, game, stubs, gen, extra_ld=()):
+    """link()'s psx_syms.ld and data_table.c for x64, and bss.s. A function is its native code
+    (or stub); a global of the data is its own (data_image.py's 64-bit layout), an address inside
+    one the place data_image.py found for it; .bss is an object of its own for every address the
+    code names there, twice its retail extent (to the next name) so that pointers fit; anything
+    else is the retail address, which only data may name (never followed)."""
+    globs = data["globals"]
+    gstarts = [g[0] for g in globs]
+    known = sorted({int(v, 16) for tu in ctx.tus.values() for k, v in tu["syms"].items()
+                    if BSS_START <= int(v, 16) < BSS_END} |
+                   {int(s[5:13], 16) for s in syms if BSS_START <= int(s[5:13], 16) < BSS_END} |
+                   {BSS_END})
+    ld, dead, bss, table = [], [], [], []
+    stub_set = set(stubs)
+    for s in sorted(syms):
+        a = int(s[5:13], 16)
+        name = s[1:]
+        k = bisect.bisect_right(gstarts, a) - 1
+        if a in game or a in stub_set:
+            ld.append("%s = %s_%08x;\n" % (name, "pcfn" if a in game else "pcstub", a))
+        elif TEXT_START <= a < LIB_END and not (k >= 0 and a < globs[k][1]):
+            raise SystemExit("link: %s is in the retail code but no function" % s)
+        elif k >= 0 and a < globs[k][1]:
+            o = 0 if a == globs[k][0] else globs[k][2].get(str(a))
+            if o is None:
+                raise SystemExit("link: %s is inside a global with no 64-bit place" % s)
+            if name != "psx_%08x" % a or a != globs[k][0]:
+                ld.append("%s = pc_data_%08x + %d;\n" % (name, globs[k][0], o))
+            else:
+                ld.append("%s = pc_data_%08x;\n" % (name, a))
+        elif BSS_START <= a < BSS_END:
+            if name == "psx_%08x" % a:
+                nxt = known[bisect.bisect_right(known, a)]
+                bss.append((a, 2 * (nxt - a)))
+            else:
+                ld.append("%s = psx_%08x;\n" % (name, a))
+        else:
+            dead.append(a)
+            ld.append("%s = 0x%08x;\n" % (name, a))
+    write_if_changed(os.path.join(gen, "psx_syms.ld"), "".join(ld + list(extra_ld)))
+    if dead:
+        print("link: %d addresses outside the game's data (never followed): %s" % (
+            len(dead), " ".join("%08x" % a for a in sorted(dead))))
+    asm = ["\t.bss"]
+    for a, n in bss:
+        asm += ["\t.p2align 4", "\t.globl psx_%08x" % a, "psx_%08x:" % a, "\t.zero %d" % n]
+    if not WINDOWS:
+        asm.append("\t.section .note.GNU-stack,\"\",@progbits")
+    write_if_changed(os.path.join(gen, "bss.s"), "\n".join(asm) + "\n")
+    lines = ['#include "pc_runtime.h"']
+    lines += ["extern char pc_data_%08x[];" % g[0] for g in globs]
+    lines += ["extern char psx_%08x[];" % a for a, _ in bss]
+    lines.append("const PcData pc_data[] = {")
+    ents = [(g[0], g[1], "pc_data_%08x" % g[0]) for g in globs] + \
+        [(a, a + n // 2, "psx_%08x" % a) for a, n in bss]
+    lines += ["\t{0x%08xu, 0x%08xu, %s}," % e for e in sorted(ents)]
+    lines.append("\t{0, 0, 0}\n};")
+    write_if_changed(os.path.join(gen, "data_table.c"), "\n".join(lines) + "\n")
+
+
 def link(ctx, metas, out, toolbin, release=False):
     gcc = tool("gcc")
     objroot = out
@@ -174,14 +332,15 @@ def link(ctx, metas, out, toolbin, release=False):
         sdl_libs = []
     else:
         sdl_cflags, sdl_libs = sdl_flags()
-    rt_flags = ["-m32", "-O2", "-g", "-std=gnu11", "-fno-strict-aliasing", "-fwrapv",
+    rt_flags = [MFLAG, "-O2", "-g", "-std=gnu11", "-fno-strict-aliasing", "-fwrapv",
                 "-fno-omit-frame-pointer", "-Wall", "-Wno-unused-function",
                 "-Wno-unused-variable", "-Werror=implicit-function-declaration", "-I" + os.path.join(PC, "include"),
                 "-I" + os.path.join(PC, "include", "psyq")] + sdl_cflags
     if not WINDOWS:
         # absolute addresses (no PIE), the Windows ABI's small-struct returns (as the game code,
         # build.py), 64-bit file offsets (disc images are bigger than 2 GB)
-        rt_flags += ["-fno-pic", "-fno-pie", "-freg-struct-return", "-D_FILE_OFFSET_BITS=64"]
+        rt_flags += ["-fno-pic", "-fno-pie", "-D_FILE_OFFSET_BITS=64"] + \
+            ([] if X64 else ["-freg-struct-return"])
     img = ctx.image[0x800:]
 
     # ---- 1. runtime -------------------------------------------------------------------------
@@ -241,8 +400,15 @@ def link(ctx, metas, out, toolbin, release=False):
     # data.s, its globals and .bss in their retail layout with native pointers and string literals.
     img_bin = os.path.join(gen, "image.bin")
     data_s = os.path.join(gen, "data.s")
-    r = subprocess.run([sys.executable, os.path.join(HERE, "data_image.py"), img_bin,
-                        "--check", EXE, "--asm", data_s], capture_output=True, text=True)
+    cmd = [sys.executable, os.path.join(HERE, "data_image.py"), img_bin, "--check", EXE,
+           "--asm", data_s]
+    if X64:
+        # x64: the data's own layout; data_image.py places what the code names inside a global
+        refs_txt = os.path.join(gen, "code_refs.txt")
+        write_if_changed(refs_txt, "".join("%s\n" % s[5:13] for s in sorted(
+            {s for m in metas for s in m.get("psx_syms", [])})))
+        cmd += ["--refs", refs_txt]
+    r = subprocess.run(cmd, capture_output=True, text=True)
     sys.stdout.write(r.stdout)
     if r.returncode:
         sys.stderr.write(r.stderr)
@@ -308,7 +474,11 @@ def link(ctx, metas, out, toolbin, release=False):
 
     asm = ["\t.text"]
     done = set()
-    for m in metas:
+    # (x64: thunks_x64; the loops below are i386's)
+    tmetas = [] if X64 else metas
+    if X64:
+        asm += thunks_x64(metas, unowned)
+    for m in tmetas:
         for t in m.get("thunks", []):
             if t["key"] in done:
                 continue
@@ -359,7 +529,7 @@ def link(ctx, metas, out, toolbin, release=False):
                     "\tmovl $0, _pc_delete_marked"] + jump_to(a)
     # constructors defined in C++: call the native one with the caller's argument words, then
     # return `this` as egcs constructors do
-    for m in metas:
+    for m in tmetas:
         for a in m.get("ctor_defs", []):
             if ("ctor", a) in done:
                 continue
@@ -384,7 +554,7 @@ def link(ctx, metas, out, toolbin, release=False):
                     "\tret"]
     # destructors defined in C++: the egcs destructor is (this, in_chrg); run the native
     # base-object destructor (body, then the base classes'), then free if in_chrg bit 0 is set
-    for m in metas:
+    for m in tmetas:
         for a, cls, dl in m.get("dtor_defs", []):
             if ("dtor", a) in done:
                 continue
@@ -408,9 +578,11 @@ def link(ctx, metas, out, toolbin, release=False):
             k = asm.index(base + ":")
             asm[k:k] = ["\t.globl %s" % al, "%s:" % al]
     asm_text = "\n".join(asm) + "\n"
-    if not WINDOWS:
-        # the names above are PE's (`_pcvt_...`, `_pc_delete_marked`); ELF has no '_' prefix
+    if not USCORE:
+        # the names above are 32-bit PE's (`_pcvt_...`, `_pc_delete_marked`); x64 PE and ELF
+        # have no '_' prefix
         asm_text = re.sub(r"(?<![\w$.])_(?=pc|psx_)", "", asm_text)
+    if not WINDOWS:
         asm_text += "\t.section .note.GNU-stack,\"\",@progbits\n"
     write_if_changed(os.path.join(gen, "thunks.s"), asm_text)
 
@@ -423,51 +595,59 @@ def link(ctx, metas, out, toolbin, release=False):
     syms.update("_psx_%08x" % a for a in list(game) + stubs)
     for m in metas:
         syms.update(m.get("psx_syms", []))
-    starts = [b[0] for b in data["blocks"]]
-    fixed = data["fixed"]
+    # data a TU's object holds (build.py relocate_data_defs) is defined there
+    kept = {a for m in metas for a in m.get("kept", [])}
+    kept_aliases = ["%s = %spsx_%s;\n" % (s if USCORE else s[1:], USCORE, s[5:13])
+                    for s in sorted(syms) if int(s[5:13], 16) in kept and len(s) > 13]
+    syms = {s for s in syms if int(s[5:13], 16) not in kept}
+    if X64:
+        x64_symbols(ctx, data, syms, game, stubs, gen, kept_aliases)
+    else:
+        starts = [b[0] for b in data["blocks"]]
+        fixed = data["fixed"]
 
-    def native_block(a):
-        k = bisect.bisect_right(starts, a) - 1
-        if k < 0 or a >= data["blocks"][k][1] or any(s <= a < e for s, e in fixed):
-            return None
-        return starts[k]
+        def native_block(a):
+            k = bisect.bisect_right(starts, a) - 1
+            if k < 0 or a >= data["blocks"][k][1] or any(s <= a < e for s, e in fixed):
+                return None
+            return starts[k]
 
-    ld, dead = [], []
-    stub_set = set(stubs)
-    for s in sorted(syms):
-        a = int(s[5:13], 16)
-        b = native_block(a)
-        name = s if WINDOWS else s[1:]
-        if a in game or a in stub_set:
-            ld.append("%s = %s%s_%08x;\n" % (name, USCORE, "pcfn" if a in game else "pcstub", a))
-        elif TEXT_START <= a < LIB_END and b is None:
-            raise SystemExit("link: %s is in the retail code but no function" % s)
-        elif b is None:
-            # outside the game's data: a library table's pointer into library data the port
-            # doesn't have, never followed
-            dead.append(a)
-            ld.append("%s = 0x%08x;\n" % (name, a))
-        else:
-            ld.append("%s = %spc_data_%08x + %d;\n" % (name, USCORE, b, a - b))
-    write_if_changed(os.path.join(gen, "psx_syms.ld"), "".join(ld))
-    if dead:
-        print("link: %d addresses outside the game's data (never followed): %s" % (
-            len(dead), " ".join("%08x" % a for a in sorted(dead))))
-    # PC_Data's table: the blocks, less the fixed data inside them
-    ranges = []
-    for s, e in data["blocks"]:
-        cuts = sorted((max(fs, s), min(fe, e)) for fs, fe in fixed if fs < e and fe > s)
-        a = s
-        for cs, ce in cuts + [(e, e)]:
-            if cs > a:
-                ranges.append((a, cs, s))
-            a = max(a, ce)
-    lines = ['#include "pc_runtime.h"']
-    lines += ["extern char pc_data_%08x[];" % b[0] for b in data["blocks"]]
-    lines.append("const PcData pc_data[] = {")
-    lines += ["\t{0x%08xu, 0x%08xu, pc_data_%08x + %d}," % (a, e, b, a - b) for a, e, b in ranges]
-    lines.append("\t{0, 0, 0}\n};")
-    write_if_changed(os.path.join(gen, "data_table.c"), "\n".join(lines) + "\n")
+        ld, dead = [], []
+        stub_set = set(stubs)
+        for s in sorted(syms):
+            a = int(s[5:13], 16)
+            b = native_block(a)
+            name = s if WINDOWS else s[1:]
+            if a in game or a in stub_set:
+                ld.append("%s = %s%s_%08x;\n" % (name, USCORE, "pcfn" if a in game else "pcstub", a))
+            elif TEXT_START <= a < LIB_END and b is None:
+                raise SystemExit("link: %s is in the retail code but no function" % s)
+            elif b is None:
+                # outside the game's data: a library table's pointer into library data the port
+                # doesn't have, never followed
+                dead.append(a)
+                ld.append("%s = 0x%08x;\n" % (name, a))
+            else:
+                ld.append("%s = %spc_data_%08x + %d;\n" % (name, USCORE, b, a - b))
+        write_if_changed(os.path.join(gen, "psx_syms.ld"), "".join(ld + kept_aliases))
+        if dead:
+            print("link: %d addresses outside the game's data (never followed): %s" % (
+                len(dead), " ".join("%08x" % a for a in sorted(dead))))
+        # PC_Data's table: the blocks, less the fixed data inside them
+        ranges = []
+        for s, e in data["blocks"]:
+            cuts = sorted((max(fs, s), min(fe, e)) for fs, fe in fixed if fs < e and fe > s)
+            a = s
+            for cs, ce in cuts + [(e, e)]:
+                if cs > a:
+                    ranges.append((a, cs, s))
+                a = max(a, ce)
+        lines = ['#include "pc_runtime.h"']
+        lines += ["extern char pc_data_%08x[];" % b[0] for b in data["blocks"]]
+        lines.append("const PcData pc_data[] = {")
+        lines += ["\t{0x%08xu, 0x%08xu, pc_data_%08x + %d}," % (a, e, b, a - b) for a, e, b in ranges]
+        lines.append("\t{0, 0, 0}\n};")
+        write_if_changed(os.path.join(gen, "data_table.c"), "\n".join(lines) + "\n")
 
     # ---- 5. compile generated sources and link ------------------------------------------------
     gen_objs = []
@@ -478,13 +658,17 @@ def link(ctx, metas, out, toolbin, release=False):
     with cf.ThreadPoolExecutor() as ex:
         gen_objs = list(ex.map(lambda j: cc(j[0], j[1], gflags), jobs))
     th_o = os.path.join(gen, "thunks.o")
-    run([gcc, "-m32", "-c", os.path.join(gen, "thunks.s"), "-o", th_o])
+    run([gcc, MFLAG, "-c", os.path.join(gen, "thunks.s"), "-o", th_o])
     gen_objs.append(th_o)
     data_o = os.path.join(gen, "data.o")
     if not os.path.exists(data_o) or os.path.getmtime(data_o) < max(
             os.path.getmtime(data_s), os.path.getmtime(data_s[:-2] + ".bin")):
-        run([gcc, "-m32", "-c", data_s, "-o", data_o], cwd=gen)
+        run([gcc, MFLAG, "-c", data_s, "-o", data_o], cwd=gen)
     gen_objs.append(data_o)
+    if X64:
+        bss_o = os.path.join(gen, "bss.o")
+        run([gcc, MFLAG, "-c", os.path.join(gen, "bss.s"), "-o", bss_o])
+        gen_objs.append(bss_o)
 
 
     if WINDOWS:
@@ -496,7 +680,7 @@ def link(ctx, metas, out, toolbin, release=False):
         res_o = os.path.join(gen, "thps_res.o")
         if not os.path.exists(res_o) or os.path.getmtime(res_o) < max(
                 os.path.getmtime(ico), os.path.getmtime(os.path.join(gen, "thps.rc"))):
-            run([tool("windres"), "-F", "pe-i386",
+            run([tool("windres"), "-F", "pe-x86-64" if X64 else "pe-i386",
                  os.path.join(gen, "thps.rc"), "-o", res_o])
         gen_objs.append(res_o)
 
@@ -511,14 +695,20 @@ def link(ctx, metas, out, toolbin, release=False):
                 "-luser32", "-lgdi32", "-lwinmm", "-limm32", "-lole32", "-loleaut32", "-lshell32",
                 "-lsetupapi", "-lversion", "-luuid", "-lopengl32", "-static"]
         # release: a GUI program (no console window; the log goes to thps.log, pc_main.c)
-        ldflags = ["-mwindows" if release else "-mconsole", "-Wl,--large-address-aware",
-                   "-Wl,--disable-dynamicbase", "-Wl,--image-base=0x400000"]
+        ldflags = ["-mwindows" if release else "-mconsole"]
+        if not X64:
+            ldflags += ["-Wl,--large-address-aware", "-Wl,--disable-dynamicbase",
+                        "-Wl,--image-base=0x400000"]
+        elif not release:
+            # a fixed base above 4 GB: stable addresses for symbolize.py, and a pointer cut to 32
+            # bits faults
+            ldflags += ["-Wl,--disable-dynamicbase", "-Wl,--image-base=0x140000000"]
     else:
         # SDL2 and the C library are the system's; OpenGL comes through SDL. Not position
         # independent: the image sits at its default 0x08048000
         libs = sdl_libs + ["-lm", "-lpthread"]
         ldflags = ["-no-pie", "-Wl,-z,noexecstack"]
-    run([gcc, "-m32", "-g", "@" + rsp, "-o", exe] + ldflags +
+    run([gcc, MFLAG, "-g", "@" + rsp, "-o", exe] + ldflags +
         ["-Wl," + os.path.join(gen, "psx_syms.ld").replace("\\", "/")] + libs)
     if release:
         # the debug info goes to thps.debug (for symbolize.py; not shipped)

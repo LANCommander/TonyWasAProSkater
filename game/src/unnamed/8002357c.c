@@ -13,7 +13,7 @@ typedef struct {
 int DAT_800d1650, GameFMV_NumSoundSources, GameFMV_Active, alreadyHandledPause,
     GameFMV_RewindSwitch, sendVLC, currentVlcBuffer, currentDecodeBuffer;
 short decodeSlice_4, decodeSlice_6;
-int vlcBuffer[2];
+unsigned int *vlcBuffer[2];
 
 extern char *CameraList;
 extern int GamePaused, GameFrozen, MusicStopped;
@@ -71,7 +71,7 @@ void GameFMV_SyncFMV(int a) {
 			if (sendVLC) {
 				/* the whole frame into the song's texture, where strCallback put its slices */
 				if (GameFMV_StartX != -1)
-					PC_VdecToTexture((void *)vlcBuffer[currentVlcBuffer], GameFMV_Is24Bit,
+					PC_VdecToTexture(vlcBuffer[currentVlcBuffer], GameFMV_Is24Bit,
 					                 decodeSlice, decodeSlice_2, GameFMV_EndX, decodeSlice_6);
 
 				currentVlcBuffer = 1 - currentVlcBuffer;

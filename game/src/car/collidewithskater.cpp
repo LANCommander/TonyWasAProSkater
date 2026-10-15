@@ -15,8 +15,9 @@ extern "C" {
 #include "game/bruce.h"
 #include "game/bit.h"
 #include "game/sfx.h"
+#include "game/front.h"
 
-extern int GameText_c0[];
+extern LocalText GameText;
 extern int BitCount;
 extern int UseCacheForBits;
 extern char ZeroVector[];
@@ -122,7 +123,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 				pSkater->Vibrate(8, 1, 150);
 				SFX_Grunt(pSkater);
 				SFX_PlayX(40, 0x2000, 0);
-				pSkater->Trick_Trick(78, (char *)GameText_c0[0], -1000, 0);
+				pSkater->Trick_Trick(78, GameText.pCarPlant, -1000, 0);
 
 				{
 					int n = BitCount;

@@ -42,11 +42,14 @@ struct SLineInfo {
 	                             /* sizeof == 0xa4 */
 };
 
-/* the nearest hit so far (NearestHit) */
+/* the nearest hit so far (NearestHit). Retail keeps a pointer to the hit face's normal at 0x08
+   where the demo had CVector Normal (M3dAsm_LineColijProcessFaces, M3dColij_GetLineInfo,
+   M3dColij_LineToThisItemCached store/read it as a pointer). */
 struct SHit {
 	Item *pItem;        /* 0x00 */
 	uint *pFace;        /* 0x04 */
-	CVector Normal;     /* 0x08 */
+	SVECTOR *pNormal;   /* 0x08 */
+	int pad0c[2];       /* 0x0c: the rest of the demo's Normal */
 	CVector PolyCentre; /* 0x14 */
 	int Dist;           /* 0x20 */
 	                    /* sizeof == 0x24 */

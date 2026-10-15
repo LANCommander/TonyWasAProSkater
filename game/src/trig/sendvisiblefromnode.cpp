@@ -3,9 +3,11 @@
 #include "game/ob.h"
 #include "game/bit.h"
 
-extern int pCurrentPlayer;
+class CBruce;
+
+extern CBruce *pCurrentPlayer;
 extern int GNumberOfPlayers;
-extern int MechList;
+extern CBruce *MechList[];
 extern CItem *PowerUpList;
 extern CBit *NonRenderedBitList;
 
@@ -22,7 +24,7 @@ void SendVisibleFromNode(int node, int visible) {
 
 	if (!pCurrentPlayer || GNumberOfPlayers == 1)
 		SetFlags = 65;
-	else if (pCurrentPlayer == MechList)
+	else if (pCurrentPlayer == MechList[0])
 		SetFlags = 64;
 	else
 		SetFlags = 1;
@@ -82,7 +84,7 @@ void SendVisibleFromNode(int node, int visible) {
 					pVisNode++;
 					pVisNode += *pVisNode + 1;
 
-					if ((int)pVisNode & 2)
+					if ((intptr_t)pVisNode & 2)
 						pVisNode++;
 
 					pItem = Spool_FindEnviroItem(*(uint *)pVisNode);

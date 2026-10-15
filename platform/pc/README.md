@@ -115,6 +115,20 @@ debug information split into `thps.debug`; and `thps-windows.zip` with the exe,
 The build also runs Ghidra's GNU v2 demangler (`decomp/tools/demangle.py`; it finds it in the
 Ghidra install `GHIDRA_INSTALL_DIR` names, default `D:\Tools\ghidra`, or takes `GNU_DEMANGLER`).
 
+### 64-bit
+
+`THPS_ARCH=x64` builds a 64-bit program into `build/pc64` (Linux: `build/pc64-linux`), with
+`--release` too. On Windows it needs MSYS2's `ucrt64` toolchain and SDL2
+(`pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-SDL2`) and still the `mingw32` one: the
+build checks the decompiled data in its retail, 32-bit layout before laying it out natively
+(`tools/data_image.py`). `tools/ptr64_check.py` (with both builds made) compares every view of a
+global, parameter and return value between the 32- and 64-bit layouts and lists where they
+disagree.
+
+```
+THPS_ARCH=x64 python platform/pc/tools/build.py   # -> build/pc64/thps.exe
+```
+
 ### Linux
 
 The same build runs on x86 Linux with a GCC that can build 32-bit programs, binutils, Python 3,
@@ -131,7 +145,9 @@ build/pc-linux/thps
 with `gcc lib32-gcc-libs lib32-sdl2`.) `build.py` finds SDL2 through pkg-config's 32-bit
 directories, or takes `THPS_SDL_CFLAGS`/`THPS_SDL_LIBS`; `THPS_TOOLBIN` points at another
 toolchain, `THPS_BUILD_DIR` moves the output (`tools/toolchain.py`). Running needs the 32-bit SDL2
-and OpenGL libraries (`libsdl2-2.0-0:i386 libgl1:i386 libgl1-mesa-dri:i386`).
+and OpenGL libraries (`libsdl2-2.0-0:i386 libgl1:i386 libgl1-mesa-dri:i386`). The 64-bit build
+(`THPS_ARCH=x64`, -> `build/pc64-linux/thps`) needs the native `libsdl2-dev` as well as the
+32-bit compiler (for the data check), and runs on the native SDL2 and OpenGL libraries.
 `build.py --release` makes `build/pc-linux/release/thps-linux.tar.gz`: the stripped `thps`,
 `dist/README-linux.txt`, the LICENSE and the notices (SDL2 and the C library are the system's,
 linked dynamically, so build releases on an old distribution for an old enough glibc).
@@ -424,7 +440,7 @@ DCT and colour conversion, a whole frame at once) and the player shows them as a
 their own (`PC_MovieDecode`/`PC_MovieShow`, `pc_screen.h`); the player's busy-waits wait a frame
 for the stream instead (`PC_MovieWait`). The songs' 96x64 video goes into the texture of the
 levels' TV screens the same way (`PC_VdecToTexture`; the credits screen shows it too). Not done yet: the PS1's exact
-reverb, 64-bit build.
+reverb.
 
 Port glue worth knowing about (see the tools for details):
 - C++ follows the egcs ABI where the retail code depends on it: vtable layout, `delete` through

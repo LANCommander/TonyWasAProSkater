@@ -145,7 +145,7 @@ void DisplayScore(CBruce *pBruce, ushort xpos, ushort ypos) {
 					GraffitiColor(pBruce);
 				}
 
-				sprintf(score, "%ld", Value);
+				sprintf(score, "%ld", (long)Value);
 			}
 		}
 
