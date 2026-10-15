@@ -677,8 +677,10 @@ int M3d_DefaultLight[13] = {
 	512,
 };
 
-/* THPS2 demo: SVertex[800] */
-int Vertices[1600];
+/* THPS2 demo: SVertex[800]. ProjectedVertices, with RotatedVertices 3200 bytes on; lighting
+   writes a RotatedVertices word for each of a model's normals (vertices + faces), which overran
+   the 6400 bytes with the Dreamcast's bigger models, so the tail has room for any u16 count */
+int Vertices[(3200 + 65536 * 8) / 4];
 
 /* THPS2 demo: short[1024] */
 short WibbleTables[1024];
