@@ -1,0 +1,279 @@
+/* M3DINIT.CPP: renderer setup: the resolution, the fog parameters and parsing a level's
+   PSX file. */
+#include "game/m3dinit.h"
+#include "game/m3d.h"
+#include "game/psyq.h"
+#include "game/campt.h"
+#include "game/front.h"
+#include "game/globals.h"
+#include "pc_dctex.h"
+
+extern int LastDpqShift;
+/* one item record in a PSX file (SPSXRegion::pPSX + 3): the first 0x24 bytes of m3d.h's Item.
+   game/m3d.h's Item runs on to 0x48 (CItem's data), so it can't step through the file's array */
+struct SPSXItem {
+	ushort Flags;
+	ushort Inquiry;
+	Vector Position;
+	SVector Angles;
+	ushort Model;
+	uchar Frame;
+	uchar TintIndex;
+	uchar Anim;
+	uchar Region;
+	uint NextItem; /* (a pointer on the PS1, linked by M3dInit_ParsePSX) */
+	uint RGB;
+};
+Item *PSXRegionItems[40];
+extern int GBoardPart;
+extern int GWheel1Part;
+extern int GWheel2Part;
+extern ushort M3d_DefaultLODDistance;
+
+/* M3dInit_SetResolution__FUiUi (0x800820e4) */
+void M3dInit_SetResolution(unsigned w, unsigned h) {
+	Xres = w;
+	Yres = h;
+
+	if (w * 3 > h * 4) {
+		PixelAspectX = 4096;
+		PixelAspectY = (w * 3 << 12) / (h * 4);
+	} else {
+		PixelAspectY = 4096;
+		PixelAspectX = (h * 4 << 12) / (w * 3);
+	}
+}
+
+/* M3dInit_SetFoggingParams__FiiUi (0x80082158) */
+void M3dInit_SetFoggingParams(int a, int nearz, unsigned range) {
+	DpqMin = nearz;
+	DpqMax = nearz + range;
+	DpqShift = 0;
+
+	while (range < 4096) {
+		range <<= 1;
+		DpqShift++;
+	}
+
+	while (range > 4096) {
+		range >>= 1;
+		DpqShift--;
+	}
+
+	LastDpqMax = DpqMax;
+	LastDpqMin = DpqMin;
+	LastDpqShift = DpqShift;
+}
+
+/* M3dInit_ParsePSX__Fi (0x800821f8) */
+/* Locals from the demo's MAIN.SYM; SModel/Texture are the demo's layouts.
+   The per-region table (64-byte entries) is laid out by offset. */
+void M3dInit_ParsePSX(int Region) {
+	SModel *pModel;
+	SPSXItem *pItem;
+	Item *pItems;
+	uint *pFace;
+	uint Fastable;
+	int i;
+	int j;
+	int NumModels;
+	int NumParts;
+	int NumItems;
+	int NumVertices;
+	int NumNormals;
+	int NumFaces;
+	int NumStitchVertices;
+	Texture *pTex;
+	SVECTOR *pVertex;
+	SVECTOR *pNormal;
+	ushort clut;
+	ushort tpage;
+	ushort u0v0;
+	ushort u1v1;
+	ushort u2v2;
+	ushort u3v3;
+	uint OrOfFlags;
+	uint AndOfFUFlags;
+
+	if (GHeadPart != -1) {
+		if (GHeadPart == 18) {
+			GBoardPart = 0;
+			GWheel1Part = 1;
+			GWheel2Part = 2;
+		} else {
+			GBoardPart = 16;
+			GWheel1Part = 17;
+			GWheel2Part = 18;
+		}
+	}
+
+	/* a Dreamcast (version 6) file keeps its faces' texture entries and 16-bit texture
+	   coordinates; the renderer reads them (platform/pc/include/pc_dctex.h) */
+	int DcFile = (PSXRegion[Region].pPSX[0] & 0xffff) == 6;
+
+	NumStitchVertices = 0;
+	Fastable = 1;
+	NumParts = 0;
+	NumModels = PSXRegion[Region].NumModels;
+	pModel = PSXRegion[Region].ppModels[0];
+
+	for (i = 0; i < NumModels; i++) {
+		OrOfFlags = 0;
+		NumVertices = pModel->NumVertices;
+		NumNormals = pModel->NumNormals;
+		NumFaces = pModel->NumFaces;
+		AndOfFUFlags = 0xffffffff;
+
+		if (pModel->NextLOD == 0xffff)
+			NumParts++;
+
+		if (pModel->zMax == -1)
+			pModel->zMax = M3d_DefaultLODDistance;
+
+		for (j = 0, pVertex = pModel->Vertices; j < NumVertices; j++, pVertex++) {
+			if (i == GHeadPart && !(pVertex->pad & 0x12)) {
+				pVertex->vx *= 3;
+				pVertex->vy *= 2;
+				pVertex->vz *= 3;
+				pVertex->vy += GHeadUp * 16;
+
+				if (GHeadUp < 0)
+					pVertex->vz -= 240;
+			}
+
+			if (pVertex->pad & 2) {
+				pVertex->vx = (ushort)pVertex->vy * 8;
+				pVertex->vy = 0;
+			}
+
+			if (pVertex->pad & 0x10)
+				pModel->Flags |= 0x100;
+
+			if (pVertex->pad & 1)
+				NumStitchVertices++;
+		}
+
+		if (NumVertices + NumStitchVertices > 100)
+			Fastable = 0;
+
+		if (NumNormals == NumFaces + NumVertices) {
+			pNormal = pVertex;
+			pVertex -= NumVertices;
+
+			for (j = 0; j < NumVertices; j++, pNormal++, pVertex++) {
+				if (pVertex->pad & 1)
+					pNormal->pad |= 1;
+
+				if (pVertex->pad & 2) {
+					pNormal->pad |= 2;
+					pNormal->vx = pVertex->vx;
+					pNormal->vy = 0;
+				}
+			}
+		}
+
+		pFace = (uint *)(pVertex + NumNormals);
+
+		for (j = 0; j < NumFaces; j++) {
+			((ushort *)pFace)[6] *= 8;
+
+			if (!(pFace[0] & 0x40))
+				pFace[0] ^= 0x80;
+
+			if (!(pFace[0] & 0x800))
+				pFace[2] &= 0xffffff;
+
+			if ((pFace[0] & 3) == 3 && !DcFile) {
+				pTex = PSXRegion[Region].ppTextures[pFace[4]];
+				clut = pTex->clut;
+				tpage = pTex->tpage;
+				u0v0 = ((ushort *)pFace)[10];
+				u1v1 = ((ushort *)pFace)[11];
+				u2v2 = ((ushort *)pFace)[12];
+				u3v3 = ((ushort *)pFace)[13];
+
+				if (pFace[0] & 0x20) {
+					pFace[7] = pTex->TexWin;
+				} else {
+					/* not in the SYM: an int temp keeps the load a zero_extend (no HI-mode
+					   load whose dying pTex would pull pTex into a0 by preference) */
+					int uv = *(ushort *)pTex;
+
+					u0v0 += uv;
+					u1v1 += uv;
+					u2v2 += uv;
+					u3v3 += uv;
+				}
+
+				pFace[4] = u0v0 | (clut << 16);
+				pFace[5] = u1v1 | (tpage << 16);
+				pFace[6] = u2v2 | (u3v3 << 16);
+			}
+
+			/* a Dreamcast face's texture entry, by its index (pc_dctex.h) */
+			if ((pFace[0] & 3) == 3 && DcFile)
+				pFace[4] = PC_DcFaceTexIndex(PSXRegion[Region].ppTextures[pFace[4]]);
+
+			OrOfFlags |= pFace[0];
+			AndOfFUFlags &= ((ushort *)pFace)[7];
+
+			if (pFace[0] & 0x10)
+				((uchar *)pFace)[7] = ((uchar *)pFace)[6];
+
+			pFace += pFace[0] >> 18;
+		}
+
+		if (AndOfFUFlags & 1)
+			pModel->Flags |= 0x10;
+
+		if (!(OrOfFlags & 0xc0))
+			pModel->Flags |= 0x20;
+
+		if (OrOfFlags & 0x1000)
+			pModel->Flags |= 0x40;
+
+		if (OrOfFlags & 4)
+			pModel->Flags |= 4;
+
+		pModel = (SModel *)pFace;
+	}
+
+	PSXRegion[Region].Fastable = Fastable;
+	PSXRegion[Region].NumParts = NumParts;
+	NumItems = PSXRegion[Region].pPSX[2];
+	pItem = (SPSXItem *)(PSXRegion[Region].pPSX + 3);
+	/* retail linked the file's item records in place (NextItem is a pointer); the port makes them
+	   Items of their own */
+	free(PSXRegionItems[Region]);
+	pItems = (Item *)malloc((NumItems + 1) * sizeof(Item));
+	memset(pItems, 0, (NumItems + 1) * sizeof(Item));
+	PSXRegionItems[Region] = pItems;
+
+	for (i = 0; i < NumItems; i++) {
+		pItems->Flags = pItem->Flags;
+		pItems->Inquiry = pItem->Inquiry;
+		pItems->Position = pItem->Position;
+		pItems->Angles = pItem->Angles;
+		pItems->Model = pItem->Model;
+		pItems->Frame = pItem->Frame;
+		pItems->TintIndex = pItem->TintIndex;
+		pItems->Anim = pItem->Anim;
+		pItems->RGB = pItem->RGB;
+
+		if (i < NumItems - 1)
+			pItems->NextItem = pItems + 1;
+		else
+			pItems->NextItem = 0;
+
+		pItems->Region = Region;
+
+		if (PSXRegion[pItems->Region].ppModels[pItems->Model]->Flags & 0x10)
+			pItems->Flags |= 0x20;
+
+		if (PSXRegion[pItems->Region].ppModels[pItems->Model]->Flags & 0x20)
+			pItems->Flags |= 0x1000;
+
+		pItem++;
+		pItems++;
+	}
+}

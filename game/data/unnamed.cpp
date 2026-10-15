@@ -21,14 +21,15 @@ struct Sprite;
 #include "game/gamefmv.h"
 #include "game/panel.h"
 #include "game/shellutils.h"
+#include "game/rail.h"
 
+extern char dtor_8006553c[] PSX_NAME("FUN_8006553c");
 extern char Delay[];
 extern char FUN_8001d21c[];
 extern char FUN_8001f274[];
 extern char FUN_8001f2dc[];
 extern char FUN_8004f544[];
 extern char FUN_8005de48[];
-extern char FUN_8006553c[];
 extern char FUN_80066180[];
 extern char FUN_80071a14[];
 extern char FUN_80071acc[];
@@ -227,7 +228,7 @@ PsxVtEntry DAT_800a2120[2] = {
 
 PsxVtEntry DAT_800a2130[2] = {
 	{0, 0, 0},
-	{0, 0, FUN_8006553c},
+	{0, 0, dtor_8006553c},
 };
 
 PsxVtEntry DAT_800a2450[2] = {
@@ -643,7 +644,7 @@ int DAT_800bf100[1] = {
 	214,
 };
 
-/* DAT_800bf104 (a PadBuffer, zero until its static constructor builds it): src/unnamed/8005de08.cpp */
+/* DAT_800bf104 (a PadBuffer, zero until its static constructor builds it): src/frontend.cpp (FUN_8005de08) */
 SlicedImage *DAT_800bf2f0[10];
 
 /* GVInfo2 (0x800bf3d8) is GVInfo1[1] (data/video.cpp) */

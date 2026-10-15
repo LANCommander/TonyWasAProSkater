@@ -24,6 +24,8 @@ extern "C" {
 #include "game/types.h"
 #include "game/class.h"
 #include "game/mess.h"
+struct SAnimFrame;
+class Sprite;
 
 class CBruce;
 struct Message;
@@ -38,7 +40,7 @@ class CTrick {
 	Message *message; /* 0x10 */
 	/* sizeof(CTrick) == 0x14 */
 
-	void Set(Message *, char *, int, int); /* 0x8006e514 */
+	void Set(Message *pMessage, char *pName, int Points, int Depreciate);
 };
 
 /* the trick table entry (`STrick Group[]`, 44 bytes; entries from 32 on are rail tricks keyed by
@@ -132,85 +134,37 @@ class CPanelData {
 		m4E0 = 0;
 		Goals = 0;
 	}
-	void DisplayTrick(CBruce *, ushort, ushort); /* 0x8006d938 */
-	void TrickMessageRefresh();                  /* 0x8006e5ac */
-	void TrickMessage();                         /* 0x8006e7c0 */
-	void Trick(char *, int, int);                /* 0x8006e804 */
-	void Land();                                 /* 0x8006e8ec */
-	void OutOfBounds();                          /* 0x8006eba4 */
-	int TotalScore();                            /* 0x8006ebdc */
-};
-
-/* the trick-tip monitor (one global, TrickTipMonitor; layout = demo, vtable 0x800a2498) */
-class CTrickTipMonitor : public CClass {
-  public:
-	/* 0x000: vptr */
-	int mShowAsNeededQueue[6];     /* 0x004 */
-	int mShowAsNeededIndex;        /* 0x01c */
-	int mShowAfterBailQueue[6];    /* 0x020 */
-	int mShowAfterBailIndex;       /* 0x038 */
-	int mShowAtStartQueue[6];      /* 0x03c */
-	int mShowAtStartIndex;         /* 0x054 */
-	uint mTimer;                   /* 0x058 */
-	uint mLastTipTime;             /* 0x05c */
-	uint mJumpTimer;               /* 0x060 */
-	CBruce *pSkater;               /* 0x064 */
-	char mTipLine1Buf[40];         /* 0x068 */
-	char *mTipLine1;               /* 0x090 */
-	char *mTipLine2;               /* 0x094 */
-	char *mTipLine3;               /* 0x098 */
-	char *mTipLine4;               /* 0x09c */
-	uint mTipTimer;                /* 0x0a0 */
-	int mOldBails;                 /* 0x0a4 */
-	int mOldPerpendicularBails;    /* 0x0a8 */
-	int mOldTrickBails;            /* 0x0ac */
-	int mOldRailBails;             /* 0x0b0 */
-	int mOldJumps;                 /* 0x0b4 */
-	int mOldWeakJumps;             /* 0x0b8 */
-	int mOldAirs;                  /* 0x0bc */
-	int mOldTricks;                /* 0x0c0 */
-	int mOldRails;                 /* 0x0c4 */
-	int mOldAirPolys;              /* 0x0c8 */
-	int mOldAirPolyBreaks;         /* 0x0cc */
-	int mOldBigAirs;               /* 0x0d0 */
-	int mOldGrinds;                /* 0x0d4 */
-	int mBailCounter;              /* 0x0d8 */
-	int mPerpendicularBailCounter; /* 0x0dc */
-	int mTrickBailCounter;         /* 0x0e0 */
-	int mRailBailCounter;          /* 0x0e4 */
-	int mJumpCounter;              /* 0x0e8 */
-	int mWeakJumpCounter;          /* 0x0ec */
-	int mAirCounter;               /* 0x0f0 */
-	int mTrickCounter;             /* 0x0f4 */
-	int mRailCounter;              /* 0x0f8 */
-	int mAirPolyCounter;           /* 0x0fc */
-	int mAirPolyBreakCounter;      /* 0x100 */
-	int mBigAirCounter;            /* 0x104 */
-	int mGrindCounter;             /* 0x108 */
-	int mHoldingForwardCounter;    /* 0x10c */
-	int mOkayToShow;               /* 0x110 (TrickTips_Init sets 1) */
-	/* sizeof(CTrickTipMonitor) == 0x114 */
-
-	/* inlined into TrickTips_Update (tricktips/update.cpp defines them `inline`) */
-	int FindTip();
-	void ShowTip(int);
-	void ShowFoundTip(int);
-	void Update();
+	void DisplayTrick(CBruce *pBruce, ushort xpos, ushort ypos);
+	void TrickMessageRefresh();
+	void TrickMessage();
+	void Trick(char *pName, int Points, int Dep);
+	void Land();
+	void OutOfBounds();
+	int TotalScore();
 };
 
 /* functions */
-void Panel_Update(); /* 0x8006c4e8 */
-POLY_F4 *Panel_DrawFlatShadedPoly(int x, int y, int w, int h, uchar r, uchar g, uchar b,
-                                  int sort);                       /* 0x8006c610 */
-void GraffitiColor(CBruce *);                                      /* 0x8006ca1c */
-void Panel_TakeOff(CBruce *pSkater, int a);                        /* 0x8006e168 */
-void Panel_Trick(CBruce *pSkater, char *pName, int score, int a3); /* 0x8006e19c */
-void Panel_HoldTrick(CBruce *pSkater, int Score);                  /* 0x8006e1bc */
-void Panel_Bonus(CBruce *pSkater, int Score);                      /* 0x8006e204 */
-void Panel_Land(CBruce *pSkater);                                  /* 0x8006e20c */
-void Panel_Bail(CBruce *pSkater);                                  /* 0x8006e22c */
-void Panel_Tape(int);                                              /* 0x8006e2fc */
-void Panel_GoalCounter(int goals);                                 /* 0x8006e454 */
-char *Panel_SwitchText(CBruce *pSkater);                           /* 0x8006e534 */
+void Panel_addPrim(void *p);
+void FUN_8006c4c4();
+void Panel_Update();
+POLY_FT4 *Panel_DrawTexturedPoly(SAnimFrame *t);
+void Panel_SetStretchedScreenCoords(int x, int y, POLY_FT4 *p, SAnimFrame *f);
+POLY_F4 *Panel_DrawFlatShadedPoly(int x, int y, int w, int h, uchar r, uchar g, uchar b, int sort);
+void GraffitiColor(struct CBruce *a);
+void Panel_PlayerInit(unsigned short n, CBruce *b);
+void Panel_TakeOff(CBruce *p, int a);
+void Panel_Trick(CBruce *p, char *name, int score, int a3);
+void Panel_HoldTrick(CBruce *p, int s);
+void Panel_Bonus(CBruce *pSkater, int Score);
+void Panel_Land(CBruce *p);
+void Panel_Bail(CBruce *p);
+int Panel_Letter(int n);
+void Panel_Tape(int a);
+void Panel_GoalCounter(int goals);
+char *Panel_SwitchText(CBruce *p);
 
+/* globals */
+extern int GStartTime;
+extern Sprite *pBarSprite;
+extern Sprite *pScoreSprite;
 #endif

@@ -82,7 +82,7 @@ char *D_800a2208[3] = {
 /* THPS2 demo: CTape*[5] */
 CTape *GTape[5];
 
-/* FallingTextEffect (src/front/update.cpp's GHorseFallingText; the code sets it up) */
+/* FallingTextEffect (Front_Update's GHorseFallingText, src/front.cpp; the code sets it up) */
 int DAT_800a5b28[18];
 
 /* three level entries the decompiled code doesn't refer to: library, level and background

@@ -65,6 +65,6 @@ void *SpecialDisplayList;
 /* THPS2 demo: CGLine* */
 void *GLineList;
 
-/* StoredTPagePrim (0x800d1900, a DR_TPAGE) is src/bit/init.c's: the port's primitives have a
+/* StoredTPagePrim (0x800d1900, a DR_TPAGE) is Bit_Init's (src/bit.cpp): the port's primitives have a
    full-pointer tag, bigger than retail's 8 bytes (retail strings follow it) */
 

@@ -55,6 +55,9 @@ struct SString {
 };
 
 /* functions */
-void Font_Reset(); /* 0x8004c180 */
-
+void Font_Init();
+void Font_Reset();
+void Font_String(ushort X, ushort Y, char *pString, uchar r, uchar g, uchar b, uchar BigText);
+void Font_Number(ushort X, ushort Y, int Number, uchar r, uchar g, uchar b, uchar BigText);
+void Font_Display();
 #endif

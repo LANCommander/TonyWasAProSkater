@@ -21,17 +21,25 @@ struct SMovieDetails {
 /* functions */
 struct CVector;
 struct Texture;
+void FUN_80022b4c();
+void GameFMV_PlayMovie(int track);
+void GameFMV_SetStartTrack(int a);
+void GameFMV_StartFMV(int a);
+void GameFMV_StopFMV();
+void GameFMV_SyncFMV(int a);
+void Redbook_XAAllow(int v);
 
-void GameFMV_SetScreenTexture(uint Checksum);                  /* 0x800229ec */
-void GameFMV_AddSoundSource(const CVector *pPos);              /* 0x80022aec */
-void GameFMV_PlayMovie(int track);                             /* 0x80022c1c */
-void GameFMV_SetStartTrack(int Track);                         /* 0x80023168 */
-void GameFMV_StartFrameBufferCopy();                           /* 0x80023260 */
-void GameFMV_SkipTrack();                                      /* 0x80023528 */
-void GameFMV_SyncFMV(int Arg);                                 /* 0x8002357c */
-void GameFMV_RetargetScreenFaces(ushort TPage, Texture *pTex); /* 0x800237b4 */
-void strInit();                                                /* 0x80023cb8 */
-int GameFMV_ScaleMusicVolume(int Volume);                      /* 0x80023fb0 */
-void GameFMV_SetCDMixForPos(const CVector &Pos);               /* 0x80024010 */
+void GameFMV_SetScreenTexture(uint Checksum);
+void GameFMV_AddSoundSource(const CVector *s);
+void GameFMV_StartFrameBufferCopy();
+void GameFMV_SkipTrack();
+void GameFMV_RetargetScreenFaces(ushort arg0, Texture *a1);
+void strInit();
+int GameFMV_ScaleMusicVolume(int a);
+void GameFMV_SetCDMixForPos(const CVector &pos);
 
+/* globals */
+extern ushort GameFMV_EndX;
+extern int GameFMV_RewindSwitch;
+extern short GameFMV_StartY;
 #endif

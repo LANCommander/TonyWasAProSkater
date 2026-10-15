@@ -20,65 +20,47 @@ SPresetCamera Presets[5] = {
 };
 
 /* CVector (THPS2 demo: CVector) */
-int Camera_CamOffset[3];
+CVector Camera_CamOffset;
 
 /* MATRIX (THPS2 demo: MATRIX) */
-int tm[8];
+MATRIX tm;
 
 /* THPS2 demo: int */
-int Cheat_ScreenShots[1];
+int Cheat_ScreenShots;
 
 /* THPS2 demo: int */
-int camDist[1] = {
-	658,
-};
+int camDist = 658;
 
 /* THPS2 demo: int */
-int camPitch[1] = {
-	54,
-};
+int camPitch = 54;
 
 /* THPS2 demo: int */
-int camYOffset[9] = {
-	-220, 0, -212,
-};
+int camYOffset = -220;
 
 /* THPS2 demo: int */
-int Camera_Preset[1] = {
-	2,
-};
+int Camera_Preset = 2;
 
 /* THPS2 demo: int */
-int Camera_CamPitch[1] = {
-	54,
-};
+int Camera_CamPitch = 54;
 
 /* THPS2 demo: int */
-int Camera_CamDist[1] = {
-	850,
-};
+int Camera_CamDist = 850;
 
 /* THPS2 demo: int */
-int NumCameras[1];
+int NumCameras;
 
 /* THPS2 demo: uint */
-unsigned int Camera_CurrentMikeCamera[8] = {
-	0, 0x20676962, 0x726961, 0x706d6172, 0x676e69, 0x6d726f6e, 0x6c61,
-};
+uint Camera_CurrentMikeCamera = 0;
 
 /* THPS2 demo: int */
-int Mick_CameraTweak[1];
+int Mick_CameraTweak;
 
-int DAT_800d2084[1] = {
-	1,
-};
+int DAT_800d2084 = 1;
 
-int DAT_800d2088[1] = {
-	256,
-};
+int DAT_800d2088 = 256;
 
-int DAT_800d208c[1];
-int DAT_800d2090[2];
+int DAT_800d208c;
+int DAT_800d2090;
 
 /* THPS2 demo: int */
-int CameraCollisionCheck[1];
+int CameraCollisionCheck;

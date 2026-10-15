@@ -38,20 +38,19 @@ class CPlatform : public CBaddy {
 	int mSpin[3];             /* 0x24c (demo: CVector mBoundingBox) */
 	/* sizeof(CPlatform) == 0x258 */
 
-	CPlatform(short *, int);                    /* 0x8003d6d8 */
-	virtual ~CPlatform();                       /* slot 0: 0x8003d7a0 */
-	void Bounce(CBruce *, const CVector &);     /* 0x8003d820 */
-	void BouncyAI();                            /* 0x8003db00 */
-	virtual void AI();                          /* slot 2: 0x8003e390 */
-	virtual int Hit(int, const CVector &, int); /* slot 5: 0x8003e934 */
-	void DoPhysics();                           /* 0x8003e9d8 */
-	void MoveTo(CVector &);                     /* 0x8003ebdc */
-	virtual int ExecuteCommand(ushort);         /* slot 7: 0x8003ec48 */
-	virtual void SetVariable(ushort);           /* slot 8: 0x8003f45c */
-	virtual short GetVariable(ushort);          /* slot 9: 0x8003f624 */
+	CPlatform(short *p_info, int node);
+	virtual ~CPlatform();
+	void Bounce(CBruce *pSkater, const CVector &Direction);
+	void BouncyAI();
+	virtual void AI();
+	virtual int Hit(int, const CVector &, int);
+	void DoPhysics();
+	void MoveTo(CVector &pos);
+	virtual int ExecuteCommand(ushort command);
+	virtual void SetVariable(ushort variable);
+	virtual short GetVariable(ushort variable);
 };
 
 /* functions */
-void Platform_HandleBounce(); /* 0x8003f65c */
-
+void Platform_HandleBounce();
 #endif

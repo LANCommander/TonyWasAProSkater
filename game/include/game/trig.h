@@ -7,6 +7,8 @@
 #define GAME_TRIG_H
 
 #include "game/types.h"
+#include "game/vector.h"
+class CBruce;
 
 struct SSinCos {
 	short s; /* 0x0 */
@@ -30,11 +32,36 @@ struct SCommandPoint {
 
 /* functions */
 class CBody;
+void Trig_ClearTrigMenu();
+void FUN_800448b8();
+void Trig_ResetCPCollisionFlags(int m);
+void Trig_ResetCPExecutedFlags(int m);
+void Trig_SetRestart(char *name);
+void Trig_ExecuteRestart();
+void Trig_DeleteTrigFile();
+void Trig_InitialParseTRGFile(char *pName);
+void Trig_SendPulse(unsigned short *p);
+void SendSignalToNode(CBody *b, int node);
+void SendSignalToLinks(unsigned short *p);
+void Trig_RemoveDualBuffer();
+void Trig_ParseTRGFile();
+unsigned short *Trig_GetLinksPointer(int n);
+CSVector *Trig_GetPosition(CVector &pos, int node);
 
-SCommandPoint *Trig_TriggerCommandPoint(uint, bool);                       /* 0x80044a20 */
-void Trig_ExecuteRestart();                                                /* 0x80044c84 */
-void Trig_SendPulseToNode(int idx);                                        /* 0x80045538 */
-void KillInList(int, CBody *, int);                                        /* 0x80045774 */
-void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling); /* 0x80046374 */
+SCommandPoint *Trig_TriggerCommandPoint(uint id, bool);
+void Trig_SendPulseToNode(int idx);
+void KillInList(int id, CBody *pBody, int mode);
+void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling);
 
+/* globals */
+extern CBody *BaddyList;
+extern char *CheatRestarts[];
+extern int DAT_800d1f14;
+extern CBody *EnvironmentalObjectList;
+extern char *HorseRestarts[];
+extern int NumCheatRestarts;
+extern int NumHorseRestarts;
+extern short **OffsetList;
+extern CBruce *pCurrentPlayer;
+extern int RestartNode;
 #endif

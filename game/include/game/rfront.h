@@ -2,7 +2,9 @@
 #ifndef GAME_RFRONT_H
 #define GAME_RFRONT_H
 
+#include "game/front.h"
 #include "game/types.h"
+class VerticalMenu;
 
 class Sprite;
 
@@ -18,15 +20,29 @@ struct SCachedBackground {
 };
 
 /* functions */
+int GetUpDown();
+void Front_RestoreBackground();
+void Front_InitMemCardMenus(int a, EMemCardState b, EPausedStatus c);
+void Front_SetSaveAction(ESaveAction v);
+void Front_ExtractASCIINameFromSJIS(char *s, char *d);
+void Front_MemCardDisplay();
+void Front_MemCardHiResDisplay();
+int Front_MemCardUpdate();
+void Front_ClearGVideoRestartData();
 /* what the memory-card screen loads (GLoadAction; rfront/memcardupdate state 21) */
 enum ELoadAction { LOAD_REPLAY, LOAD_REPLAY_HEADER, LOAD_GAME };
+void Front_SetSJISName(char *SJISName);
 
-void Front_FreeMemCardMenus();                /* 0x80011150 */
-void RGBGreen();                              /* 0x80011214 */
-void Front_FreeBackground();                  /* 0x80011570 */
-void Front_SetLoadAction(ELoadAction Action); /* 0x80011628 */
-void InitEnterName();                         /* 0x800117b4 */
-int NameWasBlank();                           /* 0x80012600 */
-void FillInDefaultName();                     /* 0x80012650 */
+void Front_FreeMemCardMenus();
+void RGBGreen();
+void Front_FreeBackground();
+void Front_SetLoadAction(ELoadAction v);
+void InitEnterName();
+int NameWasBlank();
+void FillInDefaultName();
 
+/* globals */
+extern VerticalMenu *pVertMenu;
+extern char SaveGameName[];
+extern char StoredCareerName[];
 #endif

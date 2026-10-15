@@ -47,20 +47,19 @@ struct SMemHandle {
 	int Serial; /* 0x4 */
 };
 
-void Bang(uchar, uchar, uchar);                           /* 0x8004ce28 */
-void AddToFreeList(SBlockHeader *, int);                  /* 0x8004ce54 */
-void *Mem_NewX(uint size, int heap, int assertOnFailure); /* 0x8004d068 */
+void Bang(uchar r, uchar g, uchar b);
+void AddToFreeList(SBlockHeader *b, int idx);
 void *Mem_New(uint size, int heap, int assertOnFailure);  /* the demo's name for 0x8004d068 */
-void *Mem_NewTop(uint size);                              /* 0x8004d3a4 */
-void Mem_Delete(void *);                                  /* 0x8004d5d0 */
-void Mem_Copy(void *, void *, int);                       /* 0x8004d8b4 */
+void *Mem_NewTop(uint size);
+void Mem_Delete(void *p);
+void Mem_Copy(void *d, void *s, int n);
 
 /* functions */
-void Mem_Shrink(void *, uint);       /* 0x8004d6a0 */
-SMemHandle Mem_GetHandle(void *);    /* 0x8004d7ac */
-void *Mem_CheckHandle(SMemHandle *); /* 0x8004d83c */
 void FUN_8004cf7c();                 /* 0x8004cf7c: the free lists over the whole heaps */
-void Init_ResetMemory(int);          /* 0x80071e40 */
-int Mem_GetFree(char i);             /* 0x8004d878 */
+void *Mem_NewX(uint size, int Heap, int AssertOnFailure);
+void Mem_Shrink(void *p, uint n);
+SMemHandle Mem_GetHandle(void *p);
+void *Mem_CheckHandle(SMemHandle *h);
+int Mem_GetFree(char i);
 
 #endif

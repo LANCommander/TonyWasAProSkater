@@ -247,83 +247,83 @@ class CBruce : public CSuper {
 	CPanelData mPanel; /* 0x924 */
 	/* sizeof(CBruce) == 0xe1c */
 
-	void Trick_TakeOff();             /* 0x8002f1a0 */
-	int Trick_RepeatScore(int, int);  /* 0x8002f290 */
-	void Trick_HoldTrick(int);        /* 0x8002f438 */
-	void Trick_Bonus(int);            /* 0x8002f458 */
-	void FrigDarkenObject();          /* 0x8003036c */
-	void HandleHoldTrick();           /* 0x80031500 */
-	void ScoreCurrentTrick();         /* 0x8003159c */
-	void SkateOffGround();            /* 0x8003434c */
-	int CheckSide(int);               /* 0x800343f0 */
-	void HandleLeaningBail(SVECTOR);  /* 0x80035f30 */
-	void HandlePlayerCollisions();    /* 0x8003b2f0 */
-	CBruce();                         /* 0x80041e5c */
-	virtual ~CBruce();                /* slot 0: 0x80042380 */
-	void SetGlow(int, int, int, int); /* 0x80042700 */
-	int CanCollect(short);            /* 0x80042744 */
-	virtual void Die();               /* slot 1: 0x80042778 */
-	virtual void AI();                /* slot 2: 0x80042d04 */
+	void Trick_TakeOff();
+	int Trick_RepeatScore(int Trick, int Score);
+	void Trick_HoldTrick(int Score);
+	void Trick_Bonus(int Score);
+	void FrigDarkenObject();
+	void HandleHoldTrick();
+	void ScoreCurrentTrick();
+	void SkateOffGround();
+	int CheckSide(int a);
+	void HandleLeaningBail(SVECTOR s);
+	void HandlePlayerCollisions();
+	CBruce();
+	virtual ~CBruce();
+	void SetGlow(int, int, int, int);
+	int CanCollect(short);
+	virtual void Die();
+	virtual void AI();
 	/* slot 3 (EveryFrame) is CBody's */
-	virtual void DoLightingSetup();             /* slot 4: 0x800425b8 (empty) */
-	virtual int Hit(int, const CVector &, int); /* slot 5: 0x800427c4 (returns 1) */
-	virtual void DeleteStuff();                 /* slot 6: 0x800427bc (empty) */
+	virtual void DoLightingSetup(); /* empty */
+	virtual int Hit(int, const CVector &, int); /* returns 1 */
+	virtual void DeleteStuff(); /* empty */
 
-	void TempRestore();                               /* 0x8002f118 */
-	void Trick_PlayerInit(ushort);                    /* 0x8002f178 */
-	void Trick_Trick(int, char *, int, int);          /* 0x8002f340 */
-	void Trick_Land();                                /* 0x8002f478 */
-	void Trick_Bail();                                /* 0x8002f774 */
-	void Vibrate(int, int, int);                      /* 0x8002f8f0 */
-	void StateTransition(EPhysicsState, int);         /* 0x8002f980 */
-	void MaybeFlipAnimationTransition();              /* 0x8002fc0c */
-	void Debug_RunAnim(int, int);                     /* 0x8002fcdc */
-	void Debug_RunAnim1(int, int, int);               /* 0x8002fd28 */
-	void Debug_RunAnim2(int, int, int, int);          /* 0x8002fd80 */
-	void Debug_RunAnim3(int, int, int, int, int);     /* 0x8002fde4 */
-	void ResetTrickBuffers();                         /* 0x8002fe50 */
-	void Bail(int BailNumber);                        /* 0x8002fe9c */
-	void TrickObRail();                               /* 0x80030434 */
-	void HandleStickToRail();                         /* 0x8003058c */
-	void HandleBailOnLanding(int);                    /* 0x80031108 */
-	void HandleBailPerpendicular(SVECTOR);            /* 0x80031224 */
-	void SetTrickFlags(STrick *);                     /* 0x800316cc */
-	void HandleTricksNew();                           /* 0x80031758 */
-	void HandleSpin();                                /* 0x800323e0 */
-	void AlignHeadingOnRail();                        /* 0x80033108 */
-	void DoOnRailPhysics();                           /* 0x800331e4 */
-	void DoOnGroundPhysics();                         /* 0x800347a8 */
-	void DoInAirPhysics();                            /* 0x8003609c */
-	void DoFootPlantPhysics();                        /* 0x80036f7c */
-	void DoHandPlantPhysics();                        /* 0x80037460 */
-	void DoWallRidePhysics();                         /* 0x800376f4 */
-	void HandleJump();                                /* 0x80038268 */
-	void HandleKick();                                /* 0x800395b4 */
-	void RotateHeadingAndVelocity(int, int, int);     /* 0x80039cd0 */
-	void ReflectHeadingVelocityInPlane(SVECTOR, int); /* 0x80039f2c */
-	void AlignToFallLine(int);                        /* 0x8003a214 */
-	void UprightSideways();                           /* 0x8003a498 */
-	void FRUVectorsFromRotMatrix();                   /* 0x8003a5a4 */
-	void RotMatrixFromFRUVectors();                   /* 0x8003a5fc */
-	void SetAnglesFromHeading();                      /* 0x8003a648 */
-	void HandleContinuousSounds();                    /* 0x8003a6d4 */
-	void OrientToNormal();                            /* 0x8003b0c0 */
-	void DoPhysics();                                 /* 0x8003b424 */
-	void BoardOff();                                  /* 0x80041c30 */
-	void BoardOn();                                   /* 0x80041c88 */
-	void GetStats(int);                               /* 0x80041ce0 */
-	void GlowUpdate();                                /* 0x800424b4 */
-	void CalculateDynamicLighting(uint *, Item *);    /* 0x800425c0 */
-	void GetHookPosition(CVector &, uchar);           /* 0x8004274c */
-	void DoShadowCheck();                             /* 0x800427d4 */
-	void InitItem(char *);                            /* 0x80042988 */
-	void FlipToVelocity();                            /* 0x800429d0 */
-	void BloodSplat(int, int);                        /* 0x80042ab0 */
-	void HandleWater();                               /* 0x80043258 */
+	void TempRestore();
+	void Trick_PlayerInit(ushort Player);
+	void Trick_Trick(int Trick, char *pName, int Score, int);
+	void Trick_Land();
+	void Trick_Bail();
+	void Vibrate(int a, int b, int c);
+	void StateTransition(EPhysicsState NewState, int);
+	void MaybeFlipAnimationTransition();
+	void Debug_RunAnim(int Anim, int);
+	void Debug_RunAnim1(int Anim, int a, int);
+	void Debug_RunAnim2(int Anim, int a, int b, int);
+	void Debug_RunAnim3(int Anim, int a, int b, int c, int);
+	void ResetTrickBuffers();
+	void Bail(int BailNumber);
+	void TrickObRail();
+	void HandleStickToRail();
+	void HandleBailOnLanding(int);
+	void HandleBailPerpendicular(SVECTOR Normal);
+	void SetTrickFlags(STrick *pTrick);
+	void HandleTricksNew();
+	void HandleSpin();
+	void AlignHeadingOnRail();
+	void DoOnRailPhysics();
+	void DoOnGroundPhysics();
+	void DoInAirPhysics();
+	void DoFootPlantPhysics();
+	void DoHandPlantPhysics();
+	void DoWallRidePhysics();
+	void HandleJump();
+	void HandleKick();
+	void RotateHeadingAndVelocity(int a, int c, int b);
+	void ReflectHeadingVelocityInPlane(SVECTOR Normal, int Angle);
+	void AlignToFallLine(int Amount);
+	void UprightSideways();
+	void FRUVectorsFromRotMatrix();
+	void RotMatrixFromFRUVectors();
+	void SetAnglesFromHeading();
+	void HandleContinuousSounds();
+	void OrientToNormal();
+	void DoPhysics();
+	void BoardOff();
+	void BoardOn();
+	void GetStats(int Skater);
+	void GlowUpdate();
+	void CalculateDynamicLighting(uint *p_face, Item *p_item);
+	void GetHookPosition(CVector &Pos, uchar Index);
+	void DoShadowCheck();
+	void InitItem(char *pName);
+	void FlipToVelocity();
+	void BloodSplat(int BodyPart, int MaxBloodBits);
+	void HandleWater();
 
 	/* inlined into HandleStickToRail (physics/handlesticktorail.cpp defines them `inline`) */
-	void StartHandPlant(int, int);
-	void StartGrind(int);
+	void StartHandPlant(int RailTrick, int Flags);
+	void StartGrind(int RailTrick);
 	/* inline helpers retail inlined */
 	int GetBalanceVel() {
 		return mBalanceVel;

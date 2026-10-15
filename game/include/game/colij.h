@@ -75,6 +75,6 @@ struct SFaceCache {
 };
 
 /* functions */
-void M3dColij_LineToItemZoned(Item **ppItem, SLineInfo *pInfo); /* 0x80080328 */
+void M3dColij_LineToItemZoned(Item **ppItem, SLineInfo *pInfo);
 
 #endif

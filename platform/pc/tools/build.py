@@ -4,15 +4,16 @@
     python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link] [--release]
 
 The game's data (game/data: ordinary C++ globals) is compiled first; its references to functions
-are renamed to `psx_<addr>` as the code's are (below). Then, for every game TU (game/tus.tsv):
+are renamed to `psx_<addr>` as the code's are (below). Then, for every game TU (each .c/.cpp
+under game/src, a retail module; its functions are its header comments, HEADER_RE):
 
   1. source transforms (portsrc.py): inline GTE asm -> software GTE calls; for C++, the egcs
      virtual-function ABI on top of non-virtual native classes (vtables: game/data by name,
      game/vtables.tsv);
   2. compile to assembly (cdecl everywhere on i386: -mabi=sysv);
   3. assemble, then rename the function symbols: a call resolves to `psx_<addr>` (the function's
-     retail address, from functions.tsv or the TU's .syms.json), and the TU's own function becomes
-     `pcfn_<addr>`. Globals keep their C names: game/data defines them.
+     retail address, from functions.tsv or the TU's .syms.json), and each of the TU's own
+     functions becomes `pcfn_<addr>`. Globals keep their C names: game/data defines them.
 
 Then it generates the glue (linker script naming every `psx_<addr>` function's code, virtual-
 dispatch thunks, stubs for anything not implemented yet) and links everything with the runtime
@@ -104,20 +105,36 @@ def load_functions():
     return fn
 
 
-HEADER_RE = re.compile(r"^/\*\s*(\S+)\s+\((0x[0-9a-fA-F]+)\)(.*?)\*/")
+# A function's header comment, at the start of a line just above it: `/* <name> (0x<retail address>)
+# [anything] */`, name as the retail symbol (GNU v2 mangling for C++). Prose that only mentions an
+# address, `/* Label (0x80087b3c): ...`, is not one.
+HEADER_RE = re.compile(r"^/\*[ \t]*(\S+)[ \t]+\((0x[0-9a-fA-F]{8})\)(?![:,])", re.M)
+SRC_DIR = os.path.join(GAME, "src")
+
+
+def game_sources():
+    """Every game TU: the .c/.cpp files under game/src, as paths relative to game/."""
+    out = []
+    for dirpath, _, files in os.walk(SRC_DIR):
+        for f in files:
+            if f.endswith((".c", ".cpp")):
+                out.append(os.path.relpath(os.path.join(dirpath, f), GAME).replace("\\", "/"))
+    return sorted(out)
 
 
 def load_tus():
+    """{src: TU}. A TU's functions are its header comments: [(addr, retail name)], in file order;
+    `addr`/`name` are the first one's (the file's primary function)."""
     tus = {}
-    for p in read_tsv(os.path.join(GAME, "tus.tsv")):
-        tus[p[0]] = {"src": p[0], "addr": int(p[1], 16), "kind": p[3]}
-    for src, tu in tus.items():
+    for src in game_sources():
         path = os.path.join(GAME, src)
-        first = open(path, encoding="utf-8", errors="replace").readline()
-        m = HEADER_RE.match(first)
-        tu["name"] = m.group(1) if m else None
+        funcs = [(int(m.group(2), 16), m.group(1))
+                 for m in HEADER_RE.finditer(open(path, encoding="utf-8", errors="replace").read())]
+        if not funcs:
+            raise SystemExit("%s: no function header (/* <name> (0x<addr>) */)" % src)
         sj = os.path.splitext(path)[0] + ".syms.json"
-        tu["syms"] = json.load(open(sj)) if os.path.exists(sj) else {}
+        tus[src] = {"src": src, "funcs": funcs, "addr": funcs[0][0], "name": funcs[0][1],
+                    "syms": json.load(open(sj)) if os.path.exists(sj) else {}}
     return tus
 
 
@@ -266,16 +283,17 @@ class Ctx:
         self.fn_by_name = {}
         for a, (sz, mangled, dem) in self.functions.items():
             self.fn_by_name.setdefault(mangled, a)
+        self.tus = load_tus()
         # hand-written assembly rewritten in C: callable by its label from other rewrites
-        for p in read_tsv(os.path.join(GAME, "tus.tsv")):
-            if p[3] == "asm" and p[4] and int(p[1], 16) >= GAME_CODE_END:
-                self.fn_by_name.setdefault(p[4], int(p[1], 16))
+        for tu in self.tus.values():
+            for a, name in tu["funcs"]:
+                if a >= GAME_CODE_END:
+                    self.fn_by_name.setdefault(name, a)
         self.fn_by_sig = {}
         self.fn_by_qual = {}
         for a, (sz, mangled, dem) in self.functions.items():
             self.fn_by_sig.setdefault(norm_sig(dem), []).append(a)
             self.fn_by_qual.setdefault(qual_name(dem), []).append(a)
-        self.tus = load_tus()
         # function name -> address, from every TU's syms.json (names with one address only)
         seen = {}
         for tu in self.tus.values():
@@ -288,6 +306,7 @@ class Ctx:
         for tu in self.tus.values():
             allnames.update(k for k in tu["syms"] if not k.startswith("."))
         allnames.update(m for (_, m, _) in self.functions.values())
+        allnames.update(n for tu in self.tus.values() for _, n in tu["funcs"])
         self.gnu_dem = demangle_gnu(sorted(allnames))
         img = open(os.path.join(ROOT, "extern", "thps1_retail", "SLUS_008.60"), "rb").read()
         self.image = img
@@ -409,6 +428,24 @@ def itanium_member(sym):
     return (parts[-2], parts[-1]) if len(parts) >= 2 and i < len(sym) and sym[i] == "E" else None
 
 
+def param_count(d):
+    """The number of parameters in a demangled signature."""
+    inner = d[d.find("(") + 1:d.rfind(")")].strip()
+    if not inner or inner == "void":
+        return 0
+    return len(portsrc._split_top(inner, ","))
+
+
+def is_virtual(classes, cls, meth, d):
+    """Whether Class::meth with demangled signature d is one of the class's virtual methods (not
+    a non-virtual overload of the same name: CTape::AI(int) next to the virtual AI())."""
+    c = classes.get(cls)
+    if not c or meth not in c["slots"]:
+        return False
+    counts = c.get("vparams", {}).get(meth)
+    return meth == "~" or not counts or param_count(d) in counts
+
+
 def split_virtual_defs(asm, classes):
     """A TU that defines a virtual member function may also call it virtually (on another object):
     g++ binds such a call to the local definition, skipping the override the vtable would pick.
@@ -419,6 +456,9 @@ def split_virtual_defs(asm, classes):
         if not cm or cm[0] not in classes or cm[1] not in classes[cm[0]]["slots"]:
             continue
         if not re.search(r"^\s*(call|jmp)\s+%s\b" % re.escape(name), asm, re.M):
+            continue
+        bare = name[1:] if name.startswith("__") else name
+        if not is_virtual(classes, cm[0], cm[1], demangle_itanium([bare]).get(bare, bare)):
             continue
         asm = re.sub(r"\b%s\b" % re.escape(name), name + VDEF, asm)
         asm = re.sub(r"^(\s*(?:call|jmp)\s+)%s\b" % re.escape(name + VDEF), r"\g<1>" + name, asm,
@@ -620,19 +660,33 @@ class Resolver:
             if d.endswith(VDEF) and d.startswith("__Z"):
                 dem[d[1:]] = demangle_itanium([d[1:-len(VDEF)]]).get(d[1:-len(VDEF)], d[1:])
         primary = self.tu["addr"]
-        primary_name = self.tu.get("name")
+        # the TU's own functions (its header comments), by signature, qualified name and name
+        own_sig, own_qual, own_name = {}, {}, {}
+        for a, n in self.tu["funcs"]:
+            d = self.ctx.gnu_dem.get(n, n)
+            own_sig.setdefault(norm_sig(d), a)
+            own_qual.setdefault(qual_name(d), []).append(a)
+            own_name[n] = a
+
+        def own_by_qual(q):
+            a = own_qual.get(q, [])
+            return a[0] if len(a) == 1 else None
         # ---- definitions
         for kind, sym in defined:
             name = strip_us(sym)
             if kind == "I":
                 # a static-object constructor: its retail address is the __main table entry that
-                # falls inside this TU's range (the other function in range is the teardown)
-                lo, size = primary, self.ctx.functions.get(primary, (0,))[0]
-                for a in self.ctx.static_ctors:
-                    if lo <= a < lo + max(size, 0x400):
+                # falls inside the range of one of the TU's functions (the other function in range
+                # is the teardown)
+                for lo, _ in self.tu["funcs"]:
+                    size = self.ctx.functions.get(lo, (0,))[0]
+                    a = next((a for a in self.ctx.static_ctors if lo <= a < lo + max(size, 0x400)),
+                             None)
+                    if a is not None:
                         renames[sym] = "_pcfn_%08x" % a
                         info["globalize"].append("_pcfn_%08x" % a)
                         info["defines"][hex(a)] = name
+                        break
                 continue
             if kind != "T":
                 continue
@@ -640,11 +694,14 @@ class Resolver:
             if name.startswith("_Z"):
                 d = dem.get(name, name)
                 sig = norm_sig(d)
-                pd = self.ctx.gnu_dem.get(primary_name, primary_name) if primary_name else None
-                if pd and norm_sig(pd) == sig:
-                    addr = primary
+                if sig in own_sig:
+                    addr = own_sig[sig]
                 elif sig in self.ctx.fn_by_sig and len(self.ctx.fn_by_sig[sig]) == 1:
                     addr = self.ctx.fn_by_sig[sig][0]
+                elif not re.search(r"C2E|D[12]Ev$", name):
+                    # declared with other parameter types than retail's: the TU's one function
+                    # of that name
+                    addr = own_by_qual(qual_name(d))
                 is_dtor = re.search(r"D[12]Ev$", name) is not None
                 is_ctor2 = re.search(r"C2E", name) is not None
                 if addr is not None and is_ctor2:
@@ -659,10 +716,12 @@ class Resolver:
                     info["defines"][hex(addr)] = name
                     continue
             else:
-                if primary_name and name == primary_name:
-                    addr = primary
-                else:
+                # C: the retail name, or the C name of a C++ one (`Options_Init`, Options_Init__Fv)
+                addr = own_name.get(name)
+                if addr is None:
                     addr = self.ctx.fn_by_name.get(name)
+                if addr is None:
+                    addr = own_by_qual(name)
             if addr is not None and addr < CODE_END:
                 if re.search(r"C1E", name):
                     # egcs constructors return `this` and C callers use it; g++'s return void.
@@ -672,14 +731,16 @@ class Resolver:
                 else:
                     renames[sym] = "_pcfn_%08x" % addr
                 info["defines"][hex(addr)] = name
-        # the earliest sources carry no header and a placeholder name (`op`): a TU that defines a
-        # single unmapped function defines the manifest's function
-        if hex(primary) not in info["defines"] and not info["dtor_defs"]:
+        # a single-function TU whose function has a placeholder name (`op`) defines its header's
+        if len(self.tu["funcs"]) == 1 and hex(primary) not in info["defines"] and \
+                not info["dtor_defs"]:
             loose = [sym for kind, sym in defined if kind == "T" and sym not in renames and
                      not re.search(r"C2E|D[12]Ev$", sym)]
             if len(loose) == 1:
                 renames[loose[0]] = "_pcfn_%08x" % primary
                 info["defines"][hex(primary)] = strip_us(loose[0])
+        info["undefined_headers"] = ["%s (0x%08x)" % (n, a) for a, n in self.tu["funcs"]
+                                     if hex(a) not in info["defines"]]
         # ---- references
         for sym in undefined:
             name = strip_us(sym)
@@ -753,14 +814,18 @@ class Resolver:
         return self.resolve_cxx_plain(name, d, sig, q, info)
 
     def resolve_cxx_plain(self, name, d, sig, q, info):
+        # `Base::Method(...)`: the method itself, no dispatch (portsrc.mark_nonvirtual_calls)
+        nonvirtual = portsrc.NONVIRTUAL + "(" in d
+        if nonvirtual:
+            d = d.replace(portsrc.NONVIRTUAL + "(", "(")
+            sig, q = norm_sig(d), qual_name(d)
+        # virtual methods: dispatch through the retail vtable
+        if "::" in q and not nonvirtual:
+            cls, meth = q.rsplit("::", 1)
+            if is_virtual(self.classes, cls, meth, d):
+                return self.vthunk(cls, meth, info)
         if sig in self.syms_by_sig:
             return "_psx_%08x" % self.syms_by_sig[sig]
-        # virtual methods: dispatch through the retail vtable
-        if "::" in q:
-            cls, meth = q.rsplit("::", 1)
-            c = self.classes.get(cls)
-            if c and meth in c["slots"]:
-                return self.vthunk(cls, meth, info)
         if sig in BUILTIN_CXX:
             a = self.ctx.psyq.get(BUILTIN_CXX[sig]) or self.syms.get(BUILTIN_CXX[sig])
             if a:
@@ -826,16 +891,22 @@ def main():
     for m in metas:
         for u in m.get("unresolved", []):
             unresolved.setdefault(u, []).append(m["src"])
+    # header comments no definition was matched to (retail functions the port never builds, like
+    # a static teardown, or a definition whose name/signature the build can't place)
+    no_def = sorted((m["src"], h) for m in metas for h in m.get("undefined_headers", []))
     report = os.path.join(OUT, "build_report.txt")
     with open(report, "w", encoding="utf-8") as f:
         f.write("%d TUs, %d with errors\n\n" % (len(metas), len(errs)))
         for m in sorted(errs, key=lambda m: m["src"]):
             f.write("== %s\n%s\n" % (m["src"], "\n".join(m["errors"])))
+        f.write("\n== headers without a definition (%d)\n" % len(no_def))
+        for src, h in no_def:
+            f.write("%s\t%s\n" % (src, h))
         f.write("\n== unresolved symbols (%d)\n" % len(unresolved))
         for u, srcs in sorted(unresolved.items()):
             f.write("%s\t%s\n" % (u, " ".join(srcs[:4])))
-    print("%d TUs, %d errors, %d unresolved symbols -> %s" % (len(metas), len(errs),
-                                                             len(unresolved), report))
+    print("%d TUs, %d errors, %d headers without a definition, %d unresolved symbols -> %s" % (
+        len(metas), len(errs), len(no_def), len(unresolved), report))
     json.dump(metas, open(os.path.join(OUT, "tus.json"), "w"))
     if a.no_link or errs:
         return 1 if errs else 0

@@ -12,8 +12,10 @@
  * where A is the world-to-view matrix (rotation + translation) and B the lighting matrix.
  * tshift is 4 for the normal transforms (the frame's translation is in 16ths) and 0 for the
  * dewibbled ones, which keep the 16x scale for precision. */
-static __inline__ void m3d_set_super_transforms(MATRIX *a, MATRIX *b, struct SMatrix *c,
-                                                int tshift) {
+/* (out of line, as it always was: with both callers in m3dasm.c it got inlined) */
+static __inline__ __attribute__((noinline)) void m3d_set_super_transforms(MATRIX *a, MATRIX *b,
+                                                                          struct SMatrix *c,
+                                                                          int tshift) {
 	short prod[3][3];
 	int16_t rot[3][3];
 	int32_t at[3];

@@ -86,12 +86,27 @@ struct SVideoRestart {
 
 /* functions */
 class CBruce;
+void Video_SFXPlay(int a, short b, int c);
+void Video_BloodSplat(CBruce *b, int a, int c);
+void FUN_80068f40(int a, int b);
+void Video_HighlightStart(CBruce *b);
+void Video_HighlightEnd(CBruce *pSkater, int Score);
+void Video_SortAndMerge();
+void Video_SetHeader(SVideoHead *h, int which);
+void Video_InitOnce();
+void FUN_8006952c();
+void Video_Stop(CBruce *b);
+void Video_Record(CBruce *b);
+void Video_Playback(CBruce *pSkater);
 
-int HasSoundCmd();                                /* 0x80068df8 */
-void Video_SyncObsIfNeeded();                     /* 0x800695f4 */
-void Video_Cleanup();                             /* 0x80069670 */
-void Video_Start(CBruce *, EVideoMode, int, int); /* 0x80069684 */
-void GetDataChunk(CBruce *pSkater, int NChunks);  /* 0x8006a158 */
-void Video_HandleStepping();                      /* 0x8006ac84 */
+int HasSoundCmd();
+void Video_SyncObsIfNeeded();
+void Video_Cleanup();
+void Video_Start(CBruce *a, EVideoMode b, int c, int d);
+void GetDataChunk(CBruce *pSkater, int NChunks);
+void Video_HandleStepping();
 
+/* globals */
+extern int GVideoReplay;
+extern SVideoInfo GVInfo1[];
 #endif

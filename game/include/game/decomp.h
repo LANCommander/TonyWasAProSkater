@@ -7,7 +7,6 @@
 /* functions */
 class CSuper;
 struct SMatrix;
-
-SMatrix *Decomp_GetAnimTransform(CSuper *pSuper); /* 0x80013cd4 */
+SMatrix *Decomp_GetAnimTransform(CSuper *pSuper);
 
 #endif

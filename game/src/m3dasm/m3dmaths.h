@@ -59,7 +59,9 @@ static __inline__ uint32_t m3d_mul_matrix_ir(const int16_t m[3][3], short a[3][3
 }
 
 /* out = M * a (>> 12), each column of a through M; out takes the saturated 16-bit results. */
-static __inline__ void m3d_mul_matrix_v(const int16_t m[3][3], short a[3][3], short out[3][3]) {
+/* (out of line, as it always was: with both SetSuperTransforms in m3dasm.c it got inlined) */
+static __inline__ __attribute__((noinline)) void m3d_mul_matrix_v(const int16_t m[3][3],
+                                                                  short a[3][3], short out[3][3]) {
 	GeomAcc r;
 	int c;
 

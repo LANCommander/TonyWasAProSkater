@@ -20,6 +20,7 @@ extern "C" {
 #include "game/types.h"
 #include "game/vector.h"
 #include "game/dbuffer.h"
+class CSuper;
 
 class CGPolyLine;
 
@@ -88,7 +89,7 @@ struct SModel {
 };
 
 /* a face in a PSX model (variable size: pTexture only on textured faces). Not in the demo SYM;
-   names from shatter/face.cpp */
+   names from the shatter face code (shatter.cpp) */
 struct SFace {
 	ushort Flags;        /* 0x00 */
 	ushort pad2;         /* 0x02 */
@@ -325,15 +326,29 @@ struct SRainEntry {
 /* functions */
 struct SCamera;
 struct SLineInfo;
+void M3d_RenderBackground(void *p);
+void M3d_BuildTransform(CSuper *t);
 
-void M3dZone_FreePSX(int region);                                       /* 0x80082738 */
-int M3dZone_LineToItemNotSCached(SLineInfo *pInfo, int CheckEnviroObs); /* 0x800827d4 */
-void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, P_TAG *ot);       /* 0x800831f8 */
-void M3d_RenderCleanup();                                               /* 0x80083774 */
-void M3d_Render(void *p);                                               /* 0x80083838 */
-void RenderModel(SModel *pModel);                                       /* 0x80084d18 */
-void RenderModelFast(SModel *pModel, VECTOR *pPos);                     /* 0x80084dc0 */
-void RenderModelInSuper(SModel *pModel);                                /* 0x80084ebc */
-void RenderModelNonRotated(SModel *pModel, VECTOR *pPos);               /* 0x80085018 */
+void M3d_RenderSetup(SCamera *pCamera, SViewport *pVP, P_TAG *ot);
+void M3d_RenderCleanup();
+void M3d_Render(void *p);
+void RenderModel(SModel *p);
+void RenderModelFast(SModel *p, VECTOR *c);
+void RenderModelInSuper(SModel *p);
+void RenderModelNonRotated(SModel *p, VECTOR *c);
 
+/* globals */
+extern uchar CurrentObjFileRegion;
+extern int CurrentWaterLevel;
+extern int DpqMax;
+extern int DpqMin;
+extern int DpqShift;
+extern uint M3d_FadeColour;
+extern short M3d_OTPushback2;
+extern int M3d_WireframeMode;
+extern SCamera *pCurrentCamera;
+extern int PixelAspectX;
+extern int PixelAspectY;
+extern uint Xres;
+extern uint Yres;
 #endif

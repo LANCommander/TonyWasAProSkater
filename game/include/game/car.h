@@ -18,10 +18,10 @@ class CCar : public CBaddy {
 	int mHonkLock;           /* 0x220 */
 	/* sizeof(CCar) == 0x224 */
 
-	CCar(short *, int, int);            /* 0x8006b490 */
-	virtual ~CCar();                    /* slot 0: 0x8006b630 */
-	virtual void AI();                  /* slot 2: 0x8006bf5c */
-	virtual int ExecuteCommand(ushort); /* slot 7: 0x8006c470 (returns 1) */
+	CCar(short *p_info, int node, int type);
+	virtual ~CCar();
+	virtual void AI();
+	virtual int ExecuteCommand(ushort); /* returns 1 */
 };
 
 #endif

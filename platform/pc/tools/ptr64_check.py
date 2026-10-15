@@ -410,11 +410,8 @@ def main():
     ap.add_argument("--json", help="write the findings here")
     ap.add_argument("-j", type=int, default=os.cpu_count())
     a = ap.parse_args()
-    tus = []
-    for line in open(os.path.join(GAME, "tus.tsv"), encoding="utf-8"):
-        if not line.startswith("#") and line.strip():
-            tus.append(line.split("\t")[0])
-    tus = list(dict.fromkeys(tus))
+    import build  # noqa: E402
+    tus = build.game_sources()
     groups, errs = {}, []
     with cf.ProcessPoolExecutor(a.j) as ex:
         for src, views, err in ex.map(tu_views, tus, chunksize=4):

@@ -56,16 +56,18 @@ class CTape : public CBody {
 	static int mOkayToDisplayTitle;
 	static int mOkayToDisplayContinueButton;
 
-	static int DisplayTitle();          /* 0x80072ec8 */
-	static int DisplayContinueButton(); /* 0x80072ed4 */
-	CTape(ushort, const CVector &, const CVector &, int, int, const CVector &, uint,
-	      int);                 /* 0x80072ee0 */
-	virtual ~CTape();           /* slot 0: 0x80073228 */
-	void DontDisplay();         /* 0x80073294 */
-	void CreateBit();           /* 0x800732d0 */
-	virtual void DeleteStuff(); /* slot 6: 0x800732e4 */
-	void DoPhysics();           /* 0x8007333c */
-	void AI(int);               /* 0x800733ec (not the virtual slot 2) */
+	static int DisplayTitle();
+	static int DisplayContinueButton();
+	CTape(ushort PowerupType, const CVector &Pos, const CVector &Pos2, int Size1, int Size2,
+	      const CVector &Vel, uint Flags, int Lifetime);
+	virtual ~CTape();
+	void DontDisplay();
+	void CreateBit();
+	virtual void DeleteStuff();
+	void DoPhysics();
+	void AI(int tape_no); /* not the virtual slot 2 */
 };
 
+/* functions */
+CTape *Tape_Create(int x, int y, int z, int p, int e, int f, int g, int h);
 #endif

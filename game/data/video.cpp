@@ -38,30 +38,30 @@ int SoundCmd[60];
 unsigned char DAT_800d000b[1];
 
 /* THPS2 demo: int */
-int ReplaySoundLockout[1];
+int ReplaySoundLockout;
 
 /* THPS2 demo: int */
-int GVideoReplay[1];
+int GVideoReplay;
 
 /* THPS2 demo: int */
-int HLStartCalled[1];
+int HLStartCalled;
 
-int DAT_800d1df0[1];
-
-/* THPS2 demo: int */
-int Splat1[1];
+int DAT_800d1df0;
 
 /* THPS2 demo: int */
-int Splat2[1];
+int Splat1;
 
 /* THPS2 demo: int */
-int HighlightStartFrame[1];
+int Splat2;
 
 /* THPS2 demo: int */
-int HighlightEndFrame[1];
+int HighlightStartFrame;
 
 /* THPS2 demo: int */
-int HighlightStartY[1];
+int HighlightEndFrame;
 
 /* THPS2 demo: int */
-int HighlightEndY[2];
+int HighlightStartY;
+
+/* THPS2 demo: int */
+int HighlightEndY;

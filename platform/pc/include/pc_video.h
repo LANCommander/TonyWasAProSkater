@@ -2,7 +2,7 @@
  * or exclusive fullscreen in one of the display's modes. With OpenGL the game draws at the
  * window's resolution (pc_gpu_gl.h), so a 1024x768 mode is drawn at 1024x768. The draw distance
  * and fog settings live here too (PC_DrawFarPlane below). Kept in the
- * [Video] section of Settings.ini; Options > Graphics (game/src/front/controlleroptions.cpp)
+ * [Video] section of Settings.ini; Options > Graphics (game/src/frontend.cpp)
  * and Alt+Enter change it. */
 #ifndef PC_VIDEO_H
 #define PC_VIDEO_H

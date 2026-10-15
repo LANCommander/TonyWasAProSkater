@@ -4,6 +4,7 @@
 #define GAME_SPOOL_H
 
 #include "game/types.h"
+struct Item;
 
 /* one queued PSX load (SpoolQ[20]) */
 struct SQueue {
@@ -28,15 +29,29 @@ struct AnimPacket {
 
 /* functions */
 struct Texture;
+void Spool_Init();
+void Spool_BackupPSX(int i);
+void Spool_RestorePSX(int i);
+int Spool_GetModel(uint id, int region);
+Item *Spool_FindEnviroItem(uint id);
+Texture *Spool_FindTextureEntry(uint id);
+void ProcessNewPSX(int region);
+int Spool_FindRegion(char *name);
+void Spool_ClearPSX(char *name);
+void Spool_ClearAllPSXs();
+void ClearRegion(int Region, int cleanuptextures, int KeepInMemory);
+void Spool_ClearEnvironmentRegions();
+SAnimFrame *Spool_FindAnim(char *pName);
+int Spool_PSX(char *Name, int IsEnviro, int WhichHeap);
+int Spool_GetEnvIndex(int i);
+void Spool_Continue();
+void Spool_Sync();
+int FUN_80070830();
 
-void Spool_BackupPSX(int region);                                    /* 0x8006ed2c */
-void Spool_RestorePSX(int region);                                   /* 0x8006edb8 */
-int Spool_GetModel(uint id, int region);                             /* 0x8006ee38 */
-Texture *NewTextureEntry(uint checksum);                             /* 0x8006ef30 */
-void ProcessNewPSX(int region);                                      /* 0x8006f290 */
-void Spool_LoadTexturesToVRAM(int Region, int defrag);               /* 0x8006f854 */
-void ClearRegion(int Region, int cleanuptextures, int KeepInMemory); /* 0x8006fde4 */
-void Spool_Continue();                                               /* 0x8007046c */
-void Spool_Sync();                                                   /* 0x8007079c */
+Texture *NewTextureEntry(uint checksum);
+void Spool_LoadTexturesToVRAM(int Region, int defrag);
 
+/* globals */
+extern Item *EnviroList;
+extern int EnvRegions[];
 #endif

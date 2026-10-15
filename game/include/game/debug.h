@@ -5,6 +5,6 @@
 #include "game/types.h"
 
 /* functions */
-void Debug_String(char *, int, char *); /* 0x80047774 */
+void Debug_String(char *, int, char *);
 
 #endif

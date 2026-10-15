@@ -96,21 +96,22 @@ struct ControllerBuffer {
 	uchar pad[34]; /* 0x00 */
 };
 
-void Pad_InitAtStart();                           /* 0x80070878 */
-void Pad_LockAnalog();                            /* 0x80070928 */
-void Pad_ClearAllOne(int);                        /* 0x80070960 */
-void Pad_ClearAll();                              /* 0x800709d4 */
-void Pad_Clear(SControl *);                       /* 0x80070a0c */
-void Pad_ClearTriggers(SControl *);               /* 0x80070a60 */
-void Pad_ActuatorOn(uchar, ushort, uchar, uchar); /* 0x80070a80 */
-void Pad_ActuatorOff(uchar, uchar);               /* 0x80070c24 */
-void Pad_Button(SButton *, int);                  /* 0x80070c74 */
-void ReadControllers();                           /* 0x80070d10 */
-void ReadController(ControllerData *, uchar *);   /* 0x80070e5c */
-void Pad_Remap();                                 /* 0x80071588 */
-void Pad_Restore();                               /* 0x8007171c */
+void Pad_ClearAllOne(int i);
+void Pad_Clear(SControl *pControl);
+void Pad_ActuatorOn(uchar index, ushort time, uchar motor, uchar motor_value);
+void Pad_ActuatorOff(unsigned char a, unsigned char b);
+void Pad_Button(SButton *b, int pressed);
+void ReadControllers();
+void ReadController(ControllerData *d, unsigned char *s);
+void Pad_Remap();
+void Pad_Restore();
 
 /* functions */
-int Pad_Update(); /* 0x80070ff4 */
+void Pad_InitAtStart();
+void Pad_LockAnalog();
+void Pad_ClearAll();
+void Pad_ClearTriggers(SControl *pControl);
+int Pad_Update();
+int FUN_800718d0();
 
 #endif

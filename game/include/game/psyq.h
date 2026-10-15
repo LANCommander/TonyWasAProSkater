@@ -7,6 +7,7 @@
    NATIVE_OK; printf becomes the port's trace log, NATIVE_RENAME). */
 #ifndef GAME_PSYQ_H
 #define GAME_PSYQ_H
+#include "game/trig.h"
 
 /* CPPPSX doesn't define __cplusplus, so the SDK headers' own extern "C" guards are inactive under
    egcs: wrap them, as the TUs do */
@@ -43,4 +44,6 @@ extern "C" {
 	                               unsigned char fine); /* 0x80094e44 */
 }
 
+/* globals */
+extern SSinCos rcossin_tbl[];
 #endif

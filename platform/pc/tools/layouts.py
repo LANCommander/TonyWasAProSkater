@@ -199,11 +199,7 @@ def dump_tu(src):
 
 
 def cxx_tus(only):
-    out = []
-    for p in build.read_tsv(os.path.join(build.GAME, "tus.tsv")):
-        if p[0].endswith(".cpp") and p[0] not in out and (not only or only in p[0]):
-            out.append(p[0])
-    return out
+    return [s for s in build.game_sources() if s.endswith(".cpp") and (not only or only in s)]
 
 
 def dump_all(only):

@@ -5,6 +5,7 @@
 #ifndef GAME_CARD_H
 #define GAME_CARD_H
 
+#include "game/front.h"
 #include "game/types.h"
 #include "game/career.h"
 
@@ -45,12 +46,22 @@ struct SSaveGame {
 }; /* size 0x88 */
 
 /* functions */
-int Card_FileExists(EFileType FileType);                      /* 0x800144a8 */
-int Card_Write(EFileType FileType, int NumBlocks);            /* 0x80014558 */
-int Card_WriteReplayToDisk(EFileType FileType, char *FName);  /* 0x80014868 */
-int Card_Load(EFileType FileType, ulong *pBuf, ulong *pBuf2); /* 0x800149f4 */
-short Card_LoadDemoReplay(const char *FName);                 /* 0x80014ba4 */
-int Card_LoadReplayFromCD(ulong *, ulong *, char *name);      /* 0x80014c74 */
-void Card_GetNextTimeStamp();                                 /* 0x8001571c */
+void Card_SetSelectedFile(char *p);
+int Card_FileExists(EFileType FileType);
+int Card_Write(EFileType FileType, int NumBlocks);
+int Card_WriteReplayToDisk(EFileType FileType, char *FName);
+int Card_Load(EFileType FileType, ulong *pBuf, ulong *pBuf2);
+short Card_LoadDemoReplay(const char *name);
+int Card_LoadReplayFromCD(ulong *pBuf, ulong *pBuf2, char *name);
+void FUN_80014d5c(int pad);
+int Card_ReadFileHeader(char *name, SCardHead *out);
+int Card_GetDirAndFreeBlocks(int cnct, int slot);
+int Card_CheckStatus(int a, int b);
+int Card_FormatCard(int a, int b);
+int FUN_800154f4();
+void Card_GetNextTimeStamp();
 
+/* globals */
+extern int CardStatus;
+extern ESaveAction GSaveAction;
 #endif

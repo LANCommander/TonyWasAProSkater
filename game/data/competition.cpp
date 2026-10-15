@@ -14,34 +14,24 @@ SMedalMessage MedalMessage[3] = {
 };
 
 /* theCompetition (0x800c0fdc), a CCompetition, is zero until the module's static constructor
- * builds it: src/unnamed/80077060.cpp holds it */
+ * builds it: src/competition.cpp holds it */
 
 int DAT_800d02e8[22] = {
 	1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1,
 };
 
 /* THPS2 demo: ushort */
-unsigned short HOLYCOW_PLACE[1] = {
-	975,
-};
+ushort HOLYCOW_PLACE = 975;
 
 /* THPS2 demo: ushort */
-unsigned short FIRST_PLACE[1] = {
-	920,
-};
+ushort FIRST_PLACE = 920;
 
 /* THPS2 demo: ushort */
-unsigned short SECOND_PLACE[1] = {
-	870,
-};
+ushort SECOND_PLACE = 870;
 
 /* THPS2 demo: ushort */
-unsigned short THIRD_PLACE[1] = {
-	820,
-};
+ushort THIRD_PLACE = 820;
 
 /* THPS2 demo: ushort */
-unsigned short LAST_PLACE[2] = {
-	520,
-};
+ushort LAST_PLACE = 520;
 

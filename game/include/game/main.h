@@ -4,18 +4,39 @@
 #define GAME_MAIN_H
 
 #include "game/types.h"
+class CBody;
+class CBruce;
+class CPowerUp;
 
 /* functions */
-void ResetMainDemoTimer();      /* 0x800241d4 */
-void CalcPolyBufferEnd();       /* 0x80024258 */
-void PollHost();                /* 0x800242cc */
-void Game_Over();               /* 0x800242d4 */
-void Game_Logic();              /* 0x80024868 */
-void Display();                 /* 0x80024fa4 */
-void FPS_Init();                /* 0x80025400 */
-void FPS_Display();             /* 0x80025440 */
-void PlayAway_Init();           /* 0x8002566c */
-void CreateSkatersAndCameras(); /* 0x80025a88 */
-void PlayAway();                /* 0x80025e00 */
+void ResetMainDemoTimer();
+void CalcPolyBufferEnd();
+void PollHost();
+void Game_Over();
+void Game_Logic();
+void Display();
+void FPS_Init();
+void FPS_Display();
+void PlayAway_Init();
+void CreateSkatersAndCameras();
+void PlayAway();
+int LaunchGame();
 
+/* globals */
+extern int DAT_800d1798;
+extern CBruce *DAT_800d17cc;
+extern int EndCode;
+extern int GClear1;
+extern int GClear2;
+extern CPowerUp *GPowA;
+extern CPowerUp *GPowE;
+extern CPowerUp *GPowK;
+extern CPowerUp *GPowS;
+extern CPowerUp *GPowT;
+extern CPowerUp *GPowTape;
+extern int GSkaterRegion;
+extern int GSpin;
+extern short M3d_OTPushback;
+extern CBody *PowerUpList;
+extern int VblankUpdateBar;
 #endif

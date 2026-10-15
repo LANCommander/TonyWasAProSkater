@@ -20,15 +20,22 @@ by native services and its memory by native memory. Ports to other platforms sta
   `DoubleBuffer` (`game/include/game/dbuffer.h`). The game's null-pointer reads, which read low
   RAM on the PS1, are fixed where they happen; any left are redirected to a zero page and logged
   once (`src/pc_main.c`). The executable is 32- or 64-bit (below).
-- **Globals by name, functions by retail address.** Each game TU (`game/tus.tsv`) is compiled
-  natively. Its globals keep their C names: `game/data` defines them, and a TU only declares them.
-  Its functions are renamed to the retail addresses recorded in its `.syms.json` (`psx_<addr>`),
-  as are the data's pointers to functions, so the decompilation's many names for one function
-  agree. The link resolves those (`gen/psx_syms.ld`) to the function's native code
+- **One file per retail module.** `game/src/<module>.cpp` holds the functions of one of
+  Neversoft's source files (`baddy.cpp` = BADDY.CPP: CBaddy and CScriptOnlyBaddy), in retail
+  address order; THPS1-only modules the demo doesn't have get their own (`frontend.cpp`,
+  `hires.cpp`, `levelselect.cpp`). Each function has a header comment,
+  `/* <retail name> (0x<retail address>) */`, which is how the build knows it.
+- **Globals by name, functions by retail address.** Each game TU (every `.c`/`.cpp` under
+  `game/src`) is compiled natively. Its globals keep their C names: `game/data` defines them, and
+  a TU only declares them. Its functions are renamed to their retail addresses (`pcfn_<addr>`,
+  from the header comments), and its calls to the addresses recorded in functions.tsv and its
+  `.syms.json` (`psx_<addr>`), as are the data's pointers to functions, so the decompilation's
+  many names for one function agree. The link resolves those (`gen/psx_syms.ld`) to the function's native code
   (`pcfn_<addr>`; one with no C, none of which is called in play, to a stub that logs the call).
   Runtime code reads the game's globals by name (`include/pc_gamedata.h`).
 - **Hand-written MIPS** (Neversoft's `M3DASM`/`M3DMATHS` renderer and maths, and a few game
-  helpers) is C interpretations in `game/src/m3dasm/` and elsewhere (`tus.tsv` kind `asm`); the
+  helpers) is C interpretations, one file per original `.s` (`game/src/m3dasm/m3dasm.c`,
+  `m3dmaths.c`, `game/src/fixedmath.c`, `mdecdecode.c`); the
   Psy-Q library code the game uses is the port's own C (`src/pc_libgte.c` for libgte,
   `src/pc_libgpu.c` for libgpu's helpers). Before the port forked from the decompilation, all of
   it was checked against the retail code (differential tests running the original MIPS on recorded
@@ -82,7 +89,7 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 
 | path | what |
 |---|---|
-| `../../game/` | the game: `src/` (its code), `include/game/` (its classes and structures), `data/` (its initialised data), `tus.tsv` |
+| `../../game/` | the game: `src/` (its code, a file per module), `include/game/` (its classes and structures), `data/` (its initialised data), `functions.tsv` (every retail function) |
 | `include/psyq/` | clean-room Psy-Q headers (`libgte.h`, `libgpu.h`, `sys/types.h`) |
 | `include/pc_*.h` | interfaces between the port's subsystems |
 | `src/` | runtime: boot, diagnostics, frame clock, input, video, drawing, screens, textures, saves, streams, sound, geometry maths |
@@ -316,8 +323,9 @@ fade-to-colour mode of some levels) still go through the retail code and that lo
 (`THPS_RENDER3D=psx THPS_GL_PRECISE=0 THPS_GL_PERSPECTIVE=0`), OpenGL at 1x samples the same
 points the PS1 rasteriser does.
 
-The build compiles every TU in `game/tus.tsv`, generates the glue in `build/pc/gen/` and links.
-`build/pc/build_report.txt` lists compile errors and unresolved symbols.
+The build compiles every source under `game/src`, generates the glue in `build/pc/gen/` and
+links. `build/pc/build_report.txt` lists compile errors, header comments no definition matched
+and unresolved symbols.
 
 ## Controls
 
@@ -334,7 +342,7 @@ skips the ones it does, so no pad counts twice. Other pads' buttons are named af
 the same place (A = Cross). The players get the first two connected, XInput's before SDL's.
 
 **Options > Player 1/2 Controls** is the rebinding screen (it replaces the PS1's face-button
-remap; `game/src/front/controlleroptions.cpp`). The top row switches between the
+remap; `Front_ControllerOptions` in `game/src/frontend.cpp`). The top row switches between the
 keyboard and gamepad bindings (player 2: gamepad only), then come Autokick and Vibration, every
 Skate and Menu action with its two bindings, Reset to Default (the device shown) and Back. Left
 and right pick the binding, Accept waits for the new key or button (5 seconds), Delete or X on
@@ -349,7 +357,7 @@ The game reads the actions themselves. Its per-player button block (`SControl`,
 `Grind`...), and the menus read `MenuAccept`, `MenuBack` and `MenuUp`..`MenuRight`. On the PS1
 those menu names are aliases of the pad's own buttons (X, Triangle, the D-pad), so the matching
 build is unchanged; on PC they are separate slots (the ones the PS1 never filled), and
-`Pad_Update` (`game/src/unnamed/80070ff4.c`) fills every slot from its action's bindings. So
+`Pad_Update` (`game/src/pad.cpp`) fills every slot from its action's bindings. So
 the same key can do one thing while skating and another in the menus. On PC, the front end's
 "press Start" prompts take Menu Accept, and Pause also resumes from the pause menu.
 
@@ -371,7 +379,7 @@ the same key can do one thing while skating and another in the menus. On PC, the
 The pause-menu cheat codes are entered with the Skate controls (hold SpinLeft). The front end's
 button legend (PS1 symbols for Select, Accept and Back) is part of its background images.
 
-On PC the main menu (`game/src/unnamed/8005e754.c`) ends with **QUIT**, which exits the game
+On PC the main menu (`FUN_8005e754` in `game/src/frontend.cpp`) ends with **QUIT**, which exits the game
 the same way closing the window does (`PC_RequestQuit`, acted on at the next frame). Its row id
 7 is also the hidden cheat menu's, which is only reached through a menu path, so the menu only
 quits when 7 was picked by hand.
@@ -386,8 +394,8 @@ is drawn at the resolution it is shown at (see Graphics). The window is DPI-awar
 real pixels. Alt+Enter switches between the window and fullscreen; a window resized by hand keeps
 its size.
 
-**Options > Graphics** (`PC_GraphicsOptions` in `game/src/front/controlleroptions.cpp`, next to
-the controls screen; the options menu `game/src/unnamed/80060274.c` gets the extra row on PC)
+**Options > Graphics** (`PC_GraphicsOptions` in `game/src/frontend.cpp`, next to
+the controls screen; the options menu `FUN_80060274` gets the extra row on PC)
 sets the display mode, the resolution and widescreen: left and right step through the display's
 modes (windowed: those that fit on the desktop). Apply switches the window and asks to keep the change;
 Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go back.

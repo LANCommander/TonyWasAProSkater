@@ -10,6 +10,7 @@
 #include "game/types.h"
 #include "game/vector.h"
 #include "game/ob.h"
+class CBody;
 
 class CBackground : public CBody {
   public:
@@ -17,9 +18,16 @@ class CBackground : public CBody {
 	char pad136[0x138 - 0x136];
 	/* sizeof(CBackground) == 0x138 */
 
-	CBackground(uint, const CSVector &); /* 0x80078188 */
-	virtual ~CBackground();              /* slot 0: 0x8007821c */
-	virtual void AI();                   /* slot 2: 0x8007828c */
+	CBackground(uint checksum, const CSVector &ang_vel);
+	virtual ~CBackground();
+	virtual void AI();
 };
 
+/* functions */
+void Backgrnd_On(ushort id);
+void Backgrnd_Off(unsigned short id);
+
+/* globals */
+extern CBody *BackgroundList;
+extern char *pCurrentObjFile;
 #endif

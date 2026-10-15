@@ -6,14 +6,14 @@
 #include "game/types.h"
 
 /* functions */
-int LevelSelect_Run(int skater);           /* 0x8006658c */
-void MakeGreyClut(int x, int y);           /* 0x800665ec */
-void LevelSelect_StartPicLoad(int first);  /* 0x800666f4 */
-void LevelSelect_ContinueLoading();        /* 0x80066768 */
-void LevelSelect_DecodePics();             /* 0x800668e8 */
-void LevelSelect_InitPackSlots();          /* 0x80066aa8 */
-void LevelSelect_SelectPackSlot(int slot); /* 0x80066bb4 */
-void LevelSelect_FreePackSlots();          /* 0x80066c70 */
-void LevelSelect_Screen();                 /* 0x80066d7c */
+int LevelSelect_Run(int a);
+void MakeGreyClut(int x, int y);
+void LevelSelect_StartPicLoad(int a);
+void LevelSelect_ContinueLoading();
+void LevelSelect_DecodePics();
+void LevelSelect_InitPackSlots();
+void LevelSelect_SelectPackSlot(int n);
+void LevelSelect_FreePackSlots();
+void LevelSelect_Screen();
 
 #endif

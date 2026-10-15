@@ -25,6 +25,7 @@ extern "C" {
 #include "game/class.h"
 #include "game/vector.h"
 #include "game/ob.h"
+#include "game/quat.h"
 
 /* demo CAMERA.H enums */
 enum ECameraMode {
@@ -125,10 +126,10 @@ class CamPos : public CClass {
 	MATRIX mTrans;        /* 0x98 */
 	/* sizeof(CamPos) == 0xb8 */
 
-	CamPos();                                                    /* 0x8007d1a4 */
-	virtual ~CamPos();                                           /* slot 0: 0x8007d20c */
-	void Display(ushort x, ushort y, uchar r, uchar g, uchar b); /* 0x8007d258 */
-	static void DisplayLabels(ushort x, ushort y, uchar r, uchar g, uchar b); /* 0x8007d4b4 */
+	CamPos();
+	virtual ~CamPos();
+	void Display(ushort x, ushort y, uchar r, uchar g, uchar b);
+	static void DisplayLabels(ushort x, ushort y, uchar r, uchar g, uchar b);
 };
 
 /* The camera (vtable 0x800a3554: overrides slot 0 ~CCamera and slot 2 AI). The demo's bool members
@@ -238,33 +239,33 @@ class CCamera : public CBody {
 	int loose_cam_timer;    /* 0x6ac */
 	/* sizeof(CCamera) == 0x6b0 */
 
-	CCamera(CBody *tripod, ushort mike_index);        /* 0x800785f0 */
-	virtual ~CCamera();                               /* slot 0: 0x800788b8 */
-	void SetCollisionRayLR(int);                      /* 0x80078988 */
-	void SetCollisionRayBack(int);                    /* 0x80078990 */
-	void SetCollisionAngLR(short);                    /* 0x80078998 */
-	void SetCollisionAngBack(short);                  /* 0x800789a0 */
-	void Shake(const CVector &pos, EShakeType type);  /* 0x800789d8 */
-	void SetComplexMode(ushort mode);                 /* 0x80078afc (empty) */
-	void LoadIntoMikeCamera();                        /* 0x80078b04 */
-	void ResetOrientation();                          /* 0x80078d94 */
-	void ReactToCollision();                          /* 0x80078f3c */
-	void MoveToDesiredPos(uint normal_slerp);         /* 0x8007a494 */
-	void SetCamAngle(short angle, ushort speed);      /* 0x8007b094 (empty) */
-	void SetCamXZDistance(ushort dist, ushort speed); /* 0x8007b09c (empty) */
-	void SetCamYDistance(short dist, ushort speed);   /* 0x8007b0a4 (empty) */
-	void SetCamXOffset(short offset, ushort speed);   /* 0x8007b0ac (empty) */
-	void SetCamYOffset(short offset, ushort speed);   /* 0x8007b0b4 (empty) */
-	void SetCamZOffset(short offset, ushort speed);   /* 0x8007b0bc (empty) */
-	void SetZoom(ushort zoom, ushort time);           /* 0x8007b0c4 */
-	int GetZoom();                /* 0x8007b0fc (FUN_; demo GetZoom__7CCamera) */
-	void TweakMenu();             /* 0x8007b108 (FUN_; demo TweakMenu__7CCamera) */
-	virtual void AI();            /* slot 2: 0x8007b7c4 */
-	void CM_Normal();             /* 0x8007c240 */
-	void StartCompetitionIntro(); /* 0x8007c814 */
-	void CM_CompetitionIntro();   /* 0x8007c83c */
-	int InCompetitionIntro();     /* 0x8007cd64 (FUN_; demo returns bool) */
-	void CM_NoBigAir();           /* 0x8007cd78 */
+	CCamera(CBody *tripod, ushort mike_index);
+	virtual ~CCamera();
+	void SetCollisionRayLR(int v);
+	void SetCollisionRayBack(int v);
+	void SetCollisionAngLR(short v);
+	void SetCollisionAngBack(short v);
+	void Shake(const CVector &pos, EShakeType type);
+	void SetComplexMode(ushort mode); /* empty */
+	void LoadIntoMikeCamera();
+	void ResetOrientation();
+	void ReactToCollision();
+	void MoveToDesiredPos(uint normal_slerp);
+	void SetCamAngle(short angle, ushort speed); /* empty */
+	void SetCamXZDistance(ushort dist, ushort speed); /* empty */
+	void SetCamYDistance(short dist, ushort speed); /* empty */
+	void SetCamXOffset(short offset, ushort speed); /* empty */
+	void SetCamYOffset(short offset, ushort speed); /* empty */
+	void SetCamZOffset(short offset, ushort speed); /* empty */
+	void SetZoom(ushort zoom, ushort time);
+	int GetZoom(); /* FUN_; demo GetZoom__7CCamera */
+	void TweakMenu(); /* FUN_; demo TweakMenu__7CCamera */
+	virtual void AI();
+	void CM_Normal();
+	void StartCompetitionIntro();
+	void CM_CompetitionIntro();
+	int InCompetitionIntro(); /* FUN_; demo returns bool */
+	void CM_NoBigAir();
 
 	/* inline (demo CAMERA.H; retail inlines them into CamPt_SetClosestCamera) */
 	void SetMode(ECameraMode mode) {
@@ -298,11 +299,17 @@ class CCamera : public CBody {
 	}
 };
 
-void SendShake(const CVector &pos, CBody *list, EShakeType type); /* 0x800789a8 */
+void SendShake(const CVector &pos, CBody *b, EShakeType type);
 
 /* functions */
 class CBruce;
 
-void CamPt_SetClosestCamera(CBruce *pSkater); /* 0x8004e268 */
 
+/* globals */
+extern int camDist;
+extern uint Camera_CurrentMikeCamera;
+extern int CameraCollisionCheck;
+extern int camPitch;
+extern int camYOffset;
+extern int Cheat_ScreenShots;
 #endif

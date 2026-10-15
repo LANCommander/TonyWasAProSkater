@@ -11,6 +11,8 @@
 #include "game/types.h"
 #include "game/vector.h"
 #include "game/ob.h"
+#include "game/career.h"
+class CPowerUp;
 
 class CMedal : public CBody {
   public:
@@ -31,10 +33,12 @@ class CMedal : public CBody {
 	char pad156[0x158 - 0x156];
 	/* sizeof(CMedal) == 0x158 */
 
-	virtual ~CMedal();          /* slot 0: 0x80073c94 */
-	virtual void DeleteStuff(); /* slot 6: 0x80073cf0 (empty) */
-	void DoPhysics();           /* 0x80073cf8 */
-	virtual void AI();          /* slot 2: 0x80073da8 (calls DoPhysics) */
+	virtual ~CMedal();
+	virtual void DeleteStuff(); /* empty */
+	void DoPhysics();
+	virtual void AI(); /* calls DoPhysics */
 };
 
+/* functions */
+CPowerUp *Medal_Create(EMedalType type, int x, int y, int z, int a, int b);
 #endif

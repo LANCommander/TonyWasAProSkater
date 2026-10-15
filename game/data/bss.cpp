@@ -4,6 +4,7 @@
  * arrays of their size. */
 #include "psxdata.h"
 #include "game/panel.h"
+#include "game/tricktips.h"
 
 struct CBruce;
 struct SlicedImage;
@@ -44,11 +45,11 @@ unsigned char AverageB;
 /* gamefmv */
 unsigned int *pRingBuffer;
 
-/* redbook: Redbook_Rnd's state */
+/* utils: Rnd's state */
 int DAT_800d2230;
-int DAT_800d2238;
-int DAT_800d223c;
-int DAT_800d2240;
+int RandSeed;
+int RandMul;
+int RandAdd;
 
 /* fileio */
 int FileSize;

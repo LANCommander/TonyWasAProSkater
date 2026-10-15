@@ -5,6 +5,12 @@
 #include "game/types.h"
 
 /* functions */
-void Shell_PauseScreen(); /* 0x800785c4 */
+int Shell_DoCheatProcessing();
+void Shell_PauseScreen();
+void FUN_800785cc(int a);
 
+/* globals */
+extern int Cheat_SlowMo;
+extern uint CheatCheck;
+extern int DAT_800d1d24;
 #endif

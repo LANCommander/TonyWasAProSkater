@@ -55,8 +55,7 @@ def main():
     ap.add_argument("only", nargs="*")
     ap.add_argument("--json")
     a = ap.parse_args()
-    tus = sorted({p[0] for p in build.read_tsv(os.path.join(build.GAME, "tus.tsv"))
-                  if not a.only or any(s in p[0] for s in a.only)})
+    tus = [s for s in build.game_sources() if not a.only or any(o in s for o in a.only)]
     res = {}
     with cf.ThreadPoolExecutor(os.cpu_count()) as ex:
         for src, warns in ex.map(check, tus):

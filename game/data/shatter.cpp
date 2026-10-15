@@ -18,7 +18,7 @@ int DecDCTvlcMaxSize3[1] = {
 	0xffffff,
 };
 
-/* DecDCTvlcState3 (0x800a6354): src/shatter/decdctvlc3.c holds it */
+/* DecDCTvlcState3 (0x800a6354): src/mdecdecode.c holds it */
 
 /* THPS2 demo: CSVector* */
 CSVector *pNormal;

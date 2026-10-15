@@ -1,6 +1,0 @@
-/* _GLOBAL_.I.SCROLL_COUNT (0x80050c34) */
-extern int Z_OVER_SY, SKATER_Y_POS;
-
-void GLOBAL_I_SCROLL_COUNT(void) {
-	SKATER_Y_POS = Z_OVER_SY * 330;
-}

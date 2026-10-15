@@ -8,6 +8,11 @@
 #define GAME_MESS_H
 
 #include "game/types.h"
+extern "C" {
+	#include <sys/types.h>
+	#include <libgte.h>
+	#include <libgpu.h>
+}
 
 /* the out-of-bounds / falling-letters effect; two live in CPanelData (+0x164, +0x1b0) */
 class FallingTextEffect {
@@ -20,31 +25,80 @@ class FallingTextEffect {
 	short m46; /* 0x46: init sets 240; FUN_8001e100 sets */
 	/* sizeof(FallingTextEffect) == 0x48 */
 
-	FallingTextEffect();         /* 0x8001dfc4 */
-	~FallingTextEffect();        /* 0x8001dfec (empty) */
-	void init();                 /* 0x8001e014 */
-	void update();               /* 0x8001e07c */
-	void bind(int On);           /* 0x8001e0a4 */
-	void setScale(ushort Scale); /* 0x8001e0f8 */
-	ushort handleComplete();     /* 0x8001e108 (returns m42; front/update calls it) */
+	FallingTextEffect();
+	~FallingTextEffect(); /* empty */
+	void init();
+	void update();
+	void bind(int On);
+	void setScale(ushort Scale);
+	ushort handleComplete(); /* returns m42; front/update calls it */
+};
+
+/* one step of a message's program (Mess_Message): every value goes from its 0 to its 1 setting
+   over Duration frames; then Next steps to the program entry Next entries on (0: the message is
+   deleted, 127: it holds) */
+struct SMessageProg {
+	ushort Duration;      /* 0x00 */
+	uchar SemiTrans;      /* 0x02: semi-transparent text */
+	uchar Justify;        /* 0x03: Mess_SetTextJustify value */
+	ushort Scale0;        /* 0x04 */
+	ushort Scale1;        /* 0x06 */
+	uchar R0, G0, B0;     /* 0x08 */
+	uchar R1, G1, B1;     /* 0x0b */
+	ushort Solid0;        /* 0x0e: Mess_DrawText DrawSolid */
+	ushort Solid1;        /* 0x10 */
+	short X0;             /* 0x12 */
+	short Y0;             /* 0x14 */
+	short X1;             /* 0x16 */
+	short Y1;             /* 0x18 */
+	uchar BlinkRate;      /* 0x1a: drawn only on odd periods of this many frames (0: always) */
+	uchar pad1b;          /* 0x1b */
+	ushort ColourCycle;   /* 0x1c: cycles the red component over time */
+	signed char Next;     /* 0x1e */
+	char pad1f;           /* 0x1f */
+	                      /* sizeof(SMessageProg) == 0x20 */
+};
+
+/* an on-screen message (the list pMessages, newest first) */
+struct Message {
+	const char *pText;  /* 0x00 (a pointer: 8 bytes in the 64-bit port) */
+	ushort Timer;       /* 0x04: frames into the current program step */
+	ushort TotalTime;   /* 0x06: frames since it was made */
+	short X;            /* 0x08 */
+	short Y;            /* 0x0a */
+	int Stacked;        /* 0x0c: stacked messages are spread out vertically */
+	SMessageProg *pProg; /* 0x10 */
+	Message *pNext;     /* 0x14 */
+	Message *pPrev;     /* 0x18 */
 };
 
 /* functions */
-void Mess_SetTextJustify(uchar);                  /* 0x8001d250 */
-void Mess_SetScale(int s);                        /* 0x8001d25c */
-void Mess_SetSort(int Sort);                      /* 0x8001d2c4 */
-void Mess_SetRGB(uchar, uchar, uchar, int);       /* 0x8001d2d0 */
-int Mess_TextHeightAboveBaseline2(const char *s); /* 0x8001d528 */
-void Mess_Update();                               /* 0x8001d6bc */
-int Mess_TextWidth(const char *s0);               /* 0x8001da44 */
-int Mess_TextHeightBelowBaseline(const char *s);  /* 0x8001db80 */
-int Mess_TextHeightAboveBaseline(const char *);   /* 0x8001dc9c */
-int Mess_DrawText(int x, int y, const char *pMessage, int DrawSolid, uint FireRGB, int FireSquash,
-                  bool IsPanel);             /* 0x8001e114 */
-void Mess_UnloadFont();                      /* 0x8001ef60 */
-void Mess_UnloadAllFonts();                  /* 0x8001f0dc */
-void Mess_SetCurrentFont(int Font);          /* 0x8001f138 */
-void Mess_SetCurrentFont(char *name);        /* 0x8001f144 */
-void Mess_SetFontShadowOffset(uchar Offset); /* 0x8001f1b4 */
+void Mess_SetTextJustify(uchar v);
+void Mess_SetScale(int s);
+int Mess_GetScale();
+void Mess_SetSort(int v);
+void Mess_SetRGB(uchar r, uchar g, uchar b, int flag);
+void Mess_DrawPanelText(int x, int y, const char *s, int a, unsigned b, int c);
+int Mess_TextHeightAboveBaseline2(const char *s);
+void Mess_DeleteAll();
+Message *Mess_Message(const char *text, SMessageProg *prog, bool flag, short x, short y);
+void Mess_Update();
+void Mess_Display();
+int Mess_TextWidth(const char *s0);
+int Mess_TextHeightBelowBaseline(const char *s0);
+int Mess_TextHeightAboveBaseline(const char *s0);
+int Mess_TextHeight(const char *s);
+int Mess_DrawText(int x, int y, const char *pMessage, int DrawSolid, u_int FireRGB, int FireSquash, bool IsPanel);
+int Mess_LoadFont(char *filename, char *file_buffer, int char_sep, int shadow_offset, int width);
+int Mess_LoadFont(char *name, int a, int b, int c);
+void Mess_UnloadFont();
+void Mess_UnloadAllFonts();
+void Mess_SetCurrentFont(int v);
+void Mess_SetCurrentFont(char *name);
+void Mess_SetFontShadowOffset(uchar v);
+void Mess_SetFontScale(uint s);
+int Mess_GetFontScale();
 
+/* globals */
+extern int Pack_NoRight;
 #endif

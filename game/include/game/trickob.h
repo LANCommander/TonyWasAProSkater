@@ -14,23 +14,6 @@
 
 struct Item;
 
-/* a grind rail: a node run with its bounding box, on the doubly linked RailList */
-class CRail : public CClass {
-  public:
-	/* 0x00: vptr (vtable 0x800a1340) */
-	int mStartNode;    /* 0x04 (retail: a word; the demo's short + ushort mType) */
-	CVector mBBoxMin;  /* 0x08 */
-	CVector mBBoxMax;  /* 0x14 */
-	CRail *mpPrevious; /* 0x20 */
-	CRail *mpNext;     /* 0x24 */
-	int mNodeParam;    /* 0x28 THPS1: the start node's position word +6 (0 if -1); a grinding
-	                      skater copies it to CBruce::m210 (Rail_Update) */
-	/* sizeof(CRail) == 0x2c (Trig_SendPulseToNode allocates 44) */
-
-	virtual ~CRail(); /* slot 0: 0x8004f814 */
-};
-CHECK_CLASS_SIZE(CRail, SIZEOF_CRAIL);
-
 /* a scoring object (TrickObList): node + checksum, state/owner for the trick-attack modes */
 class CTrickOb : public CClass {
   public:
@@ -45,16 +28,19 @@ class CTrickOb : public CClass {
 	Item *mpItem;     /* 0x14 */
 	/* sizeof(CTrickOb) == 0x18 */
 
-	CTrickOb(ushort);    /* 0x8004ef08 */
-	virtual ~CTrickOb(); /* slot 0: 0x8004ef80 */
+	CTrickOb(unsigned short Node);
+	virtual ~CTrickOb();
 };
 CHECK_CLASS_SIZE(CTrickOb, SIZEOF_CTRICKOB);
 
 /* functions */
-int TrickOb_TrickedOnItem(Item *, void *, int); /* 0x8004f000 */
-int TrickOb_GetItemType(Item *pItem);           /* 0x8004f318 */
-void TrickOb_Update();                          /* 0x8004f374 */
-int Rail_NextNode(ushort *);                    /* 0x8004f578 */
-void Rail_Update();                             /* 0x8004f8a0 */
+void TrickOb_DeleteAll();
+int TrickOb_TrickedOnItem(Item *a, void *pb, int c);
+void TrickOb_DarkenNode(int id);
+int TrickOb_GetItemType(Item *o);
+void TrickOb_Update();
 
+/* globals */
+/* the last tagging skater (uchar) and its trick score (ushort) */
+extern int TrickPlayer;
 #endif

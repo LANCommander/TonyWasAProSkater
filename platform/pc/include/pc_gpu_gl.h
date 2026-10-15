@@ -27,7 +27,7 @@ void PC_GlNoteScreen(int x, int y, int w, int h);
 
 /* Widescreen (Hor+): with on, and a window wider than 4:3, gameplay's 512x240 screens get
  * pc_wide_pad columns of margin on either side, drawn only in their display surfaces (the view
- * frustum and outcodes widen by as much: game/src/m3d/rendersetup.cpp, pc_render3d.c). Applies
+ * frustum and outcodes widen by as much: M3d_RenderSetup in game/src/m3d.cpp, pc_render3d.c). Applies
  * at the next PC_GlPresent; needs the native 3D renderer. */
 void PC_GlSetWidescreen(int on);
 extern int pc_wide_pad;

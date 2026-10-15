@@ -28,12 +28,12 @@ uint *pTexWibPacket[2];
 Item *EnviroList;
 
 /* THPS2 demo: int */
-int SpoolPos[1];
+int SpoolPos;
 
 /* THPS2 demo: int */
-int FreePos[1];
+int FreePos;
 
 /* THPS2 demo: AnimPacket* */
 AnimPacket *AnimPackets;
 
-int DAT_800d1f08[1];
+int DAT_800d1f08;

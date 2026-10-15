@@ -60,13 +60,13 @@ class CItem {
 	short mFlash_dB;           /* 0x46 */
 	/* 0x48: vptr; sizeof(CItem) == 0x4c */
 
-	static void *operator new(__SIZE_TYPE__ size) throw(); /* 0x800434d4 */
-	void operator delete(void *);                 /* 0x80043530 */
-	CItem();                                      /* 0x80043550 */
-	virtual ~CItem();                             /* slot 0: 0x80043584 */
-	void InitItem(char *);                        /* 0x800435b8 */
-	void Flash(int, uchar, uchar, uchar);         /* 0x800435e8 */
-	void FlashUpdate();                           /* 0x80043728 */
+	static void *operator new(__SIZE_TYPE__ size) throw();
+	void operator delete(void *p);
+	CItem();
+	virtual ~CItem();
+	void InitItem(char *name);
+	void Flash(int frames, uchar r, uchar g, uchar b);
+	void FlashUpdate();
 
 	void Hide() {
 		mFlags &= ~1;
@@ -125,25 +125,25 @@ class CBody : public CItem {
 	char pad132[0x134 - 0x132];
 	/* sizeof(CBody) == 0x134 */
 
-	CBody();                      /* 0x800437d4 */
-	virtual ~CBody();             /* slot 0: 0x80043860 */
-	void AttachTo(CBody **);      /* 0x800438dc */
-	void DeleteFrom(CBody **);    /* 0x80043908 */
-	short *SquirtPos(short *);    /* 0x800439ac */
-	short *SquirtAngles(short *); /* 0x800439ec */
-	void Suspend(CBody **);       /* 0x80043a14 */
-	void UnSuspend();             /* 0x80043a80 */
-	void ShadowOn();              /* 0x80043ae0 */
-	void KillShadow();            /* 0x80043af4 */
-	void UpdateShadow();          /* 0x80043b50 */
-	virtual void Die();           /* slot 1: 0x80043cac */
-	int IsDead() const;           /* 0x80043ce8 */
+	CBody();
+	virtual ~CBody();
+	void AttachTo(CBody **pp_list);
+	void DeleteFrom(CBody **pp_list);
+	short *SquirtPos(short *p_info);
+	short *SquirtAngles(short *p_info);
+	void Suspend(CBody **pp_list);
+	void UnSuspend();
+	void ShadowOn();
+	void KillShadow();
+	void UpdateShadow();
+	virtual void Die();
+	int IsDead() const;
 	/* slots 2..6: names and order from the demo's vtable; the empty bodies were inline in OB.H */
-	virtual void AI() {}                        /* slot 2: 0x800447ec */
-	virtual void EveryFrame() {}                /* slot 3: 0x800447e4 */
-	virtual void DoLightingSetup() {}           /* slot 4: 0x800447dc */
-	virtual int Hit(int, const CVector &, int); /* slot 5: 0x80043cfc (returns 1) */
-	virtual void DeleteStuff() {}               /* slot 6: 0x800447d4 */
+	virtual void AI() {}
+	virtual void EveryFrame() {}
+	virtual void DoLightingSetup() {}
+	virtual int Hit(int, const CVector &, int); /* returns 1 */
+	virtual void DeleteStuff() {}
 };
 
 class CSuper : public CBody {
@@ -180,17 +180,19 @@ class CSuper : public CBody {
 	uint mSubObjectDisplayMask; /* 0x194 */
 	/* sizeof(CSuper) == 0x198 */
 
-	CSuper();                         /* 0x80043d04 */
-	virtual ~CSuper();                /* slot 0: 0x80043d5c */
-	void RunAnim(int, int, int, int); /* 0x80043e0c */
-	void CycleAnim(int, signed char); /* 0x80043f24 */
-	void UpdateFrame();               /* 0x80043f70 */
+	CSuper();
+	virtual ~CSuper();
+	void RunAnim(int a, int from, int to, int to2);
+	void CycleAnim(int anim, signed char dir);
+	void UpdateFrame();
 };
 
 /* functions */
-void Ob_ClearInputFlags(CBody *); /* 0x80044484 */
-void Ob_AI(CBody **);             /* 0x800444bc */
-void Ob_QuickAI(CBody **ppBody);  /* 0x80044620 */
-void Ob_MaybeUnSuspendOrCull();   /* 0x800446d4 */
+void Ob_ClearInputFlags(CBody *b);
+void Ob_AI(CBody **a);
+void Ob_QuickAI(CBody **ppBody);
+void Ob_MaybeUnSuspendOrCull();
 
+/* globals */
+extern CBody *SuspendedList;
 #endif

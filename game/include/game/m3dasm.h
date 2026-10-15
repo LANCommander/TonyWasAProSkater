@@ -13,6 +13,7 @@ extern "C" {
 }
 
 #include "game/types.h"
+struct SViewport;
 
 struct Item;
 struct SMatrix;
@@ -45,4 +46,10 @@ int M3dMaths_SquareRoot0(int n);                      /* 0x8008b5dc */
 int M3dMaths_MulDiv64(int a, int b, int c);           /* 0x8008b62c */
 void M3dMaths_TransformLastVec(ushort *m);            /* 0x8008b71c */
 
+/* globals */
+extern P_TAG *CurrentOrderingTable;
+extern uint M3dColij_OneMask;
+extern uint M3dColij_ZeroMask;
+extern SViewport *pCurrentViewport;
+extern SProjectedVertex *ProjectedVertices;
 #endif

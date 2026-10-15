@@ -58,16 +58,16 @@ class CBaddy : public CSuper {
 	CBruce *mpCreatedByPlayer; /* 0x218 */
 	/* sizeof(CBaddy) == 0x21c */
 
-	CBaddy();                           /* 0x8003fa34 */
-	virtual ~CBaddy();                  /* slot 0: 0x8003faa8 */
-	virtual void Die();                 /* slot 1: 0x8003fb1c */
-	void SendDeathPulse();              /* 0x8003fb68 */
-	void SkipToEndif();                 /* 0x8003fbc4 */
-	void ParseScript(ushort *);         /* 0x8003fc1c */
-	virtual int ExecuteCommand(ushort); /* slot 7: 0x8003fcdc */
-	int GetScriptValue();               /* 0x80040c68 */
-	virtual void SetVariable(ushort);   /* slot 8: 0x80040ccc */
-	virtual short GetVariable(ushort);  /* slot 9: 0x80040f50 */
+	CBaddy();
+	virtual ~CBaddy();
+	virtual void Die();
+	void SendDeathPulse();
+	void SkipToEndif();
+	void ParseScript(ushort *p_script);
+	virtual int ExecuteCommand(ushort command);
+	int GetScriptValue();
+	virtual void SetVariable(ushort variable);
+	virtual short GetVariable(ushort variable);
 
 	void StopScript() {
 		mDoScript = 0;
@@ -86,11 +86,14 @@ class CScriptOnlyBaddy : public CBaddy {
 	int mLoopingSoundVol;    /* 0x234 */
 	/* sizeof(CScriptOnlyBaddy) == 0x238 */
 
-	CScriptOnlyBaddy(short *, int);     /* 0x800411ac */
-	virtual ~CScriptOnlyBaddy();        /* slot 0: 0x80041264 */
-	virtual void AI();                  /* slot 2: 0x80041388 */
-	virtual void SetVariable(ushort);   /* slot 8: 0x8004167c */
-	virtual int ExecuteCommand(ushort); /* slot 7: 0x8004169c */
+	CScriptOnlyBaddy(short *p_info, int node);
+	virtual ~CScriptOnlyBaddy();
+	virtual void AI();
+	virtual void SetVariable(ushort variable);
+	virtual int ExecuteCommand(ushort command);
 };
 
+/* globals */
+extern int CurrentWaterDamage;
+extern int GameFMV_CurrentFrame;
 #endif

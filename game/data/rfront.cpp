@@ -12,10 +12,10 @@ char s_800a42dc[] = "          ";
 char s_800a42e8[] = "          ";
 
 /* THPS2 demo: char[11] */
-unsigned char StoredCareerName[12];
+char StoredCareerName[11];
 
 /* THPS2 demo: char[15][11] */
-unsigned char ASCIIName[168];
+char ASCIIName[15][11];
 
 /* THPS2 demo: char*[15] */
 char *VertMenuItem[15];
@@ -27,44 +27,42 @@ int VertMenuItemIndex[15];
 SCachedBackground BGCache[10];
 
 /* THPS2 demo: null */
-int VideoToDisk[1];
+int VideoToDisk;
 
 /* THPS2 demo: int */
-int CursorPos[1];
+int CursorPos;
 
 /* THPS2 demo: VerticalMenu* */
 VerticalMenu *pVertMenu;
 
 /* THPS2 demo: int */
-int NumVertMenuItems[1];
+int NumVertMenuItems;
 
 /* THPS2 demo: int */
-int VertMenuTopIndex[1];
+int VertMenuTopIndex;
 
 /* THPS2 demo: int */
-int VertMenuTopChanged[1];
+int VertMenuTopChanged;
 
 /* THPS2 demo: int */
-int FreeSprite[1];
+int FreeSprite;
 
 /* EMemCardState (THPS2 demo: EMemCardState) */
-int MCState[1];
+EMemCardState MCState;
 
 /* EMemCardState (THPS2 demo: EMemCardState) */
-int OldMCState[1];
+EMemCardState OldMCState;
 
 /* THPS2 demo: int */
-int CheckingCardPause[1];
+int CheckingCardPause;
 
 /* THPS2 demo: int */
-int MCResolution[1] = {
-	512,
-};
+int MCResolution = 512;
 
 int DAT_800d1138[1];
 
 /* ELoadAction (THPS2 demo: ELoadAction) */
-int GLoadAction[1];
+ELoadAction GLoadAction;
 
 /* THPS2 demo: int */
-int LeftRightAutoRepeatTimer[1];
+int LeftRightAutoRepeatTimer;

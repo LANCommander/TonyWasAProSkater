@@ -108,11 +108,11 @@ typedef struct SLineInfo {
 } SLineInfo;
 
 /* a model vertex in line space, as M3dAsm_LineColijProcessVertices leaves it */
-typedef struct SProjectedVertex {
+typedef struct SLineVertex {
 	short x, y;             /* across the line */
 	short z;                /* along the line (low 16 bits) */
 	unsigned short Outcode; /* PV_* */
-} SProjectedVertex;
+} SLineVertex;
 
 #define PV_ZNEG 0x001 /* behind the line start */
 #define PV_YNEG 0x002

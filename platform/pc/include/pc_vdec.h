@@ -1,7 +1,7 @@
 /* The PS1's STR video pictures (src/pc_vdec.c): full-screen movies, and the songs' 96x64 video on
  * the in-level TVs and in the front end.
  *
- * The game does the variable-length stage itself (DecDCTvlc3, game/src/shatter/decdctvlc3.c):
+ * The game does the variable-length stage itself (DecDCTvlc3, game/src/mdecdecode.c):
  * it turns each frame's bitstream into run-level halfwords, a header word (its low 16 bits: the
  * size in words) and then the halfwords. This decodes those into a picture: macroblocks of 16x16
  * pixels in columns, top to bottom, then left to right, as the PS1's MDEC delivered them. */

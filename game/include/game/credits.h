@@ -5,6 +5,6 @@
 #include "game/types.h"
 
 /* functions */
-void Credits_Roll(int, int); /* 0x8004fe28 */
+void Credits_Roll(int a0, int a1);
 
 #endif

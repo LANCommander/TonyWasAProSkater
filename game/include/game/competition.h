@@ -12,6 +12,7 @@
 #pragma interface /* see class.h */
 #endif
 
+#include "game/front.h"
 #include "game/types.h"
 #include "game/class.h"
 
@@ -77,8 +78,23 @@ class CCompetition : public CClass {
 extern CCompetition theCompetition;
 
 /* functions */
-int Competition_WonGameAllGold();      /* 0x8007401c */
-void Competition_FullyDisplayJudge();  /* 0x80076484 */
-void Competition_FullyDisplayLadder(); /* 0x80076494 */
+int Competition_WonGameAllGold();
+int Competition_IsOver();
+void Competition_Init();
+void Competition_JudgeLogic();
+void Competition_JudgeDisplay();
+void Competition_LadderLogic();
+void Competition_LadderDisplay();
+void Competition_WinLoseLogic(EPausedStatus &a0, int &a1);
+void Competition_WinLoseDisplay();
+int Competition_JudgeFullyDisplayed();
+int Competition_LadderFullyDisplayed();
+void Competition_FullyDisplayJudge();
+void Competition_FullyDisplayLadder();
+int Competition_NewHeat();
+void Competition_MarqueeDisplay();
+void Competition_ResetMarquee();
+void Competition_EndGameLogic(EPausedStatus &a, int &b);
+void Competition_EndGameDisplay();
 
 #endif

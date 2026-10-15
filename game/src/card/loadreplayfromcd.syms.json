@@ -1,1 +1,0 @@
-{"gp":"0x800d1080","s_Checksum_error_for_1P_in_Card_Lo":"0x8009e0b0","s_Checksum_error_for_2P_in_Card_Lo":"0x8009e0e4","FileIO_Open__FPCc":"0x8004c8a4","Mem_NewX__FUiii":"0x8004d068","FileIO_Load__FPv":"0x8004cb10","FileIO_Sync__Fv":"0x8004cdd0","Mem_Delete__FPv":"0x8004d5d0","printf":"0x8008c190","Mem_Copy__FPvT0i":"0x8004d8b4","CalcChecksum__FPUlUl":"0x800142c4"}

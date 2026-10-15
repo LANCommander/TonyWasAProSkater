@@ -216,7 +216,10 @@ static __inline__ int vtx_transform_super(const uint32_t *v, int n, int dewibble
 
 /* SuperVerticesFast (+ dewibbled): fast-format results in the scratchpad, no rotated positions or
  * outcodes. Returns the AND of the screen words' x/y flag bits (0x60000000 for no vertices). */
-static __inline__ int vtx_transform_super_fast(const uint32_t *v, int n, int dewibbled) {
+/* (always inlined: both its callers are in m3dasm.c, which would otherwise keep it out of line) */
+static __inline__ __attribute__((always_inline)) int vtx_transform_super_fast(const uint32_t *v,
+                                                                              int n,
+                                                                              int dewibbled) {
 	struct SViewport *vp = pCurrentViewport;
 	uint32_t xRyB = vtx_pack(vp->xR, vp->yB);
 	int yon = (short)vp->Yon;

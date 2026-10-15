@@ -6,9 +6,17 @@
 #include "game/types.h"
 
 /* functions */
-int Db_OTSize();       /* 0x80048c74 */
-void Db_DrawPending(); /* 0x80048d24 */
-void Db_WaitRender();  /* 0x80048fec */
-void Db_Init();        /* 0x800491e8 */
+int Db_OTSize();
+void Db_UpdateSky();
+void FUN_80048d00();
+void Db_DrawPending();
+void Db_Vblank();
+void Db_WaitRender();
+void FUN_800491a0();
+void Db_Reset();
+void Db_Init();
+void FUN_80049474();
+void FUN_800494dc();
+void Db_Render();
 
 #endif

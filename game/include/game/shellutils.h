@@ -28,6 +28,7 @@ extern "C" {
 #include "game/classsizes.h"
 #include "game/types.h"
 #include "game/class.h"
+class PREManager;
 
 class SlicedImage : public CClass {
   public:
@@ -45,20 +46,18 @@ class SlicedImage : public CClass {
 	int m_removed_from_memory; /* 0x30 */
 	/* sizeof(SlicedImage) == 0x34 */
 
-	SlicedImage(char *pPixels, int w, int h, int sw, int sh, int depth,
-	            ushort clutid); /* 0x80061ef4 */
-	virtual ~SlicedImage();     /* slot 0: 0x800620f0 */
-	int pack();                 /* 0x800621c0 */
-	void packAt(int x, int y);  /* 0x800627ec (FUN_; THPS1-only) */
-	void unpack();              /* 0x80062d00 */
-	void removeFromMemory();    /* 0x80062de8 */
-	void draw(int x, int y, int otFront, int r, int g, int b, int semiTrans,
-	          int drawNow); /* 0x80062e20 */
+	SlicedImage(char *pPixels, int w, int h, int sw, int sh, int depth, ushort clutid);
+	virtual ~SlicedImage();
+	int pack();
+	void packAt(int x, int y); /* FUN_; THPS1-only */
+	void unpack();
+	void removeFromMemory();
+	void draw(int x, int y, int otFront, int r, int g, int b, int semiTrans, int drawNow);
 	/* draw, scaled to w x h pixels (the size a Sprite is laid out at; platform/pc) */
 	void drawScaled(int x, int y, int w, int h, int otFront, int r, int g, int b, int semiTrans,
 	                int drawNow);
-	void rotateDraw(int x, int y); /* 0x80063474 */
-	void removeBlack();            /* 0x800637d0 */
+	void rotateDraw(int x, int y);
+	void removeBlack();
 };
 CHECK_CLASS_SIZE(SlicedImage, SIZEOF_SLICEDIMAGE);
 
@@ -71,15 +70,15 @@ class Sprite : public CClass {
 	SlicedImage *m_image; /* 0x14 */
 	/* sizeof(Sprite) == 0x18 */
 
-	Sprite(char *pName, int packed, int maxw, int maxh);                /* 0x80063830 */
-	Sprite(int x, int y, int w, int h, int packed, int maxw, int maxh); /* 0x80063928 */
-	virtual ~Sprite();                                                  /* slot 0: 0x80063b64 */
-	void draw(int x, int y, int otFront, int r, int g, int b);          /* 0x80063be4 */
-	void prepare(); /* 0x80063c48 (FUN_; name from front/boardselect*: FUN_80063290(m_image)) */
-	void drawFaded(int x, int y, int otFront, int r, int g, int b); /* 0x80063c6c */
-	void pack();                                                    /* 0x80063cb4 */
-	void unpack();                                                  /* 0x80063cec */
-	void removeFromMemory();                                        /* 0x80063d24 */
+	Sprite(char *pName, int packed, int maxw, int maxh);
+	Sprite(int x, int y, int w, int h, int packed, int maxw, int maxh);
+	virtual ~Sprite();
+	void draw(int x, int y, int otFront, int r, int g, int b);
+	void prepare(); /* FUN_; name from front/boardselect*: FUN_80063290(m_image) */
+	void drawFaded(int x, int y, int otFront, int r, int g, int b);
+	void pack();
+	void unpack();
+	void removeFromMemory();
 };
 CHECK_CLASS_SIZE(Sprite, SIZEOF_SPRITE);
 
@@ -89,9 +88,9 @@ class EraseSprite : public CClass {
 	ulong *mData; /* 0x0c */
 	/* sizeof(EraseSprite) == 0x10 */
 
-	EraseSprite(int x, int y, int w, int h); /* 0x80063d48 */
-	virtual ~EraseSprite();                  /* slot 0: 0x80063db4 */
-	void restore(int x, int y);              /* 0x80063e10 */
+	EraseSprite(int x, int y, int w, int h);
+	virtual ~EraseSprite();
+	void restore(int x, int y);
 };
 
 /* d-pad repeat queue. The destructor is implicit (demo: SHELLUTILS.H; retail 0x80066524). */
@@ -106,10 +105,10 @@ class PadBuffer : public CClass {
 	uint mWhich_pad; /* 0x118: unsigned (`mPad < 2` is sltiu) */
 	/* sizeof(PadBuffer) == 0x11c */
 
-	PadBuffer(int pad); /* 0x80063e34 */
-	void update();      /* 0x80063f58 */
-	int getPress();     /* 0x80064274 */
-	void reset();       /* 0x800642c0 */
+	PadBuffer(int pad);
+	void update();
+	int getPress();
+	void reset();
 };
 CHECK_CLASS_SIZE(PadBuffer, SIZEOF_PADBUFFER);
 
@@ -143,16 +142,16 @@ class VerticalMenu : public CClass {
 	/* sizeof(VerticalMenu) == 0x334 */
 
 	VerticalMenu(int top, int bottom, int spacing, char **items, int num, int *xlist, int *ylist,
-	             int selection);                   /* 0x800642e8 */
-	void setString(int i, char *pString);          /* 0x800646b0 */
-	virtual ~VerticalMenu();                       /* slot 0: 0x80064720 */
-	void setTriangles(Sprite *tri1, Sprite *tri2); /* 0x80064890 */
-	virtual void draw();                           /* slot 1: 0x80064990 */
-	void erase();                                  /* 0x80064f9c */
-	void select(int i);                            /* 0x80065120 */
-	int getSelected();                             /* 0x8006516c */
-	void up();                                     /* 0x80065178 */
-	void down();                                   /* 0x80065230 */
+	             int selection);
+	void setString(int i, char *pString);
+	virtual ~VerticalMenu();
+	void setTriangles(Sprite *tri1, Sprite *tri2);
+	virtual void draw();
+	void erase();
+	void select(int i);
+	int getSelected();
+	void up();
+	void down();
 };
 CHECK_CLASS_SIZE(VerticalMenu, SIZEOF_VERTICALMENU);
 
@@ -160,9 +159,9 @@ class VerticalDialog : public VerticalMenu {
   public:
 	/* sizeof(VerticalDialog) == 0x334 */
 	VerticalDialog(int top, int bottom, int spacing, char **items, int num, int *xlist, int *ylist,
-	               int selection); /* 0x800652e4 (FUN_; C source) */
-	virtual ~VerticalDialog();     /* slot 0: 0x80065340 */
-	virtual void draw();           /* slot 1: 0x80065394 */
+	               int selection); /* FUN_; C source */
+	virtual ~VerticalDialog();
+	virtual void draw();
 };
 
 /* a front-end screen's files (DAT_800be478[15]; FrontLoader_SetFiles hands one to FileLoader::setFiles)
@@ -190,18 +189,29 @@ class FileLoader : public CClass {
 	SLoadEntry mEntry[32]; /* 0x010 */
 	/* sizeof(FileLoader) == 0x490 */
 
-	FileLoader();                         /* 0x80065520 (FUN_; C source) */
-	virtual ~FileLoader();                /* slot 0: 0x8006553c (FUN_; C source) */
-	void setFiles(char **names, int num); /* 0x80065594 */
-	void unload(int i);                   /* 0x80065e04 (FUN_; C source) */
+	FileLoader(); /* FUN_; C source */
+	virtual ~FileLoader(); /* FUN_; C source */
+	void setFiles(char **names, int num);
+	void unload(int i); /* FUN_; C source */
 };
 
 /* functions */
-void DownloadBMP16x2(char *pData);                                          /* 0x80061714 */
-void DrawColoredBox(int x, int y, int w, int h, uchar r, uchar g, uchar b); /* 0x80061d44 */
-void SetClippingBox(int x, int y, int w, int h);                            /* 0x80061e00 */
-void ResetOT();                                                             /* 0x80061ea0 */
-void SetOTPlayer(int player);                                               /* 0x80061eb4 */
-void PadBuffer_SetNumPlayers(int numPlayers);                               /* 0x800642d4 */
+int Load8BitBMP2(char *file, char **out, int *pw, int *ph, unsigned short *pclut);
+void DownloadBMP16x2(char *pData);
+void DrawColoredBox(int x, int y, int w, int h, u_char r, u_char g, u_char b);
+void SetClippingBox(int x, int y, int w, int h);
+void ResetOT();
+void SetOTPlayer(int a);
+void PadBuffer_SetNumPlayers(int a);
+void FUN_800648c0(VerticalMenu *m, int i, int on);
+char **FUN_800652e4(char **p, int a, int b, int c, char **d, int e, int *f, int *g, int h);
+FileLoader *FUN_80065520(FileLoader *p);
+void FUN_8006553c(char **p, int f);
+void FUN_80065fec(FileLoader *s);
+PREManager *FUN_8006613c(PREManager *p);
+void FUN_80066214(void *pm, char *name);
 
+/* globals */
+extern int Pack_NoBottom;
+extern char *pBMR;
 #endif

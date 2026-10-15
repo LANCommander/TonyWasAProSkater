@@ -12,6 +12,7 @@
 #include "game/types.h"
 #include "game/vector.h"
 #include "game/ob.h"
+#include "game/mess.h"
 
 class CBruce;
 class CGlow;
@@ -39,18 +40,25 @@ class CPowerUp : public CBody {
 	uint mTimer; /* 0x160 */
 	/* sizeof(CPowerUp) == 0x164 */
 
-	CPowerUp(ushort, const CVector &, const CVector &, uint, int); /* 0x8001f934 */
-	virtual ~CPowerUp();                                           /* slot 0: 0x8001fe14 */
-	void DontDisplay();                                            /* 0x8001fe7c */
-	void SetGravity(int, int);                                     /* 0x8001feb8 */
-	void CreateBit();                                              /* 0x8001fec4 */
-	virtual void DeleteStuff();                                    /* slot 6: 0x8001fed8 */
-	void SetNode(int Node);                                        /* 0x8001ff34 */
-	virtual void Die();                                            /* slot 1: 0x8001ff44 */
-	void DoPhysics();                                              /* 0x8001ff84 */
-	void TakeEffect(CBruce *);                                     /* 0x80020328 */
-	virtual void AI();                                             /* slot 2: 0x800206ac */
+	CPowerUp(ushort a1, const CVector &a2_, const CVector &a3_, uint a4, int a5);
+	virtual ~CPowerUp();
+	void DontDisplay();
+	void SetGravity(int g, int fric);
+	void CreateBit();
+	virtual void DeleteStuff();
+	void SetNode(int Node);
+	virtual void Die();
+	void DoPhysics();
+	void TakeEffect(CBruce *pMech);
+	virtual void AI();
 };
 CHECK_CLASS_SIZE(CPowerUp, SIZEOF_CPOWERUP);
 
+/* functions */
+CPowerUp *PowerUp_Create(ushort type, const CVector &pos, uint a, int b, CVector &v);
+
+/* globals */
+extern uchar CurrentItemsFileRegion;
+extern uchar CurrentMedalsFileRegion;
+extern SMessageProg Messprog_Zoom[];
 #endif

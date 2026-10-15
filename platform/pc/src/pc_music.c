@@ -1,7 +1,7 @@
 /* The soundtrack order comes from Data/Music/Playlist.m3u (written on first startup, see
  * pc_assets.c) instead of the retail rotation through the movie table.
  *
- * GameFMV_SetStartTrack (game/src/unnamed/80023168.c) picks what the next StartFMV streams: a
+ * GameFMV_SetStartTrack (game/src/gamefmv.cpp) picks what the next StartFMV streams: a
  * negative argument is a fixed movie-table entry (~arg; the movies, and the songs the front end
  * previews), anything else means "the next song", which the retail code takes from its CycleTracks
  * cursor. It asks PC_MusicNextSong for the next playlist entry instead. The fixed

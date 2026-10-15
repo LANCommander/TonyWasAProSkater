@@ -22,15 +22,13 @@ unsigned char Mapping[128] = {
 };
 
 /* THPS2 demo: char[512] */
-unsigned char NumberStrings[512];
+char NumberStrings[512];
 
 /* THPS2 demo: SAnimFrame* */
 SAnimFrame *FontAnim;
 
 /* THPS2 demo: uint */
-unsigned int CodeVal[1] = {
-	0x2c000000,
-};
+uint CodeVal = 0x2c000000;
 
 /* THPS2 demo: SString* */
 SString *BufferPos;

@@ -14,6 +14,9 @@
 
 #include "game/types.h"
 #include "game/class.h"
+#include "game/career.h"
+class CTape;
+struct SAnimFrame;
 
 /* one line of a CMenu */
 struct SEntry {
@@ -51,19 +54,18 @@ class CMenu : public CClass {
 	SEntry mEntry[15]; /* 0x018 */
 	/* sizeof(CMenu) == 0x180 */
 
-	CMenu(int x, int y, uchar justification, int hiScale, int lowScale,
-	      int lineSep);                 /* 0x80016534 */
-	virtual ~CMenu();                   /* slot 0: 0x8001664c (FUN_; demo _._5CMenu) */
-	void CentreY();                     /* 0x80016680 */
-	void SetLine(uchar Line);           /* 0x80016708 */
-	int FindEntry(const char *pString); /* 0x80016770 */
-	void AddEntry(const char *pString); /* 0x800167f0 */
-	void EntryOn(const char *pString);  /* 0x80016878 */
-	void EntryOff(const char *pString); /* 0x800168b4 */
-	int IsEntryOn(const char *pString); /* 0x800168ec */
-	int ChoiceIs(const char *pString);  /* 0x8001692c */
-	void Display();                     /* 0x8001696c */
-	void Update();                      /* 0x80016dc0 */
+	CMenu(int x, int y, uchar justification, int hiScale, int lowScale, int lineSep);
+	virtual ~CMenu(); /* FUN_; demo _._5CMenu */
+	void CentreY();
+	void SetLine(uchar Line);
+	int FindEntry(const char *pString);
+	void AddEntry(const char *pString);
+	void EntryOn(const char *pString);
+	void EntryOff(const char *pString);
+	int IsEntryOn(const char *pString);
+	int ChoiceIs(const char *pString);
+	void Display();
+	void Update();
 };
 
 /* The localised front-end strings (global `GameText`, 0x800a5d5c). Demo struct LocalText (0x28c),
@@ -256,28 +258,114 @@ struct SLabels {
 	char *Name[8];
 };
 
+/* the paused front end's screens (Status) */
+enum EPausedStatus {
+	STATUS_NORMAL,
+	STATUS_PAUSEDMENU,
+	STATUS_SKIPTORESTART,
+	STATUS_REALLYQUIT,
+	STATUS_PADUNPLUGGED,
+	STATUS_SAVEGAME,
+	STATUS_QUITSAVE,
+	STATUS_MEDALSAVE,
+	STATUS_ENDLEVELFADESCREEN,
+	STATUS_DOSAVEFADESCREEN,
+	STATUS_NOSAVEFADESCREEN,
+	STATUS_GOTTAPE,
+	STATUS_TAPESAVE,
+	STATUS_STATS,
+	STATUS_ENDINGSCREEN,
+	STATUS_VIDEOSCREEN,
+	STATUS_VIDEOSCREEN2,
+	STATUS_REALLYMAINMENU,
+	STATUS_MEMCARDMENUS,
+	STATUS_ENDHEAT,
+	STATUS_ENDHEATREPLAY,
+	STATUS_ENDHEATJUDGES,
+	STATUS_ENDHEATLADDER,
+	STATUS_ENDHEATWINLOSE,
+	STATUS_ENDHEATMENU,
+	STATUS_ENDHEATVIDEOMENU,
+	STATUS_BEGINHEAT,
+	STATUS_ENDGAME,
+	STATUS_ENDGAMEALLGOLD,
+	STATUS_ENDGAMEPLAYERMOVIE,
+	STATUS_ENDGAMEBAILMOVIE,
+	STATUS_ENDGAMESAVE,
+	STATUS_ENDGAMECREDITS,
+	STATUS_STARTHORSE,
+	STATUS_CHANGEHORSEWORD,
+	STATUS_LOADSUCCESS,
+	STATUS_LOADFAILED,
+	STATUS_HIGHSCORE,
+	STATUS_SETSOUNDLEVELS
+};
+enum EMemCardState { SVSTATUS_CHECKINGCARDPAUSE };
+enum ESaveAction { SAVE_VIDEO, SAVE_GAME };
+
 /* functions */
 struct SSaveGame;
+void Horse_Reset();
+void Horse_DisplayWords(int *p);
+int InCompetition();
+void Front_ClearScreen();
+void Front_Init();
+void Front_PrintGoBackSelect();
+void Front_PrintCentredPrompt(const char *s);
+void Front_Display();
+void Front_GetButtons(int &a, int &b, int &c, int &d);
+void RestartCompFrig();
+void Front_SaveGameState();
+void Front_SetPreferences(const SPreferences &prefs);
 
-void Front_SetSJISName(char *SJISName);                              /* 0x800116b4 */
-void Front_PrintDemo();                                              /* 0x800160bc */
-void Front_DisplayScreen();                                          /* 0x800161d8 */
-void Front_Init();                                                   /* 0x800171f0 */
-void PrintPaused();                                                  /* 0x80017898 */
-void CommonSwitchOnMenuCode();                                       /* 0x8001a128 */
-void Front_SwitchOnEndHeat();                                        /* 0x8001a1c8 */
-void Front_SwitchOnEndLevelMenu();                                   /* 0x8001a2bc */
-void Front_SwitchOnStartLevelMenu();                                 /* 0x8001a5b8 */
-void Front_PrintHorseLetters();                                      /* 0x8001a5e0 */
-void Front_SwitchOnVideoScreen();                                    /* 0x8001a608 */
-void Front_Update();                                                 /* 0x8001a6f8 */
-void Front_SaveGameState();                                          /* 0x8001cbf0 */
-void Front_LoadGame(SSaveGame *pGame);                               /* 0x8001ccf8 */
-void FlickerSync();                                                  /* 0x80059018 */
-void ClearSoftReset();                                               /* 0x8005c678 */
-void LoadingScreen_Main();                                           /* 0x8005cba0 */
-void LoadingScreen_SetCurrentLevel(int level, int type, int skater); /* 0x8005d35c */
-void LoadingScreen_Wait();                                           /* 0x8005d3dc */
-void LoadingScreen_WaitLevel();                                      /* 0x8005d73c */
+void Front_PrintDemo();
+void Front_DisplayScreen();
+void PrintPaused();
+void CommonSwitchOnMenuCode();
+void Front_SwitchOnEndHeat();
+void Front_SwitchOnEndLevelMenu();
+void Front_SwitchOnStartLevelMenu();
+void Front_PrintHorseLetters();
+void Front_SwitchOnVideoScreen();
+void Front_Update();
+void Front_LoadGame(SSaveGame *p);
 
+/* globals */
+extern SAnimFrame *ButtonsAnim;
+extern int Cheat_BigHead;
+extern int Cheat_LevelSelect;
+extern int Cheat_RestartSkip;
+extern int CurrentGameLevel;
+extern int DAT_800d1cb8;
+extern char DemoName[];
+/* picture y by screen */
+extern uint GameFade;
+extern int GAutoGame;
+extern int GAutoLevel;
+extern int GAutoPlayer1;
+extern int GAutoPlayer2;
+extern int GAutoTest;
+extern BoardStats GBoardStats[];
+extern int GHeadUp;
+extern int GHighTags1;
+extern int GHighTags2;
+extern int GHorseClearInput2;
+extern int GHorseDoneStart;
+extern int GHorseLetters[];
+extern int GHorseRestart;
+extern int GHorseWordChosen;
+extern int GLosses1;
+extern int GLosses2;
+extern int GRollCredits;
+extern int GSoftResetEnabled;
+extern int GState;
+extern int GStreak1;
+extern int GStreak2;
+extern CTape *GTape[];
+extern int GWins1;
+extern int GWins2;
+extern int SelectedSkater2;
+extern int SizeUp;
+extern int StartScreen;
+extern EPausedStatus Status;
 #endif

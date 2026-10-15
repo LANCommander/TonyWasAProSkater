@@ -621,8 +621,8 @@
 #define Rail_NextNode Rail_NextNode__FPUs  /* Rail_NextNode(unsigned short *) */
 #define Rail_Update Rail_Update__Fv  /* Rail_Update(void) */
 #define ReadControllers ReadControllers__Fv  /* ReadControllers(void) */
-#define Redbook_InitialRand Redbook_InitialRand__Fi  /* Redbook_InitialRand(int) */
-#define Redbook_Rnd Redbook_Rnd__Fi  /* Redbook_Rnd(int) */
+#define Utils_InitialRand Utils_InitialRand__Fi  /* Utils_InitialRand(int) */
+#define Rnd Rnd__Fi  /* Rnd(int) */
 #define Redbook_XAAllow Redbook_XAAllow__Fb  /* Redbook_XAAllow(bool) */
 #define RemoveDeadBits RemoveDeadBits__FP4CBit  /* RemoveDeadBits(CBit *) */
 #define RemovePaletteEntry RemovePaletteEntry__FP9tag_S_Pal  /* RemovePaletteEntry(tag_S_Pal *) */

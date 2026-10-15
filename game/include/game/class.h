@@ -20,8 +20,8 @@
 class CClass {
   public:
 	virtual ~CClass() {}                          /* slot 0 */
-	static void *operator new(__SIZE_TYPE__ size) throw(); /* 0x800241dc */
-	void operator delete(void *);                 /* 0x80024238 */
+	static void *operator new(__SIZE_TYPE__ size) throw();
+	void operator delete(void *p);
 };
 
 #endif

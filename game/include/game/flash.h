@@ -5,7 +5,10 @@
 #include "game/types.h"
 
 /* functions */
-void Flash_Reset();  /* 0x8001f310 */
-void Flash_Update(); /* 0x8001f3f4 */
-
+void Flash_Reset();
+int Flash_FadeFinished();
+void Flash_Screen(unsigned char r, unsigned char g, unsigned char b, int n, unsigned char c, int d);
+void Flash_Fade(int a, int b);
+void Flash_Update();
+void Flash_Display();
 #endif

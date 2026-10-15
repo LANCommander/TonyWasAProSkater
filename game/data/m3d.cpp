@@ -5,7 +5,7 @@
 struct SCamera;
 
 /* SVECTOR[10], then FrustumMatrix1 and FrustumMatrix2 (MATRIX): one SLights to the renderer
- * (src/m3d/render.cpp) (THPS2 demo: SVECTOR[10], MATRIX, MATRIX) */
+ * (M3d_Render, src/m3d.cpp) (THPS2 demo: SVECTOR[10], MATRIX, MATRIX) */
 int FrustumNormals[36];
 
 /* THPS2 demo: int */

@@ -274,6 +274,8 @@ class ClassInfo:
         self.polymorphic = False
         self.root = False
         self.slots = []  # full vtable slot list (method names)
+        self.own_vparams = {}  # method name -> parameter counts of its virtual declarations
+        self.vparams = {}  # the same with the bases'
 
 
 def _strip_comments(s):
@@ -316,6 +318,18 @@ def _virtual_name(decl, cls):
     return "~" if name.startswith("~") else name
 
 
+def _param_count(decl):
+    """The number of parameters of the (first) function a declaration declares."""
+    m = re.search(r"(~?\s*\w+|operator\s*\S+?)\s*\(", decl)
+    if not m:
+        return 0
+    lp = m.end() - 1
+    inner = decl[lp + 1:_match_paren(decl, lp) - 1].strip()
+    if not inner or inner == "void":
+        return 0
+    return len(_split_top(inner, ","))
+
+
 def parse_classes(src):
     clean = _strip_comments(src)
     classes = {}
@@ -339,6 +353,8 @@ def parse_classes(src):
             vn = _virtual_name(decl, name)
             if vn and vn not in ci.own_virtuals:
                 ci.own_virtuals.append(vn)
+            if vn:
+                ci.own_vparams.setdefault(vn, set()).add(_param_count(decl))
             if re.search(r"\boperator\s+delete\b", decl):
                 ci.has_delete = True
         if name in classes:  # forward-declared twice? keep the one with a body
@@ -365,6 +381,13 @@ def parse_classes(src):
             if v not in slots:
                 slots.append(v)
         c.slots = slots
+        vparams = {}
+        if poly_base:
+            for k, v in poly_base.vparams.items():
+                vparams[k] = set(v)
+        for k, v in c.own_vparams.items():
+            vparams.setdefault(k, set()).update(v)
+        c.vparams = vparams
         c.polymorphic = bool(slots)
         c.root = c.polymorphic and poly_base is None
         c.vbase = poly_base.name if poly_base else None
@@ -388,7 +411,9 @@ def mark_deletes(src):
     operator delete of its own choosing. Each delete statement records its pointer first
     (pc_delete_mark) so the build's destructor thunks pass in_chrg 3 for exactly that object, and
     the operator delete that follows is skipped (see link.py, "destructor thunks")."""
-    clean = _strip_comments(src)
+    # (string literals blanked too: "do you want to delete ..." is no statement)
+    clean = re.sub(r'"(?:[^"\\\n]|\\.)*"', lambda m: '"' + " " * (len(m.group(0)) - 2) + '"',
+                   _strip_comments(src))
     out, i = [], 0
     for m in _DELETE_RE.finditer(clean):
         if m.start() < i:
@@ -452,11 +477,88 @@ def strip_virtual_bodies(src):
     return src
 
 
+NONVIRTUAL = "__pcnv"
+
+
+def _brace_depths(clean):
+    """Brace depth before each index of comment-free source (string/char literals skipped)."""
+    depths = [0] * (len(clean) + 1)
+    d, i, n = 0, 0, len(clean)
+    while i < n:
+        c = clean[i]
+        depths[i] = d
+        if c in "\"'":
+            j = i + 1
+            while j < n and clean[j] != c and clean[j] != "\n":
+                j += 2 if clean[j] == "\\" else 1
+            for k in range(i, min(j + 1, n)):
+                depths[k] = d
+            i = j + 1
+            continue
+        if c == "{":
+            d += 1
+        elif c == "}":
+            d -= 1
+        i += 1
+    depths[n] = d
+    return depths
+
+
+def mark_nonvirtual_calls(src):
+    """`Base::Method(...)` names a virtual method without dispatching (a derived class calling the
+    base version). Once `virtual` is gone, g++ emits the same symbol for that call and for a
+    virtual call of the method, and the build routes that symbol through the vtable. Such calls
+    get a name of their own, `Method__pcnv`, declared next to the method, which the build links
+    straight to the method."""
+    classes, _ = parse_classes(src)
+    clean = _strip_comments(src)
+    depths = None
+    edits, needed = [], {}
+    for m in re.finditer(r"(?<![\w:])(\w+)\s*::\s*(\w+)\s*\(", clean):
+        cls, meth = m.group(1), m.group(2)
+        c = classes.get(cls)
+        if not c or not c.polymorphic or meth not in c.slots:
+            continue
+        if depths is None:
+            depths = _brace_depths(clean)
+        if depths[m.start()] == 0:
+            continue  # the method's definition
+        # the class whose declaration qualified lookup finds: cls or its nearest base declaring it
+        d, seen = c, set()
+        while d and d.name not in seen:
+            seen.add(d.name)
+            body = clean[d.body_start:d.body_end]
+            if re.search(r"(?<![\w~:])%s\s*\(" % re.escape(meth), body):
+                break
+            d = classes.get(d.vbase) if getattr(d, "vbase", None) else None
+        if not d:
+            continue
+        edits.append((m.start(2), m.end(2), meth + NONVIRTUAL))
+        needed.setdefault(d.name, set()).add(meth)
+    for cname, meths in needed.items():
+        c = classes[cname]
+        decls = []
+        for decl in _top_level_decls(clean[c.body_start:c.body_end]):
+            t = re.sub(r"^\s*((public|private|protected)\s*:\s*)*", "", decl).strip()
+            for meth in meths:
+                if re.search(r"(?<![\w~:])%s\s*\(" % re.escape(meth), t):
+                    t = re.sub(r"\bvirtual\b", "", t)
+                    t = re.sub(r"(?<![\w~:])%s(\s*\()" % re.escape(meth),
+                               lambda mm: meth + NONVIRTUAL + mm.group(1), t, count=1)
+                    t = re.sub(r"\)\s*(const\s*)?=\s*0\s*;$", lambda mm: ") %s;" % (mm.group(1) or ""), t)
+                    decls.append(t.strip())
+        edits.append((c.body_end, c.body_end, "\npublic: " + "\n".join(decls) + "\n"))
+    for a, b, text in sorted(edits, key=lambda e: -e[0]):
+        src = src[:a] + text + src[b:]
+    return src
+
+
 def transform_cxx(src, vtables, tukey="tu"):
     """vtables: {class name: its vtable (a global of game/data)}. Returns (new source, class info dict for the
     build: {class: {"vptr_root": root class, "slots": [...], "has_delete": bool}})."""
     src = re.sub(r"^[ \t]*#[ \t]*pragma[ \t]+(interface|implementation)\b[^\n*]*$", "", src, flags=re.M)
     src = strip_virtual_bodies(src)
+    src = mark_nonvirtual_calls(src)
     classes, order = parse_classes(src)
     clean = _strip_comments(src)
     info = {}
@@ -467,6 +569,7 @@ def transform_cxx(src, vtables, tukey="tu"):
             continue
         root = _root_of(classes, c)
         info[n] = {"root": root.name if root else n, "slots": c.slots,
+                   "vparams": dict((k, sorted(v)) for k, v in c.vparams.items()),
                    "has_delete": c.has_delete, "bases": c.bases}
         if c.root:
             edits.append((c.body_end, "\npublic: void *__vptr;\n"))

@@ -25,7 +25,7 @@ void PC_DrawMark2D(const void *entry);
  * so their computed corners can land on unrelated projections and get those depths. */
 #define PC_DRAW_FLAT_BEGIN 0x00f1a700u
 #define PC_DRAW_FLAT_END 0x00f1a701u
-/* A flat begin that also describes a light's glow (game/src/bit/display.cpp), which is drawn
+/* A flat begin that also describes a light's glow (Bit_Display, game/src/bit.cpp), which is drawn
  * smoothly from it in place of the game's polygons up to the end (THPS_GLOWS=retail: the
  * polygons). Words: this, centre (y << 16 | x, 16-bit), centre colour, rim colour, fringe colour
  * (0x00BBGGRR), angle of section 0 minus one step | step << 16 (4096ths of a turn), fringe width,
