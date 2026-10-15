@@ -20,6 +20,19 @@ void PC_DrawOT(const void *ot);
 /* An ordering-table entry after which a chain is the HUD, panels and text, which the precise
  * (unrounded) 3D vertices don't apply to: the game's OT and OT2D entries. */
 void PC_DrawMark2D(const void *entry);
+/* Command words (GPU NOPs) around packets the game made in screen space from one projection, such
+ * as the glows: the polygons between them are drawn as given. The precise lookup goes by value,
+ * so their computed corners can land on unrelated projections and get those depths. */
+#define PC_DRAW_FLAT_BEGIN 0x00f1a700u
+#define PC_DRAW_FLAT_END 0x00f1a701u
+/* A flat begin that also describes a light's glow (game/src/bit/display.cpp), which is drawn
+ * smoothly from it in place of the game's polygons up to the end (THPS_GLOWS=retail: the
+ * polygons). Words: this, centre (y << 16 | x, 16-bit), centre colour, rim colour, fringe colour
+ * (0x00BBGGRR), angle of section 0 minus one step | step << 16 (4096ths of a turn), fringe width,
+ * then the 8 sections' radii two to a word; radii vertical, in 16ths of a pixel (horizontal ones
+ * are 400/256 of that). */
+#define PC_DRAW_GLOW 0x00f1a702u
+#define PC_DRAW_GLOW_WORDS 11
 /* Draw one packet now. */
 void PC_DrawPacket(const void *p);
 /* Clear an ordering table of n entries linked from the last to the first (entry 0 ends it). */

@@ -18,6 +18,7 @@ extern "C" {
 #include "game/m3d.h"
 #include "game/trig.h"
 #include "game/camera.h"
+#include "pc_draw.h"
 
 extern SCamera MikeCamera[];
 extern int Camera_CurrentMikeCamera;
@@ -26,6 +27,11 @@ extern SDoubleBuffer *pDoubleBuffer;
 extern uchar *pPoly;
 extern uchar *PolyBufferEnd;
 extern SSinCos rcossin_tbl[];
+extern ushort Xres;
+
+/* Widescreen (platform/pc, pc_gpu_gl.h): a full-width view shows pc_wide_pad more columns on
+   either side. */
+extern "C" int pc_wide_pad;
 
 extern CSpecialDisplay *SpecialDisplayList;
 extern CGlow *GlowList;
@@ -43,6 +49,70 @@ extern DR_TPAGE StoredTPagePrim; /* bit/init.c */
 int M3dAsm_ClipLine(SClipLineBuf *);
 int M3dMaths_SquareRoot0(int);
 
+/* Links a packet of n command words (the port's markers, pc_draw.h); 0 when the buffer is full. */
+static int AddMark(P_TAG *OTPos, const u_long *words, int n) {
+	P_TAG *p = (P_TAG *)pPoly;
+	uchar *end = pPoly + sizeof(P_TAG) + n * sizeof(u_long);
+
+	if (end > PolyBufferEnd)
+		return 0;
+
+	pPoly = end;
+	setlen(p, n);
+
+	for (int i = 0; i < n; i++)
+		P_WORDS(p)[i] = words[i];
+
+	addPrim(OTPos, p);
+	return 1;
+}
+
+static int AddFlatMark(P_TAG *OTPos, u_long code) {
+	return AddMark(OTPos, &code, 1);
+}
+
+static u_long FadeBGR(u_long bgr, int fade) {
+	if (!fade)
+		return bgr & 0xffffff;
+
+	return (((bgr & 0xff) * fade >> 8) | (((bgr >> 8) & 0xff) * fade >> 8) << 8 |
+	        (((bgr >> 16) & 0xff) * fade >> 8) << 16);
+}
+
+/* A plain glow (a light's: one fringe, all sections drawn) for the port to draw smoothly
+   (PC_DRAW_GLOW, pc_draw.h); others are drawn as the PS1 had them. */
+static int AddGlowMark(P_TAG *OTPos, CGlow *pGlow, int CentreX, int CentreY, int vz, int fade) {
+	u_long w[PC_DRAW_GLOW_WORDS];
+	uint i;
+
+	if (pGlow->mNumSections != 8 || pGlow->mNumFringes != 1 || pGlow->mSkipTriangles ||
+	    (pGlow->mMask & 0xff) != 0xff)
+		return AddFlatMark(OTPos, PC_DRAW_FLAT_BEGIN);
+
+	w[0] = PC_DRAW_GLOW;
+	w[1] = ((u_long)(ushort)CentreY << 16) | (ushort)CentreX;
+	w[2] = FadeBGR(pGlow->mCentreCodeBGR, fade);
+	w[3] = FadeBGR(pGlow->mpSections[0].CodeBGR, fade);
+	w[4] = FadeBGR(pGlow->mpFringes[0].CodeBGR, fade);
+	w[5] = (pGlow->mAngle & 4095) | (pGlow->mStepAngle & 0xffff) << 16;
+
+	/* screen radii (vertical, in 16ths of a pixel) as Bit_Display has them: Radius * 400 / z */
+	{
+		uint r = pGlow->mpFringes[0].Width * 400 * 16 / vz;
+
+		w[6] = r > 0xffff ? 0xffff : r;
+	}
+
+	for (i = 0; i < 8; i += 2) {
+		uint r0 = pGlow->mpSections[i].Radius * 400 * 16 / vz;
+		uint r1 = pGlow->mpSections[i + 1].Radius * 400 * 16 / vz;
+
+		w[7 + i / 2] = (r0 > 0xffff ? 0xffff : r0) | (r1 > 0xffff ? 0xffff : r1) << 16;
+	}
+
+	return AddMark(OTPos, w, PC_DRAW_GLOW_WORDS);
+}
+
 void Bit_Display() {
 	CVector Temp;
 	CVector camera_pos;
@@ -59,6 +129,18 @@ void Bit_Display() {
 	camera_pos.vy = MikeCamera[Camera_CurrentMikeCamera].Position.vy;
 	camera_pos.vz = MikeCamera[Camera_CurrentMikeCamera].Position.vz;
 	GTEZedLimit = pCurrentViewport->Zoom >> 1;
+
+	/* the glows clamp their corners to 100 columns beyond the screen; in widescreen beyond its
+	   margins, as far as the GPU's polygon width limit (1023) allows */
+	int XMin = -100;
+	int XMax = 612;
+
+	if (pCurrentViewport->xL == 0 && pCurrentViewport->xR == Xres) {
+		int pad = pc_wide_pad < 155 ? pc_wide_pad : 155;
+
+		XMin -= pad;
+		XMax += pad;
+	}
 	pSpecial = SpecialDisplayList;
 
 	while (pSpecial) {
@@ -130,6 +212,12 @@ void Bit_Display() {
 				continue;
 
 			P_TAG *OTPos = pDoubleBuffer->pOT + ((RotCoords.vz & 0x3ffc) >> 2);
+
+			/* the glow is made in screen space around its centre's projection: the port draws
+			   it as given (linked first, so the end marker follows the glow's packets) */
+			if (!AddFlatMark(OTPos, PC_DRAW_FLAT_END))
+				return;
+
 			DVECTOR *pBufA = (DVECTOR *)SCRATCHPAD;
 			DVECTOR *pBufB = (DVECTOR *)(SCRATCHPAD + 0x4) + pGlow->mNumFringes;
 			SSinCos *pTab = rcossin_tbl;
@@ -140,11 +228,11 @@ void Bit_Display() {
 			int x = CentreX + RadA * MSin / 4096;
 			int y = CentreY - RadA * MCos / 4096;
 
-			if (x > 612)
-				x = 612;
+			if (x > XMax)
+				x = XMax;
 
-			if (x < -100)
-				x = -100;
+			if (x < XMin)
+				x = XMin;
 
 			if (y > 340)
 				y = 340;
@@ -168,11 +256,11 @@ void Bit_Display() {
 					x = CentreX + (Rad * 400 / RotCoords.vz) * MSin / 4096;
 					y = CentreY - (Rad * 400 / RotCoords.vz) * MCos / 4096;
 
-					if (x > 612)
-						x = 612;
+					if (x > XMax)
+						x = XMax;
 
-					if (x < -100)
-						x = -100;
+					if (x < XMin)
+						x = XMin;
 
 					if (y > 340)
 						y = 340;
@@ -208,11 +296,11 @@ void Bit_Display() {
 					x = CentreX + RadB * MSin / 4096;
 					y = CentreY - RadB * MCos / 4096;
 
-					if (x > 612)
-						x = 612;
+					if (x > XMax)
+						x = XMax;
 
-					if (x < -100)
-						x = -100;
+					if (x < XMin)
+						x = XMin;
 
 					if (y > 340)
 						y = 340;
@@ -273,11 +361,11 @@ void Bit_Display() {
 							x = CentreX + (Rad * 400 / RotCoords.vz) * MSin / 4096;
 							y = CentreY - (Rad * 400 / RotCoords.vz) * MCos / 4096;
 
-							if (x > 612)
-								x = 612;
+							if (x > XMax)
+								x = XMax;
 
-							if (x < -100)
-								x = -100;
+							if (x < XMin)
+								x = XMin;
 
 							if (y > 340)
 								y = 340;
@@ -360,6 +448,7 @@ void Bit_Display() {
 			}
 
 			addPrim(OTPos, ptpage);
+			AddGlowMark(OTPos, pGlow, CentreX, CentreY, RotCoords.vz, RGBFade);
 		}
 	}
 

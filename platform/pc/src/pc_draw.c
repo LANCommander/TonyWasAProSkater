@@ -5,6 +5,7 @@
  * markers are in the ordering table. There is no VRAM: the screens are render targets
  * (pc_screen.h) and the textures are in the texture store (pc_texstore.h); packets that copy or
  * transfer VRAM are not supported. */
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -166,6 +167,10 @@ static void gl_vertex(PC_GlVertex *o, const Vtx *v)
 
 /* Set while draw_chain is past the ordering table's 2D entries (is_2d_entry). */
 static int s_chain_2d;
+/* Set between PC_DRAW_FLAT_BEGIN (or PC_DRAW_GLOW) and PC_DRAW_FLAT_END. */
+static int s_flat;
+/* Set after a glow drawn from its PC_DRAW_GLOW: its polygons up to the flat end are not drawn. */
+static int s_glow_drawn;
 
 /* Precise positions and depths of the game's projections (pc_precise.h) for a polygon's vertices,
  * by the screen words in its packet. All or nothing: a polygon that isn't entirely projected (2D,
@@ -178,7 +183,7 @@ static void gl_precise(PC_GlVertex *gv, const uint32_t *xy, int n)
     static int stats = -1;
     static uint32_t frame, hit, miss;
     float x[4], y[4], z[4];
-    int ok = !s_chain_2d && PC_PrecisePolygon(xy, n, x, y, z);
+    int ok = !s_chain_2d && !s_flat && PC_PrecisePolygon(xy, n, x, y, z);
     if (stats < 0)
         stats = getenv("THPS_GLSTATS") && atoi(getenv("THPS_GLSTATS"));
     if (stats) {
@@ -206,6 +211,119 @@ static void line_out(const Prim *p, const Vtx *a, const Vtx *b)
     gl_vertex(&ga, a);
     gl_vertex(&gb, b);
     PC_GlLine(&gp, &ga, &gb);
+}
+
+static int glows_retail(void)
+{
+    static int retail = -1;
+    if (retail < 0) {
+        const char *e = getenv("THPS_GLOWS");
+        retail = e && !strcmp(e, "retail");
+    }
+    return retail;
+}
+
+/* A glow's radius (vertical, pixels) in direction a (radians) from its 8 sections' (rs; section i
+ * at a0 + (i + 1) * step): a periodic Catmull-Rom curve through them, so the outline stays round
+ * however the sections wobble. */
+static float glow_radius(const float rs[8], float a0, float step, float a)
+{
+    float t = (a - a0) / step - 1.0f;
+    t -= floorf(t / 8.0f) * 8.0f;
+    int i = (int)t;
+    float f = t - (float)i;
+    float p0 = rs[(i + 7) & 7], p1 = rs[i & 7], p2 = rs[(i + 1) & 7], p3 = rs[(i + 2) & 7];
+    float r = p1 + 0.5f * f * (p2 - p0 + f * (2 * p0 - 5 * p1 + 4 * p2 - p3 +
+                                              f * (3 * (p1 - p2) + p3 - p0)));
+    return r > 0 ? r : 0;
+}
+
+/* PC_DRAW_GLOW (pc_draw.h): the PS1 draws a light's glow as 8 gouraud triangles to its sections
+ * and a ring of quads fading out, so up close it is an octagon with creases along the spokes and a
+ * sharp edge where the narrow fade starts. Drawn here as a finely divided disc over the same area
+ * with the same colours and blending: the centre colour turns into the rim's towards the
+ * sections, and the brightness falls off smoothly to nothing at the fringe's outer edge. */
+static void cmd_glow(const uint32_t *w)
+{
+    enum { SEGS = 48, RINGS = 12 };
+    s_flat = 1;
+    if (glows_retail())
+        return;
+    s_glow_drawn = 1;
+
+    float cx = (float)(int16_t)w[1] + gs.ofs_x, cy = (float)(int16_t)(w[1] >> 16) + gs.ofs_y;
+    float col[3][3];
+    for (int k = 0; k < 3; k++)
+        for (int c = 0; c < 3; c++)
+            col[k][c] = (float)((w[2 + k] >> (8 * c)) & 0xff);
+    const float turn = 6.28318531f / 4096.0f, aspect = 400.0f / 256.0f;
+    float a0 = (float)(w[5] & 0xfff) * turn, step = (float)(int16_t)(w[5] >> 16) * turn;
+    float fringe = (float)(w[6] & 0xffff) / 16.0f, rs[8];
+    for (int i = 0; i < 8; i++)
+        rs[i] = (float)((w[7 + i / 2] >> (16 * (i & 1))) & 0xffff) / 16.0f;
+    if (step == 0)
+        return;
+
+    Prim p;
+    prim_from_state(&p, 0, 0, 1, 0);
+    p.abr = 1;   /* the glows' draw mode: additive */
+    PC_GlPrim gp;
+    gl_prim(&gp, &p);
+
+    /* each ring: position and colour of its vertices */
+    float xy[2][SEGS + 1][2];
+    uint8_t rgb[2][SEGS + 1][3];
+    float sn[SEGS + 1], cs[SEGS + 1], rad[SEGS + 1];
+    for (int j = 0; j <= SEGS; j++) {
+        float a = a0 + 6.28318531f * (float)j / SEGS;
+        sn[j] = sinf(a);
+        cs[j] = cosf(a);
+        rad[j] = glow_radius(rs, a0, step, a);
+    }
+    for (int ring = 0; ring <= RINGS; ring++) {
+        float s = (float)ring / RINGS;
+        float (*pos)[2] = xy[ring & 1];
+        uint8_t (*c8)[3] = rgb[ring & 1];
+        for (int j = 0; j <= SEGS; j++) {
+            float total = rad[j] + fringe, r = s * total;
+            /* centre colour to rim colour across the inner radius */
+            float h = total > 0 && rad[j] > 0 ? r / rad[j] : 1;
+            h = h >= 1 ? 1 : h * h * (3 - 2 * h);
+            /* brightness: 1 at the centre, 0 with a level slope at the outer edge */
+            float fall = (1 - s * s) * (1 - s * s);
+            for (int c = 0; c < 3; c++) {
+                float hue = col[0][c] + (col[1][c] - col[0][c]) * h;
+                float v = col[2][c] + (hue - col[2][c]) * fall;
+                c8[j][c] = (uint8_t)(v < 0 ? 0 : v > 255 ? 255 : v + 0.5f);
+            }
+            pos[j][0] = cx + r * sn[j] * aspect;
+            pos[j][1] = cy - r * cs[j];
+        }
+        if (!ring)
+            continue;
+        float (*in)[2] = xy[(ring - 1) & 1];
+        uint8_t (*inc)[3] = rgb[(ring - 1) & 1];
+        for (int j = 0; j < SEGS; j++) {
+            float t[3][2];
+            uint8_t tc[3][3];
+            memcpy(t[0], in[j], sizeof t[0]);
+            memcpy(t[1], pos[j], sizeof t[0]);
+            memcpy(t[2], pos[j + 1], sizeof t[0]);
+            memcpy(tc[0], inc[j], 3);
+            memcpy(tc[1], c8[j], 3);
+            memcpy(tc[2], c8[j + 1], 3);
+            PC_GlTriangleF(&gp, (const float (*)[2])t, (const uint8_t (*)[3])tc);
+            if (ring > 1) {
+                memcpy(t[1], in[j + 1], sizeof t[0]);
+                memcpy(tc[1], inc[j + 1], 3);
+                memcpy(t[2], pos[j + 1], sizeof t[0]);
+                memcpy(tc[2], c8[j + 1], 3);
+                memcpy(t[0], in[j], sizeof t[0]);
+                memcpy(tc[0], inc[j], 3);
+                PC_GlTriangleF(&gp, (const float (*)[2])t, (const uint8_t (*)[3])tc);
+            }
+        }
+    }
 }
 
 static void cmd_polygon(const uint32_t *w)
@@ -456,11 +574,20 @@ static void execute(const uint32_t *w)
     uint32_t op = w[0] >> 24;
     trace_cmd(w);
     switch (op >> 5) {
-    case 1: cmd_polygon(w); return;
+    case 1:
+        if (!s_glow_drawn)
+            cmd_polygon(w);
+        return;
     case 3: cmd_rect(w); return;
     default: break;
     }
     switch (op) {
+    case 0x00:
+        if (w[0] == PC_DRAW_FLAT_BEGIN || w[0] == PC_DRAW_FLAT_END) {
+            s_flat = w[0] == PC_DRAW_FLAT_BEGIN;
+            s_glow_drawn = 0;
+        }
+        break;
     case 0x02: cmd_fill(w); break;
     case 0xe1: set_drawmode(w[0]); break;
     case 0xe2: set_texwindow(w[0]); break;
@@ -530,6 +657,11 @@ static void draw_words(const uint32_t *w, int n)
                        op >> 5 == 4 ? "copy" : op >> 5 == 5 ? "load" : "store", w[i]);
             }
             return;
+        }
+        if (w[i] == PC_DRAW_GLOW && i + PC_DRAW_GLOW_WORDS <= n) {
+            cmd_glow(w + i);
+            i += PC_DRAW_GLOW_WORDS;
+            continue;
         }
         int size = gp0_size(op);
         if (i + size > n) {
@@ -629,6 +761,8 @@ static void draw_ot(const P_TAG *ot)
 {
     draw_chain(ot);
     s_chain_2d = 0;
+    s_flat = 0;
+    s_glow_drawn = 0;
     R3d_ChainEnd();
 }
 

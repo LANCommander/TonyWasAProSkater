@@ -932,6 +932,20 @@ void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *
         uv_range(o, a, b, c, bx0, by0, bx1, by1);
 }
 
+void PC_GlTriangleF(const PC_GlPrim *p, const float xy[3][2], const uint8_t rgb[3][3])
+{
+    int bx0 = (int)floorf(MIN3(xy[0][0], xy[1][0], xy[2][0]));
+    int by0 = (int)floorf(MIN3(xy[0][1], xy[1][1], xy[2][1]));
+    int bx1 = (int)ceilf(MAX3(xy[0][0], xy[1][0], xy[2][0]));
+    int by1 = (int)ceilf(MAX3(xy[0][1], xy[1][1], xy[2][1]));
+    GVert *o = begin_prim(p, 3, bx0, by0, bx1, by1);
+    if (!o)
+        return;
+    uint16_t info = prim_info(p);
+    for (int i = 0; i < 3; i++)
+        put(&o[i], p, info, xy[i][0], xy[i][1], rgb[i][0], rgb[i][1], rgb[i][2], 0, 0);
+}
+
 void PC_GlRect(const PC_GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b,
                int u0, int v0, int flip_x, int flip_y)
 {

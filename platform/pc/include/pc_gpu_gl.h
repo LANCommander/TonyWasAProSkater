@@ -53,6 +53,8 @@ typedef struct {
 
 void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b,
                    const PC_GlVertex *c);
+/* An untextured gouraud triangle at sub-pixel positions (offset applied). */
+void PC_GlTriangleF(const PC_GlPrim *p, const float xy[3][2], const uint8_t rgb[3][3]);
 /* Rectangle (TILE/SPRT) at x,y (offset applied); u0,v0 = top-left texel. */
 void PC_GlRect(const PC_GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b,
                int u0, int v0, int flip_x, int flip_y);
