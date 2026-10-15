@@ -67,8 +67,32 @@ static int AddMark(P_TAG *OTPos, const u_long *words, int n) {
 	return 1;
 }
 
-static int AddFlatMark(P_TAG *OTPos, u_long code) {
+/* Also for CTexturedRibbon::Display. */
+int AddFlatMark(P_TAG *OTPos, u_long code) {
 	return AddMark(OTPos, &code, 1);
+}
+
+/* Packets made in screen space around projected points, linked at OTPos before this (and after a
+   PC_DRAW_FLAT_END there): the view depths of their polygons' vertices 0-3 for the port
+   (PC_DRAW_DEPTH), so that geometry in front hides them. Also for CTexturedRibbon::Display. */
+int AddDepthMark(P_TAG *OTPos, const int z[4]) {
+	u_long w[PC_DRAW_DEPTH_WORDS];
+
+	w[0] = PC_DRAW_DEPTH;
+
+	for (int i = 0; i < 4; i++)
+		w[1 + i] = z[i] > 1 ? z[i] : 1;
+
+	return AddMark(OTPos, w, PC_DRAW_DEPTH_WORDS);
+}
+
+/* A particle around one projection (zed, its view depth), ext pixels across at most: its depth
+   brought forward by its size as if a ball, so that geometry it touches doesn't cut it. */
+static int AddParticleDepth(P_TAG *OTPos, int zed, int ext) {
+	int z = zed - ext * zed / pCurrentViewport->Zoom;
+	int zs[4] = {z, z, z, z};
+
+	return AddDepthMark(OTPos, zs);
 }
 
 static u_long FadeBGR(u_long bgr, int fade) {
@@ -767,11 +791,40 @@ void Bit_Display() {
 			}
 		}
 
-		if (pFlatBit->mForcedPriority)
-			addPrim(pDoubleBuffer->pOT + pFlatBit->mForcedPriority, apoly);
-		else
-			addPrim(pDoubleBuffer->pOT + (((zed - pFlatBit->mFrigDeltaZ) & 0x3ffc) >> 2),
-			        apoly);
+		{
+			P_TAG *OTPos;
+
+			if (pFlatBit->mForcedPriority)
+				OTPos = pDoubleBuffer->pOT + pFlatBit->mForcedPriority;
+			else
+				OTPos = pDoubleBuffer->pOT + (((zed - pFlatBit->mFrigDeltaZ) & 0x3ffc) >> 2);
+
+			/* the port: the sprite at its own depth (its corners are only near projections) */
+			if (!AddFlatMark(OTPos, PC_DRAW_FLAT_END))
+				return;
+
+			addPrim(OTPos, apoly);
+
+			if (pFlatBit->mForcedPriority) {
+				if (!AddFlatMark(OTPos, PC_DRAW_FLAT_BEGIN))
+					return;
+			} else {
+				short xs[4] = {apoly->x0, apoly->x1, apoly->x2, apoly->x3};
+				short ys[4] = {apoly->y0, apoly->y1, apoly->y2, apoly->y3};
+				int x0 = xs[0], x1 = xs[0], y0 = ys[0], y1 = ys[0];
+
+				for (int i = 1; i < 4; i++) {
+					x0 = xs[i] < x0 ? xs[i] : x0;
+					x1 = xs[i] > x1 ? xs[i] : x1;
+					y0 = ys[i] < y0 ? ys[i] : y0;
+					y1 = ys[i] > y1 ? ys[i] : y1;
+				}
+
+				if (!AddParticleDepth(OTPos, zed - pFlatBit->mFrigDeltaZ,
+				                  x1 - x0 > y1 - y0 ? x1 - x0 : y1 - y0))
+					return;
+			}
+		}
 	}
 
 	CGlassBit *pGlass;
@@ -1164,6 +1217,7 @@ void Bit_Display() {
 
 	while (pPixel) {
 		int zed;
+		P_TAG *OTPos; /* the port's depth marks */
 
 		Temp = (pPixel->mPos >> 12) - camera_pos;
 		proj = geom_project_lv(&Temp);
@@ -1194,8 +1248,15 @@ void Bit_Display() {
 			}
 
 			geom_st_word(&atile->x0, proj.sxy);
-			addPrim(pDoubleBuffer->pOT + (((zed - pPixel->mFrigDeltaZ) & 0x3ffc) >> 2),
-			        atile);
+			OTPos = pDoubleBuffer->pOT + (((zed - pPixel->mFrigDeltaZ) & 0x3ffc) >> 2);
+
+			if (!AddFlatMark(OTPos, PC_DRAW_FLAT_END))
+				return;
+
+			addPrim(OTPos, atile);
+
+			if (!AddParticleDepth(OTPos, zed - pPixel->mFrigDeltaZ, 1))
+				return;
 		} else {
 			TILE *atile;
 			uchar *newppoly;
@@ -1223,8 +1284,16 @@ void Bit_Display() {
 			}
 
 			geom_st_word(&atile->x0, proj.sxy);
-			addPrim(pDoubleBuffer->pOT + (((zed - pPixel->mFrigDeltaZ) & 0x3ffc) >> 2),
-			        atile);
+			OTPos = pDoubleBuffer->pOT + (((zed - pPixel->mFrigDeltaZ) & 0x3ffc) >> 2);
+
+			if (!AddFlatMark(OTPos, PC_DRAW_FLAT_END))
+				return;
+
+			addPrim(OTPos, atile);
+
+			if (!AddParticleDepth(OTPos, zed - pPixel->mFrigDeltaZ,
+			                  atile->w > atile->h ? atile->w : atile->h))
+				return;
 		}
 	SKIPPIXEL:
 		pPixel = (CPixel *)pPixel->mNext;

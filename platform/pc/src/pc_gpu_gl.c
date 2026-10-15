@@ -850,6 +850,22 @@ static void put_v(GVert *o, const PC_GlPrim *p, uint16_t info, const PC_GlVertex
         o->z = s->w;
 }
 
+/* An effect made in screen space with view depths (PC_DRAW_DEPTH: zs, one per vertex): inside a
+ * native 3D layer it is depth-tested there, as projected primitives are. The depth is also the w
+ * of its corners, which leaves their positions as they are. */
+static void flat_depth(GVert *o, int n, const float *zs)
+{
+    if (!s_layer)
+        return;
+    for (int i = 0; i < n; i++)
+        if (zs[i] <= 0)
+            return;
+    for (int i = 0; i < n; i++) {
+        o[i].z = zs[i];
+        o[i].info |= I_DEPTH;
+    }
+}
+
 /* ---------------------------------------------------------------------------------------------
  * Primitives */
 
@@ -928,6 +944,10 @@ void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *
     put_v(&o[0], p, info, a, precise);
     put_v(&o[1], p, info, b, precise);
     put_v(&o[2], p, info, c, precise);
+    if (!precise) {
+        float zs[3] = { a->z, b->z, c->z };
+        flat_depth(o, 3, zs);
+    }
     if (p->textured && p->depth != 3 && !(precise && s_precise))
         uv_range(o, a, b, c, bx0, by0, bx1, by1);
 }
@@ -978,6 +998,10 @@ void PC_GlRect(const PC_GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_
     o[3] = o[1];
     put(&o[4], p, info, x1, y1, r, g, b, ur, vb);
     o[5] = o[2];
+    {
+        float zs[6] = { p->z, p->z, p->z, p->z, p->z, p->z };
+        flat_depth(o, 6, zs);
+    }
 }
 
 void PC_GlLine(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b)

@@ -40,6 +40,7 @@ typedef struct {
     uint8_t r, g, b;
     int u, v;        /* texel coordinates */
     float px, py, w; /* precise position (offset applied) and view depth; w = 0: unknown */
+    float z;         /* > 0: the view depth of an effect made in screen space (PC_DRAW_DEPTH) */
 } PC_GlVertex;
 
 typedef struct {
@@ -49,6 +50,7 @@ typedef struct {
     int mask_set, mask_check;
     int clip_l, clip_t, clip_r, clip_b;   /* drawing area, inclusive */
     int wide;                             /* the area is widened (PC_GlWideClip) */
+    float z;   /* > 0: a rectangle's view depth (PC_DRAW_DEPTH; polygons have PC_GlVertex.z) */
 } PC_GlPrim;
 
 void PC_GlTriangle(const PC_GlPrim *p, const PC_GlVertex *a, const PC_GlVertex *b,

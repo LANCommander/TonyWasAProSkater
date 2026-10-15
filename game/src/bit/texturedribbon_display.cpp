@@ -16,6 +16,7 @@ extern "C" {
 #include "game/bit.h"
 #include "game/m3d.h"
 #include "game/trig.h"
+#include "pc_draw.h"
 
 extern SViewport *pCurrentViewport;
 extern SDoubleBuffer *pDoubleBuffer;
@@ -29,6 +30,8 @@ extern DR_TPAGE StoredTPagePrim; /* bit/init.c */
 
 int Transform(const CVector &, int &);
 void CalcScreenNormal(SCalcBuffer *, int &, int &, int);
+int AddFlatMark(P_TAG *, u_long);       /* the port's markers (bit/display.cpp) */
+int AddDepthMark(P_TAG *, const int *);
 
 void CTexturedRibbon::Display() {
 	SRibbonPoint *pPoint;
@@ -194,6 +197,12 @@ void CTexturedRibbon::Display() {
 				win.w = 64;
 				win.h = 64;
 				setTexWindow(pWinOn, &win);
+
+				/* the port: the strips' edges are made in screen space, so the segment has its ends'
+				   depths, brought forward by their widths (pc_draw.h PC_DRAW_DEPTH) */
+				if (!AddFlatMark(pOTPos, PC_DRAW_FLAT_END))
+					return;
+
 				addPrim(pOTPos, pWinOff);
 
 				setlen(pTopPoly, 12), setlen(pBottomPoly, 12), setlen(pTopPolyB, 12), setlen(pBottomPolyB, 12);
@@ -283,6 +292,15 @@ void CTexturedRibbon::Display() {
 				setlen(ptpage, a);
 				ptpage->code[0] = b;
 				addPrim(pOTPos, ptpage);
+
+				{
+					int z = pBuf->Zed - pPoint->WidthB;
+					int zLast = pLastBuf->Zed - pLastPoint->WidthB;
+					int zs[4] = {z, zLast, z, zLast};
+
+					if (!AddDepthMark(pOTPos, zs))
+						return;
+				}
 
 				LastBottom = NewBottom;
 				LastBottomB = NewBottomB;

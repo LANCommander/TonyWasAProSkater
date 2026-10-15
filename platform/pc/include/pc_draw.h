@@ -33,6 +33,13 @@ void PC_DrawMark2D(const void *entry);
  * are 400/256 of that). */
 #define PC_DRAW_GLOW 0x00f1a702u
 #define PC_DRAW_GLOW_WORDS 11
+/* A flat begin with view depths for the packets up to the end: effects made in screen space
+ * around projected points (sparks, splashes, steam and water jets). Words: this, then the integer
+ * view z of a polygon's vertices 0-3 (rectangles take the first). Inside the native 3D layer they
+ * are depth-tested at those, so geometry in front hides them however the ordering table sorted
+ * the two. */
+#define PC_DRAW_DEPTH 0x00f1a703u
+#define PC_DRAW_DEPTH_WORDS 5
 /* Draw one packet now. */
 void PC_DrawPacket(const void *p);
 /* Clear an ordering table of n entries linked from the last to the first (entry 0 ends it). */

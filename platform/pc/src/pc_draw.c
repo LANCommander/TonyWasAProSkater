@@ -128,6 +128,9 @@ static void vtx_from_words(Vtx *v, uint32_t xy, uint32_t col)
     v->u = v->v = 0;
 }
 
+/* The view depths of a polygon's vertices given by PC_DRAW_DEPTH up to the flat end (0: none). */
+static float s_flat_z[4];
+
 /* The OpenGL backend (pc_gpu_gl.c) gets the primitive with the state it needs. */
 static void gl_prim(PC_GlPrim *o, const Prim *p)
 {
@@ -151,6 +154,7 @@ static void gl_prim(PC_GlPrim *o, const Prim *p)
     o->clip_r = gs.clip_r;
     o->clip_b = gs.clip_b;
     o->wide = PC_GlWideClip(&o->clip_l);   /* widescreen: the screen's margins too */
+    o->z = s_flat_z[0];
 }
 
 static void gl_vertex(PC_GlVertex *o, const Vtx *v)
@@ -162,7 +166,7 @@ static void gl_vertex(PC_GlVertex *o, const Vtx *v)
     o->b = v->b;
     o->u = v->u;
     o->v = v->v;
-    o->px = o->py = o->w = 0;
+    o->px = o->py = o->w = o->z = 0;
 }
 
 /* Set while draw_chain is past the ordering table's 2D entries (is_2d_entry). */
@@ -421,8 +425,10 @@ static void cmd_polygon(const uint32_t *w)
     PC_GlPrim gp;
     PC_GlVertex gv[4];
     gl_prim(&gp, &p);
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++) {
         gl_vertex(&gv[i], &v[i]);
+        gv[i].z = s_flat_z[i];
+    }
     gl_precise(gv, xy, n);
     if (!tri_too_big(&v[0], &v[1], &v[2]))
         PC_GlTriangle(&gp, &gv[0], &gv[1], &gv[2]);
@@ -585,6 +591,7 @@ static void execute(const uint32_t *w)
     case 0x00:
         if (w[0] == PC_DRAW_FLAT_BEGIN || w[0] == PC_DRAW_FLAT_END) {
             s_flat = w[0] == PC_DRAW_FLAT_BEGIN;
+            memset(s_flat_z, 0, sizeof s_flat_z);
             s_glow_drawn = 0;
         }
         break;
@@ -661,6 +668,14 @@ static void draw_words(const uint32_t *w, int n)
         if (w[i] == PC_DRAW_GLOW && i + PC_DRAW_GLOW_WORDS <= n) {
             cmd_glow(w + i);
             i += PC_DRAW_GLOW_WORDS;
+            continue;
+        }
+        if (w[i] == PC_DRAW_DEPTH && i + PC_DRAW_DEPTH_WORDS <= n) {
+            s_flat = 1;
+            for (int k = 0; k < 4; k++)
+                s_flat_z[k] = (float)(int32_t)w[i + 1 + k];
+            s_glow_drawn = 0;
+            i += PC_DRAW_DEPTH_WORDS;
             continue;
         }
         int size = gp0_size(op);
@@ -762,6 +777,7 @@ static void draw_ot(const P_TAG *ot)
     draw_chain(ot);
     s_chain_2d = 0;
     s_flat = 0;
+    memset(s_flat_z, 0, sizeof s_flat_z);
     s_glow_drawn = 0;
     R3d_ChainEnd();
 }
