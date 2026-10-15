@@ -21,6 +21,7 @@ extern "C" {
 #include "game/trig.h"
 #include "game/utils.h"
 #include "game/m3dzone.h"
+#include "game/script.h"
 
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
 extern "C" void FUN_8003ec40(CPlatform *);
@@ -609,7 +610,7 @@ void FUN_8003ec40(void) {}
    command handler. */
 int CPlatform::ExecuteCommand(ushort command) {
 	switch (command) {
-		case 17161: {
+		case C_IS_BOUNCY: {
 			SModel *m;
 			ushort *pBox;
 			ushort v = *mpScript++;
@@ -628,21 +629,21 @@ int CPlatform::ExecuteCommand(ushort command) {
 			mDepth = pBox[4] - pBox[5];
 			break;
 		}
-		case 17157:
+		case C_WATER_CLIP:
 			if (*mpScript++)
 				mFlags |= 8;
 			else
 				mFlags &= ~8;
 
 			break;
-		case 17671:
+		case C_PLAY_LOOPING_SFX:
 			if (mLoopingSound)
 				SFX_Stop(mLoopingSound);
 
 			mLoopingSound = SFX_PlayX(*mpScript++, 0x2000, 0);
 			mLoopingSoundUpdate = -1;
 			break;
-		case 17672: {
+		case C_PLAY_LOOPING_POSITIONAL_SFX: {
 			int id;
 
 			if (mLoopingSound)
@@ -653,13 +654,13 @@ int CPlatform::ExecuteCommand(ushort command) {
 			mLoopingSound = SFX_PlayPos(id, mPos, 0);
 			break;
 		}
-		case 17673:
+		case C_STOP_LOOPING_SFX:
 			if (mLoopingSound)
 				SFX_Stop(mLoopingSound);
 
 			mLoopingSound = 0;
 			break;
-		case 17156: {
+		case C_SCALE: {
 			short p;
 
 			if (!(mFlags & 0x200)) {
@@ -680,7 +681,7 @@ int CPlatform::ExecuteCommand(ushort command) {
 			mScale.vz += mScaleZAdjust;
 			break;
 		}
-		case 17158: {
+		case C_SCALE_X: {
 			short p;
 
 			if (!(mFlags & 0x200)) {
@@ -699,7 +700,7 @@ int CPlatform::ExecuteCommand(ushort command) {
 			mScale.vx += mScaleXAdjust;
 			break;
 		}
-		case 17159: {
+		case C_SCALE_Y: {
 			short p;
 
 			if (!(mFlags & 0x200)) {
@@ -718,7 +719,7 @@ int CPlatform::ExecuteCommand(ushort command) {
 			mScale.vy += mScaleYAdjust;
 			break;
 		}
-		case 17160: {
+		case C_SCALE_Z: {
 			short p;
 
 			if (!(mFlags & 0x200)) {
@@ -737,10 +738,10 @@ int CPlatform::ExecuteCommand(ushort command) {
 			mScale.vz += mScaleZAdjust;
 			break;
 		}
-		case 17155:
+		case C_DAMAGE_BRUCE:
 			mBruceHealthAdjust = *mpScript++;
 			break;
-		case 17154: {
+		case C_BOUNDING_BOX_CHECK_ON: {
 			int x = *mpScript++;
 			int y = *mpScript++;
 			int z = *mpScript++;
@@ -751,13 +752,13 @@ int CPlatform::ExecuteCommand(ushort command) {
 			mSpin[2] = z << 11;
 			break;
 		}
-		case 17152:
+		case C_WAIT_UNTIL_STOOD_ON:
 			if (mTrodUpon)
 				return 1;
 
 			mpScript--;
 			return 0;
-		case 16928: {
+		case C_MOVE_TO_ABSOLUTE: {
 			int *p_pos;
 			CVector pos;
 
@@ -770,18 +771,18 @@ int CPlatform::ExecuteCommand(ushort command) {
 			MoveTo(pos);
 			break;
 		}
-		case 16929: {
+		case C_MOVE_TO_NODE: {
 			ushort node = *mpScript++;
 			CVector pos;
 
-			if (node & 0x2000)
+			if (node & BASE_VARIABLE)
 				node = GetVariable(node);
 
 			Trig_GetPosition(pos, node);
 			MoveTo(pos);
 			return 1;
 		}
-		case 16930: {
+		case C_MOVE_TO_RELATIVE: {
 			int *p_pos;
 			CVector pos;
 
@@ -795,10 +796,10 @@ int CPlatform::ExecuteCommand(ushort command) {
 			MoveTo(pos);
 			break;
 		}
-		case 16901:
+		case C_DIE_QUIETLY:
 			Die();
 			return 0;
-		case 17153:
+		case C_SHATTER:
 			if (MechList->m868 == this)
 				MechList->m868 = 0;
 
@@ -816,14 +817,14 @@ int CPlatform::ExecuteCommand(ushort command) {
 /* SetVariable__9CPlatformUs (0x8003f45c) */
 void CPlatform::SetVariable(ushort variable) {
 	switch (variable) {
-		case 8483:
+		case V_APPLY_GRAVITY:
 			mApplyGravity = *(uchar *)mpScript;
 			mpScript++;
 			break;
-		case 8484:
+		case V_MODEL:
 			mModel = *mpScript++;
 			break;
-		case 8495: {
+		case V_MODEL_CHECKSUM: {
 			uint *p_checksum = (uint *)(((intptr_t)mpScript + 3) & -4);
 
 			mModel = Spool_GetModel(*p_checksum, mRegion);
@@ -831,7 +832,7 @@ void CPlatform::SetVariable(ushort variable) {
 			mFlags &= ~1;
 			break;
 		}
-		case 8500: {
+		case V_VELOCITY: {
 			short a = GetScriptValue();
 			short b = GetScriptValue();
 			short c = GetScriptValue();
@@ -839,7 +840,7 @@ void CPlatform::SetVariable(ushort variable) {
 			mVel.Set(a << 12, b << 12, c << 12);
 			break;
 		}
-		case 8503: {
+		case V_ANGLES: {
 			short a = GetScriptValue();
 			short b = GetScriptValue();
 			short c = GetScriptValue();
@@ -847,7 +848,7 @@ void CPlatform::SetVariable(ushort variable) {
 			mAngles.Set(a, b, c);
 			break;
 		}
-		case 8487: {
+		case V_ANGULAR_VELOCITY: {
 			short a = GetScriptValue();
 			short b = GetScriptValue();
 			short c = GetScriptValue();
@@ -855,7 +856,7 @@ void CPlatform::SetVariable(ushort variable) {
 			mAngVel.Set(a, b, c);
 			break;
 		}
-		case 8488: {
+		case V_ANGULAR_ACCELERATION: {
 			short a = GetScriptValue();
 			short b = GetScriptValue();
 			short c = GetScriptValue();

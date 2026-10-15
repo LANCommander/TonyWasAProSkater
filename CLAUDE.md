@@ -56,6 +56,9 @@ addresses all fall inside `PROSKATE.EXE`.
   correlation (474 exact / 31.7%, a lower bound).
 - `emit_ghidra_tsv.py` — turns the two JSONs into `build/demo_syms.tsv` and `build/retail_names.tsv`
   (demo names ported to retail addresses).
+- `trg_dump.py <file.trg>` / `--check` — disassembles a level `.TRG` (nodes, trigger command lists,
+  object scripts) with the opcode names in `game/include/game/script.h`; `--check` over
+  `build/pc/data/Scripts/*.trg` must report 0 errors after any operand-format change.
 
 ## Naming conventions
 

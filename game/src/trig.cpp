@@ -35,6 +35,7 @@
 #include "game/spool.h"
 #include "game/utils.h"
 #include "game/video.h"
+#include "game/script.h"
 
 /* a light node's CLight parameters, after its position (Trig_GetPosition) */
 struct STrigLightParams {
@@ -131,7 +132,7 @@ void FUN_800448b8(void) {
 SCommandPoint *GetCommandPoint(int n) {
 	SCommandPoint *p;
 
-	if (n != 0xffff && *OffsetList[n] == 6) {
+	if (n != 0xffff && *OffsetList[n] == NODE_COMMANDPOINT) {
 		for (p = CommandPoints; p; p = p->pNext)
 			if (p->NodeIndex == n)
 				return p;
@@ -191,7 +192,7 @@ void Trig_SetRestart(char *name) {
 	RestartNode = 0xffff;
 
 	for (i = 0; i < NumNodes; i++) {
-		if (*OffsetList[i] == 8) {
+		if (*OffsetList[i] == NODE_RESTART) {
 			CVector v;
 
 			if (Utils_CompareStrings((char *)Trig_GetPosition(v, i) + 6, name, -1)) {
@@ -279,7 +280,7 @@ void Trig_ExecuteRestart() {
 			short *pNode = OffsetList[i];
 			CVector Dummy;
 
-			if (*pNode == 8 &&
+			if (*pNode == NODE_RESTART &&
 			    Utils_CompareStrings((char *)(Trig_GetPosition(Dummy, i) + 1), "RE_2P", -1)) {
 				CVector StartPos;
 
@@ -354,7 +355,7 @@ void Trig_InitialParseTRGFile(char *pName) {
 	{
 		short *pLast = OffsetList[NumNodes - 1];
 
-		if (*pLast == 255)
+		if (*pLast == NODE_TERMINATOR)
 			Mem_Shrink(TrigFile, ((char *)pLast - TrigFile + 5) & ~3);
 	}
 
@@ -366,7 +367,7 @@ void Trig_InitialParseTRGFile(char *pName) {
 		for (i = 0; i < NumNodes; i++) {
 			short *pNode = OffsetList[i];
 
-			if (*pNode == 8) {
+			if (*pNode == NODE_RESTART) {
 				CVector Dummy;
 				char *pNodeName = (char *)Trig_GetPosition(Dummy, i) + 6;
 
@@ -383,7 +384,7 @@ void Trig_InitialParseTRGFile(char *pName) {
 		for (i = 0; i < NumNodes; i++) {
 			short *pNode = OffsetList[i];
 
-			if (*pNode == 8) {
+			if (*pNode == NODE_RESTART) {
 				CVector Dummy;
 				char *pNodeName = (char *)Trig_GetPosition(Dummy, i);
 
@@ -405,7 +406,7 @@ void Trig_InitialParseTRGFile(char *pName) {
 		for (i = 0; i < NumNodes; i++) {
 			short *pNode = OffsetList[i];
 
-			if (*pNode == 15) {
+			if (*pNode == NODE_AUTOEXEC2) {
 				Found = 1;
 				ExecuteCommandList((ushort *)(pNode + 1), i, 1);
 			}
@@ -418,7 +419,7 @@ void Trig_InitialParseTRGFile(char *pName) {
 		for (i = 0; i < NumNodes; i++) {
 			short *pNode = OffsetList[i];
 
-			if (*pNode == 4)
+			if (*pNode == NODE_AUTOEXEC)
 				ExecuteCommandList((ushort *)(pNode + 1), i, 1);
 		}
 	}
@@ -462,33 +463,33 @@ CBody *Trig_CreateObject(int NodeIndex) {
 	NodeType = *pInfo++;
 
 	switch (NodeType) {
-		case 7:
+		case NODE_SEEDABLEBADDY:
 			Inactive = 1;
-		case 1:
+		case NODE_BADDY:
 			Type = *pInfo++;
 			Seedable = (ushort)*pInfo++;
 			pInfo += *pInfo + 1;
-			NotSuspendedAtStart = GetFlag(2, (uchar *)pInfo);
-			ManualSuspendControl = GetFlag(4, (uchar *)pInfo);
+			NotSuspendedAtStart = GetFlag(ACTIVEWHENCREATED, (uchar *)pInfo);
+			ManualSuspendControl = GetFlag(MANUALSUSPENDCONTROL, (uchar *)pInfo);
 			pInfo = (short *)(((intptr_t)SkipFlags((uchar *)pInfo) + 3) & ~3);
 
 			switch (Type) {
-				case 203:
+				case OBJ_SCRIPTONLYBADDY:
 					NewObject = new CScriptOnlyBaddy(pInfo, NodeIndex);
 					break;
-				case 402:
+				case OBJ_PLATFORM:
 					NewObject = new CPlatform(pInfo, NodeIndex);
 					break;
-				case 213:
-				case 214:
-				case 215:
-				case 216:
+				case OBJ_CAR_TAXI:
+				case OBJ_CAR_POLICE:
+				case OBJ_CAR_BUS:
+				case OBJ_CAR_CABLE:
 					NewObject = new CCar(pInfo, NodeIndex, Type);
 					break;
 			}
 
 			break;
-		case 5: {
+		case NODE_POWRUP: {
 			CVector Pos;
 			ushort *pStuff;
 
@@ -553,33 +554,33 @@ void Trig_SendPulseToNode(int idx) {
 
 	/* (retail passes OffsetList as a stray second argument to the calls made through casts) */
 	switch (*OffsetList[idx]) {
-		case 5:
-		case 7:
-		case 1:
+		case NODE_POWRUP:
+		case NODE_SEEDABLEBADDY:
+		case NODE_BADDY:
 			((CBody * (*)(int, short **)) Trig_CreateObject)(idx, OffsetList);
 			break;
-		case 6:
+		case NODE_COMMANDPOINT:
 			cp = ((SCommandPoint * (*)(int, short **)) GetCommandPoint)(idx, OffsetList);
 			cp->PulsesReceived = cp->PulsesReceived + 1;
 			ExecuteCommandList(cp->pCommands, idx, 0);
 			break;
-		case 501:
+		case NODE_OFFLIGHT:
 			p = (STrigLightParams *)Trig_GetPosition(v.Pos, idx);
 			UseCacheForBits = 0;
 			new CLight(v.Pos, idx, p->w0, p->w2, p->w4, p->w6, p->b8, p->b10, p->b12, p->b14, p->b16,
 			           p->b18);
 			UseCacheForBits = 1;
 			break;
-		case 10:
-		case 11:
+		case NODE_RAILPOINT:
+		case NODE_RAILDEF:
 			o2 = ((void *(*)(uint, short **))CClass::operator new)(SIZEOF_CRAIL, OffsetList);
 
 			if (o2)
 				FUN_8004f684((CRail *)o2, idx);
 
 			break;
-		case 14:
-		case 12:
+		case NODE_GOALOB:
+		case NODE_TRICKOB:
 			((void (*)(int, short **))TrickOb_DarkenNode)(idx, OffsetList);
 			break;
 	}
@@ -876,63 +877,63 @@ char *SkipString(char *p) {
    empty groups (10-12, 0x88-0x89, 0x95 sharing the default label) only show up in its shape. */
 ushort *SkipCommand(ushort *pCommand) {
 	switch (*pCommand++) {
-		case 0xffff:
+		case TRG_ENDCOMMANDLIST:
 			return 0;
 
-		case 0x82:
-		case 0x87:
-		case 0x8b:
-		case 0x8f:
-		case 0x90:
-		case 0x91:
-		case 0x92:
-		case 0xa7:
-		case 0xae:
-		case 0xc8:
-		case 0xca:
+		case TRG_SETCAMANGLE:
+		case TRG_SETCAMDISTXZ:
+		case TRG_PLAYXA:
+		case TRG_SETCAMDISTY:
+		case TRG_SETCAMOFFSETX:
+		case TRG_SETCAMOFFSETY:
+		case TRG_SETCAMOFFSETZ:
+		case TRG_SETCAMZOOM:
+		case TRG_SETDROPDAMAGEON:
+		case TRG_SETFADECOLOR:
+		case TRG_SETSKYCOLOR:
 			pCommand += 2;
 			break;
 
-		case 0x68:
+		case TRG_SETFOGGINGPARAMS:
 			pCommand += 3;
 			break;
 
 		case 0x73:
-		case 0x77:
-		case 0x7e:
-		case 0x7f:
-		case 0x80:
-		case 0x8c:
-		case 0x8e:
-		case 0xb0:
-		case 0xb2:
+		case TRG_DEBUGTEXT:
+		case TRG_SPOOLIN:
+		case TRG_SPOOLOUT:
+		case TRG_SPOOLENV:
+		case TRG_SETRESTART:
+		case TRG_SETOBJFILE:
+		case TRG_SETRESTARTNOMESSAGE:
+		case TRG_SETRESTART2:
 			pCommand = (ushort *)SkipString((char *)pCommand);
 			break;
 
-		case 2:
+		case TRG_SETCHEATRESTARTS:
 			while (*(char *)pCommand)
 				pCommand = (ushort *)SkipString((char *)pCommand);
 
 			pCommand++;
 			break;
 
-		case 0xab: {
+		case TRG_BACKGROUNDCREATE: {
 			uint *p_checksum = (uint *)(((intptr_t)pCommand + 3) & ~3);
 
 			pCommand = (ushort *)p_checksum + 5;
 			break;
 		}
 
-		case 0xc9: {
+		case TRG_GAPPOLYHIT: {
 			uint *p_checksum = (uint *)(((intptr_t)pCommand + 3) & ~3);
 
 			pCommand = (ushort *)p_checksum + 3;
 			break;
 		}
 
-		case 0x8d:
+		case TRG_SETVISIBILITYINBOX:
 			pCommand += 2;
-		case 0x85: {
+		case TRG_KILLEVERYTHINGINBOX: {
 			while (*pCommand != 0xff) {
 				int *p_pos = (int *)(((intptr_t)pCommand + 3) & ~3);
 
@@ -944,52 +945,52 @@ ushort *SkipCommand(ushort *pCommand) {
 			break;
 		}
 
-		case 0x0d:
-		case 0x69:
-		case 0x6a:
-		case 0x83:
-		case 0x84:
-		case 0x86:
-		case 0x8a:
-		case 0x93:
-		case 0x94:
-		case 0x99:
-		case 0x9a:
-		case 0x9b:
-		case 0x9c:
-		case 0xa0:
-		case 0xa3:
-		case 0xa4:
-		case 0xa5:
-		case 0xa6:
-		case 0xa8:
-		case 0xa9:
-		case 0xaa:
-		case 0xac:
-		case 0xb1:
+		case TRG_SENDVISIBLE:
+		case TRG_PLAYSOUND:
+		case TRG_STOPSOUND:
+		case TRG_BACKGROUNDON:
+		case TRG_BACKGROUNDOFF:
+		case TRG_SETINITIALPULSES:
+		case TRG_SEEKXA:
+		case TRG_SETGAMELEVEL:
+		case TRG_IFPULSECOUNT:
+		case TRG_SETCAMCOLIJSIDE:
+		case TRG_SETCAMCOLIJBACK:
+		case TRG_MIDIFADEIN:
+		case TRG_MIDIFADEOUT:
+		case TRG_SETCAMMODE:
+		case TRG_IGNOREBRUCEINPUT:
+		case TRG_SETCAMCOLIJANGLESIDE:
+		case TRG_SETCAMCOLIJANGLEBACK:
+		case TRG_SETOTPUSHBACK:
+		case TRG_SETCAMPITCHDAMP:
+		case TRG_SETOTPUSHBACK2:
+		case TRG_SETSUSPENDDISTANCE:
+		case TRG_SETCAMYDAMP:
+		case TRG_IGNOREBRUCEINPUTFREEZE:
 			pCommand++;
 			break;
 
-		case 3:
-		case 4:
-		case 5:
-		case 0x66:
-		case 0x67:
+		case TRG_SENDPULSE:
+		case TRG_SENDACTIVATE:
+		case TRG_SENDSUSPEND:
+		case TRG_WATEREFFECTON:
+		case TRG_WATEREFFECTOFF:
 		case 0x79:
 		case 0x7a:
-		case 0x81:
-		case 0xad:
-		case 0xaf:
+		case TRG_SPOOLLOCK:
+		case TRG_SETCAMFOCUSEQUALSTRIPOD:
+		case TRG_SETDROPDAMAGEOFF:
 			break;
 
-		case 0xa:
-		case 0xb:
-		case 0xc:
+		case TRG_SENDSIGNAL:
+		case TRG_SENDKILL:
+		case TRG_SENDKILLLOUDLY:
 			return pCommand;
-		case 0x88:
-		case 0x89:
+		case TRG_ALLOWXA:
+		case TRG_DISALLOWXA:
 			return pCommand;
-		case 0x95:
+		case TRG_ENDIF:
 		default:
 			return pCommand;
 	}
@@ -1019,11 +1020,11 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 	uint Range;
 	SCommandPoint *pCommandPoint = GetCommandPoint(Node);
 
-	while (*pCommands != 0xffff) {
+	while (*pCommands != TRG_ENDCOMMANDLIST) {
 		ushort Command = *pCommands++;
 
 		switch (Command) {
-			case 0x02:
+			case TRG_SETCHEATRESTARTS:
 				NumCheatRestarts = 0;
 
 				while (*(char *)pCommands) {
@@ -1034,13 +1035,13 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				pCommands++;
 				break;
 
-			case 0x97:
+			case TRG_SETDUALBUFFERSIZE:
 				Trig_RemoveDualBuffer();
 				Trig_AllocateDualBuffer(*pCommands++ * 1000);
 				break;
 
-			case 0x8c:
-			case 0xb0: {
+			case TRG_SETRESTART:
+			case TRG_SETRESTARTNOMESSAGE: {
 				int OldRestart = RestartNode;
 
 				if (GGame == 7)
@@ -1051,7 +1052,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				pCommands = (ushort *)SkipString((char *)pCommands);
 
 				if (OldRestart != 0xffff && RestartNode != OldRestart) {
-					if (Command != 0xb0)
+					if (Command != TRG_SETRESTARTNOMESSAGE)
 						Mess_DeleteAll();
 
 					Front_SaveGameState();
@@ -1060,7 +1061,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 			}
 
-			case 0xb2:
+			case TRG_SETRESTART2:
 				if (GNumberOfPlayers == 2) {
 					if (GGame == 7)
 						Trig_SetRestart(HorseRestarts[GHorseRestart]);
@@ -1071,7 +1072,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				pCommands = (ushort *)SkipString((char *)pCommands);
 				break;
 
-			case 0x7e:
+			case TRG_SPOOLIN:
 				Spool_PSX((char *)pCommands, 0, 0);
 
 				if (WaitForSpooling)
@@ -1080,13 +1081,13 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				pCommands = (ushort *)SkipString((char *)pCommands);
 				break;
 
-			case 0x7f:
+			case TRG_SPOOLOUT:
 				Spool_ClearPSX((char *)pCommands);
 
 				pCommands = (ushort *)SkipString((char *)pCommands);
 				break;
 
-			case 0x80:
+			case TRG_SPOOLENV:
 				Spool_PSX((char *)pCommands, 1, 0);
 
 				if (WaitForSpooling)
@@ -1095,23 +1096,23 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				pCommands = (ushort *)SkipString((char *)pCommands);
 				break;
 
-			case 0x81:
+			case TRG_SPOOLLOCK:
 				Spool_Sync();
 				break;
 
-			case 0x9f:
+			case TRG_SPOOLMIDI:
 				SFX_SpoolInMIDI((char *)pCommands);
 
 				pCommands = (ushort *)SkipString((char *)pCommands);
 				break;
 
-			case 0x8e:
+			case TRG_SETOBJFILE:
 				pCurrentObjFile = (char *)pCommands;
 				pCommands = (ushort *)SkipString((char *)pCommands);
 				CurrentObjFileRegion = Spool_FindRegion(pCurrentObjFile);
 				break;
 
-			case 0x85: {
+			case TRG_KILLEVERYTHINGINBOX: {
 				CVector min, max;
 
 				while (*pCommands != 0xff) {
@@ -1132,11 +1133,11 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 			}
 
-			case 0x8a:
+			case TRG_SEEKXA:
 				pCommands++;
 				break;
 
-			case 0x8d: {
+			case TRG_SETVISIBILITYINBOX: {
 				ushort on = *pCommands++;
 				ushort in = *pCommands++;
 				CVector min, max;
@@ -1159,15 +1160,15 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 			}
 
-			case 0x66:
+			case TRG_WATEREFFECTON:
 				DAT_800d1f14 = 1;
 				break;
 
-			case 0x67:
+			case TRG_WATEREFFECTOFF:
 				DAT_800d1f14 = 0;
 				break;
 
-			case 0xab: {
+			case TRG_BACKGROUNDCREATE: {
 				uint *p_checksum = (uint *)(((intptr_t)pCommands + 3) & ~3);
 				uint checksum = *p_checksum++;
 				CSVector ang_vel;
@@ -1180,22 +1181,22 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 			}
 
-			case 0x83:
+			case TRG_BACKGROUNDON:
 				Backgrnd_On(*pCommands++);
 				break;
 
-			case 0x84:
+			case TRG_BACKGROUNDOFF:
 				Backgrnd_Off(*pCommands++);
 				break;
 
-			case 0x68:
+			case TRG_SETFOGGINGPARAMS:
 				ZHither = *pCommands++;
 				ZDpqMin = *pCommands++;
 				Range = *pCommands++;
 				NewFoggingParameters = 1;
 				break;
 
-			case 0xc8: {
+			case TRG_SETFADECOLOR: {
 				uint fadecolor = *pCommands++ << 16;
 
 				fadecolor += *pCommands++;
@@ -1203,7 +1204,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 			}
 
-			case 0xca: {
+			case TRG_SETSKYCOLOR: {
 				uint skycolor = *pCommands++ << 16;
 
 				skycolor += *pCommands++;
@@ -1212,7 +1213,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 			}
 
-			case 0xc9: {
+			case TRG_GAPPOLYHIT: {
 				uint *pChecksum = (uint *)(((intptr_t)pCommands + 3) & ~3);
 				uint Checksum = *pChecksum++;
 				int GapType;
@@ -1261,47 +1262,47 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 			}
 
-			case 0x69:
+			case TRG_PLAYSOUND:
 				SFX_PlayX((short)*pCommands++, 0x2000, 0);
 				break;
 
-			case 0x6a:
+			case TRG_STOPSOUND:
 				SFX_Stop((short)*pCommands++);
 				break;
 
-			case 0x96:
+			case TRG_MIDICHANNELMUTE:
 				SFX_MIDIChannelMute(*pCommands++);
 				break;
 
-			case 0x9b:
+			case TRG_MIDIFADEIN:
 				SFX_MIDIFadeIn(*pCommands++);
 				break;
 
-			case 0x9c:
+			case TRG_MIDIFADEOUT:
 				SFX_MIDIFadeOut(*pCommands++);
 				break;
 
-			case 0x9d:
+			case TRG_SETREVERBTYPE:
 				SFX_SetReverbType(*pCommands++);
 				break;
 
-			case 0x9e:
+			case TRG_ENDLEVEL:
 				Game_Over();
 				break;
 
-			case 0xa3:
+			case TRG_IGNOREBRUCEINPUT:
 				if (MechList)
 					MechList->mIgnoreBruceInputTimer = *pCommands++;
 
 				break;
 
-			case 0xb1:
+			case TRG_IGNOREBRUCEINPUTFREEZE:
 				if (MechList)
 					MechList->mIgnoreBruceInputFreezeTimer = *pCommands++;
 
 				break;
 
-			case 0x98: {
+			case TRG_KILLBRUCE: {
 				CVector StartPos;
 				CVector BestStartPos;
 				CSVector *pBestAngles;
@@ -1321,7 +1322,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 						for (i = 0; i < NumNodes; i++) {
 							CVector Dummy;
 
-							if (*OffsetList[i] == 8 &&
+							if (*OffsetList[i] == NODE_RESTART &&
 							    Utils_CompareStrings((char *)(Trig_GetPosition(Dummy, i) + 1),
 							                         HorseRestarts[n], -1)) {
 								CSVector *pAngles = Trig_GetPosition(StartPos, i);
@@ -1371,9 +1372,9 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				break;
 			}
 
-			case 0x94:
+			case TRG_IFPULSECOUNT:
 				if (pCommandPoint->PulsesReceived != *pCommands++) {
-					while (*pCommands != 0x95)
+					while (*pCommands != TRG_ENDIF)
 						pCommands = SkipCommand(pCommands);
 
 					pCommands++;
@@ -1381,7 +1382,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x86:
+			case TRG_SETINITIALPULSES:
 				if (!pCommandPoint->NumPulsesSet) {
 					pCommandPoint->NumPulses = *pCommands;
 					pCommandPoint->NumPulsesSet = 1;
@@ -1390,7 +1391,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 				pCommands++;
 				break;
 
-			case 0x03:
+			case TRG_SENDPULSE:
 				if (pCommandPoint) {
 					if (pCommandPoint->NumPulses) {
 						Trig_SendPulse(Trig_GetLinksPointer(Node));
@@ -1404,51 +1405,51 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x04:
-			case 0x05:
+			case TRG_SENDACTIVATE:
+			case TRG_SENDSUSPEND:
 				SendSuspendOrActivate(Trig_GetLinksPointer(Node), Command);
 				break;
 
-			case 0x0a:
+			case TRG_SENDSIGNAL:
 				SendSignalToLinks(Trig_GetLinksPointer(Node));
 				break;
 
-			case 0x0d:
+			case TRG_SENDVISIBLE:
 				SendVisibleFromNode(Node, *pCommands++);
 				break;
 
-			case 0x0b:
+			case TRG_SENDKILL:
 				SendKillFromNode(Node, 0);
 				break;
 
-			case 0x0c:
+			case TRG_SENDKILLLOUDLY:
 				SendKillFromNode(Node, 1);
 				break;
 
-			case 0x77:
-			case 0xa2:
+			case TRG_DEBUGTEXT:
+			case TRG_LOADAI:
 				pCommands = (ushort *)SkipString((char *)pCommands);
 				break;
 
-			case 0xaa:
+			case TRG_SETSUSPENDDISTANCE:
 				SuspendDistance = *pCommands++;
 				break;
 
-			case 0xa6:
+			case TRG_SETOTPUSHBACK:
 				M3d_OTPushback = *pCommands++;
 				break;
 
-			case 0xa9:
+			case TRG_SETOTPUSHBACK2:
 				M3d_OTPushback2 = *pCommands++;
 				break;
 
-			case 0xad:
+			case TRG_SETCAMFOCUSEQUALSTRIPOD:
 				if (CameraList)
 					CameraList->mFocus = CameraList->mTripod;
 
 				break;
 
-			case 0xa7:
+			case TRG_SETCAMZOOM:
 				if (CameraList) {
 					ushort a = pCommands[0];
 					ushort b = pCommands[1];
@@ -1460,21 +1461,21 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0xa8:
+			case TRG_SETCAMPITCHDAMP:
 				if (CameraList)
 					CameraList->SetPitchDamper(*pCommands);
 
 				pCommands++;
 				break;
 
-			case 0xac:
+			case TRG_SETCAMYDAMP:
 				if (CameraList)
 					CameraList->SetTripodPosYDamper(*pCommands);
 
 				pCommands++;
 				break;
 
-			case 0x82:
+			case TRG_SETCAMANGLE:
 				if (CameraList) {
 					short a = pCommands[0];
 					ushort b = pCommands[1];
@@ -1486,7 +1487,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x87:
+			case TRG_SETCAMDISTXZ:
 				if (CameraList) {
 					ushort a = pCommands[0];
 					ushort b = pCommands[1];
@@ -1498,7 +1499,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x8f:
+			case TRG_SETCAMDISTY:
 				if (CameraList) {
 					short a = pCommands[0];
 					ushort b = pCommands[1];
@@ -1510,7 +1511,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x90:
+			case TRG_SETCAMOFFSETX:
 				if (CameraList) {
 					short a = pCommands[0];
 					ushort b = pCommands[1];
@@ -1522,7 +1523,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x91:
+			case TRG_SETCAMOFFSETY:
 				if (CameraList) {
 					short a = pCommands[0];
 					ushort b = pCommands[1];
@@ -1534,7 +1535,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x92:
+			case TRG_SETCAMOFFSETZ:
 				if (CameraList) {
 					short a = pCommands[0];
 					ushort b = pCommands[1];
@@ -1546,7 +1547,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x99:
+			case TRG_SETCAMCOLIJSIDE:
 				if (CameraList)
 					CameraList->SetCollisionRayLR((short)*pCommands++);
 				else
@@ -1554,7 +1555,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x9a:
+			case TRG_SETCAMCOLIJBACK:
 				if (CameraList)
 					CameraList->SetCollisionRayBack((short)*pCommands++);
 				else
@@ -1562,7 +1563,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0xa4:
+			case TRG_SETCAMCOLIJANGLESIDE:
 				if (CameraList)
 					CameraList->SetCollisionAngLR(*pCommands++);
 				else
@@ -1570,7 +1571,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0xa5:
+			case TRG_SETCAMCOLIJANGLEBACK:
 				if (CameraList)
 					CameraList->SetCollisionAngBack(*pCommands++);
 				else
@@ -1578,14 +1579,14 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0xa0:
+			case TRG_SETCAMMODE:
 				if (CameraList)
 					CameraList->mCameraMode = (ECameraMode)*pCommands;
 
 				pCommands++;
 				break;
 
-			case 0xa1:
+			case TRG_SETCAMCOMPLEXMODE:
 				if (CameraList)
 					CameraList->SetComplexMode(*pCommands++);
 				else
@@ -1593,26 +1594,26 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 				break;
 
-			case 0x93:
+			case TRG_SETGAMELEVEL:
 				CurrentGameLevel = *pCommands++;
 				break;
 
-			case 0x88:
+			case TRG_ALLOWXA:
 				Redbook_XAAllow(1);
 				break;
 
-			case 0x89:
+			case TRG_DISALLOWXA:
 				Redbook_XAAllow(0);
 				break;
 
-			case 0xae:
+			case TRG_SETDROPDAMAGEON:
 				if (MechList)
 					MechList->SetM8A4(pCommands[0], pCommands[1]);
-			case 0x8b:
+			case TRG_PLAYXA:
 				pCommands += 2;
 				break;
 
-			case 0xaf:
+			case TRG_SETDROPDAMAGEOFF:
 				if (MechList)
 					MechList->m8A4 = 0;
 
@@ -1640,22 +1641,22 @@ void Trig_ParseTRGFile(void) {
 		b = (ushort *)OffsetList[i];
 
 		switch (*(short *)b) {
-			case 7:
-				GetFlag(1, (unsigned char *)b + (((short *)b)[3] * 2 + 8));
+			case NODE_SEEDABLEBADDY:
+				GetFlag(CREATEDATSTART, (unsigned char *)b + (((short *)b)[3] * 2 + 8));
 				break;
-			case 1:
-				if (GetFlag(1, (unsigned char *)b + (((short *)b)[3] * 2 + 8)))
+			case NODE_BADDY:
+				if (GetFlag(CREATEDATSTART, (unsigned char *)b + (((short *)b)[3] * 2 + 8)))
 					Trig_CreateObject(i);
 
 				break;
-			case 5:
+			case NODE_POWRUP:
 				r = (int *)Trig_GetPosition(v, i);
 
 				if (*(unsigned short *)r == 1)
 					Trig_CreateObject(i);
 
 				break;
-			case 6:
+			case NODE_COMMANDPOINT:
 				ui = i;
 				b += 1;
 				b = (unsigned short *)((char *)b + (*(short *)b * 2 + 2));
@@ -1665,8 +1666,8 @@ void Trig_ParseTRGFile(void) {
 
 				CreateCommandPoint(*(int *)b, ui, (ushort *)((char *)b + 4));
 				break;
-			case 2:
-			case 9:
+			case NODE_CRATE:
+			case NODE_BARREL:
 				b += 1;
 				b = (unsigned short *)((char *)b + (*(short *)b * 2 + 2));
 
@@ -1675,7 +1676,7 @@ void Trig_ParseTRGFile(void) {
 
 				CreateCommandPoint(*(int *)b, i, (ushort *)DAT_800d1a10);
 				break;
-			case 500:
+			case NODE_LIGHT:
 				q = (STrigLightParams *)Trig_GetPosition(v, i);
 				UseCacheForBits = 0;
 				it = __nw__4CBitUi(SIZEOF_CLIGHT);
@@ -1686,15 +1687,15 @@ void Trig_ParseTRGFile(void) {
 
 				UseCacheForBits = 1;
 				break;
-			case 12:
-			case 14:
+			case NODE_TRICKOB:
+			case NODE_GOALOB:
 				it = __nw__6CClassUi(SIZEOF_CTRICKOB);
 
 				if (it)
 					__8CTrickObUs(it, i, 0);
 
 				break;
-			case 13:
+			case NODE_CAMPT:
 				CamPt_New(i);
 				break;
 		}
@@ -1705,7 +1706,7 @@ void Trig_ParseTRGFile(void) {
 	for (j = 0; j < NumNodes; j++) {
 		short *pNode = (short *)OffsetList[j];
 
-		if (*pNode == 8) {
+		if (*pNode == NODE_RESTART) {
 			char *pNodeName = (char *)Trig_GetPosition(v, j) + 6;
 
 			MenuFilenamePointers[NumTrigMenuEntries++] = pNodeName;
@@ -1718,22 +1719,22 @@ unsigned short *Trig_GetLinksPointer(int n) {
 	unsigned short *p = (ushort *)OffsetList[n];
 
 	switch (*p) {
-		case 1:
+		case NODE_BADDY:
 			return p + 3;
-		case 5:
+		case NODE_POWRUP:
 			return p + 2;
-		case 2:
-		case 3:
-		case 6:
-		case 8:
-		case 9:
-		case 10:
-		case 11:
-		case 12:
-		case 13:
-		case 14:
-		case 1000:
-		case 1001:
+		case NODE_CRATE:
+		case NODE_POINT:
+		case NODE_COMMANDPOINT:
+		case NODE_RESTART:
+		case NODE_BARREL:
+		case NODE_RAILPOINT:
+		case NODE_RAILDEF:
+		case NODE_TRICKOB:
+		case NODE_CAMPT:
+		case NODE_GOALOB:
+		case NODE_SCRIPTPOINT:
+		case NODE_CAMERAPATH:
 			return p + 1;
 	}
 
@@ -1750,8 +1751,8 @@ CSVector *Trig_GetPosition(CVector &pos, int node) {
 	switch (*pNode) {
 		{
 			uchar *pFlags;
-			case 1:
-			case 7:
+			case NODE_BADDY:
+			case NODE_SEEDABLEBADDY:
 				pFlags = (uchar *)(pNode + 4 + pNode[3]);
 
 				while (*pFlags != 0xff)
@@ -1762,28 +1763,28 @@ CSVector *Trig_GetPosition(CVector &pos, int node) {
 				pos.vy = pLong[1] << 12;
 				pos.vz = pLong[2] << 12;
 				break;
-			case 3:
-			case 8:
-			case 10:
-			case 11:
-			case 13:
-			case 1000:
-			case 1001:
+			case NODE_POINT:
+			case NODE_RESTART:
+			case NODE_RAILPOINT:
+			case NODE_RAILDEF:
+			case NODE_CAMPT:
+			case NODE_SCRIPTPOINT:
+			case NODE_CAMERAPATH:
 				pPos = pNode + 2 + pNode[1];
 				pLong = (int *)((intptr_t)((uchar *)pPos + 3) & ~3);
 				pos.vx = pLong[0] << 12;
 				pos.vy = pLong[1] << 12;
 				pos.vz = pLong[2] << 12;
 				break;
-			case 5:
+			case NODE_POWRUP:
 				pPos = pNode + 3 + pNode[2];
 				pLong = (int *)((intptr_t)((uchar *)pPos + 3) & ~3);
 				pos.vx = pLong[0] << 12;
 				pos.vy = pLong[1] << 12;
 				pos.vz = pLong[2] << 12;
 				break;
-			case 500:
-			case 501:
+			case NODE_LIGHT:
+			case NODE_OFFLIGHT:
 				pPos = pNode + 1;
 				pLong = (int *)((intptr_t)((uchar *)pPos + 3) & ~3);
 				pos.vx = pLong[0] << 12;

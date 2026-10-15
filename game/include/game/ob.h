@@ -68,10 +68,11 @@ class CItem {
 	void Flash(int frames, uchar r, uchar g, uchar b);
 	void FlashUpdate();
 
-	void Hide() {
+	/* C_DISPLAY_ON / C_DISPLAY_OFF (game/script.h); 0x41 is what a dead or invisible object gets */
+	void Show() {
 		mFlags &= ~1;
 	}
-	void Show() {
+	void Hide() {
 		mFlags |= 0x41;
 	}
 };
