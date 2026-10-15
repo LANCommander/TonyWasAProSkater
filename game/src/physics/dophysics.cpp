@@ -28,7 +28,7 @@ extern SStats Stats[];
 extern SCareer GCareer;
 extern SLevel Levels[];
 extern STrick DAT_800a7250, DAT_800a727c, DAT_800a72a8, DAT_800a72d4, DAT_800a7300, DAT_800a732c;
-extern STrick DAT_800a7460, DAT_800a74e4, DAT_800a7510;
+extern STrick Group[];
 extern short HeadBloodAtFrame[];
 extern CVector WorldUp;
 extern CVector DAT_800d25e4;
@@ -86,29 +86,29 @@ void CBruce::DoPhysics() {
 
 	switch (Stats[mSkaterIndex].Stats[4]) {
 		case 0:
-			DAT_800a74e4 = DAT_800a727c;
-			DAT_800a7510 = DAT_800a72a8;
-			DAT_800a7460 = DAT_800a7250;
+			Group[9] = DAT_800a727c;
+			Group[10] = DAT_800a72a8;
+			Group[6] = DAT_800a7250;
 			break;
 		case 1:
-			DAT_800a74e4 = DAT_800a7300;
-			DAT_800a7510 = DAT_800a732c;
-			DAT_800a7460 = DAT_800a72d4;
+			Group[9] = DAT_800a7300;
+			Group[10] = DAT_800a732c;
+			Group[6] = DAT_800a72d4;
 			break;
 		case 2:
-			DAT_800a74e4 = DAT_800a7250;
-			DAT_800a7510 = DAT_800a72a8;
-			DAT_800a7460 = DAT_800a72d4;
+			Group[9] = DAT_800a7250;
+			Group[10] = DAT_800a72a8;
+			Group[6] = DAT_800a72d4;
 			break;
 		case 3:
-			DAT_800a74e4 = DAT_800a727c;
-			DAT_800a7510 = DAT_800a732c;
-			DAT_800a7460 = DAT_800a7250;
+			Group[9] = DAT_800a727c;
+			Group[10] = DAT_800a732c;
+			Group[6] = DAT_800a7250;
 			break;
 		case 4:
-			DAT_800a74e4 = DAT_800a727c;
-			DAT_800a7510 = DAT_800a732c;
-			DAT_800a7460 = DAT_800a7250;
+			Group[9] = DAT_800a727c;
+			Group[10] = DAT_800a732c;
+			Group[6] = DAT_800a7250;
 			break;
 	}
 

@@ -27,25 +27,21 @@ STrick DAT_800a732c = {
 	0, 59, 0x10000, "360 FLIP", 0, 3, 8, 300,
 };
 
-/* THPS2 demo: SGroup[4] */
-STrick Group[6] = {
+/* the trick table, by trick number (THPS2 demo: SGroup[4]) */
+STrick Group[67] = {
 	{0, 78, -1},
 	{0, 53, 0x10000, "360 SHOVE IT", 0, 7, 10, 250},
 	{0, 22, 0x10000, "IMPOSSIBLE", 0, 3, 6, 250},
 	{0, 78, -1},
 	{0, 20, 0x10000, "KICKFLIP", 0, 6, 10, 100},
 	{0, 28, 0x10000, "KICKFLIP TO INDY", 28, 8, 0, 500},
-};
-
-STrick DAT_800a7460[3] = {
+	/* 6 */
 	{0, 78, -1},
 	{0, 78, -1},
 	{0, 21, 0x10000, "HEELFLIP", 0, 6, 10, 100},
-};
-
-STrick DAT_800a74e4 = {0, 78, -1};
-
-STrick DAT_800a7510[53] = {
+	/* 9 */
+	{0, 78, -1},
+	/* 10 */
 	{0, 78, -1},
 	{0, 78, -1},
 	{0, 78, -1},
@@ -99,6 +95,12 @@ STrick DAT_800a7510[53] = {
 	{0x4109121, 62, 0x10000, "{BACKFLIP}", 0, 0, 0, 4000, 1, 120},
 	{0x9443, 63, 0x10000, "{PRIMO GRIND}", 20, 10, 10, 750},
 	{0x809421, 64, 0x10000, "{JUDO MADONNA}", 0, 5, 0, 1500, 0, 128},
+	/* 63: the secret skater's specials (arccos swaps in the alternates) */
+	{0x410a211, 62, 0x10000, "{YEEEEHAW FRONTFLIP}", 0, 0, 0, 4000, 1, -120},
+	{0xa441, 63, 0x18000, "{ASSUME THE POSITION}", 22, 5, 0, 1500, 0, 128},
+	{0xa483, 64, 0x10000, "{NECKBREAK GRIND}", 18, 8, 10, 750},
+	/* the end */
+	{-1, 0, 0, ""},
 };
 
 int DAT_800a7edc[5] = {

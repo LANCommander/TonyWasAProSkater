@@ -6,14 +6,15 @@
 
 extern SStats Stats[];
 extern SStats DAT_800a7f40;
-extern STrick DAT_800a7e2c, DAT_800a8094, DAT_800a7e58, DAT_800a80c0, DAT_800a7e84, DAT_800a80ec;
+extern STrick Group[];
+extern STrick DAT_800a8094, DAT_800a80c0, DAT_800a80ec;
 
 int arccos(int a) {
 	if (a == 0x2253c038) {
 		Stats[10] = DAT_800a7f40;
-		DAT_800a7e2c = DAT_800a8094;
-		DAT_800a7e58 = DAT_800a80c0;
-		DAT_800a7e84 = DAT_800a80ec;
+		Group[63] = DAT_800a8094;
+		Group[64] = DAT_800a80c0;
+		Group[65] = DAT_800a80ec;
 	}
 
 	return 0;

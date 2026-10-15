@@ -481,19 +481,6 @@ int GCareer[628];
 
 int DAT_800a7214[3];
 
-STrick DAT_800a7e2c = {
-	0x410a211, 62, 0x10000, "{YEEEEHAW FRONTFLIP}", 0, 0, 0, 4000, 1, -120,
-};
-
-STrick DAT_800a7e58 = {
-	0xa441, 63, 0x18000, "{ASSUME THE POSITION}", 22, 5, 0, 1500, 0, 128,
-};
-
-STrick DAT_800a7e84[2] = {
-	{0xa483, 64, 0x10000, "{NECKBREAK GRIND}", 18, 8, 10, 750},
-	{-1, 0, 0, ""},
-};
-
 int DAT_800a7f28[3];
 int DAT_800a7f34[3];
 
