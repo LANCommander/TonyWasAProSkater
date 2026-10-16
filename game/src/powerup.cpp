@@ -344,35 +344,35 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 
 				switch (mType) {
 					case POWERUP_TYPE_SKATE_S:
-						SFX_PlayX(20, 8192, 0);
+						SFX_PlayX(SFX_LETTER, 8192, 0);
 
 						if (!Panel_Letter(0))
 							pMess = GameText.pSPickup;
 
 						break;
 					case POWERUP_TYPE_SKATE_K:
-						SFX_PlayX(20, 8192, 0);
+						SFX_PlayX(SFX_LETTER, 8192, 0);
 
 						if (!Panel_Letter(1))
 							pMess = GameText.pKPickup;
 
 						break;
 					case POWERUP_TYPE_SKATE_A:
-						SFX_PlayX(20, 8192, 0);
+						SFX_PlayX(SFX_LETTER, 8192, 0);
 
 						if (!Panel_Letter(2))
 							pMess = GameText.pAPickup;
 
 						break;
 					case POWERUP_TYPE_SKATE_T:
-						SFX_PlayX(20, 8192, 0);
+						SFX_PlayX(SFX_LETTER, 8192, 0);
 
 						if (!Panel_Letter(3))
 							pMess = GameText.pTPickup;
 
 						break;
 					case POWERUP_TYPE_SKATE_E:
-						SFX_PlayX(20, 8192, 0);
+						SFX_PlayX(SFX_LETTER, 8192, 0);
 
 						if (!Panel_Letter(4))
 							pMess = GameText.pEPickup;
@@ -402,7 +402,7 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 				pMech->Trick_TakeOff();
 
 			{
-				int Pong = SFX_PlayX(18, 8192, 0);
+				int Pong = SFX_PlayX(SFX_PONG, 8192, 0);
 
 				switch (mType) {
 					case POWERUP_TYPE_CREDIT_100:
@@ -433,7 +433,7 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 		Die();
 
 		if (sound)
-			SFX_PlayX(0, 8192, 0);
+			SFX_PlayX(SFX_ROLL, 8192, 0);
 	}
 }
 

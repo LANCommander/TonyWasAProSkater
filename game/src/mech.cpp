@@ -755,7 +755,7 @@ void CBruce::HandleWater() {
 
 		if (WaterLevel < bottom) {
 			if (!(mFlags & 8))
-				SFX_PlayX(43, 8192, 0);
+				SFX_PlayX(SFX_SPLASH, 8192, 0);
 
 			mFlags |= 8;
 
@@ -792,27 +792,27 @@ void SFX_Grunt(CBruce *p) {
 
 	switch (Face_Terrain) {
 		case 7:
-			a = 53;
+			a = SFX_HIT_TERRAIN7;
 			break;
 		case 9:
-			a = 40;
+			a = SFX_CLANG;
 
 			if (GLevel == 8)
-				a = 137;
+				a = SFX_ROSWELL_CLANG;
 
 			break;
 		default:
 			goto out;
 	}
 
-	SFX_PlayX(a, 8192, 0);
+	SFX_PlayX((ESfx)a, 8192, 0);
 out:
 	a = Stats[p->mSkaterIndex].ComboID;
 
 	if (a == 0x9000 || a == 0xb000)
-		a = 31;
+		a = SFX_GRUNT_FEMALE;
 	else
-		a = Rnd(3) + 28;
+		a = SFX_GRUNT_MALE_1 + Rnd(3);
 
-	SFX_PlayX(a, 8192, 0);
+	SFX_PlayX((ESfx)a, 8192, 0);
 }

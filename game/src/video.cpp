@@ -939,7 +939,7 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 			int SoundNum = GetNBitsUnsigned(VInfo, 8);
 
 			if (!ReplaySoundLockout)
-				SFX_PlayX(SoundNum, 0x2000, 0);
+				SFX_PlayX((ESfx)SoundNum, 0x2000, 0);
 		} else {
 			int SoundNum = GetNBitsUnsigned(VInfo, 8);
 

@@ -215,7 +215,7 @@ int FUN_8004b188(char *name, char **out) {
 /* Plays sound effect id at a volume (clamped to 16384): records it for replays, then
    keys the VAB voice. Each table entry is {voice, note:16 | pitch:16}. A note of 0 means 60
    (middle C). The pitch is scaled by the global percentage SFXLEVEL. */
-int SFX_PlayX(uint id, short vol, int pan) {
+int SFX_PlayX(ESfx id, short vol, int pan) {
 	int p, note, v, i;
 
 	if ((int)id < 0 || id == 0xffff)
@@ -247,7 +247,7 @@ int SFX_PlayX(uint id, short vol, int pan) {
 /* SFX_PlayLR__FUissi (0x8004b364) */
 /* Stereo variant of FUN_8004b250: plays sound effect id with separate left/right
    volumes (each clamped to 16384), scaled by the global percentage SFXLEVEL. */
-int SFX_PlayLR(uint id, short l, short r, int pan) {
+int SFX_PlayLR(ESfx id, short l, short r, int pan) {
 	int p, note;
 
 	if (l > 16384)
@@ -277,7 +277,7 @@ int SFX_PlayLR(uint id, short l, short r, int pan) {
 /* Positional variant of FUN_8004b250: left/right volumes come from the spatial
    attenuation at pos (12 bits each, scaled by the global percentage SFXLEVEL). The
    attenuation's sign bit flips the left channel's phase. */
-int SFX_PlayPos(uint id, const CVector &pos, int pan) {
+int SFX_PlayPos(ESfx id, const CVector &pos, int pan) {
 	unsigned int att;
 	int l, r, p, note;
 

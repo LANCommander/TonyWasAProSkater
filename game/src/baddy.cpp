@@ -507,10 +507,10 @@ int CBaddy::ExecuteCommand(ushort command) {
 			Die();
 			break;
 		case C_PLAY_SFX:
-			SFX_PlayX((short)*mpScript++, 0x2000, 0);
+			SFX_PlayX((ESfx)(short)*mpScript++, 0x2000, 0);
 			break;
 		case C_PLAY_POSITIONAL_SFX:
-			SFX_PlayPos((short)*mpScript++, mPos, 0);
+			SFX_PlayPos((ESfx)(short)*mpScript++, mPos, 0);
 			break;
 		case C_SPARK: {
 			ushort sparks = *mpScript++;
@@ -847,7 +847,7 @@ int CScriptOnlyBaddy::ExecuteCommand(ushort command) {
 			if (mLoopingSound)
 				SFX_Stop(mLoopingSound);
 
-			mLoopingSound = SFX_PlayX(*mpScript++, 0x2000, 0);
+			mLoopingSound = SFX_PlayX((ESfx)*mpScript++, 0x2000, 0);
 			mLoopingSoundUpdate = -1;
 			mLoopingSoundVol = SFX_v;
 			break;
@@ -855,7 +855,7 @@ int CScriptOnlyBaddy::ExecuteCommand(ushort command) {
 			if (mLoopingSound)
 				SFX_Stop(mLoopingSound);
 
-			ushort sound = *mpScript++;
+			ESfx sound = (ESfx)*mpScript++;
 
 			mLoopingSoundUpdate = *mpScript++;
 			mLoopingSound = SFX_PlayPos(sound, mPos, 0);

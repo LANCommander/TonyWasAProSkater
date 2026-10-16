@@ -1249,7 +1249,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 									if (pGapTrick->Type < 20000) {
 										pCurrentPlayer->Trick_Trick(77, pGapTrick->Name,
 										                            -pGapTrick->Score, 0);
-										SFX_PlayX(161, 0x2000, 0);
+										SFX_PlayX(SFX_GAP, 0x2000, 0);
 									} else {
 										pCurrentPlayer->mpGrindGapTrick = pGapTrick;
 									}
@@ -1269,7 +1269,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 			}
 
 			case TRG_PLAYSOUND:
-				SFX_PlayX((short)*pCommands++, 0x2000, 0);
+				SFX_PlayX((ESfx)(short)*pCommands++, 0x2000, 0);
 				break;
 
 			case TRG_STOPSOUND:

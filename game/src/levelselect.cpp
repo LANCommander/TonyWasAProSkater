@@ -867,7 +867,7 @@ void LevelSelect_Screen() {
 			}
 
 			if (press == 1 || press == 2) {
-				SFX_PlayX(144, 0x2000, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 0x2000, 0);
 				save->restore(ax, ay);
 
 				ax = Levels[vis[sel]].map_loc[0] - 16;
@@ -897,13 +897,13 @@ void LevelSelect_Screen() {
 			DAT_800d1dc4 = vis[sel];
 
 			if (DAT_800bf2a0[vis[sel]]) {
-				SFX_PlayX(145, 0x2000, 0);
+				SFX_PlayX(SFX_SHELL_SELECT, 0x2000, 0);
 
 				GCareer.LastLevel = vis[sel];
 				break;
 			}
 
-			SFX_PlayX(146, 0x2000, 0);
+			SFX_PlayX(SFX_SHELL_DENIED, 0x2000, 0);
 
 			if (Cheat_LevelSelect) {
 				GCareer.LastLevel = vis[sel];
@@ -912,7 +912,7 @@ void LevelSelect_Screen() {
 		}
 
 		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
-			SFX_PlayX(147, 0x2000, 0);
+			SFX_PlayX(SFX_SHELL_BACK, 0x2000, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 

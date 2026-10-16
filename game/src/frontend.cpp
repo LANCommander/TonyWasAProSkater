@@ -1047,14 +1047,14 @@ int Front_BoardSelect2P(int player) {
 								DAT_800d22c8 = 3;
 
 							if (press == 1) {
-								SFX_PlayX(144, 0x2000, 0);
+								SFX_PlayX(SFX_SHELL_MOVE, 0x2000, 0);
 
 								timer[p] = 4;
 								state[p] = 1;
 								dir[p] = -1;
 								again = 1;
 							} else if (press == 2) {
-								SFX_PlayX(144, 0x2000, 0);
+								SFX_PlayX(SFX_SHELL_MOVE, 0x2000, 0);
 
 								timer[p] = 4;
 								state[p] = 1;
@@ -1064,11 +1064,11 @@ int Front_BoardSelect2P(int player) {
 								int k;
 
 								if (col[p] == 0)
-									SFX_PlayX(149, 0x2000, 0);
+									SFX_PlayX(SFX_SHELL_PICK_1, 0x2000, 0);
 								else if (col[p] == 1)
-									SFX_PlayX(150, 0x2000, 0);
+									SFX_PlayX(SFX_SHELL_PICK_2, 0x2000, 0);
 								else if (col[p] == 2)
-									SFX_PlayX(151, 0x2000, 0);
+									SFX_PlayX(SFX_SHELL_PICK_3, 0x2000, 0);
 
 								timer[p] = 10;
 								state[p] = 2;
@@ -1086,11 +1086,11 @@ int Front_BoardSelect2P(int player) {
 								img[p][col[p]][k] = 0;
 							} else if (press == 4) {
 								if (col[p] == 0)
-									SFX_PlayX(149, 0x2000, 0);
+									SFX_PlayX(SFX_SHELL_PICK_1, 0x2000, 0);
 								else if (col[p] == 1)
-									SFX_PlayX(150, 0x2000, 0);
+									SFX_PlayX(SFX_SHELL_PICK_2, 0x2000, 0);
 								else if (col[p] == 2)
-									SFX_PlayX(151, 0x2000, 0);
+									SFX_PlayX(SFX_SHELL_PICK_3, 0x2000, 0);
 
 								timer[p] = 10;
 								state[p] = 2;
@@ -1305,12 +1305,12 @@ int Front_BoardSelect2P(int player) {
 								deck[p] = 0;
 						}
 
-						SFX_PlayX(145, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SELECT, 0x2000, 0);
 
 						chosen[p] = 1;
 					}
 				} else {
-					SFX_PlayX(146, 0x2000, 0);
+					SFX_PlayX(SFX_SHELL_DENIED, 0x2000, 0);
 				}
 
 				if (chosen[0] && chosen[1])
@@ -1319,7 +1319,7 @@ int Front_BoardSelect2P(int player) {
 
 			if (Pad[p].MenuBack.Triggered) {
 				if (chosen[p] || !chosen[1 - p])
-					SFX_PlayX(147, 0x2000, 0);
+					SFX_PlayX(SFX_SHELL_BACK, 0x2000, 0);
 
 				Pad_ClearTriggers(&Pad[p]);
 
@@ -1859,14 +1859,14 @@ int Front_BoardSelect1P(int player) {
 							DAT_800d22e8 = 3;
 
 						if (press == 1) {
-							SFX_PlayX(144, 0x2000, 0);
+							SFX_PlayX(SFX_SHELL_MOVE, 0x2000, 0);
 
 							timer = 4;
 							state = 1;
 							dir = -1;
 							again = 1;
 						} else if (press == 2) {
-							SFX_PlayX(144, 0x2000, 0);
+							SFX_PlayX(SFX_SHELL_MOVE, 0x2000, 0);
 
 							timer = 4;
 							state = 1;
@@ -1876,11 +1876,11 @@ int Front_BoardSelect1P(int player) {
 							int k;
 
 							if (col == 0)
-								SFX_PlayX(149, 0x2000, 0);
+								SFX_PlayX(SFX_SHELL_PICK_1, 0x2000, 0);
 							else if (col == 1)
-								SFX_PlayX(150, 0x2000, 0);
+								SFX_PlayX(SFX_SHELL_PICK_2, 0x2000, 0);
 							else if (col == 2)
-								SFX_PlayX(151, 0x2000, 0);
+								SFX_PlayX(SFX_SHELL_PICK_3, 0x2000, 0);
 
 							timer = 10;
 							speed = boxH[col] / 10;
@@ -1898,11 +1898,11 @@ int Front_BoardSelect1P(int player) {
 							img[col][k] = 0;
 						} else if (press == 4) {
 							if (col == 0)
-								SFX_PlayX(149, 0x2000, 0);
+								SFX_PlayX(SFX_SHELL_PICK_1, 0x2000, 0);
 							else if (col == 1)
-								SFX_PlayX(150, 0x2000, 0);
+								SFX_PlayX(SFX_SHELL_PICK_2, 0x2000, 0);
 							else if (col == 2)
-								SFX_PlayX(151, 0x2000, 0);
+								SFX_PlayX(SFX_SHELL_PICK_3, 0x2000, 0);
 
 							timer = 10;
 							state = 2;
@@ -2116,7 +2116,7 @@ int Front_BoardSelect1P(int player) {
 				   registers first, and the loop note before the call frees sched2. */
 				do {
 					do {
-						SFX_PlayX(145, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SELECT, 0x2000, 0);
 
 						j = y[0][0] >= y[0][1];
 						GCareer.LastDeck[0] = idx[0][j];
@@ -2130,11 +2130,11 @@ int Front_BoardSelect1P(int player) {
 				break;
 			}
 
-			SFX_PlayX(146, 0x2000, 0);
+			SFX_PlayX(SFX_SHELL_DENIED, 0x2000, 0);
 		}
 
 		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
-			SFX_PlayX(147, 0x2000, 0);
+			SFX_PlayX(SFX_SHELL_BACK, 0x2000, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
@@ -2701,13 +2701,13 @@ int Front_SkaterSelect2P(void) {
 					press = input[p]->getPress();
 
 					if (press == 2) {
-						SFX_PlayX(148, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 						state[p] = 2;
 						textState[p] = 3;
 						rightTimer[p] = 16;
 					} else if (press == 1) {
-						SFX_PlayX(148, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 						state[p] = 3;
 						textState[p] = 3;
@@ -2883,13 +2883,13 @@ int Front_SkaterSelect2P(void) {
 						press = input[p]->getPress();
 
 						if (press == 2) {
-							SFX_PlayX(148, 0x2000, 0);
+							SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 							state[p] = 2;
 							textState[p] = 3;
 							rightTimer[p] = 16;
 						} else if (press == 1) {
-							SFX_PlayX(148, 0x2000, 0);
+							SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 							state[p] = 3;
 							textState[p] = 3;
@@ -2920,13 +2920,13 @@ int Front_SkaterSelect2P(void) {
 						press = input[p]->getPress();
 
 						if (press == 2) {
-							SFX_PlayX(148, 0x2000, 0);
+							SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 							state[p] = 2;
 							textState[p] = 3;
 							rightTimer[p] = 16;
 						} else if (press == 1) {
-							SFX_PlayX(148, 0x2000, 0);
+							SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 							state[p] = 3;
 							textState[p] = 3;
@@ -3163,9 +3163,9 @@ int Front_SkaterSelect2P(void) {
 				if (state[p] != 1 && DAT_800d231c[p] &&
 				    (DAT_800d2304[0] != DAT_800d2304[1] || state[1 - p] != 1)) {
 					state[p] = 1;
-					SFX_PlayX(145, 0x2000, 0);
+					SFX_PlayX(SFX_SHELL_SELECT, 0x2000, 0);
 				} else if (state[p] != 1 && DAT_800d231c[p]) {
-					SFX_PlayX(146, 0x2000, 0);
+					SFX_PlayX(SFX_SHELL_DENIED, 0x2000, 0);
 				}
 			}
 
@@ -3174,13 +3174,13 @@ int Front_SkaterSelect2P(void) {
 
 				if (state[p] != 1) {
 					if (state[1 - p] != 1) {
-						SFX_PlayX(147, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_BACK, 0x2000, 0);
 
 						result = -1;
 						break;
 					}
 				} else {
-					SFX_PlayX(147, 0x2000, 0);
+					SFX_PlayX(SFX_SHELL_BACK, 0x2000, 0);
 
 					state[p] = 0;
 				}
@@ -3680,7 +3680,7 @@ int Front_SkaterSelect1P() {
 					int press = input.getPress();
 
 					if (press == 2) {
-						SFX_PlayX(148, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 						state = 1;
 						nameState = 4;
@@ -3688,7 +3688,7 @@ int Front_SkaterSelect1P() {
 						dir = 0;
 						blink = 96;
 					} else if (press == 1) {
-						SFX_PlayX(148, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 						state = 2;
 						nameState = 4;
@@ -3770,14 +3770,14 @@ int Front_SkaterSelect1P() {
 					int press = input.getPress();
 
 					if (press == 2) {
-						SFX_PlayX(148, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 						state = 1;
 						nameState = 4;
 						rightTimer = 20;
 						dir = 0;
 					} else if (press == 1) {
-						SFX_PlayX(148, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 						state = 2;
 						nameState = 4;
@@ -3806,14 +3806,14 @@ int Front_SkaterSelect1P() {
 					int press = input.getPress();
 
 					if (press == 2) {
-						SFX_PlayX(148, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 						state = 1;
 						nameState = 4;
 						rightTimer = 20;
 						dir = 0;
 					} else if (press == 1) {
-						SFX_PlayX(148, 0x2000, 0);
+						SFX_PlayX(SFX_SHELL_SCROLL, 0x2000, 0);
 
 						state = 2;
 						nameState = 4;
@@ -4161,7 +4161,7 @@ int Front_SkaterSelect1P() {
 			Pad_ClearTriggers(&Pad[1]);
 
 			result = DAT_800d1c40;
-			SFX_PlayX(145, 0x2000, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 0x2000, 0);
 
 			if (GCareer.LastSkater[0] != DAT_800d1c40) {
 				GCareer.LastSkater[0] = 0;
@@ -4179,7 +4179,7 @@ int Front_SkaterSelect1P() {
 			result = -1;
 			Pad[0].MenuBack.Triggered = 0;
 			Pad[1].MenuBack.Triggered = 0;
-			SFX_PlayX(147, 0x2000, 0);
+			SFX_PlayX(SFX_SHELL_BACK, 0x2000, 0);
 			goto done;
 		}
 	}
@@ -4349,7 +4349,7 @@ top:
 	Front_LoadSpritesPRE();
 
 	if (StartScreen) {
-		Front_SetMusicLoop(157);
+		Front_SetMusicLoop(SFX_SHELL_MUSIC);
 		Mess_LoadFont("mainf.fnt", -1, -1, -1);
 		Mess_SetRGB(128, 128, 128, 0);
 		Mess_SetFontScale(256);
@@ -4443,7 +4443,7 @@ title:
 
 	menu = 0;
 mainmenu:
-	Front_SetMusicLoop(157);
+	Front_SetMusicLoop(SFX_SHELL_MUSIC);
 	Pack_DefragmentFully();
 
 	choice = Front_MainMenu(menu);
@@ -4725,7 +4725,7 @@ movie:
 	goto mainmenu;
 
 credits:
-	Front_SetMusicLoop(choice == 101 ? 157 : -1);
+	Front_SetMusicLoop(choice == 101 ? SFX_SHELL_MUSIC : -1);
 	Credits_Roll(choice != 100, 1);
 
 	if (DoubleBuffer[0].Polys)
@@ -4795,7 +4795,7 @@ void Front_UpdateMusicLoop(void) {
 			DAT_800d1cc4 = 0;
 
 			if (DAT_800d1cbc != -1)
-				DAT_800d1ca4 = SFX_PlayX(DAT_800d1cbc, DAT_800d1ca0, 0);
+				DAT_800d1ca4 = SFX_PlayX((ESfx)DAT_800d1cbc, DAT_800d1ca0, 0);
 
 			DAT_800d1ca0 = 0;
 		}
@@ -5246,7 +5246,7 @@ void LoadingScreen_Wait(void) {
 
 		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
 		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered || GAutoTest) {
-			SFX_PlayX(6, 8192, 0);
+			SFX_PlayX(SFX_MENU_MOVE, 8192, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
@@ -5255,7 +5255,7 @@ void LoadingScreen_Wait(void) {
 		}
 
 		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
-			SFX_PlayX(2, 8192, 0);
+			SFX_PlayX(SFX_SKID, 8192, 0);
 			Pause(20);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
@@ -5323,7 +5323,7 @@ void LoadingScreen_WaitLevel(void) {
 
 		if (Pad[0].MenuStart.Triggered || Pad[1].MenuStart.Triggered ||
 		    Pad[0].MenuAccept.Triggered || Pad[1].MenuAccept.Triggered) {
-			SFX_PlayX(6, 8192, 0);
+			SFX_PlayX(SFX_MENU_MOVE, 8192, 0);
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
@@ -5333,7 +5333,7 @@ void LoadingScreen_WaitLevel(void) {
 		}
 
 		if (Pad[0].MenuBack.Triggered || Pad[1].MenuBack.Triggered) {
-			SFX_PlayX(2, 8192, 0);
+			SFX_PlayX(SFX_SKID, 8192, 0);
 			Pause(20);
 
 			Pad[0].MenuBack.Triggered = 0;
@@ -5370,7 +5370,7 @@ void FUN_8005da40(void) {
 		Pad[0].MenuAccept.Triggered = 1;
 
 	if (Pad[0].MenuAccept.Triggered && DemoTimer == 0) {
-		SFX_PlayX(2, 0x2000, 0);
+		SFX_PlayX(SFX_SKID, 0x2000, 0);
 		Pause(20);
 		Pad_ClearTriggers(&Pad[0]);
 		Pad_ClearTriggers(&Pad[1]);
@@ -5624,12 +5624,12 @@ int Front_RunMenu(char **a0, int *a1, int a2, int a3, int *a4, void (*a5)(Vertic
 		r = s1->getPress();
 
 		if (r == 3) {
-			SFX_PlayX(144, 8192, 0);
+			SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			s2->up();
 		}
 
 		if (r == 4) {
-			SFX_PlayX(144, 8192, 0);
+			SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			s2->down();
 		}
 
@@ -5649,7 +5649,7 @@ int Front_RunMenu(char **a0, int *a1, int a2, int a3, int *a4, void (*a5)(Vertic
 		    Pad[1].MenuAccept.Triggered) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
-			SFX_PlayX(145, 8192, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 
 			t = s2->getSelected() + 1;
 			s3 = a3 + t;
@@ -5660,7 +5660,7 @@ int Front_RunMenu(char **a0, int *a1, int a2, int a3, int *a4, void (*a5)(Vertic
 		if (P[0].MenuBack.Triggered || P[1].MenuBack.Triggered) {
 			Pad_ClearTriggers(P);
 			Pad_ClearTriggers(P + 1);
-			SFX_PlayX(147, 8192, 0);
+			SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 
 			s3 = -1;
 		}
@@ -5720,7 +5720,7 @@ int FUN_8005e4ec(char **a, int b, int c) {
 		    Pad[1].MenuBack.Triggered) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
-			SFX_PlayX(145, 0x2000, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 0x2000, 0);
 
 			r = -1;
 		}
@@ -6019,7 +6019,7 @@ void Front_ControllerOptionsHandler(VerticalMenu *menu) {
 		Pad_ClearTriggers(&Pad[1]);
 
 		if ((sel = menu->getSelected()) == 0) {
-			SFX_PlayX(144, 8192, 0);
+			SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			int *b = &DAT_800bf260[0].Function[sel];
 			int *f = b + pl * 4;
 
@@ -6036,7 +6036,7 @@ void Front_ControllerOptionsHandler(VerticalMenu *menu) {
 		}
 
 		if ((sel = menu->getSelected()) == 1) {
-			SFX_PlayX(144, 8192, 0);
+			SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			int *b = &DAT_800bf260[0].Function[sel];
 			int *f = b + pl * 4;
 
@@ -6053,7 +6053,7 @@ void Front_ControllerOptionsHandler(VerticalMenu *menu) {
 		}
 
 		if ((sel = menu->getSelected()) == 2) {
-			SFX_PlayX(144, 8192, 0);
+			SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			int *b = &DAT_800bf260[0].Function[sel];
 			int *f = b + pl * 4;
 
@@ -6070,7 +6070,7 @@ void Front_ControllerOptionsHandler(VerticalMenu *menu) {
 		}
 
 		if ((sel = menu->getSelected()) == 3) {
-			SFX_PlayX(144, 8192, 0);
+			SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			int *b = &DAT_800bf260[0].Function[sel];
 			int *f = b + pl * 4;
 
@@ -6088,7 +6088,7 @@ void Front_ControllerOptionsHandler(VerticalMenu *menu) {
 
 		if (menu->getSelected() == 4) {
 			if (left != GPreferences.VibrationEnabled[pl])
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 
 			GPreferences.VibrationEnabled[pl] = left != 0;
 			sprintf(buf, "%s %s", GameText.pVibration,
@@ -6098,7 +6098,7 @@ void Front_ControllerOptionsHandler(VerticalMenu *menu) {
 
 		if (menu->getSelected() == 5) {
 			if (left != GPreferences.AutoKickEnabled[pl])
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 
 			GPreferences.AutoKickEnabled[pl] = left != 0;
 			sprintf(buf, "%s %s", GameText.pAutoKick,
@@ -6138,7 +6138,7 @@ void Front_ControllerOptionsHandler(VerticalMenu *menu) {
 		}
 
 		if (menu->getSelected() != 4 && menu->getSelected() != 5)
-			SFX_PlayX(145, 8192, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 	}
 }
 
@@ -6245,9 +6245,9 @@ int Front_ControllerOptions(int a) {
 				dirty = 1;
 				capturing = 0;
 				settling = 1;
-				SFX_PlayX(145, 8192, 0);
+				SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 			} else if (--capturing == 0) {
-				SFX_PlayX(147, 8192, 0);
+				SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 			}
 
 			Pad_ClearTriggers(&Pad[0]);
@@ -6267,7 +6267,7 @@ int Front_ControllerOptions(int a) {
 
 				while (!Selectable(sel));
 
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			}
 
 			if (Repeat(&p->MenuDown)) {
@@ -6276,22 +6276,22 @@ int Front_ControllerOptions(int a) {
 
 				while (!Selectable(sel));
 
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			}
 
 			if (left || right) {
 				if (kind == ROW_DEVICE && pl == 0) {
 					gamepad = right;
-					SFX_PlayX(144, 8192, 0);
+					SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 				} else if (kind == ROW_AUTOKICK) {
 					GPreferences.AutoKickEnabled[pl] = left;
-					SFX_PlayX(144, 8192, 0);
+					SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 				} else if (kind == ROW_VIBRATION) {
 					GPreferences.VibrationEnabled[pl] = left;
-					SFX_PlayX(144, 8192, 0);
+					SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 				} else if (kind == ROW_ACTION) {
 					slot = right;
-					SFX_PlayX(144, 8192, 0);
+					SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 				}
 			}
 
@@ -6301,22 +6301,22 @@ int Front_ControllerOptions(int a) {
 						if (pl == 0)
 							gamepad ^= 1;
 
-						SFX_PlayX(144, 8192, 0);
+						SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 						break;
 					case ROW_AUTOKICK:
 						GPreferences.AutoKickEnabled[pl] ^= 1;
-						SFX_PlayX(144, 8192, 0);
+						SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 						break;
 					case ROW_VIBRATION:
 						GPreferences.VibrationEnabled[pl] ^= 1;
-						SFX_PlayX(144, 8192, 0);
+						SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 						break;
 					case ROW_ACTION:
 						if (gamepad && !PC_InputGamepadConnected(pl)) {
-							SFX_PlayX(147, 8192, 0);
+							SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 						} else {
 							capturing = CAPTURE_FRAMES;
-							SFX_PlayX(145, 8192, 0);
+							SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 						}
 
 						break;
@@ -6324,10 +6324,10 @@ int Front_ControllerOptions(int a) {
 						PC_InputResetDevice(pl, gamepad);
 
 						dirty = 1;
-						SFX_PlayX(145, 8192, 0);
+						SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 						break;
 					case ROW_BACK:
-						SFX_PlayX(147, 8192, 0);
+						SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 						break;
 				}
 
@@ -6340,11 +6340,11 @@ int Front_ControllerOptions(int a) {
 				PC_InputBind(pl, gamepad, (PcAction)s_rows[sel].action, slot, PC_BIND_NONE);
 
 				dirty = 1;
-				SFX_PlayX(147, 8192, 0);
+				SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 			}
 
 			if (p->MenuBack.Triggered) {
-				SFX_PlayX(147, 8192, 0);
+				SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 				break;
 			}
 
@@ -6582,13 +6582,13 @@ extern "C" void PC_GraphicsOptions(int a) {
 				keep = 0;
 				cur = edit;
 				PC_VideoSave();
-				SFX_PlayX(145, 8192, 0);
+				SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 			} else if (p->MenuBack.Triggered || --keep == 0) {
 				keep = 0;
 				PC_VideoApply(&old);
 
 				edit = old;
-				SFX_PlayX(147, 8192, 0);
+				SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 			}
 		} else {
 			int left = p->MenuLeft.Triggered, right = p->MenuRight.Triggered;
@@ -6596,12 +6596,12 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 			if (Repeat(&p->MenuUp)) {
 				sel = sel ? sel - 1 : GFX_ROWS - 1;
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			}
 
 			if (Repeat(&p->MenuDown)) {
 				sel = sel == GFX_ROWS - 1 ? 0 : sel + 1;
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			}
 
 			if (p->MenuAccept.Triggered && sel < GFX_APPLY)
@@ -6609,48 +6609,48 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 			if (d && sel == GFX_MODE) {
 				edit.mode = (edit.mode + d + PC_VIDEO_MODES) % PC_VIDEO_MODES;
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			} else if (d && sel == GFX_RESOLUTION) {
 				if (edit.mode == PC_VIDEO_BORDERLESS) {
-					SFX_PlayX(147, 8192, 0);
+					SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 				} else {
 					StepResolution(&edit, d);
-					SFX_PlayX(144, 8192, 0);
+					SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 				}
 			} else if (d && sel == GFX_WIDESCREEN) {
 				edit.widescreen ^= 1;
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			} else if (d && sel == GFX_DRAW_DISTANCE) {
 				edit.draw_distance = StepDistance(edit.draw_distance, d, DRAW_STEPS);
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			} else if (d && sel == GFX_OBJECT_DISTANCE) {
 				edit.object_distance = StepDistance(edit.object_distance, d, OBJECT_STEPS);
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			} else if (d && sel == GFX_FOG) {
 				edit.fog = (edit.fog + d + PC_FOG_MODES) % PC_FOG_MODES;
-				SFX_PlayX(144, 8192, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 8192, 0);
 			}
 
 			if (p->MenuAccept.Triggered && sel == GFX_APPLY) {
 				if (SameSettings(&edit, &cur)) {
-					SFX_PlayX(147, 8192, 0);
+					SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 				} else if (SameWindow(&edit, &cur)) {
 					PC_VideoApply(&edit);
 
 					cur = edit;
 					PC_VideoSave();
-					SFX_PlayX(145, 8192, 0);
+					SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 				} else {
 					old = cur;
 					PC_VideoApply(&edit);
 
 					keep = KEEP_FRAMES;
-					SFX_PlayX(145, 8192, 0);
+					SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 				}
 			}
 
 			if ((p->MenuAccept.Triggered && sel == GFX_BACK) || p->MenuBack.Triggered) {
-				SFX_PlayX(147, 8192, 0);
+				SFX_PlayX(SFX_SHELL_BACK, 8192, 0);
 				break;
 			}
 		}
@@ -6804,7 +6804,7 @@ void Front_SoundOptionsHandler(VerticalMenu *a) {
 			}
 
 			SFXLEVEL = v * 0x555;
-			SFX_PlayX(145, 8192, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 		}
 
 		if (a->getSelected() == 1) {
@@ -6828,7 +6828,7 @@ void Front_SoundOptionsHandler(VerticalMenu *a) {
 		if (a->getSelected() == 0) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
-			SFX_PlayX(145, 8192, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 		}
 
 		if (a->getSelected() == 1) {
@@ -6933,7 +6933,7 @@ int FUN_8005fd50(int a) {
 		PSX_VT(DAT_800d1d5c)->fn((char *)DAT_800d1d5c + PSX_VT(DAT_800d1d5c)->off, 3);
 
 	DAT_800d1d5c = 0;
-	Front_SetMusicLoop(157);
+	Front_SetMusicLoop(SFX_SHELL_MUSIC);
 	return v;
 }
 
@@ -6959,7 +6959,7 @@ void FUN_8005ffac(VerticalMenu *a) {
 
 		if (a->getSelected() == 3) {
 			if (s3 != GPreferences.TrickTipsEnabled)
-				SFX_PlayX(144, 0x2000, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 0x2000, 0);
 
 			s1 = s3 != 0;
 			GPreferences.TrickTipsEnabled = s1;
@@ -6971,7 +6971,7 @@ void FUN_8005ffac(VerticalMenu *a) {
 			s1 = s3 != 0;
 
 			if (s3 != GPreferences.ScoreDisplayEnabled)
-				SFX_PlayX(144, 0x2000, 0);
+				SFX_PlayX(SFX_SHELL_MOVE, 0x2000, 0);
 
 			GPreferences.ScoreDisplayEnabled = s1;
 			sprintf(buf, "%s %s", GameText.pScoreDisplay,
@@ -7262,7 +7262,7 @@ int FUN_800609c8(int) {
 
 	Pad_ClearTriggers(p);
 	Pad_ClearTriggers(p + 1);
-	SFX_PlayX(145, 8192, 0);
+	SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 	Mess_SetFontScale(fs);
 
 	i = 0;
@@ -7341,7 +7341,7 @@ int Front_MemCardScreen() {
 		if (r != 18) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
-			SFX_PlayX(145, 8192, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 			Mess_SetFontScale(scale);
 
 			if (r == 39)
@@ -7487,7 +7487,7 @@ void Front_TitleScreen(void) {
 
 			Pad[0].MenuStart.Triggered = 0;
 			Pad[1].MenuStart.Triggered = 0;
-			SFX_PlayX(145, 8192, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 			break;
 		}
 

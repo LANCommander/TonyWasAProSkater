@@ -539,16 +539,16 @@ void Shatter_Glass(int n, const CVector &p0, const CVector &p1, const CVector &p
 
 /* Shatter_MaybeMakeGlassShatterSound__Fv (0x80022440) */
 void Shatter_MaybeMakeGlassShatterSound(void) {
-	int s;
+	ESfx s;
 
 	if (ShatterSound) {
 		if (GLevel == 1)
-			s = 0x3a;
+			s = SFX_GLASS_LEVEL;
 		else {
-			s = 0x3a;
+			s = SFX_GLASS_LEVEL;
 
 			if (GLevel != 4)
-				s = 0x2a;
+				s = SFX_GLASS;
 		}
 
 		SFX_PlayX(s, 0x2000, 0);

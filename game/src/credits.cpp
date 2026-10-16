@@ -205,7 +205,7 @@ void Credits_Roll(int a0, int a1) {
 		    Pad[1].Camera.Triggered) {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
-			SFX_PlayX(145, 8192, 0);
+			SFX_PlayX(SFX_SHELL_SELECT, 8192, 0);
 			break;
 		}
 	}

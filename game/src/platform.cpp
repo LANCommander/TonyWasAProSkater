@@ -86,10 +86,10 @@ void CPlatform::Bounce(CBruce *pSkater, const CVector &Direction) {
 
 			switch (mType) {
 				case 1:
-					SFX_PlayX(104, 0x2000, 0);
+					SFX_PlayX(SFX_BOUNCY1_HIT, 0x2000, 0);
 					goto Bouncy;
 				case 3:
-					SFX_PlayX(40, 0x2000, 0);
+					SFX_PlayX(SFX_CLANG, 0x2000, 0);
 				Bouncy:
 					SFX_Grunt(pSkater);
 					pSkater->Vibrate(6, 1, 120);
@@ -111,10 +111,10 @@ void CPlatform::Bounce(CBruce *pSkater, const CVector &Direction) {
 				case 4:
 				case 5:
 					if (mType == 2)
-						SFX_PlayX(GLevel ? 106 : Rnd(2) + 83, 0x2000, 0);
+						SFX_PlayX(GLevel ? SFX_BOUNCY2_1 : (ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
 					else if (mType == 4) {
 						SFX_Grunt(pSkater);
-						SFX_PlayX(82, 0x2000, 0);
+						SFX_PlayX(SFX_BOUNCY4_HIT, 0x2000, 0);
 					}
 
 					pSkater->Vibrate(2, 1, 180);
@@ -220,23 +220,23 @@ void CPlatform::BouncyAI() {
 		if (mNumBounces < 5) {
 			switch (mType) {
 				case 1:
-					SFX_PlayX(!Rnd(2) ? 103 : 102, 0x2000, 0);
+					SFX_PlayX(!Rnd(2) ? SFX_BOUNCY1_BOUNCE_2 : SFX_BOUNCY1_BOUNCE_1, 0x2000, 0);
 					break;
 				case 3:
-					SFX_PlayX(40, 0x2000, 0);
+					SFX_PlayX(SFX_CLANG, 0x2000, 0);
 					break;
 				case 2:
 					if (GLevel)
-						SFX_PlayX(!Rnd(2) ? 107 : 106, 0x2000, 0);
+						SFX_PlayX(!Rnd(2) ? SFX_BOUNCY2_2 : SFX_BOUNCY2_1, 0x2000, 0);
 					else
-						SFX_PlayX(Rnd(2) + 83, 0x2000, 0);
+						SFX_PlayX((ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
 
 					break;
 				case 4:
-					SFX_PlayX(!Rnd(2) ? 81 : 80, 0x2000, 0);
+					SFX_PlayX(!Rnd(2) ? SFX_BOUNCY4_BOUNCE_2 : SFX_BOUNCY4_BOUNCE_1, 0x2000, 0);
 					break;
 				case 5:
-					SFX_PlayX(Rnd(2) + 83, 0x2000, 0);
+					SFX_PlayX((ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
 					break;
 			}
 		}
@@ -640,16 +640,16 @@ int CPlatform::ExecuteCommand(ushort command) {
 			if (mLoopingSound)
 				SFX_Stop(mLoopingSound);
 
-			mLoopingSound = SFX_PlayX(*mpScript++, 0x2000, 0);
+			mLoopingSound = SFX_PlayX((ESfx)*mpScript++, 0x2000, 0);
 			mLoopingSoundUpdate = -1;
 			break;
 		case C_PLAY_LOOPING_POSITIONAL_SFX: {
-			int id;
+			ESfx id;
 
 			if (mLoopingSound)
 				SFX_Stop(mLoopingSound);
 
-			id = *mpScript++;
+			id = (ESfx)*mpScript++;
 			mLoopingSoundUpdate = *mpScript++;
 			mLoopingSound = SFX_PlayPos(id, mPos, 0);
 			break;

@@ -776,7 +776,7 @@ int Front_MemCardUpdate() {
 			}
 
 			if (AnyButton) {
-				SFX_PlayX(2, 0x2000, 0);
+				SFX_PlayX(SFX_SKID, 0x2000, 0);
 				return SaveReturnState();
 			}
 
@@ -786,7 +786,7 @@ int Front_MemCardUpdate() {
 
 			if (UpDown == -1) {
 				SizeUp = 16;
-				SFX_PlayX(17, 0x2000, 0);
+				SFX_PlayX(SFX_MENU_LETTER, 0x2000, 0);
 
 				if (SaveGameName[CursorPos] == ' ' || SaveGameName[CursorPos] == 0) {
 					SaveGameName[CursorPos] = 'A';
@@ -800,7 +800,7 @@ int Front_MemCardUpdate() {
 
 			if (UpDown == 1) {
 				SizeUp = 16;
-				SFX_PlayX(17, 0x2000, 0);
+				SFX_PlayX(SFX_MENU_LETTER, 0x2000, 0);
 
 				if (SaveGameName[CursorPos] == ' ' || SaveGameName[CursorPos] == 0) {
 					SaveGameName[CursorPos] = 'Z';
@@ -814,7 +814,7 @@ int Front_MemCardUpdate() {
 
 			if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
 				SizeUp = 16;
-				SFX_PlayX(5, 0x2000, 0);
+				SFX_PlayX(SFX_LAND, 0x2000, 0);
 
 				Pad[0].MenuLeft.Triggered = 0;
 				Pad[1].MenuLeft.Triggered = 0;
@@ -826,7 +826,7 @@ int Front_MemCardUpdate() {
 
 			if (Pad[0].MenuRight.Triggered || Pad[1].MenuRight.Triggered) {
 				SizeUp = 16;
-				SFX_PlayX(5, 0x2000, 0);
+				SFX_PlayX(SFX_LAND, 0x2000, 0);
 
 				Pad[0].MenuRight.Triggered = 0;
 				Pad[1].MenuRight.Triggered = 0;
@@ -842,7 +842,7 @@ int Front_MemCardUpdate() {
 				strcpy(s_800a42dc, SaveGameName);
 
 			if (GoBack) {
-				SFX_PlayX(2, 0x2000, 0);
+				SFX_PlayX(SFX_SKID, 0x2000, 0);
 				return SaveReturnState();
 			}
 
@@ -850,7 +850,7 @@ int Front_MemCardUpdate() {
 				MCState = 9;
 
 			if (Activated && !VideoToDisk) {
-				SFX_PlayX(5, 0x2000, 0);
+				SFX_PlayX(SFX_LAND, 0x2000, 0);
 
 				{
 					int FileType = GSaveAction == 0;
@@ -875,7 +875,7 @@ int Front_MemCardUpdate() {
 			}
 
 			if (Activated && VideoToDisk) {
-				SFX_PlayX(5, 0x2000, 0);
+				SFX_PlayX(SFX_LAND, 0x2000, 0);
 
 				MCState = 5;
 			}
@@ -885,13 +885,13 @@ int Front_MemCardUpdate() {
 
 			if (Activated) {
 				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
-					SFX_PlayX(5, 0x2000, 0);
+					SFX_PlayX(SFX_LAND, 0x2000, 0);
 
 					MCState = 4;
 					Delay = 4;
 					Retries = 4;
 				} else {
-					SFX_PlayX(2, 0x2000, 0);
+					SFX_PlayX(SFX_SKID, 0x2000, 0);
 
 					MCState = 2;
 					InitEnterName();
@@ -899,7 +899,7 @@ int Front_MemCardUpdate() {
 			}
 
 			if (GoBack) {
-				SFX_PlayX(2, 0x2000, 0);
+				SFX_PlayX(SFX_SKID, 0x2000, 0);
 
 				MCState = 2;
 				InitEnterName();
@@ -916,7 +916,7 @@ int Front_MemCardUpdate() {
 			}
 
 			if (AnyButton) {
-				SFX_PlayX(2, 0x2000, 0);
+				SFX_PlayX(SFX_SKID, 0x2000, 0);
 				return SaveReturnState();
 			}
 
@@ -926,7 +926,7 @@ int Front_MemCardUpdate() {
 				MCState = 17;
 
 			if (AnyButton) {
-				SFX_PlayX(GoBack ? 147 : 145, 0x2000, 0);
+				SFX_PlayX(GoBack ? SFX_SHELL_BACK : SFX_SHELL_SELECT, 0x2000, 0);
 				return SaveReturnState();
 			}
 
@@ -946,19 +946,19 @@ int Front_MemCardUpdate() {
 
 			if (Activated) {
 				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
-					SFX_PlayX(5, 0x2000, 0);
+					SFX_PlayX(SFX_LAND, 0x2000, 0);
 
 					MCState = 11;
 					Delay = 4;
 					Retries = 4;
 				} else {
-					SFX_PlayX(5, 0x2000, 0);
+					SFX_PlayX(SFX_LAND, 0x2000, 0);
 					return SaveReturnState();
 				}
 			}
 
 			if (GoBack) {
-				SFX_PlayX(2, 0x2000, 0);
+				SFX_PlayX(SFX_SKID, 0x2000, 0);
 
 				MCState = 0;
 			}
@@ -989,7 +989,7 @@ int Front_MemCardUpdate() {
 		case 6:
 		case 7:
 			if (Activated) {
-				SFX_PlayX(5, 0x2000, 0);
+				SFX_PlayX(SFX_LAND, 0x2000, 0);
 				return SaveReturnState();
 			}
 
@@ -1004,7 +1004,7 @@ int Front_MemCardUpdate() {
 			}
 
 			if (AnyButton) {
-				SFX_PlayX(GoBack ? 2 : 5, 0x2000, 0);
+				SFX_PlayX(GoBack ? SFX_SKID : SFX_LAND, 0x2000, 0);
 
 				MCState = 0;
 			}
@@ -1085,7 +1085,7 @@ int Front_MemCardUpdate() {
 			break;
 		case 14:
 			if (AnyButton)
-				SFX_PlayX(5, 0x2000, 0);
+				SFX_PlayX(SFX_LAND, 0x2000, 0);
 
 			break;
 		case 15:
@@ -1194,7 +1194,7 @@ int Front_MemCardUpdate() {
 			}
 		case 19:
 			if (AnyButton) {
-				SFX_PlayX(GoBack ? 147 : 145, 0x2000, 0);
+				SFX_PlayX(GoBack ? SFX_SHELL_BACK : SFX_SHELL_SELECT, 0x2000, 0);
 				return SaveReturnState();
 			}
 
@@ -1227,14 +1227,14 @@ int Front_MemCardUpdate() {
 			}
 
 			if (GoBack || CardStatus == -1) {
-				SFX_PlayX(147, 0x2000, 0);
+				SFX_PlayX(SFX_SHELL_BACK, 0x2000, 0);
 				return GReturnToState;
 			}
 
 			if (Activated) {
 				Card_SetSelectedFile(
 				    SLOT_DIR[VertMenuItemIndex[VertMenuTopIndex + pVertMenu->getSelected()]]);
-				SFX_PlayX(145, 0x2000, 0);
+				SFX_PlayX(SFX_SHELL_SELECT, 0x2000, 0);
 
 				MCState = 21;
 			}
@@ -1314,7 +1314,7 @@ int Front_MemCardUpdate() {
 			break;
 		case 22:
 			if (AnyButton) {
-				SFX_PlayX(GoBack ? 147 : 145, 0x2000, 0);
+				SFX_PlayX(GoBack ? SFX_SHELL_BACK : SFX_SHELL_SELECT, 0x2000, 0);
 				return 36;
 			}
 

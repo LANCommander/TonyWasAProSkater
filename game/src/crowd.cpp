@@ -33,7 +33,7 @@ void Crowd_Start() {
 			Crowd_Bored = 0;
 
 			for (i = 0; i < 1; i++) {
-				Crowd[i].Voice = SFX_PlayX(44, 0, 0);
+				Crowd[i].Voice = SFX_PlayX(SFX_CROWD_LOOP, 0, 0);
 				printf("Pitch = %d \n", SFX_GetVoicePitch(Crowd[i].Voice));
 
 				Crowd[i].VolL = Crowd[i].TargetL = Crowd[i].TargetR = Crowd[i].VolR = 0;
@@ -124,14 +124,14 @@ void Crowd_Cheer(int a) {
 				DAT_800d10e8 ^= 1;
 
 				if (v > 2048) {
-					SFX_PlayX(48, v, 0);
-					SFX_PlayX(46, v, 0);
+					SFX_PlayX(SFX_CROWD_CHEER, v, 0);
+					SFX_PlayX(SFX_CROWD_MURMUR, v, 0);
 
 					if (a >= 8000)
-						SFX_PlayX(49, v, 0);
+						SFX_PlayX(SFX_CROWD_OOH, v, 0);
 				} else {
 					if (a >= 400)
-						SFX_PlayX(46, v * 4, 0);
+						SFX_PlayX(SFX_CROWD_MURMUR, v * 4, 0);
 				}
 			}
 		}
@@ -153,7 +153,7 @@ void Crowd_Oww(int Speed) {
 			if (Volume < 2048)
 				Volume = 2048;
 
-			SFX_PlayX(49, Volume, 0);
+			SFX_PlayX(SFX_CROWD_OOH, Volume, 0);
 		}
 	}
 }
@@ -176,9 +176,9 @@ void Crowd_Ahh(int a) {
 		if (s < 4096)
 			s = 4096;
 		else
-			SFX_PlayX(46, (short)(s / 2), 0);
+			SFX_PlayX(SFX_CROWD_MURMUR, (short)(s / 2), 0);
 
-		SFX_PlayX(47, (short)s, 0);
+		SFX_PlayX(SFX_CROWD_AWW, (short)s, 0);
 	}
 }
 
@@ -189,6 +189,6 @@ extern "C" void FUN_80011060(int a) {
 	if (Levels[GLevel].Crowd && GGame == 1) {
 		s1 = (a * (Rnd(20) + 90)) / 100;
 		s0 = (a * (Rnd(20) + 90)) / 100;
-		SFX_PlayLR(50, s1, s0, 0);
+		SFX_PlayLR(SFX_CROWD_BORED, s1, s0, 0);
 	}
 }
