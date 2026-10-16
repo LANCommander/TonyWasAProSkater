@@ -12,6 +12,18 @@
 #include "game/classsizes.h"
 #include "game/class.h"
 
+/* CRail::mType, which a grinding skater copies to CBruce::mRailType (Rail_Update): what the rail
+   is made of, for its grind and landing sounds (physics.cpp). THPS2 has the fields (CRail::mType,
+   CBruce::mRailType) but no names for the values; these come from THPS2's names for the sounds
+   each one picks. */
+enum ERailType : int {
+	RAIL_TYPE_DEFAULT = 0, /* ledges, and a rail node without one: the plain grind/boardslide loops,
+	                          no landing sound */
+	RAIL_TYPE_METAL = 1,   /* the metal grind loop (for slides too), metal landings, and a sound
+	                          for leaving it from a slide */
+	RAIL_TYPE_WOOD = 2,    /* the plain loops, wooden landings */
+};
+
 /* a grind rail: a node run with its bounding box, on the doubly linked RailList */
 class CRail : public CClass {
   public:
@@ -21,8 +33,7 @@ class CRail : public CClass {
 	CVector mBBoxMax;  /* 0x14 */
 	CRail *mpPrevious; /* 0x20 */
 	CRail *mpNext;     /* 0x24 */
-	int mNodeParam;    /* 0x28 THPS1: the start node's position word +6 (0 if -1); a grinding
-	                      skater copies it to CBruce::m210 (Rail_Update) */
+	ERailType mType;   /* 0x28 THPS1: the start node's position word +6 (RAIL_TYPE_DEFAULT if -1) */
 	/* sizeof(CRail) == 0x2c (Trig_SendPulseToNode allocates 44) */
 
 	virtual ~CRail();

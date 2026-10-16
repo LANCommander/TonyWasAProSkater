@@ -104,9 +104,9 @@ CRail *FUN_8004f684(CRail *p, int idx) {
 	s = ((short *)Trig_GetPosition(a, idx))[3];
 
 	if (s == -1)
-		p->mNodeParam = 0;
+		p->mType = RAIL_TYPE_DEFAULT;
 	else
-		p->mNodeParam = s;
+		p->mType = (ERailType)s;
 
 	idx = p->mStartNode;
 	p->mBBoxMin.vz = 0x7fffffff;
@@ -283,7 +283,7 @@ void Rail_Update() {
 											o->mRailStart = b->mStartNode;
 											o->mRailNode = s7;
 											o2->mRailPos = v70;
-											o->m210 = b->mNodeParam;
+											o->mRailType = b->mType;
 										}
 									}
 								}

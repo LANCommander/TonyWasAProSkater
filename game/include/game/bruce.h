@@ -27,6 +27,7 @@ extern "C" {
 #include "game/ob.h"
 #include "game/pad.h"
 #include "game/panel.h"
+#include "game/rail.h"
 
 class CCar;
 class CCamera;
@@ -69,7 +70,7 @@ class CBruce : public CSuper {
 	int m204;    /* 0x204 */
 	int m208;    /* 0x208 */
 	int mGrinds; /* 0x20c */
-	int m210;    /* 0x210 */
+	ERailType mRailType; /* 0x210 (the rail being ground's CRail::mType) */
 	int m214;    /* 0x214 */
 	/* 0x218..0x247: the trick-tip counters (demo order) */
 	int mBails;              /* 0x218 */

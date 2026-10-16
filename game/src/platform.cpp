@@ -40,7 +40,7 @@ CPlatform::CPlatform(short *p_info, int node) {
 	InitItem(pCurrentObjFile);
 	AttachTo(&EnvironmentalObjectList);
 
-	mType = 402;
+	mType = OBJ_PLATFORM;
 	mFlags |= 0x111;
 	mFlags &= ~2;
 	p_info = SquirtPos(p_info);
@@ -85,10 +85,10 @@ void CPlatform::Bounce(CBruce *pSkater, const CVector &Direction) {
 			mTargetAngles.vz = mAngles.vz - 1024 + (Rnd(2) << 11);
 
 			switch (mType) {
-				case 1:
+				case BOUNCY_BARRIER:
 					SFX_PlayX(SFX_BOUNCY1_HIT, 0x2000, 0);
 					goto Bouncy;
-				case 3:
+				case BOUNCY_TRASHCAN:
 					SFX_PlayX(SFX_CLANG, 0x2000, 0);
 				Bouncy:
 					SFX_Grunt(pSkater);
@@ -107,12 +107,12 @@ void CPlatform::Bounce(CBruce *pSkater, const CVector &Direction) {
 
 					mVel.Set(Direction.vx, Height, Direction.vz);
 					break;
-				case 2:
-				case 4:
-				case 5:
-					if (mType == 2)
+				case BOUNCY_CONE:
+				case BOUNCY_PLASTIC:
+				case BOUNCY_WOODENBOX:
+					if (mType == BOUNCY_CONE)
 						SFX_PlayX(GLevel ? SFX_BOUNCY2_1 : (ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
-					else if (mType == 4) {
+					else if (mType == BOUNCY_PLASTIC) {
 						SFX_Grunt(pSkater);
 						SFX_PlayX(SFX_BOUNCY4_HIT, 0x2000, 0);
 					}
@@ -219,23 +219,23 @@ void CPlatform::BouncyAI() {
 
 		if (mNumBounces < 5) {
 			switch (mType) {
-				case 1:
+				case BOUNCY_BARRIER:
 					SFX_PlayX(!Rnd(2) ? SFX_BOUNCY1_BOUNCE_2 : SFX_BOUNCY1_BOUNCE_1, 0x2000, 0);
 					break;
-				case 3:
+				case BOUNCY_TRASHCAN:
 					SFX_PlayX(SFX_CLANG, 0x2000, 0);
 					break;
-				case 2:
+				case BOUNCY_CONE:
 					if (GLevel)
 						SFX_PlayX(!Rnd(2) ? SFX_BOUNCY2_2 : SFX_BOUNCY2_1, 0x2000, 0);
 					else
 						SFX_PlayX((ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
 
 					break;
-				case 4:
+				case BOUNCY_PLASTIC:
 					SFX_PlayX(!Rnd(2) ? SFX_BOUNCY4_BOUNCE_2 : SFX_BOUNCY4_BOUNCE_1, 0x2000, 0);
 					break;
-				case 5:
+				case BOUNCY_WOODENBOX:
 					SFX_PlayX((ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
 					break;
 			}
@@ -262,7 +262,7 @@ void CPlatform::BouncyAI() {
 				if (mNumBounces == 1) {
 					mTargetAngles.vx += (short)((Rnd(2) << 11) - 1024);
 
-					if ((mType == 2 || mType == 4) &&
+					if ((mType == BOUNCY_CONE || mType == BOUNCY_PLASTIC) &&
 					    ((mTargetAngles.vx == 0x800 && mTargetAngles.vz == 0) ||
 					     (mTargetAngles.vx == 0 && mTargetAngles.vz == 0x800)))
 						mTargetAngles.vx = (Rnd(2) << 11) - 1024;
@@ -271,7 +271,7 @@ void CPlatform::BouncyAI() {
 				if (mNumBounces == 1) {
 					mTargetAngles.vz += (Rnd(3) - 1) << 10;
 
-					if ((mType == 2 || mType == 4) &&
+					if ((mType == BOUNCY_CONE || mType == BOUNCY_PLASTIC) &&
 					    ((mTargetAngles.vx == 0x800 && mTargetAngles.vz == 0) ||
 					     (mTargetAngles.vx == 0 && mTargetAngles.vz == 0x800)))
 						mTargetAngles.vz = (Rnd(2) << 11) - 1024;

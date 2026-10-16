@@ -666,7 +666,7 @@ void SendVisibleFromNode(int node, int visible) {
 					CBit *pBit;
 
 					for (pBit = NonRenderedBitList; pBit; pBit = pBit->mNext) {
-						if (pBit->mType == 2 && pBit->mLifetime == VisNode) {
+						if (pBit->mType == BITTYPE_LIGHT && pBit->mLifetime == VisNode) {
 							if (visible)
 								((CLight *)pBit)->mOn = 1;
 							else if (GNumberOfPlayers == 1)
@@ -790,7 +790,7 @@ void SendKillFromNode(int Node, int How) {
 				CBit *pBit;
 
 				for (pBit = NonRenderedBitList; pBit; pBit = pBit->mNext) {
-					if (pBit->mType == 2 && pBit->mLifetime == KillNode) {
+					if (pBit->mType == BITTYPE_LIGHT && pBit->mLifetime == KillNode) {
 						pBit->Die();
 						break;
 					}

@@ -848,13 +848,13 @@ inline void CBruce::StartGrind(int RailTrick) {
 		mVel += Vel;
 	}
 
-	switch (m210) {
-		case 0:
+	switch (mRailType) {
+		case RAIL_TYPE_DEFAULT:
 			break;
-		case 1:
+		case RAIL_TYPE_METAL:
 			SFX_PlayX((ESfx)(SFX_RAIL_LAND_1 + Rnd(2)), 0x2000, 0);
 			break;
-		case 2:
+		case RAIL_TYPE_WOOD:
 			SFX_PlayX((ESfx)(SFX_IMPACT_1 + Rnd(2)), 0x2000, 0);
 			break;
 	}
@@ -981,7 +981,7 @@ inline void CBruce::StartGrind(int RailTrick) {
    table walk reads the body through a local table pointer and the test into a variable, which
    keeps the two pointer givs apart as in retail; `char *pName` loaded before the Trick_Trick call
    gives retail's score-first argument loads; the Limit test is two ifs on a State local (not an
-   || that folds to & 0x6000); `case 0: break;` gives the m210 slti tree; Bailing as two `= 1`
+   || that folds to & 0x6000); `case 0: break;` gives the mRailType slti tree; Bailing as two `= 1`
    stores. StartGrind's Score is one function-scope local assigned in both Trick_Trick arms (set
    twice, so no sched1 set-once boost; as in CBruce::ScoreCurrentTrick) and read after the mGrindTrick store.
    Residues: the trick walk and the GetBalanceVel copy/arm register roles (a1/a2/a3: retail's DAT
@@ -2295,7 +2295,7 @@ NoSparks:
 				m740 = 1;
 				mDoingATrick = 0;
 
-				if (m210 == 1 && !m2EC)
+				if (mRailType == RAIL_TYPE_METAL && !m2EC)
 					SFX_PlayX(SFX_RAIL_OFF, 0x2000, 0);
 			} else {
 				int NextSegment2 = Rail_NextNode(Trig_GetLinksPointer(PreviousSegment));
@@ -2322,7 +2322,7 @@ NoSparks:
 					m740 = 1;
 					mDoingATrick = 0;
 
-					if (m210 == 1 && !m2EC)
+					if (mRailType == RAIL_TYPE_METAL && !m2EC)
 						SFX_PlayX(SFX_RAIL_OFF, 0x2000, 0);
 				} else {
 					RemainingSpeed = t;
@@ -2347,7 +2347,7 @@ NoSparks:
 				m740 = OffRail;
 				mDoingATrick = 0;
 
-				if (m210 == 1 && !m2EC)
+				if (mRailType == RAIL_TYPE_METAL && !m2EC)
 					SFX_PlayX(SFX_RAIL_OFF, 0x2000, 0);
 			} else {
 				int NextSegment2 = Rail_NextNode(Trig_GetLinksPointer(NextSegment));
@@ -2374,7 +2374,7 @@ NoSparks:
 					m740 = OffRail;
 					mDoingATrick = 0;
 
-					if (m210 == 1 && !m2EC)
+					if (mRailType == RAIL_TYPE_METAL && !m2EC)
 						SFX_PlayX(SFX_RAIL_OFF, 0x2000, 0);
 				} else {
 					mRailNode = NextSegment;
@@ -3955,7 +3955,7 @@ void CBruce::HandleJump() {
 				if (mPhysicsState == 4 && !m2EC) {
 					Sfx = 16;
 
-					if (m210 != 1)
+					if (mRailType != RAIL_TYPE_METAL)
 						Sfx = 6;
 				}
 
@@ -4482,9 +4482,9 @@ void CBruce::HandleContinuousSounds() {
 		if (!mGrindSnd) {
 			ESfx Snd;
 
-			if (m2EC && (m210 == 0 || m210 == 2))
+			if (m2EC && (mRailType == RAIL_TYPE_DEFAULT || mRailType == RAIL_TYPE_WOOD))
 				Snd = SFX_GRIND_LOOP;
-			else if (!m2EC && (m210 == 0 || m210 == 2))
+			else if (!m2EC && (mRailType == RAIL_TYPE_DEFAULT || mRailType == RAIL_TYPE_WOOD))
 				Snd = SFX_SLIDE_LOOP;
 			else if (GLevel == 8)
 				Snd = SFX_ROSWELL_GRIND_LOOP;

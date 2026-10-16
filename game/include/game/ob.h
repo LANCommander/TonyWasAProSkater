@@ -67,7 +67,7 @@ class CItem {
 	uint mStoredRGB;           /* 0x34 */
 	uchar mPredatorEffectType; /* 0x38 */
 	uchar mPredatorEffectFade; /* 0x39 */
-	ushort mType;              /* 0x3a */
+	ushort mType;              /* 0x3a ETrigObjectType (game/script.h); CPowerUp: EPowerUpType */
 	SLight *mpLight;           /* 0x3c */
 	ushort mFlashTimer;        /* 0x40 */
 	short mFlash_dR;           /* 0x42 */

@@ -28,6 +28,7 @@ extern "C" {
 #include "game/trig.h"
 #include "game/utils.h"
 #include "game/m3dzone.h"
+#include "game/script.h"
 
 extern SPresetCamera Presets[5];
 extern int Camera_Preset;
@@ -87,7 +88,7 @@ CCamera::CCamera(CBody *tripod, ushort mike_index)
 	mTripodTime = 0;
 	mFocusPos = mFocus->mPos;
 	mFocusTime = 0;
-	mType = 99;
+	mType = OBJ_CAMERA;
 	Camera_Preset = 2;
 
 	camDist = Presets[Camera_Preset].Dist;

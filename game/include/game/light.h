@@ -8,7 +8,7 @@
 
 #include "game/bit.h"
 
-/* a dynamic light (mType 2; mLifetime holds its trigger node); vtable 0x8009f0b0 */
+/* a dynamic light (BITTYPE_LIGHT; mLifetime holds its trigger node); vtable 0x8009f0b0 */
 class CLight : public CNonRenderedBit {
   public:
 	int mInnerRadius;  /* 0x48 */

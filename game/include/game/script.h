@@ -60,14 +60,28 @@ enum ETrigCreateFlag {
 	RADIALSUSPENDCONTROL = 5,
 };
 
-/* NODE_BADDY object types (Trig_CreateObject) */
+/* NODE_BADDY object types (Trig_CreateObject). The objects keep theirs in CItem::mType, which a
+   CPowerUp fills with its EPowerUpType (game/powerup.h) and a CCamera with OBJ_CAMERA instead. */
 enum ETrigObjectType {
+	OBJ_CAMERA = 99,            /* not a node's: CCamera's CItem::mType (THPS2 CAMERA.H's CAMERA) */
 	OBJ_SCRIPTONLYBADDY = 203,  /* CScriptOnlyBaddy */
 	OBJ_CAR_TAXI = 213,         /* CCar (no script) */
 	OBJ_CAR_POLICE = 214,
 	OBJ_CAR_BUS = 215,          /* THPS1: the van, "c_van" */
 	OBJ_CAR_CABLE = 216,
 	OBJ_PLATFORM = 402,         /* CPlatform */
+};
+
+/* C_IS_BOUNCY's operand, kept in CPlatform::mType (which holds OBJ_PLATFORM until a script sets
+   one): how a skater knocks the platform over and what it sounds like (CPlatform::Bounce,
+   BouncyAI). THPS2's unprefixed defines, with BOUNCY_. */
+enum EBouncyType {
+	BOUNCY_NONE = 0,            /* (no THPS2 name) a normal platform again */
+	BOUNCY_BARRIER = 1,         /* a wooden sawhorse */
+	BOUNCY_CONE = 2,
+	BOUNCY_TRASHCAN = 3,
+	BOUNCY_PLASTIC = 4,         /* a plastic chair */
+	BOUNCY_WOODENBOX = 5,
 };
 
 /* object script commands (BASE_COMMAND set) */
@@ -145,7 +159,7 @@ enum EScriptCommand {
 	C_SCALE_X = 0x4306,         /* percent, frames */
 	C_SCALE_Y = 0x4307,
 	C_SCALE_Z = 0x4308,
-	C_IS_BOUNCY = 0x4309,       /* bounce type (mType); 0 makes it a normal platform again */
+	C_IS_BOUNCY = 0x4309,       /* EBouncyType (CPlatform::mType); BOUNCY_NONE: a normal platform */
 
 	/* CScriptOnlyBaddy (the looping sounds also CPlatform) */
 	C_MAKE_RAIN = 0x4503,       /* droplets (GetScriptValue); falling around the skater */

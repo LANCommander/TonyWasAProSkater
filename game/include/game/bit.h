@@ -74,6 +74,20 @@ struct SRibbonPoint {
 
 /* ---- CBit -------------------------------------------------------------------------------- */
 
+/* CBit::mType: the THPS2 source's BITTYPE_ consts (BIT.H, in order from 0; from its sk2.vtg tag
+   database, as game/script.h's names). THPS1 sets only CLight's and CChunkBit's; every other bit
+   keeps the zeroed block's BITTYPE_UNIDENTIFIED. */
+enum EBitType : uchar {
+	BITTYPE_UNIDENTIFIED = 0,
+	BITTYPE_GENERICLASER = 1,
+	BITTYPE_LIGHT = 2,             /* CLight (found on NonRenderedBitList by trigger node) */
+	BITTYPE_SMARTBOMB = 3,
+	BITTYPE_BADDYRAPIDLASER = 4,
+	BITTYPE_TRIANGLEFRAGMENT = 5,
+	BITTYPE_QUADFRAGMENT = 6,      /* CChunkBit */
+	BITTYPE_SPRAY = 7,
+};
+
 /* base of every particle (BIT.CPP 0x80027d08..0x80027ec4); vtable 0x8009f8b0 */
 class CBit {
   public:
@@ -89,7 +103,7 @@ class CBit {
 	uchar mDead;        /* 0x3f */
 	ushort mFrigDeltaZ; /* 0x40 */
 	uchar mProtected;   /* 0x42 */
-	uchar mType;        /* 0x43 */
+	EBitType mType;     /* 0x43 */
 	/* 0x44: vptr; sizeof(CBit) == 0x48 */
 
 	static void *operator new(__SIZE_TYPE__ size) throw(); /* zeroes the block */

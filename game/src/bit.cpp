@@ -529,7 +529,7 @@ CChunkBit::CChunkBit(const CSVector &a, const CSVector &b, const CSVector &c) {
 	SChunkVec ca, ba, cprod, norm;
 	int mul;
 
-	mType = 6;
+	mType = BITTYPE_QUADFRAGMENT;
 	mPosA.vx = a.vx;
 	mPosA.vy = a.vy;
 	mPosA.vz = a.vz;

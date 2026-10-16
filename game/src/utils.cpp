@@ -557,7 +557,7 @@ void Utils_SetVisibilityInBox(const CVector &a, const CVector &b, bool arg2, boo
 
 	if (q) {
 		do {
-			if (q->mType == 2) {
+			if (q->mType == BITTYPE_LIGHT) {
 				if (arg3) {
 					if (INSIDE(q->mPos.vx, q->mPos.vz, q->mPos.vy)) {
 						if (arg2)

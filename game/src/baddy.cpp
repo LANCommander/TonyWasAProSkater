@@ -743,7 +743,7 @@ CScriptOnlyBaddy::CScriptOnlyBaddy(short *p_info, int node) {
 	AttachTo(&BaddyList);
 
 	mRMinor = 0;
-	mType = 203;
+	mType = OBJ_SCRIPTONLYBADDY;
 }
 
 /* FUN_80041264 (0x80041264) */

@@ -10,6 +10,7 @@ extern "C" {
 #include "game/bruce.h"
 #include "game/bit.h"
 #include "game/sfx.h"
+#include "game/script.h"
 #include "game/front.h"
 #include "game/m3d.h"
 #include "game/video.h"
@@ -45,21 +46,21 @@ CCar::CCar(short *p_info, int node, int type) {
 	mLoopingSoundUpdate = 1;
 
 	switch (type) {
-		case 0xd5:
+		case OBJ_CAR_TAXI:
 			InitItem("c_taxi");
 
 			mLoopingSound = SFX_PlayX(SFX_TAXI_ENGINE, 0, 0);
 			break;
-		case 0xd6:
+		case OBJ_CAR_POLICE:
 			mLoopingSoundUpdate = 0;
 			InitItem("c_police");
 			break;
-		case 0xd7:
+		case OBJ_CAR_BUS:
 			InitItem("c_van");
 
 			mLoopingSound = SFX_PlayX(SFX_VAN_ENGINE, 0, 0);
 			break;
-		case 0xd8:
+		case OBJ_CAR_CABLE:
 			InitItem("c_cable");
 
 			mLoopingSound = SFX_PlayX(SFX_CABLE_CAR_LOOP, 0, 0);
@@ -197,9 +198,9 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 		{
 			int CarHeight = 0;
 
-			if (pCar->mType == 215)
+			if (pCar->mType == OBJ_CAR_BUS)
 				CarHeight = 0x46000;
-			else if (pCar->mType == 216)
+			else if (pCar->mType == OBJ_CAR_CABLE)
 				CarHeight = 0x64000;
 
 			if (!pSkater->mInAir && pSkater->mPhysicsState == 1 &&
@@ -297,16 +298,16 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 			ESfx sfx;
 
 			switch (pCar->mType) {
-				case 213:
+				case OBJ_CAR_TAXI:
 					sfx = (ESfx)(SFX_TAXI_HIT_1 + Rnd(4));
 					break;
-				case 214:
+				case OBJ_CAR_POLICE:
 					sfx = (ESfx)(SFX_POLICE_HIT_1 + Rnd(4));
 					break;
-				case 215:
+				case OBJ_CAR_BUS:
 					sfx = SFX_VAN_HIT;
 					break;
-				case 216:
+				case OBJ_CAR_CABLE:
 					sfx = SFX_CABLE_CAR_BELL;
 					break;
 				default:
@@ -391,16 +392,16 @@ void HonkAtSkaters(CCar *pCar, CVector Front) {
 	if (Honk) {
 		if (!pCar->mHonkLock) {
 			switch (pCar->mType) {
-				case 213:
+				case OBJ_CAR_TAXI:
 					SFX_PlayX((ESfx)(SFX_TAXI_HORN_1 + Rnd(3)), 0x2000, 0);
 					break;
-				case 214:
+				case OBJ_CAR_POLICE:
 					SFX_PlayX(SFX_POLICE_HORN, 0x2000, 0);
 					break;
-				case 215:
+				case OBJ_CAR_BUS:
 					SFX_PlayX(SFX_VAN_HORN, 0x2000, 0);
 					break;
-				case 216:
+				case OBJ_CAR_CABLE:
 					SFX_PlayX(SFX_CABLE_CAR_BELL, 0x2000, 0);
 					break;
 			}
