@@ -49,7 +49,7 @@ CCar::CCar(short *p_info, int node, int type) {
 		case OBJ_CAR_TAXI:
 			InitItem("c_taxi");
 
-			mLoopingSound = SFX_PlayX(SFX_TAXI_ENGINE, 0, 0);
+			mLoopingSound = SFX_PlayX(SND_TAXI2, 0, 0);
 			break;
 		case OBJ_CAR_POLICE:
 			mLoopingSoundUpdate = 0;
@@ -58,12 +58,12 @@ CCar::CCar(short *p_info, int node, int type) {
 		case OBJ_CAR_BUS:
 			InitItem("c_van");
 
-			mLoopingSound = SFX_PlayX(SFX_VAN_ENGINE, 0, 0);
+			mLoopingSound = SFX_PlayX(SND_VWBUS, 0, 0);
 			break;
 		case OBJ_CAR_CABLE:
 			InitItem("c_cable");
 
-			mLoopingSound = SFX_PlayX(SFX_CABLE_CAR_LOOP, 0, 0);
+			mLoopingSound = SFX_PlayX(SND_CABLECAR1B, 0, 0);
 			break;
 	}
 
@@ -211,7 +211,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 				pSkater->mVel.vy -= 0x1e000;
 				pSkater->Vibrate(8, 1, 150);
 				SFX_Grunt(pSkater);
-				SFX_PlayX(SFX_CLANG, 0x2000, 0);
+				SFX_PlayX(SND_SMACKMETAL, 0x2000, 0);
 				pSkater->Trick_Trick(78, GameText.pCarPlant, -1000, 0);
 
 				{
@@ -292,23 +292,23 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 		pSkater->BloodSplat(1, 100);
 		pSkater->Vibrate(12, 1, 255);
 		SFX_Grunt(pSkater);
-		SFX_PlayX(SFX_CAR_HIT, 0x2000, 0);
+		SFX_PlayX(SND_CARHIT1, 0x2000, 0);
 
 		{
 			ESfx sfx;
 
 			switch (pCar->mType) {
 				case OBJ_CAR_TAXI:
-					sfx = (ESfx)(SFX_TAXI_HIT_1 + Rnd(4));
+					sfx = (ESfx)(SND_CABDRIVER1 + Rnd(4));
 					break;
 				case OBJ_CAR_POLICE:
-					sfx = (ESfx)(SFX_POLICE_HIT_1 + Rnd(4));
+					sfx = (ESfx)(SND_COP1 + Rnd(4));
 					break;
 				case OBJ_CAR_BUS:
-					sfx = SFX_VAN_HIT;
+					sfx = SND_VWHORN3;
 					break;
 				case OBJ_CAR_CABLE:
-					sfx = SFX_CABLE_CAR_BELL;
+					sfx = SND_DINGDING;
 					break;
 				default:
 					return;
@@ -393,16 +393,16 @@ void HonkAtSkaters(CCar *pCar, CVector Front) {
 		if (!pCar->mHonkLock) {
 			switch (pCar->mType) {
 				case OBJ_CAR_TAXI:
-					SFX_PlayX((ESfx)(SFX_TAXI_HORN_1 + Rnd(3)), 0x2000, 0);
+					SFX_PlayX((ESfx)(SND_TAXIHORN + Rnd(3)), 0x2000, 0);
 					break;
 				case OBJ_CAR_POLICE:
-					SFX_PlayX(SFX_POLICE_HORN, 0x2000, 0);
+					SFX_PlayX(SND_SIREN1, 0x2000, 0);
 					break;
 				case OBJ_CAR_BUS:
-					SFX_PlayX(SFX_VAN_HORN, 0x2000, 0);
+					SFX_PlayX(SND_VWHORN2, 0x2000, 0);
 					break;
 				case OBJ_CAR_CABLE:
-					SFX_PlayX(SFX_CABLE_CAR_BELL, 0x2000, 0);
+					SFX_PlayX(SND_DINGDING, 0x2000, 0);
 					break;
 			}
 

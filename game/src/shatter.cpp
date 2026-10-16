@@ -543,12 +543,12 @@ void Shatter_MaybeMakeGlassShatterSound(void) {
 
 	if (ShatterSound) {
 		if (GLevel == 1)
-			s = SFX_GLASS_LEVEL;
+			s = SND_GLASS2;
 		else {
-			s = SFX_GLASS_LEVEL;
+			s = SND_GLASS2;
 
 			if (GLevel != 4)
-				s = SFX_GLASS;
+				s = SND_GLASS1;
 		}
 
 		SFX_PlayX(s, 0x2000, 0);

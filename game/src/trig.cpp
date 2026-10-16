@@ -1249,7 +1249,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 									if (pGapTrick->Type < 20000) {
 										pCurrentPlayer->Trick_Trick(77, pGapTrick->Name,
 										                            -pGapTrick->Score, 0);
-										SFX_PlayX(SFX_GAP, 0x2000, 0);
+										SFX_PlayX(SND_GAP, 0x2000, 0);
 									} else {
 										pCurrentPlayer->mpGrindGapTrick = pGapTrick;
 									}

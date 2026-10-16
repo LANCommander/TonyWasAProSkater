@@ -7,208 +7,209 @@
 #include "game/vector.h"
 
 /* A sound effect: an index into the voice table DAT_800b8a9c (game/data/unnamed.cpp), which gives
-   each one its VAB program/tone, loop bit and volume. The original names are lost. These come from
-   where the game plays them. The ids that play from the general bank are skate2.vab's in a level
-   and shell.vab's (SFX_SHELL_*, SFX_MENU_*) in the front end. The rest play from the level's own
-   bank (Levels[].pVab), so they only mean something in the levels whose VAB fills that slot. An id
-   that's only played from level scripts (TRG_PLAYSOUND, C_PLAY_SFX...) is named after its level.
-   A bare number means the id is never played, by code or by script. Terrain numbers are
-   CBruce::mTerrain / Face_Terrain values. */
+   each one its VAB program/tone, loop bit and volume. The names are the THPS2 source's SND_
+   #defines (from its sk2.vtg tag database, as game/script.h's names): THPS2's table grew out of
+   THPS1's, and up to 174 the two agree. The ids that play from the general bank are skate2.vab's
+   in a level and shell.vab's (144-151, 157) in the front end. The rest play from the level's own
+   bank (Levels[].pVab), so they only mean something in the levels whose VAB fills that slot.
+   The rolling loops follow the terrain (CBruce::HandleContinuousSounds), the bouncy objects'
+   sounds their EBouncyType (CPlatform::Bounce). */
 enum ESfx : uint {
 	/* the general bank: skate2.vab */
-	SFX_ROLL = 0,             /* rolling loop: terrain 11 and default; a power-up pick-up */
-	SFX_ROLL_TERRAIN2 = 1,    /* rolling loop */
-	SFX_SKID = 2,             /* braking, a female skater's bail; menu back */
-	SFX_3 = 3,                /* Downtown, Mall, Streets and Warehouse scripts */
-	SFX_4 = 4,                /* Downtown, Mall, Streets and Warehouse scripts */
-	SFX_LAND = 5,             /* landing on most terrains; menu accept */
-	SFX_MENU_MOVE = 6,        /* menu cursor */
-	SFX_AIR_LOOP = 7,         /* the wind loop in the air */
-	SFX_BAIL_FEMALE = 8,
-	SFX_BAIL_MALE_1 = 9,
-	SFX_BAIL_MALE_2 = 10,
-	SFX_GRIND_LOOP = 11,      /* a grind on a kind 0/2 rail */
-	SFX_GRIND_LOOP_RAIL1 = 12, /* grind or slide on a kind 1 rail */
-	SFX_SLIDE_LOOP = 13,      /* a slide on a kind 0/2 rail */
-	SFX_14 = 14,
-	SFX_WALLRIDE_LOOP = 15,   /* also a Downhill Jam script */
-	SFX_RAIL_OFF = 16,        /* leaving a kind 1 rail from a slide */
-	SFX_MENU_LETTER = 17,     /* cycling a letter (high score initials, the HORSE word) */
-	SFX_PONG = 18,            /* a credit pick-up (pitched by its value); high score entered */
-	SFX_TAPE = 19,            /* a tape got */
-	SFX_LETTER = 20,          /* an S-K-A-T-E letter; a trick object hit in a career game */
-	SFX_21 = 21,
-	SFX_TIMER_TICK = 22,      /* the last seconds of the clock */
-	SFX_23 = 23,
-	SFX_GRAFFITI_TAG = 24,
-	SFX_GRAFFITI_STEAL = 25,
-	SFX_26 = 26,
-	SFX_27 = 27,
-	SFX_GRUNT_MALE_1 = 28,
-	SFX_GRUNT_MALE_2 = 29,
-	SFX_GRUNT_MALE_3 = 30,
-	SFX_GRUNT_FEMALE = 31,
-	SFX_32 = 32,
-	SFX_ROLL_TERRAIN3 = 33,   /* rolling loop */
-	SFX_KICK = 34,            /* pushing off */
-	SFX_LAND_TERRAIN10 = 35,  /* landing on terrains 10 and 12 */
-	SFX_RAIL_LAND_1 = 36,     /* onto a kind 1 rail (or SFX_RAIL_LAND_2) */
-	SFX_RAIL_LAND_2 = 37,
-	SFX_IMPACT_1 = 38,        /* landing on terrain 2 or a kind 2 rail (or SFX_IMPACT_2), a
+	SND_CONCRETE = 0,         /* rolling loop: concrete, pool, and the default; a power-up pick-up */
+	SND_WOOD = 1,             /* rolling loop */
+	SND_FOOTSLIDE = 2,        /* braking, a female skater's bail; menu back */
+	SND_BUSH3 = 3,
+	SND_BUSH5 = 4,
+	SND_LAND = 5,             /* also menu accept */
+	SND_OLLIE = 6,            /* also the menu cursor */
+	SND_WHEELSPIN = 7,        /* the loop in the air */
+	SND_WIPEOUT1 = 8,         /* a female skater's bail */
+	SND_WIPEOUT2 = 9,
+	SND_WIPEOUT3 = 10,
+	SND_BOARDSLIDE = 11,      /* loop */
+	SND_METALGRIND = 12,      /* loop: grinds and slides on a RAIL_TYPE_METAL rail */
+	SND_GRIND = 13,           /* loop */
+	SND_14 = 14,              /* (no THPS2 name) */
+	SND_WALLRIDE2 = 15,       /* loop */
+	SND_METALOFF2 = 16,       /* leaving a RAIL_TYPE_METAL rail from a slide */
+	SND_COUNTDING = 17,       /* cycling a letter (high score initials, the HORSE word) */
+	SND_COLLECT56 = 18,       /* a credit pick-up (pitched by its value); high score entered */
+	SND_COLLECT70 = 19,       /* a tape got */
+	SND_COLLECT79 = 20,       /* an S-K-A-T-E letter; a trick object hit in a career game */
+	SND_GOTATAPE = 21,
+	SND_TIMEOUT = 22,         /* the last seconds of the clock */
+	SND_PAUSEON = 23,
+	SND_MARKUP2 = 24,         /* a graffiti tag */
+	SND_COLLECT27 = 25,       /* a graffiti tag stolen */
+	SND_HORSELETTER = 26,
+	SND_UPPEDANTE = 27,
+	SND_GRUNT = 28,           /* the first of the male grunts (SND_GRUNT + Rnd(3)) */
+	SND_GRUNT2 = 28,
+	SND_GRUNT3 = 29,
+	SND_GRUNT4 = 30,
+	SND_GRUNTGIRL = 31,
+	SND_OW = 32,
+	SND_DIRT = 33,            /* rolling loop */
+	SND_FOOT1 = 34,           /* pushing off */
+	SND_LANDMETAL4 = 35,      /* landing on a tin roof or metal */
+	SND_LANDPOLE1 = 36,       /* onto a RAIL_TYPE_METAL rail (or SND_LANDRAIL3) */
+	SND_LANDRAIL3 = 37,
+	SND_LANDWOOD2 = 38,       /* landing on wood or a RAIL_TYPE_WOOD rail (or SND_LANDWOOD6), a
 	                             handplant, hitting the ground in a bail */
-	SFX_IMPACT_2 = 39,
-	SFX_CLANG = 40,           /* hitting a terrain 9 wall, a car plant, a bouncy object; also a
-	                             Downhill Jam script */
-	SFX_41 = 41,
-	SFX_GLASS = 42,           /* glass shattering (SFX_GLASS_LEVEL in School and Downtown); a
-	                             HORSE letter */
-	SFX_SPLASH = 43,          /* into water */
+	SND_LANDWOOD6 = 39,
+	SND_SMACKMETAL = 40,      /* hitting a metal pole, a car plant, a BOUNCY_TRASHCAN */
+	SND_HEADCRACK2 = 41,
+	SND_GLASS1 = 42,          /* glass shattering (SND_GLASS2 in School and Downtown); a HORSE
+	                             letter */
+	SND_SPLASH1 = 43,         /* into water */
 
 	/* the level's bank */
-	SFX_CROWD_LOOP = 44,      /* the competitions' crowd */
-	SFX_CROWD_APPLAUSE = 45,  /* a medal won */
-	SFX_CROWD_MURMUR = 46,
-	SFX_CROWD_AWW = 47,       /* no medal */
-	SFX_CROWD_CHEER = 48,
-	SFX_CROWD_OOH = 49,       /* a bail */
-	SFX_CROWD_BORED = 50,
-	SFX_JUDGE_TOTAL = 51,     /* the judges' total shown */
-	SFX_JUDGE_SCORE = 52,     /* a judge's score shown; the ladder */
-	SFX_HIT_TERRAIN7 = 53,    /* hitting a terrain 7 wall */
-	SFX_54 = 54,
-	SFX_ROLL_TERRAIN12 = 55,  /* rolling loop */
-	SFX_ROLL_TERRAIN13 = 56,  /* rolling loop: also terrain 4 (but in Streets) */
-	SFX_ROLL_TERRAIN8 = 57,   /* rolling loop */
-	SFX_GLASS_LEVEL = 58,     /* glass shattering in School and Downtown */
-	SFX_59 = 59,
-	SFX_60 = 60,
-	SFX_ROLL_TERRAIN5 = 61,   /* rolling loop */
-	SFX_SCHOOL_62 = 62,
-	SFX_SCHOOL_63 = 63,
-	SFX_64 = 64,
-	SFX_SCHOOL_65 = 65,
-	SFX_SCHOOL_66 = 66,
-	SFX_67 = 67,
-	SFX_SCHOOL_68 = 68,
-	SFX_69 = 69,
-	SFX_70 = 70,
-	SFX_ROLL_TERRAIN10 = 71,  /* rolling loop */
-	SFX_ROLL_TERRAIN6 = 72,   /* rolling loop */
-	SFX_ROLL_TERRAIN1 = 73,   /* rolling loop (but in Roswell) */
-	SFX_74 = 74,
-	SFX_75 = 75,
-	SFX_76 = 76,              /* Mall and Downtown scripts */
-	SFX_MALL_77 = 77,
-	SFX_78 = 78,
-	SFX_79 = 79,
-	SFX_BOUNCY4_BOUNCE_1 = 80, /* a type 4 bouncy object (CPlatform) bouncing (or _2) */
-	SFX_BOUNCY4_BOUNCE_2 = 81,
-	SFX_BOUNCY4_HIT = 82,     /* a skater hitting a type 4 bouncy object */
-	SFX_BOUNCY_1 = 83,        /* a type 5 bouncy object, or type 2 in Warehouse, hit or bouncing
-	                             (or _2); also Warehouse and Mall scripts */
-	SFX_BOUNCY_2 = 84,        /* also Warehouse scripts */
-	SFX_MALL_85 = 85,
-	SFX_86 = 86,              /* Streets, Downtown and Warehouse scripts */
-	SFX_87 = 87,              /* Streets, Downtown and Warehouse scripts */
-	SFX_88 = 88,              /* Streets, Downtown and Warehouse scripts */
-	SFX_MALL_89 = 89,
-	SFX_90 = 90,
-	SFX_91 = 91,
-	SFX_92 = 92,
-	SFX_JAM_93 = 93,
-	SFX_JAM_94 = 94,
-	SFX_JAM_95 = 95,
-	SFX_JAM_96 = 96,
-	SFX_JAM_97 = 97,
-	SFX_JAM_98 = 98,
-	SFX_JAM_99 = 99,
-	SFX_JAM_100 = 100,
-	SFX_JAM_101 = 101,
-	SFX_BOUNCY1_BOUNCE_1 = 102, /* a type 1 bouncy object bouncing (or _2) */
-	SFX_BOUNCY1_BOUNCE_2 = 103,
-	SFX_BOUNCY1_HIT = 104,    /* a skater hitting a type 1 bouncy object */
-	SFX_ROLL_TERRAIN14 = 105, /* rolling loop */
-	SFX_BOUNCY2_1 = 106,      /* a type 2 bouncy object (but in Warehouse) hit or bouncing (or _2) */
-	SFX_BOUNCY2_2 = 107,
-	SFX_DOWNTOWN_108 = 108,
-	SFX_109 = 109,
-	SFX_TAXI_HORN_1 = 110,    /* (or _2, _3) */
-	SFX_TAXI_HORN_2 = 111,
-	SFX_TAXI_HORN_3 = 112,
-	SFX_TAXI_ENGINE = 113,    /* loop */
-	SFX_CAR_HIT = 114,        /* a car hitting a skater, then the car's own sound */
-	SFX_TAXI_HIT_1 = 115,     /* (or _2.._4) */
-	SFX_TAXI_HIT_2 = 116,
-	SFX_TAXI_HIT_3 = 117,
-	SFX_TAXI_HIT_4 = 118,
-	SFX_ROLL_TERRAIN15 = 119, /* rolling loop */
-	SFX_CABLE_CAR_BELL = 120, /* its horn and its hit */
-	SFX_121 = 121,
-	SFX_POLICE_HORN = 122,
-	SFX_STREETS_123 = 123,
-	SFX_STREETS_124 = 124,
-	SFX_POLICE_HIT_1 = 125,   /* (or _2.._4); also Streets scripts */
-	SFX_POLICE_HIT_2 = 126,
-	SFX_POLICE_HIT_3 = 127,
-	SFX_POLICE_HIT_4 = 128,
-	SFX_VAN_ENGINE = 129,     /* loop */
-	SFX_VAN_HORN = 130,
-	SFX_VAN_HIT = 131,
-	SFX_132 = 132,
-	SFX_133 = 133,
-	SFX_CABLE_CAR_LOOP = 134,
-	SFX_135 = 135,
-	SFX_136 = 136,
-	SFX_ROSWELL_CLANG = 137,  /* Roswell's SFX_CLANG for a terrain 9 wall */
-	SFX_ROSWELL_138 = 138,
-	SFX_ROSWELL_139 = 139,
-	SFX_ROSWELL_140 = 140,
-	SFX_ROSWELL_141 = 141,
-	SFX_ROSWELL_142 = 142,
-	SFX_ROSWELL_ROLL_TERRAIN12 = 143, /* rolling loop */
+	SND_CROWDAMBIENCE = 44,   /* the competitions' crowd loop */
+	SND_SCREAM3 = 45,         /* a medal won */
+	SND_CROWDAPPLAUSE = 46,
+	SND_CROWDOW = 47,         /* no medal */
+	SND_CROWDCHEER = 48,
+	SND_CROWDAMAZED = 49,     /* also a bail */
+	SND_CROWDBOO = 50,
+	SND_SCORE4 = 51,          /* the judges' total shown */
+	SND_LEADER5 = 52,         /* a judge's score shown; the ladder */
+	SND_FENCEHIT2 = 53,       /* hitting a chain-link fence */
+	SND_ROLLPOOL = 54,
+	SND_ROLLMETAL2 = 55,      /* rolling loop */
+	SND_ROLLROUGH1 = 56,      /* rolling loop: rock, and asphalt (but in Streets) */
+	SND_BRICKROLL1 = 57,      /* rolling loop */
+	SND_GLASS2 = 58,
+	SND_ACHUM = 59,
+	SND_TRASHHIT1 = 60,
+	SND_ROLLGRASS = 61,       /* rolling loop */
+	SND_SLOWFAN2 = 62,
+	SND_POLEHIT = 63,
+	SND_HITDUMPSTER = 64,
+	SND_GYMDOOR1 = 65,
+	SND_SCHOOLBELL1 = 66,
+	SND_SCHOOLBELL2 = 67,
+	SND_LIGHTSON2 = 68,
+	SND_TRASHBOUNC1 = 69,
+	SND_FLOOR = 70,
+	SND_ROLLROOF = 71,        /* rolling loop: tin roof */
+	SND_WATERROLL2 = 72,      /* rolling loop */
+	SND_TILEROLL1 = 73,       /* rolling loop (but in Roswell) */
+	SND_TILEROLL2 = 74,
+	SND_ELEV = 75,
+	SND_SMALLFALLS = 76,
+	SND_BIGFALLS1 = 77,
+	SND_NEON1 = 78,
+	SND_FENCEHIT2A = 79,
+	SND_CHAIRBOUNCE1 = 80,    /* a BOUNCY_PLASTIC bouncing (or SND_CHAIRBOUNCE2) */
+	SND_CHAIRBOUNCE2 = 81,
+	SND_CHAIRHIT1 = 82,       /* a skater hitting a BOUNCY_PLASTIC */
+	SND_BOXHIT1 = 83,         /* a BOUNCY_WOODENBOX, or a BOUNCY_CONE in Warehouse, hit or bouncing
+	                             (or SND_BOXHIT2) */
+	SND_BOXHIT2 = 84,
+	SND_DING = 85,
+	SND_SPARKS2 = 86,
+	SND_SPARKS3 = 87,
+	SND_SPARKS7 = 88,
+	SND_ELEVATORMUSIC = 89,
+	SND_ESCALATOR = 90,
+	SND_BARRELHIT1 = 91,
+	SND_BARRELBOUNC1 = 92,
+	SND_HYDRANT = 93,
+	SND_VALVE1 = 94,
+	SND_RIVER1 = 95,
+	SND_RIVER2 = 96,
+	SND_GEN1 = 97,
+	SND_SPLASH2 = 98,
+	SND_SPLASH3 = 99,
+	SND_CRATE1 = 100,
+	SND_CRATE2 = 101,
+	SND_WOODFALL1 = 102,      /* a BOUNCY_BARRIER bouncing (or SND_WOODFALL2) */
+	SND_WOODFALL2 = 103,
+	SND_WOODHORSE3 = 104,     /* a skater hitting a BOUNCY_BARRIER */
+	SND_GRAVEL2 = 105,        /* rolling loop */
+	SND_CONEBOUNCE1 = 106,    /* a BOUNCY_CONE (but in Warehouse) hit or bouncing (or
+	                             SND_CONEBOUNCE2) */
+	SND_CONEBOUNCE2 = 107,
+	SND_SIGNHIT1 = 108,
+	SND_STEAM1 = 109,
+	SND_TAXIHORN = 110,       /* (or SND_TAXIHORN2, SND_TAXIHORN3) */
+	SND_TAXIHORN2 = 111,
+	SND_TAXIHORN3 = 112,
+	SND_TAXI2 = 113,          /* the taxi's loop */
+	SND_CARHIT1 = 114,        /* a car hitting a skater, then the car's own sound */
+	SND_CABDRIVER1 = 115,     /* the taxi's (or SND_CABDRIVER2..4) */
+	SND_CABDRIVER2 = 116,
+	SND_CABDRIVER3 = 117,
+	SND_CABDRIVER4 = 118,
+	SND_ROLLSIDEWALK = 119,   /* rolling loop */
+	SND_DINGDING = 120,       /* the cable car's horn and hit */
+	SND_POLICECAR3 = 121,
+	SND_SIREN1 = 122,         /* the police car's horn */
+	SND_BIGFALLS2 = 123,
+	SND_SIRENSMASH2 = 124,
+	SND_COP1 = 125,           /* the police car's hit (or SND_COP2..4) */
+	SND_COP2 = 126,
+	SND_COP3 = 127,
+	SND_COP4 = 128,
+	SND_VWBUS = 129,          /* the van's loop */
+	SND_VWHORN2 = 130,        /* its horn */
+	SND_VWHORN3 = 131,        /* its hit */
+	SND_CANVASLAND = 132,
+	SND_CANVASROLL = 133,
+	SND_CABLECAR1B = 134,     /* the cable car's loop */
+	SND_135 = 135,            /* (no THPS2 name) */
+	SND_FENCEHIT = 136,
+	SND_SPARK8 = 137,         /* Roswell's SND_SMACKMETAL */
+	SND_BIGDOOROPEN2 = 138,
+	SND_TRUCKIDLE2 = 139,
+	SND_ALIEN1 = 140,
+	SND_GRID = 141,
+	SND_HELI1 = 142,
+	SND_ROLLALIEN2 = 143,     /* rolling loop: Roswell's metal */
 
 	/* the general bank in the front end: shell.vab */
-	SFX_SHELL_MOVE = 144,     /* cursor */
-	SFX_SHELL_SELECT = 145,
-	SFX_SHELL_DENIED = 146,   /* a locked choice */
-	SFX_SHELL_BACK = 147,
-	SFX_SHELL_SCROLL = 148,   /* left/right through the skaters, boards... */
-	SFX_SHELL_PICK_1 = 149,   /* a choice in the first, second or third column */
-	SFX_SHELL_PICK_2 = 150,
-	SFX_SHELL_PICK_3 = 151,
+	SND_MENUCHANGE2 = 144,    /* cursor */
+	SND_SELECT1 = 145,
+	SND_NOSELECT1 = 146,      /* a locked choice */
+	SND_GOBACK2 = 147,
+	SND_SELECTBOARD1 = 148,   /* left/right through the skaters, boards... */
+	SND_SELECTBOARD3 = 149,   /* the board, trucks or wheels picked */
+	SND_SELECTTRUCK2 = 150,
+	SND_SELECTWHEEL = 151,
 
 	/* the level's bank */
-	SFX_WARE_152 = 152,
-	SFX_WARE_153 = 153,
-	SFX_WARE_154 = 154,
-	SFX_155 = 155,
-	SFX_156 = 156,
+	SND_DRIP1 = 152,
+	SND_DRIP2 = 153,
+	SND_DRIP3 = 154,
+	SND_CHAINCREAK = 155,
+	SND_CHAINCREAK2 = 156,
 
 	/* the general bank */
-	SFX_SHELL_MUSIC = 157,    /* the front end's music loop (Front_SetMusicLoop) */
-	SFX_158 = 158,
-	SFX_TAPE_HIDDEN = 159,    /* the secret tape got */
-	SFX_COMP_TIME_UP = 160,   /* a competition's run over */
-	SFX_GAP = 161,            /* a gap trick */
-	SFX_SPECIAL_TRICK = 162,
+	SND_MUSICLOOP1 = 157,     /* the front end's music loop (Front_SetMusicLoop) */
+	SND_MUSICLOOP2 = 158,
+	SND_SECRETTAPE = 159,
+	SND_BUZZER = 160,         /* a competition's run over */
+	SND_GAP = 161,
+	SND_SPECIAL = 162,        /* a special trick */
 
 	/* the level's bank */
-	SFX_ROSWELL_163 = 163,
-	SFX_ROSWELL_164 = 164,
-	SFX_165 = 165,
-	SFX_ROSWELL_166 = 166,
-	SFX_ROSWELL_167 = 167,
-	SFX_ROSWELL_168 = 168,
-	SFX_STREETS_ROLL_TERRAIN4 = 169, /* rolling loop */
-	SFX_ROSWELL_GRIND_LOOP = 170,    /* Roswell's SFX_GRIND_LOOP_RAIL1 */
-	SFX_ROSWELL_ROLL_TERRAIN1 = 171, /* rolling loop */
+	SND_CRICKET2 = 163,
+	SND_HELIPASS = 164,
+	SND_RADAR = 165,
+	SND_ALIENGROAN1 = 166,
+	SND_ALIENGROAN2 = 167,
+	SND_HOWL1 = 168,
+	SND_ASPHALT = 169,        /* rolling loop: Streets' asphalt */
+	SND_ALIENGRIND = 170,     /* Roswell's SND_METALGRIND */
+	SND_PLEXIGLASS = 171,     /* rolling loop: Roswell's tile */
 
 	/* the general bank */
-	SFX_172 = 172,
-	SFX_173 = 173,
-	SFX_174 = 174,
+	SND_MUSICLOOP3 = 172,
+	SND_MUSICLOOP4 = 173,
+	SND_MUSICLOOP5 = 174,
 
-	SFX_NONE = 0xffff, /* plays nothing (as does any negative id) */
+	SND_NONE = 0xffff, /* (no THPS2 name) plays nothing, as does any negative id */
 };
 
 /* functions */

@@ -475,7 +475,7 @@ void CMenu::Update() {
 				} while (!mEntry[mLine].Visible || !mEntry[mLine].Enabled);
 
 				mEntry[mLine].TargetScale = mEntry[mLine].HiScale;
-				SFX_PlayX(SFX_MENU_MOVE, 8192, 0);
+				SFX_PlayX(SND_OLLIE, 8192, 0);
 			}
 
 			if (Pad_[0].MenuDown.Pressed || Pad_[1].MenuDown.Pressed) {
@@ -489,7 +489,7 @@ void CMenu::Update() {
 				} while (!mEntry[mLine].Visible || !mEntry[mLine].Enabled);
 
 				mEntry[mLine].TargetScale = mEntry[mLine].HiScale;
-				SFX_PlayX(SFX_MENU_MOVE, 8192, 0);
+				SFX_PlayX(SND_OLLIE, 8192, 0);
 			}
 		}
 
@@ -808,7 +808,7 @@ void Front_Display() {
 			int NumTapes = GSkater[0]->mNumTapes;
 
 			if (!GTape[0]) {
-				SFX_PlayX(SFX_TAPE, 8192, 0);
+				SFX_PlayX(SND_COLLECT70, 8192, 0);
 
 				switch (NumTapes) {
 					case 1:
@@ -1287,7 +1287,7 @@ void Front_Display() {
 										Front_PrintCentredPrompt(GameText.pContinue);
 									} else {
 										if (!GHorseSounded) {
-											SFX_PlayX(SFX_GLASS, 8192, 0);
+											SFX_PlayX(SND_GLASS1, 8192, 0);
 
 											GHorseSounded = 1;
 										}
@@ -1327,7 +1327,7 @@ void Front_Display() {
 										GHorseWaitTime = 45;
 									} else {
 										if (!GHorseSounded) {
-											SFX_PlayX(SFX_GLASS, 8192, 0);
+											SFX_PlayX(SND_GLASS1, 8192, 0);
 
 											GHorseSounded = 1;
 										}
@@ -1569,7 +1569,7 @@ void CommonSwitchOnMenuCode(void) {
 	Pad_ActuatorOff(0, 0);
 	Pad_ActuatorOff(0, 1);
 	SFX_Pause();
-	SFX_PlayX(SFX_SKID, 4096, 0);
+	SFX_PlayX(SND_FOOTSLIDE, 4096, 0);
 
 	DAT_800d1e48 = 0;
 	Front_OnTime = 0;
@@ -1604,7 +1604,7 @@ void Front_SwitchOnEndHeat(void) {
 	Pad_ActuatorOff(0, 0);
 	Pad_ActuatorOff(0, 1);
 	SFX_Pause();
-	SFX_PlayX(SFX_SKID, 4096, 0);
+	SFX_PlayX(SND_FOOTSLIDE, 4096, 0);
 
 	DAT_800d1e48 = 0;
 }
@@ -1632,7 +1632,7 @@ void Front_SwitchOnEndLevelMenu() {
 		Video_Stop(pSkater2);
 
 	if (GSkater[0]->mNumTapes && GNumberOfPlayers == 1) {
-		SFX_PlayX(SFX_TAPE, 8192, 0);
+		SFX_PlayX(SND_COLLECT70, 8192, 0);
 
 		Status = STATUS_GOTTAPE;
 	} else if (GGame == 2) {
@@ -1748,7 +1748,7 @@ void RestartCompFrig(void) {
    (8 / 45 = 0.533); GameText then skips s0 (which GCareer's prefers), giving retail's s1/s2.
    */
 void Front_Update() {
-	ESfx SoundEffect = SFX_NONE;
+	ESfx SoundEffect = SND_NONE;
 	int SwitchOffPauseMode = 0;
 	int Activated;
 	int GoBack;
@@ -1821,7 +1821,7 @@ void Front_Update() {
 
 				WobbleAmplitude = 0;
 				SFX_Pause();
-				SFX_PlayX(SFX_SKID, 4096, 0);
+				SFX_PlayX(SND_FOOTSLIDE, 4096, 0);
 				Pad_ActuatorOff(0, 0);
 				Pad_ActuatorOff(0, 1);
 
@@ -1898,7 +1898,7 @@ void Front_Update() {
 
 			if (Activated) {
 				if (pPausedMenu->ChoiceIs(GameText.pEndRun)) {
-					SoundEffect = SFX_LAND;
+					SoundEffect = SND_LAND;
 					Game_Over();
 
 					SwitchOffPauseMode = 1;
@@ -1907,7 +1907,7 @@ void Front_Update() {
 				}
 
 				if (pPausedMenu->ChoiceIs(GameText.pContinue)) {
-					SoundEffect = SFX_LAND;
+					SoundEffect = SND_LAND;
 					SwitchOffPauseMode = 1;
 				}
 
@@ -1922,25 +1922,25 @@ void Front_Update() {
 				}
 
 				if (pPausedMenu->ChoiceIs(GameText.pSkipToRestart)) {
-					SoundEffect = SFX_LAND;
+					SoundEffect = SND_LAND;
 					Status = STATUS_SKIPTORESTART;
 				}
 
 				if (pPausedMenu->ChoiceIs(GameText.pQuit)) {
-					SoundEffect = SFX_LAND;
+					SoundEffect = SND_LAND;
 					pYesNoMenu->SetLine(pYesNoMenu->FindEntry(GameText.pNo));
 
 					Status = STATUS_REALLYQUIT;
 				}
 
 				if (pPausedMenu->ChoiceIs(GameText.pChangeSoundLevels)) {
-					SoundEffect = SFX_LAND;
+					SoundEffect = SND_LAND;
 					Status = STATUS_SETSOUNDLEVELS;
 					PC_StreamResume();
 				}
 
 				if (pPausedMenu->ChoiceIs(GameText.pEndGame)) {
-					SoundEffect = SFX_LAND;
+					SoundEffect = SND_LAND;
 					Front_OnTime = 0;
 					GHorseClearInput2 = 0;
 					Status = STATUS_ENDINGSCREEN;
@@ -1949,7 +1949,7 @@ void Front_Update() {
 
 			/* Pause resumes (on the PS1, Start activated the highlighted entry) */
 			if (GoBack || Start) {
-				SoundEffect = SFX_LAND;
+				SoundEffect = SND_LAND;
 				SwitchOffPauseMode = 1;
 			}
 
@@ -1986,14 +1986,14 @@ void Front_Update() {
 				SwitchOffPauseMode = 1;
 				pRestartsMenu = 0;
 				EndCode = 7;
-				SFX_PlayX(SFX_LAND, 8192, 0);
+				SFX_PlayX(SND_LAND, 8192, 0);
 			}
 
 			if (GoBack) {
 				delete pRestartsMenu;
 				pRestartsMenu = 0;
 				Status = STATUS_PAUSEDMENU;
-				SFX_PlayX(SFX_SKID, 8192, 0);
+				SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 			}
 
 			break;
@@ -2006,15 +2006,15 @@ void Front_Update() {
 					EndCode = 8;
 					SwitchOffPauseMode = 1;
 					Horse_Reset();
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 				} else {
 					Status = STATUS_PAUSEDMENU;
-					SFX_PlayX(SFX_SKID, 8192, 0);
+					SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 				}
 			}
 
 			if (GoBack) {
-				SFX_PlayX(SFX_SKID, 8192, 0);
+				SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 				Status = STATUS_PAUSEDMENU;
 			}
@@ -2032,19 +2032,19 @@ void Front_Update() {
 
 			if (Activated) {
 				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 					Front_SetSaveAction(SAVE_GAME);
 					Front_InitMemCardMenus(512, SVSTATUS_CHECKINGCARDPAUSE, STATUS_ENDINGSCREEN);
 
 					Status = STATUS_MEMCARDMENUS;
 				} else {
 					Status = STATUS_ENDLEVELFADESCREEN;
-					SFX_PlayX(SFX_SKID, 8192, 0);
+					SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 				}
 			}
 
 			if (GoBack) {
-				SFX_PlayX(SFX_SKID, 8192, 0);
+				SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 				Status = STATUS_ENDINGSCREEN;
 			}
@@ -2057,9 +2057,9 @@ void Front_Update() {
 			if (Activated) {
 				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
 					Status = STATUS_ENDLEVELFADESCREEN;
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 				} else {
-					SFX_PlayX(SFX_SKID, 8192, 0);
+					SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 					if (InCompetition_Bool() & !Competition_IsOver_Bool()) {
 						Status = STATUS_ENDHEATMENU;
@@ -2071,7 +2071,7 @@ void Front_Update() {
 			}
 
 			if (GoBack) {
-				SFX_PlayX(SFX_SKID, 8192, 0);
+				SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 				if (InCompetition_Bool() & !Competition_IsOver_Bool()) {
 					Status = STATUS_ENDHEATMENU;
@@ -2090,7 +2090,7 @@ void Front_Update() {
 				pESMenu->Update();
 
 				if (Activated) {
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 					Flash_Fade(16, 1);
 
 					if (pESMenu->ChoiceIs(GameText.pQuit)) {
@@ -2139,7 +2139,7 @@ void Front_Update() {
 
 				if (Activated) {
 					GVideoReplay = 0;
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 					Flash_Fade(32, 1);
 
 					if (pVSMenu->ChoiceIs(GameText.pExit)) {
@@ -2164,7 +2164,7 @@ void Front_Update() {
 				}
 
 				if (GoBack) {
-					SFX_PlayX(SFX_SKID, 8192, 0);
+					SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 					Status = STATUS_ENDINGSCREEN;
 				}
@@ -2187,7 +2187,7 @@ void Front_Update() {
 
 				if (Activated) {
 					GVideoReplay = 0;
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 					Flash_Fade(32, 1);
 
 					if (pVS2Menu->ChoiceIs(GameText.pExit)) {
@@ -2208,7 +2208,7 @@ void Front_Update() {
 				}
 
 				if (GoBack) {
-					SFX_PlayX(SFX_SKID, 8192, 0);
+					SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 					Video_Cleanup();
 
 					Status = STATUS_ENDLEVELFADESCREEN;
@@ -2226,7 +2226,7 @@ void Front_Update() {
 
 				if (Activated) {
 					GVideoReplay = 0;
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 					Flash_Fade(32, 1);
 
 					if (pVS3Menu->ChoiceIs(GameText.pReturnToCompetition)) {
@@ -2253,7 +2253,7 @@ void Front_Update() {
 				}
 
 				if (GoBack) {
-					SFX_PlayX(SFX_SKID, 8192, 0);
+					SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 					Status = STATUS_ENDHEATMENU;
 					pEHMenu->SetLine(pEHMenu->FindEntry(GameText.pNextHeat));
@@ -2267,7 +2267,7 @@ void Front_Update() {
 		case STATUS_GOTTAPE:
 			if (Front_OnTime > 10) {
 				if (Activated && CTape::DisplayContinueButton()) {
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 
 					{
 						int i;
@@ -2304,7 +2304,7 @@ void Front_Update() {
 
 			if (UpDown == -1) {
 				SizeUp = 16;
-				SFX_PlayX(SFX_MENU_LETTER, 8192, 0);
+				SFX_PlayX(SND_COUNTDING, 8192, 0);
 
 				if (GCareer.Options.HorseWord[GHorseCursorPos] == ' ' ||
 				    GCareer.Options.HorseWord[GHorseCursorPos] == 0) {
@@ -2319,7 +2319,7 @@ void Front_Update() {
 
 			if (UpDown == 1) {
 				SizeUp = 16;
-				SFX_PlayX(SFX_MENU_LETTER, 8192, 0);
+				SFX_PlayX(SND_COUNTDING, 8192, 0);
 
 				if (GCareer.Options.HorseWord[GHorseCursorPos] == ' ' ||
 				    GCareer.Options.HorseWord[GHorseCursorPos] == 0) {
@@ -2347,7 +2347,7 @@ void Front_Update() {
 
 			if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
 				SizeUp = 16;
-				SFX_PlayX(SFX_LAND, 8192, 0);
+				SFX_PlayX(SND_LAND, 8192, 0);
 
 				Pad[0].MenuLeft.Triggered = 0;
 				Pad[1].MenuLeft.Triggered = 0;
@@ -2362,7 +2362,7 @@ void Front_Update() {
 
 			if (Pad[0].MenuRight.Triggered || Pad[1].MenuRight.Triggered) {
 				SizeUp = 16;
-				SFX_PlayX(SFX_LAND, 8192, 0);
+				SFX_PlayX(SND_LAND, 8192, 0);
 
 				Pad[0].MenuRight.Triggered = 0;
 				Pad[1].MenuRight.Triggered = 0;
@@ -2392,7 +2392,7 @@ void Front_Update() {
 				GHorseWordChosen = 1;
 				GHorseDoneStart = 0;
 				GPreferences.HorseLen = GCareer.Options.HorseLen;
-				SFX_PlayX(SFX_LAND, 8192, 0);
+				SFX_PlayX(SND_LAND, 8192, 0);
 			}
 		} break;
 
@@ -2409,7 +2409,7 @@ void Front_Update() {
 			pYesNoMenu->Update();
 
 			if (Activated) {
-				SFX_PlayX(SFX_LAND, 8192, 0);
+				SFX_PlayX(SND_LAND, 8192, 0);
 				Flash_Fade(32, 1);
 
 				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
@@ -2423,7 +2423,7 @@ void Front_Update() {
 			}
 
 			if (GoBack) {
-				SFX_PlayX(SFX_SKID, 8192, 0);
+				SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 				Status = STATUS_GOTTAPE;
 			}
@@ -2437,7 +2437,7 @@ void Front_Update() {
 
 					if (UpDown == -1) {
 						SizeUp = 16;
-						SFX_PlayX(SFX_MENU_LETTER, 8192, 0);
+						SFX_PlayX(SND_COUNTDING, 8192, 0);
 
 						if (Career_HighScores(GLevel)[GHighScoreLineIndex]
 						            .Name[GHighScoreInitialCursorPos] == ' ' ||
@@ -2458,7 +2458,7 @@ void Front_Update() {
 
 					if (UpDown == 1) {
 						SizeUp = 16;
-						SFX_PlayX(SFX_MENU_LETTER, 8192, 0);
+						SFX_PlayX(SND_COUNTDING, 8192, 0);
 
 						if (Career_HighScores(GLevel)[GHighScoreLineIndex]
 						            .Name[GHighScoreInitialCursorPos] == ' ' ||
@@ -2479,7 +2479,7 @@ void Front_Update() {
 
 					if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
 						SizeUp = 16;
-						SFX_PlayX(SFX_LAND, 8192, 0);
+						SFX_PlayX(SND_LAND, 8192, 0);
 
 						Pad[0].MenuLeft.Triggered = 0;
 						Pad[1].MenuLeft.Triggered = 0;
@@ -2491,7 +2491,7 @@ void Front_Update() {
 
 					if (Pad[0].MenuRight.Triggered || Pad[1].MenuRight.Triggered) {
 						SizeUp = 16;
-						SFX_PlayX(SFX_LAND, 8192, 0);
+						SFX_PlayX(SND_LAND, 8192, 0);
 
 						Pad[0].MenuRight.Triggered = 0;
 						Pad[1].MenuRight.Triggered = 0;
@@ -2503,7 +2503,7 @@ void Front_Update() {
 				}
 
 				if (Activated) {
-					SFX_PlayX(SFX_PONG, 8192, 0);
+					SFX_PlayX(SND_COLLECT56, 8192, 0);
 					sprintf(GCareer.Options.LastHighScoreInitials,
 					        Career_HighScores(GLevel)[GHighScoreLineIndex].Name);
 
@@ -2529,7 +2529,7 @@ void Front_Update() {
 				}
 
 				if (Activated) {
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 
 					GHorseSounded = 0;
 
@@ -2568,7 +2568,7 @@ void Front_Update() {
 				pEHMenu->Update();
 
 				if (Activated) {
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 					Flash_Fade(32, 1);
 
 					if (pEHMenu->ChoiceIs(GameText.pQuit)) {
@@ -2600,7 +2600,7 @@ void Front_Update() {
 			pYesNoMenu->Update();
 
 			if (Activated) {
-				SFX_PlayX(SFX_LAND, 8192, 0);
+				SFX_PlayX(SND_LAND, 8192, 0);
 				Flash_Fade(32, 1);
 
 				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
@@ -2632,7 +2632,7 @@ void Front_Update() {
 					}
 				} else {
 					Competition_FullyDisplayLadder();
-					SFX_PlayX(SFX_JUDGE_SCORE, 8192, 0);
+					SFX_PlayX(SND_LEADER5, 8192, 0);
 				}
 			}
 
@@ -2644,7 +2644,7 @@ void Front_Update() {
 			if (Front_OnTime > 10) {
 				if (Activated) {
 					if (Competition_JudgeFullyDisplayed()) {
-						SFX_PlayX(SFX_LAND, 8192, 0);
+						SFX_PlayX(SND_LAND, 8192, 0);
 
 						Status = STATUS_ENDHEATLADDER;
 						GVideoReplay = -1;
@@ -2680,7 +2680,7 @@ void Front_Update() {
 						}
 					} else {
 						Competition_FullyDisplayJudge();
-						SFX_PlayX(SFX_JUDGE_SCORE, 8192, 0);
+						SFX_PlayX(SND_LEADER5, 8192, 0);
 					}
 				}
 			} else {
@@ -2698,7 +2698,7 @@ void Front_Update() {
 			pYesNoMenu->Update();
 
 			if (Activated) {
-				SFX_PlayX(SFX_LAND, 8192, 0);
+				SFX_PlayX(SND_LAND, 8192, 0);
 				Flash_Fade(32, 1);
 
 				if (pYesNoMenu->ChoiceIs(GameText.pYes)) {
@@ -2712,7 +2712,7 @@ void Front_Update() {
 			}
 
 			if (GoBack) {
-				SFX_PlayX(SFX_SKID, 8192, 0);
+				SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 				Status = STATUS_ENDINGSCREEN;
 			}
@@ -2764,7 +2764,7 @@ void Front_Update() {
 					sprintf(soundBuf, GameText.pSFXLevel, soundVol);
 
 					SFXLEVEL = GCareer.Options.SFXVolume * 0x555;
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 				} else if (pSoundMenu->ChoiceIs(musicBuf)) {
 					if (musicVol > 0)
 						musicVol--;
@@ -2786,7 +2786,7 @@ void Front_Update() {
 					sprintf(soundBuf, GameText.pSFXLevel, soundVol);
 
 					SFXLEVEL = GCareer.Options.SFXVolume * 0x555;
-					SFX_PlayX(SFX_LAND, 8192, 0);
+					SFX_PlayX(SND_LAND, 8192, 0);
 				} else if (pSoundMenu->ChoiceIs(musicBuf)) {
 					if (musicVol < 10)
 						musicVol++;
@@ -2804,7 +2804,7 @@ void Front_Update() {
 			}
 
 			if (GoBack) {
-				SFX_PlayX(SFX_SKID, 8192, 0);
+				SFX_PlayX(SND_FOOTSLIDE, 8192, 0);
 
 				Status = STATUS_PAUSEDMENU;
 				XALEVEL = GCareer.Options.MusicVolume * 0x555;

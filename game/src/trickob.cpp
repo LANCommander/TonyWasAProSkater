@@ -150,7 +150,7 @@ int TrickOb_TrickedOnItem(Item *a, void *pb, int c) {
 
 	if (FUN_8004eed8(s0->mNode)) {
 		if (GGame == 1) {
-			SFX_PlayX(SFX_LETTER, 0x2000, 0);
+			SFX_PlayX(SND_COLLECT79, 0x2000, 0);
 
 			a->RGB = 0x202020;
 			s1 = 1;
@@ -164,13 +164,13 @@ int TrickOb_TrickedOnItem(Item *a, void *pb, int c) {
 		a->RGB = 0x202020;
 		a->Flags |= 0x400;
 		b->mGraffitiCount++;
-		SFX_PlayX(SFX_GRAFFITI_TAG, 0x2000, 0);
+		SFX_PlayX(SND_MARKUP2, 0x2000, 0);
 
 		if (s0->mState) {
 			b->mpOtherSkater->mGraffitiCount--;
 			b->mGraffitiSteals++;
 			FUN_8006eb18(&b->mPanel);
-			SFX_PlayX(SFX_GRAFFITI_STEAL, 0x2000, 0);
+			SFX_PlayX(SND_COLLECT27, 0x2000, 0);
 		}
 
 		s0->mPlayer = s5;

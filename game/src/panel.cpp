@@ -505,7 +505,7 @@ void DisplayTime(CBruce *pBruce, ushort xpos, ushort ypos) {
 						if (ticks < Urgent) {
 							int sub;
 
-							SFX_PlayX(SFX_TIMER_TICK, 8192, 0);
+							SFX_PlayX(SND_TIMEOUT, 8192, 0);
 
 							sub = Urgent / 10;
 
@@ -915,20 +915,20 @@ void Panel_Tape(int a) {
 			Mess_Message(GameText.pSKATETape, &Messprog_Goal, 1, 0, 0);
 			break;
 		case 0:
-			SFX_PlayX(SFX_TAPE, 0x2000, 0);
+			SFX_PlayX(SND_COLLECT70, 0x2000, 0);
 			Mess_Message(GameText.p20000Tape, &Messprog_Goal, 1, 0, 0);
 			break;
 		case 4:
-			SFX_PlayX(SFX_TAPE, 0x2000, 0);
+			SFX_PlayX(SND_COLLECT70, 0x2000, 0);
 			Mess_Message(GameText.p40000Tape, &Messprog_Goal, 1, 0, 0);
 			break;
 		case 1:
-			SFX_PlayX(SFX_TAPE, 0x2000, 0);
+			SFX_PlayX(SND_COLLECT70, 0x2000, 0);
 			sprintf(DAT_800d3868, GameText.p5GoalsTape, Levels[GLevel].pGoalName);
 			Mess_Message(DAT_800d3868, &Messprog_Goal, 1, 0, 0);
 			break;
 		case 3:
-			SFX_PlayX(SFX_TAPE_HIDDEN, 0x2000, 0);
+			SFX_PlayX(SND_SECRETTAPE, 0x2000, 0);
 			Mess_Message(GameText.pHiddenTape, &Messprog_Goal, 1, 0, 0);
 			break;
 	}

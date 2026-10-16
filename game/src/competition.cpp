@@ -300,7 +300,7 @@ void Competition_JudgeDisplay() {
 		s = i * 15;
 
 		if (p->mJudgeTimer == s + 1)
-			SFX_PlayX(SFX_JUDGE_SCORE, 8192, 0);
+			SFX_PlayX(SND_LEADER5, 8192, 0);
 
 		if (s < p->mJudgeTimer) {
 			sprintf(buf, "JUDGE %d     %d.%d", i + 1, p->mJudgesScore[i] / 10, p->mJudgesScore[i] % 10);
@@ -318,7 +318,7 @@ void Competition_JudgeDisplay() {
 
 	if (t >= 100) {
 		if (p->mJudgeFullyDisplayed == 0)
-			SFX_PlayX(SFX_JUDGE_TOTAL, 8192, 0);
+			SFX_PlayX(SND_SCORE4, 8192, 0);
 
 		Mess_SetTextJustify(0);
 		Mess_SetRGB(182, 132, 36, 0);
@@ -432,7 +432,7 @@ void Competition_LadderDisplay() {
 
 			if (b * 20 < pComp->mLadderTimer) {
 				if (pComp->mLadderTimer == b * 20 + 1)
-					SFX_PlayX(SFX_JUDGE_SCORE, 0x2000, 0);
+					SFX_PlayX(SND_LEADER5, 0x2000, 0);
 
 				if (pComp->mCurrentHeat == 0) {
 					pComp->mTotalScore[pComp->mOrdering[b]] = pComp->mScore[pComp->mOrdering[b]][0];
@@ -755,8 +755,8 @@ void Competition_WinLoseDisplay() {
 			}
 
 			if (!c->mWinLoseCheer) {
-				SFX_PlayX(SFX_CROWD_APPLAUSE, 0x2000, 0);
-				SFX_PlayX(SFX_CROWD_CHEER, 0x2000, 0);
+				SFX_PlayX(SND_SCREAM3, 0x2000, 0);
+				SFX_PlayX(SND_CROWDCHEER, 0x2000, 0);
 
 				c->mWinLoseCheer = 1;
 			}
@@ -772,7 +772,7 @@ void Competition_WinLoseDisplay() {
 			}
 
 			if (!c->mWinLoseCheer) {
-				SFX_PlayX(SFX_CROWD_CHEER, 0x2000, 0);
+				SFX_PlayX(SND_CROWDCHEER, 0x2000, 0);
 
 				c->mWinLoseCheer = 1;
 			}
@@ -788,7 +788,7 @@ void Competition_WinLoseDisplay() {
 			}
 
 			if (!c->mWinLoseCheer) {
-				SFX_PlayX(SFX_CROWD_APPLAUSE, 0x2000, 0);
+				SFX_PlayX(SND_SCREAM3, 0x2000, 0);
 
 				c->mWinLoseCheer = 1;
 			}
@@ -800,7 +800,7 @@ void Competition_WinLoseDisplay() {
 			int third;
 
 			if (!c->mWinLoseCheer) {
-				SFX_PlayX(SFX_CROWD_AWW, 0x2000, 0);
+				SFX_PlayX(SND_CROWDOW, 0x2000, 0);
 
 				c->mWinLoseCheer = 1;
 			}

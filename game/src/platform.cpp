@@ -86,10 +86,10 @@ void CPlatform::Bounce(CBruce *pSkater, const CVector &Direction) {
 
 			switch (mType) {
 				case BOUNCY_BARRIER:
-					SFX_PlayX(SFX_BOUNCY1_HIT, 0x2000, 0);
+					SFX_PlayX(SND_WOODHORSE3, 0x2000, 0);
 					goto Bouncy;
 				case BOUNCY_TRASHCAN:
-					SFX_PlayX(SFX_CLANG, 0x2000, 0);
+					SFX_PlayX(SND_SMACKMETAL, 0x2000, 0);
 				Bouncy:
 					SFX_Grunt(pSkater);
 					pSkater->Vibrate(6, 1, 120);
@@ -111,10 +111,10 @@ void CPlatform::Bounce(CBruce *pSkater, const CVector &Direction) {
 				case BOUNCY_PLASTIC:
 				case BOUNCY_WOODENBOX:
 					if (mType == BOUNCY_CONE)
-						SFX_PlayX(GLevel ? SFX_BOUNCY2_1 : (ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
+						SFX_PlayX(GLevel ? SND_CONEBOUNCE1 : (ESfx)(SND_BOXHIT1 + Rnd(2)), 0x2000, 0);
 					else if (mType == BOUNCY_PLASTIC) {
 						SFX_Grunt(pSkater);
-						SFX_PlayX(SFX_BOUNCY4_HIT, 0x2000, 0);
+						SFX_PlayX(SND_CHAIRHIT1, 0x2000, 0);
 					}
 
 					pSkater->Vibrate(2, 1, 180);
@@ -220,23 +220,23 @@ void CPlatform::BouncyAI() {
 		if (mNumBounces < 5) {
 			switch (mType) {
 				case BOUNCY_BARRIER:
-					SFX_PlayX(!Rnd(2) ? SFX_BOUNCY1_BOUNCE_2 : SFX_BOUNCY1_BOUNCE_1, 0x2000, 0);
+					SFX_PlayX(!Rnd(2) ? SND_WOODFALL2 : SND_WOODFALL1, 0x2000, 0);
 					break;
 				case BOUNCY_TRASHCAN:
-					SFX_PlayX(SFX_CLANG, 0x2000, 0);
+					SFX_PlayX(SND_SMACKMETAL, 0x2000, 0);
 					break;
 				case BOUNCY_CONE:
 					if (GLevel)
-						SFX_PlayX(!Rnd(2) ? SFX_BOUNCY2_2 : SFX_BOUNCY2_1, 0x2000, 0);
+						SFX_PlayX(!Rnd(2) ? SND_CONEBOUNCE2 : SND_CONEBOUNCE1, 0x2000, 0);
 					else
-						SFX_PlayX((ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
+						SFX_PlayX((ESfx)(SND_BOXHIT1 + Rnd(2)), 0x2000, 0);
 
 					break;
 				case BOUNCY_PLASTIC:
-					SFX_PlayX(!Rnd(2) ? SFX_BOUNCY4_BOUNCE_2 : SFX_BOUNCY4_BOUNCE_1, 0x2000, 0);
+					SFX_PlayX(!Rnd(2) ? SND_CHAIRBOUNCE2 : SND_CHAIRBOUNCE1, 0x2000, 0);
 					break;
 				case BOUNCY_WOODENBOX:
-					SFX_PlayX((ESfx)(SFX_BOUNCY_1 + Rnd(2)), 0x2000, 0);
+					SFX_PlayX((ESfx)(SND_BOXHIT1 + Rnd(2)), 0x2000, 0);
 					break;
 			}
 		}

@@ -611,13 +611,13 @@ void CBruce::Bail(int BailNumber) {
 	FlipToVelocity();
 
 	if (Stats[mSkaterIndex].ComboID == 0x9000 || Stats[mSkaterIndex].ComboID == 0xb000) {
-		SFX_PlayX(SFX_BAIL_FEMALE, 0x2000, 0);
-		SFX_PlayX(SFX_SKID, 0x2000, 0);
+		SFX_PlayX(SND_WIPEOUT1, 0x2000, 0);
+		SFX_PlayX(SND_FOOTSLIDE, 0x2000, 0);
 	} else {
 		if (Rnd(2))
-			SFX_PlayX(SFX_BAIL_MALE_1, 0x2000, 0);
+			SFX_PlayX(SND_WIPEOUT2, 0x2000, 0);
 		else
-			SFX_PlayX(SFX_BAIL_MALE_2, 0x2000, 0);
+			SFX_PlayX(SND_WIPEOUT3, 0x2000, 0);
 	}
 
 	m6DC = 0;
@@ -787,7 +787,7 @@ inline void CBruce::StartHandPlant(int RailTrick, int Flags) {
 		Debug_RunAnim(Group[RailTrick].Anim, 1536);
 
 		m368 |= 0x4800;
-		SFX_PlayX(SFX_SPECIAL_TRICK, 0x2000, 0);
+		SFX_PlayX(SND_SPECIAL, 0x2000, 0);
 	} else {
 		Trick_Trick(79, "Handplant", 1000, 0);
 		Debug_RunAnim1(34, 8, 1544);
@@ -796,7 +796,7 @@ inline void CBruce::StartHandPlant(int RailTrick, int Flags) {
 	}
 
 	StateTransition(PHYSICS_IN_HANDPLANT, 1548);
-	SFX_PlayX(SFX_IMPACT_1, 0x2000, 0);
+	SFX_PlayX(SND_LANDWOOD2, 0x2000, 0);
 
 	mPos = mRailPos;
 	mPos.vy -= 30;
@@ -852,10 +852,10 @@ inline void CBruce::StartGrind(int RailTrick) {
 		case RAIL_TYPE_DEFAULT:
 			break;
 		case RAIL_TYPE_METAL:
-			SFX_PlayX((ESfx)(SFX_RAIL_LAND_1 + Rnd(2)), 0x2000, 0);
+			SFX_PlayX((ESfx)(SND_LANDPOLE1 + Rnd(2)), 0x2000, 0);
 			break;
 		case RAIL_TYPE_WOOD:
-			SFX_PlayX((ESfx)(SFX_IMPACT_1 + Rnd(2)), 0x2000, 0);
+			SFX_PlayX((ESfx)(SND_LANDWOOD2 + Rnd(2)), 0x2000, 0);
 			break;
 	}
 
@@ -871,7 +871,7 @@ inline void CBruce::StartGrind(int RailTrick) {
 	m320 = 0;
 
 	if (RailTrick) {
-		SFX_PlayX(SFX_SPECIAL_TRICK, 0x2000, 0);
+		SFX_PlayX(SND_SPECIAL, 0x2000, 0);
 
 		m368 = 0x80001000;
 		Score = Group[RailTrick].Score;
@@ -1229,7 +1229,7 @@ void CBruce::ScoreCurrentTrick() {
 		return;
 
 	if ((ushort)(mAnim - 62) < 5)
-		SFX_PlayX(SFX_SPECIAL_TRICK, 0x2000, 0);
+		SFX_PlayX(SND_SPECIAL, 0x2000, 0);
 
 	int State = m368;
 	int Trick = State & 0xff;
@@ -2296,7 +2296,7 @@ NoSparks:
 				mDoingATrick = 0;
 
 				if (mRailType == RAIL_TYPE_METAL && !m2EC)
-					SFX_PlayX(SFX_RAIL_OFF, 0x2000, 0);
+					SFX_PlayX(SND_METALOFF2, 0x2000, 0);
 			} else {
 				int NextSegment2 = Rail_NextNode(Trig_GetLinksPointer(PreviousSegment));
 				CVector SegStart2;
@@ -2323,7 +2323,7 @@ NoSparks:
 					mDoingATrick = 0;
 
 					if (mRailType == RAIL_TYPE_METAL && !m2EC)
-						SFX_PlayX(SFX_RAIL_OFF, 0x2000, 0);
+						SFX_PlayX(SND_METALOFF2, 0x2000, 0);
 				} else {
 					RemainingSpeed = t;
 					mRailNode = PreviousSegment;
@@ -2348,7 +2348,7 @@ NoSparks:
 				mDoingATrick = 0;
 
 				if (mRailType == RAIL_TYPE_METAL && !m2EC)
-					SFX_PlayX(SFX_RAIL_OFF, 0x2000, 0);
+					SFX_PlayX(SND_METALOFF2, 0x2000, 0);
 			} else {
 				int NextSegment2 = Rail_NextNode(Trig_GetLinksPointer(NextSegment));
 				CVector SegStart2;
@@ -2375,7 +2375,7 @@ NoSparks:
 					mDoingATrick = 0;
 
 					if (mRailType == RAIL_TYPE_METAL && !m2EC)
-						SFX_PlayX(SFX_RAIL_OFF, 0x2000, 0);
+						SFX_PlayX(SND_METALOFF2, 0x2000, 0);
 				} else {
 					mRailNode = NextSegment;
 					RemainingSpeed = t - Length;
@@ -3319,13 +3319,13 @@ void CBruce::DoInAirPhysics() {
 		} else if (!Face_Skateable && (!Face_Air || mPhysicsState != 3)) {
 			switch (Face_Terrain) {
 				case 7:
-					SFX_PlayX(SFX_HIT_TERRAIN7, 0x2000, 0);
+					SFX_PlayX(SND_FENCEHIT2, 0x2000, 0);
 					break;
 				case 9:
 					if (GLevel == 8)
-						SFX_PlayX(SFX_ROSWELL_CLANG, 0x2000, 0);
+						SFX_PlayX(SND_SPARK8, 0x2000, 0);
 					else
-						SFX_PlayX(SFX_CLANG, 0x2000, 0);
+						SFX_PlayX(SND_SMACKMETAL, 0x2000, 0);
 
 					break;
 			}
@@ -3804,18 +3804,18 @@ void CBruce::HandleJump() {
 		if (!mInAir) {
 			switch (mTerrain) {
 				case 2:
-					SFX_PlayX((ESfx)(SFX_IMPACT_1 + Rnd(2)), 0x2000, 0);
+					SFX_PlayX((ESfx)(SND_LANDWOOD2 + Rnd(2)), 0x2000, 0);
 					break;
 				case 10:
 				case 12:
-					SFX_PlayX(SFX_LAND_TERRAIN10, 0x2000, 0);
+					SFX_PlayX(SND_LANDMETAL4, 0x2000, 0);
 					break;
 				case 6:
 					break;
 				case 1:
 				case 15:
 				default:
-					SFX_PlayX(SFX_LAND, 0x2000, 0);
+					SFX_PlayX(SND_LAND, 0x2000, 0);
 					break;
 			}
 
@@ -3950,18 +3950,18 @@ void CBruce::HandleJump() {
 			}
 
 			{
-				int Sfx = 6;
+				ESfx Sfx = SND_OLLIE;
 
 				if (mPhysicsState == 4 && !m2EC) {
-					Sfx = 16;
+					Sfx = SND_METALOFF2;
 
 					if (mRailType != RAIL_TYPE_METAL)
-						Sfx = 6;
+						Sfx = SND_OLLIE;
 				}
 
 				/* called as returning void: retail's register choice around it (README: callee
 				   return types change register allocation) */
-				((void (*)(uint, short, int))SFX_PlayX)(Sfx, 0x2000, 0);
+				((void (*)(ESfx, short, int))SFX_PlayX)(Sfx, 0x2000, 0);
 			}
 
 			if (ABS(mUp.vy) < 2500)
@@ -4099,7 +4099,7 @@ void CBruce::HandleKick() {
 
 				if (mFrame >= 11 && m714) {
 					m718 = 34;
-					SFX_PlayX(SFX_KICK, 0x2000, 0);
+					SFX_PlayX(SND_FOOT1, 0x2000, 0);
 
 					m714 = 0;
 				}
@@ -4471,7 +4471,7 @@ void CBruce::SetAnglesFromHeading() {
 void CBruce::HandleContinuousSounds() {
 	if (mPhysicsState == 5) {
 		if (!mLoopSnd)
-			mLoopSnd = SFX_PlayX(SFX_WALLRIDE_LOOP, 0x2000, 0);
+			mLoopSnd = SFX_PlayX(SND_WALLRIDE2, 0x2000, 0);
 	} else if (mLoopSnd) {
 		SFX_Stop(mLoopSnd);
 
@@ -4483,13 +4483,13 @@ void CBruce::HandleContinuousSounds() {
 			ESfx Snd;
 
 			if (m2EC && (mRailType == RAIL_TYPE_DEFAULT || mRailType == RAIL_TYPE_WOOD))
-				Snd = SFX_GRIND_LOOP;
+				Snd = SND_BOARDSLIDE;
 			else if (!m2EC && (mRailType == RAIL_TYPE_DEFAULT || mRailType == RAIL_TYPE_WOOD))
-				Snd = SFX_SLIDE_LOOP;
+				Snd = SND_GRIND;
 			else if (GLevel == 8)
-				Snd = SFX_ROSWELL_GRIND_LOOP;
+				Snd = SND_ALIENGRIND;
 			else
-				Snd = SFX_GRIND_LOOP_RAIL1;
+				Snd = SND_METALGRIND;
 
 			mGrindSnd = SFX_PlayX(Snd, 0x2000, 0);
 		}
@@ -4513,82 +4513,82 @@ void CBruce::HandleContinuousSounds() {
 
 			switch (mTerrain) {
 				case 2:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN2, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_WOOD, 0x2000, 0);
 					mRollVolScale = 100;
 					mRollPitchScale = 100;
 					break;
 				case 5:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN5, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_ROLLGRASS, 0x2000, 0);
 					break;
 				case 3:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN3, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_DIRT, 0x2000, 0);
 					break;
 				case 13:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN13, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_ROLLROUGH1, 0x2000, 0);
 					mRollVolScale = 40;
 					mRollPitchScale = 100;
 					break;
 				case 4:
 					if (GLevel == 7) {
-						mRollSnd = SFX_PlayX(SFX_STREETS_ROLL_TERRAIN4, 0x2000, 0);
+						mRollSnd = SFX_PlayX(SND_ASPHALT, 0x2000, 0);
 						mRollVolScale = 50;
 						mRollPitchScale = 110;
 					} else {
-						mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN13, 0x2000, 0);
+						mRollSnd = SFX_PlayX(SND_ROLLROUGH1, 0x2000, 0);
 						mRollVolScale = 40;
 						mRollPitchScale = 90;
 					}
 
 					break;
 				case 6:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN6, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_WATERROLL2, 0x2000, 0);
 					break;
 				case 8:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN8, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_BRICKROLL1, 0x2000, 0);
 					mRollVolScale = 50;
 					mRollPitchScale = 110;
 					break;
 				case 11:
-					mRollSnd = SFX_PlayX(SFX_ROLL, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_CONCRETE, 0x2000, 0);
 					mRollVolScale = 90;
 					mRollPitchScale = 70;
 					break;
 				case 1:
 					if (GLevel == 8) {
-						mRollSnd = SFX_PlayX(SFX_ROSWELL_ROLL_TERRAIN1, 0x2000, 0);
+						mRollSnd = SFX_PlayX(SND_PLEXIGLASS, 0x2000, 0);
 						mRollVolScale = 150;
 						mRollPitchScale = 100;
 					} else
-						mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN1, 0x2000, 0);
+						mRollSnd = SFX_PlayX(SND_TILEROLL1, 0x2000, 0);
 
 					break;
 				case 12:
 					if (GLevel == 8) {
-						mRollSnd = SFX_PlayX(SFX_ROSWELL_ROLL_TERRAIN12, 0x2000, 0);
+						mRollSnd = SFX_PlayX(SND_ROLLALIEN2, 0x2000, 0);
 						mRollVolScale = 50;
 						mRollPitchScale = 100;
 					} else {
-						mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN12, 0x2000, 0);
+						mRollSnd = SFX_PlayX(SND_ROLLMETAL2, 0x2000, 0);
 						mRollVolScale = 50;
 						mRollPitchScale = 100;
 					}
 
 					break;
 				case 10:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN10, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_ROLLROOF, 0x2000, 0);
 					mRollVolScale = 75;
 					mRollPitchScale = 150;
 					break;
 				case 14:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN14, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_GRAVEL2, 0x2000, 0);
 					break;
 				case 15:
-					mRollSnd = SFX_PlayX(SFX_ROLL_TERRAIN15, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_ROLLSIDEWALK, 0x2000, 0);
 					mRollVolScale = 60;
 					mRollPitchScale = 150;
 					break;
 				default:
-					mRollSnd = SFX_PlayX(SFX_ROLL, 0x2000, 0);
+					mRollSnd = SFX_PlayX(SND_CONCRETE, 0x2000, 0);
 					mRollVolScale = 70;
 					break;
 			}
@@ -4611,7 +4611,7 @@ void CBruce::HandleContinuousSounds() {
 				Spd = 300000;
 
 			NewVol = (unsigned short)(Spd * 200 / (MaxSpeed / 16));
-			mAirSnd = SFX_PlayX(SFX_AIR_LOOP, NewVol * 2 / 3, NewVol * 2 / 3);
+			mAirSnd = SFX_PlayX(SND_WHEELSPIN, NewVol * 2 / 3, NewVol * 2 / 3);
 			SFX_GetVoicePitch(mAirSnd);
 
 			NewPitch = (unsigned short)((Spd * 2048) / MaxSpeed);
@@ -4866,7 +4866,7 @@ void CBruce::DoPhysics() {
 				EndCode = 8;
 			else {
 				if (GGame == 1 && Levels[GLevel].isCompetition)
-					SFX_PlayX(SFX_COMP_TIME_UP, 0x2000, 0);
+					SFX_PlayX(SND_BUZZER, 0x2000, 0);
 
 				Game_Over();
 			}
@@ -4943,7 +4943,7 @@ void CBruce::DoPhysics() {
 			if (BrakeVal < M3dMaths_SquareRoot0(Mips_CVecDotProd(&mVel, &mVel)) << 6) {
 				if (mAnim != 49) {
 					mAnimSpeed = 0x20000;
-					SFX_PlayX(SFX_SKID, 0x2000, 0);
+					SFX_PlayX(SND_FOOTSLIDE, 0x2000, 0);
 					Debug_RunAnim(49, 7923);
 				}
 
@@ -5065,7 +5065,7 @@ void CBruce::DoPhysics() {
 
 			if (mpGrindGapTrick) {
 				Trick_Trick(77, mpGrindGapTrick->Name, -mpGrindGapTrick->Score, 0);
-				SFX_PlayX(SFX_GAP, 0x2000, 0);
+				SFX_PlayX(SND_GAP, 0x2000, 0);
 
 				mpGrindGapTrick = 0;
 			}
@@ -5113,7 +5113,7 @@ void CBruce::DoPhysics() {
 			case 1:
 				if (mFrame >= 15 && !m71C && !mPhysicsState) {
 					Vibrate(4, 1, 255);
-					SFX_PlayX(SFX_IMPACT_1, 0x2000, 0);
+					SFX_PlayX(SND_LANDWOOD2, 0x2000, 0);
 					BloodSplat(0, 50);
 
 					m71C = 1;
@@ -5139,7 +5139,7 @@ void CBruce::DoPhysics() {
 			case 6:
 				if (mFrame >= 15 && !m71C && !mPhysicsState) {
 					Vibrate(4, 1, 255);
-					SFX_PlayX(SFX_IMPACT_1, 0x2000, 0);
+					SFX_PlayX(SND_LANDWOOD2, 0x2000, 0);
 					BloodSplat(0, 50);
 
 					m71C = 1;
