@@ -303,13 +303,13 @@ void CBody::UpdateShadow() {
 /* Marks the body dead (once). */
 void CBody::Die() {
 	if (!IsDead())
-		mCBodyFlags |= 0x40;
+		mCBodyFlags |= CBODY_DEAD;
 }
 
 /* IsDead__C5CBody (0x80043ce8) */
 /* Whether the body has been marked dead. */
 int CBody::IsDead() const {
-	return (mCBodyFlags & 0x40) != 0;
+	return (mCBodyFlags & CBODY_DEAD) != 0;
 }
 
 /* FUN_80043cfc (0x80043cfc) */
@@ -592,12 +592,12 @@ void Ob_AI(CBody **a) {
 	for (;;) {
 		m->FlashUpdate();
 
-		if (m->mCBodyFlags & 0x40) {
-			if (m->mCBodyFlags & 0x80) {
+		if (m->mCBodyFlags & CBODY_DEAD) {
+			if (m->mCBodyFlags & CBODY_DELETE_PENDING) {
 				if (m)
 					delete m;
 			} else
-				m->mCBodyFlags = m->mCBodyFlags | 0x80;
+				m->mCBodyFlags = m->mCBodyFlags | CBODY_DELETE_PENDING;
 		} else {
 			v = &m->mPos;
 			d = Utils_CrapDist(MechList->mPos, *v);
@@ -638,11 +638,11 @@ void Ob_QuickAI(CBody **ppBody) {
 	/* the exit test loads pNext (probably a list-walk macro), so cc1 can't rotate it into a
 	   simple bottom test and `delete` keeps its null check */
 	for (pBody = *ppBody; pBody ? (pNext = (CBody *)pBody->mNextItem, 1) : 0; pBody = pNext) {
-		if (pBody->mCBodyFlags & 0x40) {
-			if (pBody->mCBodyFlags & 0x80)
+		if (pBody->mCBodyFlags & CBODY_DEAD) {
+			if (pBody->mCBodyFlags & CBODY_DELETE_PENDING)
 				delete pBody;
 			else
-				pBody->mCBodyFlags |= 0x80;
+				pBody->mCBodyFlags |= CBODY_DELETE_PENDING;
 		} else {
 			pBody->AI();
 		}

@@ -856,6 +856,32 @@ class Resolver:
 # main
 
 
+def write_compile_db():
+    """compile_commands.json at the repo root, for IDEs (clangd, VS Code, CLion...): the game TUs as
+    the IDE sees them, their source with the flags build_tu compiles portsrc's copy with; game/data;
+    the runtime."""
+    import link  # noqa: E402
+    rt_flags, _ = link.runtime_flags(TOOLBIN)
+    gcc, gxx = tool("gcc"), tool("g++")
+    cmds = []
+    for src in game_sources():
+        is_cxx = src.endswith(".cpp")
+        cmds.append(([gxx if is_cxx else gcc] + COMMON_FLAGS + (CXX_FLAGS if is_cxx else C_FLAGS),
+                     os.path.join(GAME, src)))
+    for src in sorted(glob.glob(os.path.join(DATA_DIR, "*.cpp"))):
+        cmds.append(([gxx] + DATA_FLAGS, src))
+    for src in sorted(glob.glob(os.path.join(PC, "src", "*.c")) +
+                      glob.glob(os.path.join(PC, "src", "*.cpp"))):
+        cmds.append(([gxx] + rt_flags + link.CXX_RT_FLAGS if src.endswith(".cpp") else
+                     [gcc] + rt_flags + ["-std=gnu11"], src))
+    db = [{"directory": ROOT, "file": os.path.normpath(src),
+           "arguments": args + ["-c", os.path.normpath(src)]} for args, src in cmds]
+    path = os.path.join(ROOT, "compile_commands.json")
+    text = json.dumps(db, indent=1) + "\n"
+    if not os.path.exists(path) or open(path, encoding="utf-8").read() != text:
+        open(path, "w", encoding="utf-8").write(text)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-j", type=int, default=os.cpu_count())
@@ -874,6 +900,7 @@ def main():
                                                   a.version):
         ap.error("--version %r: expected MAJOR[.MINOR[.PATCH[.BUILD]]][-suffix]" % a.version)
     toolchain.add_to_path()
+    write_compile_db()
     if a.clean and os.path.isdir(os.path.join(OUT, "obj")):
         shutil.rmtree(os.path.join(OUT, "obj"))
     os.makedirs(OUT, exist_ok=True)

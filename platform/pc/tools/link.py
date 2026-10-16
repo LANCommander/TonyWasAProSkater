@@ -324,17 +324,9 @@ def data_names(ctx, gen):
     write_if_changed(os.path.join(gen, "data_names.c"), "\n".join(lines) + "\n")
 
 
-def link(ctx, metas, out, toolbin, release=False, version=None):
-    gcc = tool("gcc")
-    gxx = tool("g++")
-    objroot = out
-    if release:
-        out = os.path.join(out, "release")
-    nm = tool("nm")
-    gen = os.path.join(out, "gen")
-    rt = os.path.join(out, "runtime")
-    os.makedirs(gen, exist_ok=True)
-    os.makedirs(rt, exist_ok=True)
+def runtime_flags(toolbin):
+    """(compile flags, SDL link flags) for the runtime (platform/pc/src); C adds -std=gnu11, C++
+    CXX_RT_FLAGS."""
     if WINDOWS:
         sdl_cflags = ["-I" + os.path.join(os.path.dirname(toolbin), "include", "SDL2"),
                       "-I" + os.path.join(os.path.dirname(toolbin), "include")]
@@ -350,6 +342,21 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
         # build.py), 64-bit file offsets (disc images are bigger than 2 GB)
         rt_flags += ["-fno-pic", "-fno-pie", "-D_FILE_OFFSET_BITS=64"] + \
             ([] if X64 else ["-freg-struct-return"])
+    return rt_flags, sdl_libs
+
+
+def link(ctx, metas, out, toolbin, release=False, version=None):
+    gcc = tool("gcc")
+    gxx = tool("g++")
+    objroot = out
+    if release:
+        out = os.path.join(out, "release")
+    nm = tool("nm")
+    gen = os.path.join(out, "gen")
+    rt = os.path.join(out, "runtime")
+    os.makedirs(gen, exist_ok=True)
+    os.makedirs(rt, exist_ok=True)
+    rt_flags, sdl_libs = runtime_flags(toolbin)
     img = ctx.image[0x800:]
 
     # ---- 1. runtime -------------------------------------------------------------------------

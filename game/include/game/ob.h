@@ -32,6 +32,21 @@ struct SJoint;
 struct SLink;
 class CQuadBit;
 
+/* CItem::mFlags hide bits. In two-player each skater's view has its own bit (Utils picks it by
+   pCurrentPlayer): 0x40 for the skater at the head of MechList, 0x01 for the other, and 0x01
+   alone in one-player; both = hidden from every view (C_DISPLAY_OFF, dead, collected). */
+enum EItemFlags {
+	ITEM_HIDDEN = 0x01,
+	ITEM_HIDDEN_MECHLIST = 0x40,
+	ITEM_HIDDEN_ALL = ITEM_HIDDEN | ITEM_HIDDEN_MECHLIST,
+};
+
+/* CBody::mCBodyFlags */
+enum ECBodyFlags {
+	CBODY_DEAD = 0x40,          /* Die(): Ob_AI / Ob_QuickAI delete it ... */
+	CBODY_DELETE_PENDING = 0x80 /* ... on the pass after the one that sets this */
+};
+
 /* the world item (vtable 0x800a05f4; not the CREDITS or front-end classes also named CItem) */
 class CItem {
   public:
@@ -68,12 +83,12 @@ class CItem {
 	void Flash(int frames, uchar r, uchar g, uchar b);
 	void FlashUpdate();
 
-	/* C_DISPLAY_ON / C_DISPLAY_OFF (game/script.h); 0x41 is what a dead or invisible object gets */
+	/* C_DISPLAY_ON / C_DISPLAY_OFF (game/script.h) */
 	void Show() {
-		mFlags &= ~1;
+		mFlags &= ~ITEM_HIDDEN;
 	}
 	void Hide() {
-		mFlags |= 0x41;
+		mFlags |= ITEM_HIDDEN_ALL;
 	}
 };
 

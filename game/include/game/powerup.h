@@ -14,6 +14,39 @@
 #include "game/ob.h"
 #include "game/mess.h"
 
+/* CPowerUp::mType (the hide/dead flags are CItem's and CBody's: game/ob.h) */
+enum EPowerUpType {
+	POWERUP_TYPE_SKATE_K = 4,
+	POWERUP_TYPE_SKATE_S = 5,
+	POWERUP_TYPE_SKATE_A = 6,
+	POWERUP_TYPE_SKATE_E = 10,
+	POWERUP_TYPE_SKATE_T = 15,
+	POWERUP_TYPE_HIDDEN_TAPE = 16, /* the career's secret tape (GPowTape) */
+	POWERUP_TYPE_TAPE = 18,
+	POWERUP_TYPE_CREDIT_100 = 21,
+	POWERUP_TYPE_CREDIT_200 = 22,
+	POWERUP_TYPE_CREDIT_500 = 23,
+	POWERUP_TYPE_MEDAL_BRONZE = 0x664,
+	POWERUP_TYPE_MEDAL_SILVER = 0x665,
+	POWERUP_TYPE_MEDAL_GOLD = 0x666,
+};
+
+/* the models' name hashes for Spool_GetModel (items file; medals: the skmedals file) */
+enum EPowerUpModel {
+	POWERUP_MODEL_SKATE_S = 0x311d55d4,
+	POWERUP_MODEL_SKATE_K = 0x2328a71c,
+	POWERUP_MODEL_SKATE_A = 0x2ebf22ca,
+	POWERUP_MODEL_SKATE_T = 0x34524351,
+	POWERUP_MODEL_SKATE_E = 0x29b68a16,
+	POWERUP_MODEL_TAPE = 0xd5108e8c, /* both tape types */
+	POWERUP_MODEL_MEDAL_BRONZE = 0x54636518,
+	POWERUP_MODEL_MEDAL_SILVER = 0xba6d0434,
+	POWERUP_MODEL_MEDAL_GOLD = 0x2364558e,
+	POWERUP_MODEL_CREDIT_100 = 0x6f0f6b9f,
+	POWERUP_MODEL_CREDIT_200 = 0xf6063a25,
+	POWERUP_MODEL_CREDIT_500 = 0x81010ab3,
+};
+
 class CBruce;
 class CGlow;
 
@@ -40,7 +73,7 @@ class CPowerUp : public CBody {
 	uint mTimer; /* 0x160 */
 	/* sizeof(CPowerUp) == 0x164 */
 
-	CPowerUp(ushort a1, const CVector &a2_, const CVector &a3_, uint a4, int a5);
+	CPowerUp(ushort type, const CVector &pos, const CVector &a3_, uint a4, int lifetime);
 	virtual ~CPowerUp();
 	void DontDisplay();
 	void SetGravity(int g, int fric);

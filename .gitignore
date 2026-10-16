@@ -57,3 +57,7 @@ Desktop.ini
 # Local emulator install + empty compiler temp files from the decomp harness
 /DuckStation/
 /decomp/ct[a-z][0-9][0-9][0-9][0-9][0-9]
+
+# IDE compile database (written by platform/pc/tools/build.py) and clangd index
+/compile_commands.json
+/.cache/
