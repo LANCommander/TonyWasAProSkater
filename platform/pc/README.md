@@ -143,6 +143,13 @@ a GUI program (the log goes to `thps.log` in the player's folder when there is n
 debug information split into `thps.debug`; and `thps-windows.zip` with the exe,
 `dist/README.txt`, the repository's LICENSE and the third-party notices.
 
+`build.py --version 1.2.0` (`build-pc.bat release version 1.2.0`) stamps the build with a version,
+`MAJOR[.MINOR[.PATCH[.BUILD]]]` with an optional `-suffix`: the exe's version resource (Properties
+> Details; numbers from the version, the strings with the commit, e.g. `1.2.0 (44a1e8f9)`, `+dirty`
+when tracked files differ from it), the first line of the log, and the archive's name
+(`thps-windows-1.2.0.zip`). Without it the version is `dev`. The Linux build takes the commit from
+`THPS_COMMIT` when set (its container has no git; `build-linux.bat` passes it).
+
 The build also runs Ghidra's GNU v2 demangler (`decomp/tools/demangle.py`; it finds it in the
 Ghidra install `GHIDRA_INSTALL_DIR` names, default `D:\Tools\ghidra`, or takes `GNU_DEMANGLER`).
 

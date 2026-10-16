@@ -866,6 +866,7 @@ int Runtime::Main() {
         freopen(log, "w", stderr);
     }
 #endif
+    PC_Log("Tony Hawk's Pro Skater %s", PC_Version);
     g_diagnostics.InstallCrashHandler();
     g_diagnostics.StartWatchdog();
     os::ExeDir(m_dataDir, sizeof m_dataDir);

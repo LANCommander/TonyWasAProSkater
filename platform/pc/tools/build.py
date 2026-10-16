@@ -2,6 +2,7 @@
 """Build the native Windows and Linux port of THPS1 (see platform/pc/README.md).
 
     python platform/pc/tools/build.py [-j N] [--clean] [--only SUBSTR] [--no-link] [--release]
+                                      [--version X.Y.Z]
 
 The game's data (game/data: ordinary C++ globals) is compiled first; its references to functions
 are renamed to `psx_<addr>` as the code's are (below). Then, for every game TU (each .c/.cpp
@@ -864,7 +865,14 @@ def main():
     ap.add_argument("--release", action="store_true",
                     help="build/pc/release/thps.exe for distribution: no retail data embedded (read "
                          "from the player's disc), no console, debug info in thps.debug")
+    ap.add_argument("--version", default=None,
+                    help="the build's version, MAJOR[.MINOR[.PATCH[.BUILD]]] with an optional "
+                         "-suffix (1.2.0, 1.2.0-beta1): in the exe's version resource (Windows), "
+                         "logged at startup, and in the release archive's name. Default: dev")
     a = ap.parse_args()
+    if a.version is not None and not re.fullmatch(r"\d+(\.\d+){0,3}(-[0-9A-Za-z.-]+)?",
+                                                  a.version):
+        ap.error("--version %r: expected MAJOR[.MINOR[.PATCH[.BUILD]]][-suffix]" % a.version)
     toolchain.add_to_path()
     if a.clean and os.path.isdir(os.path.join(OUT, "obj")):
         shutil.rmtree(os.path.join(OUT, "obj"))
@@ -911,7 +919,7 @@ def main():
     if a.no_link or errs:
         return 1 if errs else 0
     import link  # noqa: E402
-    return link.link(ctx, metas, OUT, TOOLBIN, release=a.release)
+    return link.link(ctx, metas, OUT, TOOLBIN, release=a.release, version=a.version)
 
 
 if __name__ == "__main__":
