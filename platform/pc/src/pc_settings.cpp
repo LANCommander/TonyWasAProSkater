@@ -1,10 +1,10 @@
 /* Settings.ini: reading and writing the file; the entries belong to the subsystems (see
  * pc/settings.h). */
 #include <SDL2/SDL.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "pc/ini.h"
 #include "pc/platform.h"
 #include "pc/runtime.h"
 #include "pc/settings.h"
@@ -15,20 +15,6 @@
 namespace pc {
 
 Settings g_settings;
-
-namespace {
-
-char *Trim(char *s) {
-    char *e;
-    while (isspace((unsigned char)*s))
-        s++;
-    e = s + strlen(s);
-    while (e > s && isspace((unsigned char)e[-1]))
-        *--e = 0;
-    return s;
-}
-
-} // namespace
 
 const char *Settings::Path() {
     if (!m_path[0])
@@ -61,43 +47,31 @@ bool Settings::Save() {
 /* Entries missing from the file keep their defaults. The file is only written when it doesn't
  * exist yet (and when a settings screen changes something). */
 void Settings::Load() {
-    char line[512], section[128] = "";
+    const char *section, *key;
+    char *value;
     bool warned = false;
-    FILE *f;
+    IniReader ini;
     if (m_loaded)
         return;
     m_loaded = true;
     g_input.SettingsDefaults();
     g_video.SettingsDefaults();
-    f = fopen(Path(), "r");
-    if (!f) {
+    if (!ini.Open(Path())) {
         if (Save())
             PC_Log("settings: wrote the defaults to %s", Path());
         return;
     }
-    while (fgets(line, sizeof line, f)) {
-        char *s = Trim(line), *eq;
-        if (!*s || *s == ';' || *s == '#')
-            continue;
-        if (*s == '[') {
-            char *e = strchr(s, ']');
-            if (e)
-                *e = 0;
-            snprintf(section, sizeof section, "%s", Trim(s + 1));
+    while (ini.Next(&section, &key, &value)) {
+        if (ini.NewSection())
             warned = false;
+        if (!section[0])
             continue;
-        }
-        eq = strchr(s, '=');
-        if (!section[0] || !eq)
-            continue;
-        *eq = 0;
-        if (!g_video.SettingsLine(section, Trim(s), eq + 1) &&
-            !g_input.SettingsLine(section, Trim(s), eq + 1) && !warned) {
+        if (!g_video.SettingsLine(section, key, value) &&
+            !g_input.SettingsLine(section, key, value) && !warned) {
             PC_Log("Settings.ini: unknown section [%s]", section);
             warned = true;
         }
     }
-    fclose(f);
     PC_Log("settings: %s", Path());
 }
 

@@ -95,9 +95,10 @@ extern "C" int FUN_80073f9c(void) {
 	int i = 0;
 	CBruce *g = GSkater[0];
 
-	for (; i < 10; i++) {
+	/* (the game's own competitions) */
+	for (; i < STOCK_LEVELS; i++) {
 		if (Levels[i].isCompetition) {
-			if (GCareer.CharacterProgress[g->mSkaterIndex].Tapes[i] & 224)
+			if (*Career_Tapes(g->mSkaterIndex, i) & 224)
 				c++;
 		}
 	}

@@ -18,6 +18,8 @@ class Runtime {
 public:
     /* (16 MB in a 64-bit build: its pointers, and so its structures and packets, are bigger) */
     static constexpr uint32_t kGameHeapSize = (sizeof(void *) == 8 ? 16u : 8u) << 20;
+    /* more when mods add skaters or levels (pc/mod_content.h) */
+    static constexpr uint32_t kModHeapSize = (sizeof(void *) == 8 ? 16u : 8u) << 20;
 
     /* The process: diagnostics, the host devices, then the game's Runtime::Main(). */
     int Main();

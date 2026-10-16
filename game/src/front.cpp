@@ -845,7 +845,7 @@ void Front_Display() {
 				for (i = 0; i < 5; i++) {
 					if (GTape[i]) {
 						GTape[i]->mTapeNum =
-						    GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].NumTapes -
+						    Career_Progress(GSkater[0]->mSkaterIndex)->NumTapes -
 						    (NumTapes - i);
 						GTape[i]->mSessionTapeNum = i;
 					}
@@ -857,7 +857,7 @@ void Front_Display() {
 
 				for (i = 0; i < 5; i++) {
 					if (GTape[i])
-						GTape[i]->AI(GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].NumTapes -
+						GTape[i]->AI(Career_Progress(GSkater[0]->mSkaterIndex)->NumTapes -
 						             (NumTapes - i));
 				}
 			}
@@ -1028,7 +1028,7 @@ void Front_Display() {
 					SizeUp--;
 
 				highScoreBuf[1] = 0;
-				highScoreBuf[0] = GCareer.HighScore[GLevel][i].Name[0];
+				highScoreBuf[0] = Career_HighScores(GLevel)[i].Name[0];
 				Mess_SetTextJustify(0);
 
 				if (i == GHighScoreLineIndex && GHighScoreInitialCursorPos == 0)
@@ -1039,7 +1039,7 @@ void Front_Display() {
 				Mess_DrawText(StatsLeft[i] - 80, (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
 				Mess_SetScale(256);
 
-				highScoreBuf[0] = GCareer.HighScore[GLevel][i].Name[1];
+				highScoreBuf[0] = Career_HighScores(GLevel)[i].Name[1];
 				Mess_SetTextJustify(0);
 
 				if (i == GHighScoreLineIndex && GHighScoreInitialCursorPos == 1)
@@ -1050,7 +1050,7 @@ void Front_Display() {
 				Mess_DrawText(StatsLeft[i] - 60, (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
 				Mess_SetScale(256);
 
-				highScoreBuf[0] = GCareer.HighScore[GLevel][i].Name[2];
+				highScoreBuf[0] = Career_HighScores(GLevel)[i].Name[2];
 				Mess_SetTextJustify(0);
 
 				if (i == GHighScoreLineIndex && GHighScoreInitialCursorPos == 2)
@@ -1071,7 +1071,7 @@ void Front_Display() {
 					Mess_DrawText(StatsLeft[i] + x, (i + 1) * 19 + 48, highScoreBuf, 0, 0, 256, 0);
 				}
 
-				sprintf(highScoreBuf, "%s", Stats[GCareer.HighScore[GLevel][i].Skater].Name);
+				sprintf(highScoreBuf, "%s", Stats[Career_HighScores(GLevel)[i].Skater].Name);
 
 				{
 					char *p = highScoreBuf;
@@ -1088,7 +1088,7 @@ void Front_Display() {
 
 				Mess_SetTextJustify(1);
 				Mess_DrawText(StatsLeft[i], (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
-				sprintf(highScoreBuf, "%d", GCareer.HighScore[GLevel][i].Score);
+				sprintf(highScoreBuf, "%d", Career_HighScores(GLevel)[i].Score);
 				Mess_SetTextJustify(2);
 				Mess_DrawText(StatsRight[i], (i + 1) * 19 + 40, highScoreBuf, 0, 0, 256, 0);
 			}
@@ -1152,7 +1152,7 @@ void Front_Display() {
 				Line = 0;
 				sprintf(Score1, "%d", pMan->mPanel.mTotalScore);
 				Mess_DrawText(StatsRight[0], Line++ * 18 + 60, Score1, 0, 0, 256, 0);
-				sprintf(Score2, "%d", GCareer.HighScore[GLevel][0].Score);
+				sprintf(Score2, "%d", Career_HighScores(GLevel)[0].Score);
 				Mess_DrawText(StatsRight[1], Line++ * 18 + 60, Score2, 0, 0, 256, 0);
 
 				if (GGame == 1) {
@@ -1648,27 +1648,27 @@ void Front_SwitchOnEndLevelMenu() {
 		GHighScoreInitialCursorPos = 0;
 
 		for (i = 0; i < 8; i++) {
-			if (pSkater->mPanel.mTotalScore >= GCareer.HighScore[GLevel][i].Score) {
+			if (pSkater->mPanel.mTotalScore >= Career_HighScores(GLevel)[i].Score) {
 				int j;
 
 				for (j = 7; j > i; j--) {
-					GCareer.HighScore[GLevel][j].Score = GCareer.HighScore[GLevel][j - 1].Score;
-					GCareer.HighScore[GLevel][j].Skater = GCareer.HighScore[GLevel][j - 1].Skater;
+					Career_HighScores(GLevel)[j].Score = Career_HighScores(GLevel)[j - 1].Score;
+					Career_HighScores(GLevel)[j].Skater = Career_HighScores(GLevel)[j - 1].Skater;
 
 					{
 						/* the counter is initialised between the two pointers (retail's t0/a3 order) */
-						char *d = GCareer.HighScore[GLevel][j].Name;
+						char *d = Career_HighScores(GLevel)[j].Name;
 						int k = 3;
-						char *s = GCareer.HighScore[GLevel][j - 1].Name;
+						char *s = Career_HighScores(GLevel)[j - 1].Name;
 
 						for (; k != -1; k--)
 							*d++ = *s++;
 					}
 				}
 
-				GCareer.HighScore[GLevel][i].Score = pSkater->mPanel.mTotalScore;
-				GCareer.HighScore[GLevel][i].Skater = GSkater[0]->mSkaterIndex;
-				sprintf(GCareer.HighScore[GLevel][i].Name, GCareer.Options.LastHighScoreInitials);
+				Career_HighScores(GLevel)[i].Score = pSkater->mPanel.mTotalScore;
+				Career_HighScores(GLevel)[i].Skater = GSkater[0]->mSkaterIndex;
+				sprintf(Career_HighScores(GLevel)[i].Name, GCareer.Options.LastHighScoreInitials);
 
 				GHighScoreLineIndex = i;
 				i = 8;
@@ -2439,19 +2439,19 @@ void Front_Update() {
 						SizeUp = 16;
 						SFX_PlayX(17, 8192, 0);
 
-						if (GCareer.HighScore[GLevel][GHighScoreLineIndex]
+						if (Career_HighScores(GLevel)[GHighScoreLineIndex]
 						            .Name[GHighScoreInitialCursorPos] == ' ' ||
-						    GCareer.HighScore[GLevel][GHighScoreLineIndex]
+						    Career_HighScores(GLevel)[GHighScoreLineIndex]
 						            .Name[GHighScoreInitialCursorPos] == 0) {
-							GCareer.HighScore[GLevel][GHighScoreLineIndex]
+							Career_HighScores(GLevel)[GHighScoreLineIndex]
 							    .Name[GHighScoreInitialCursorPos] = 'A';
 						} else {
-							GCareer.HighScore[GLevel][GHighScoreLineIndex]
+							Career_HighScores(GLevel)[GHighScoreLineIndex]
 							    .Name[GHighScoreInitialCursorPos]++;
 
-							if ((uchar)GCareer.HighScore[GLevel][GHighScoreLineIndex]
+							if ((uchar)Career_HighScores(GLevel)[GHighScoreLineIndex]
 							        .Name[GHighScoreInitialCursorPos] > 'Z')
-								GCareer.HighScore[GLevel][GHighScoreLineIndex]
+								Career_HighScores(GLevel)[GHighScoreLineIndex]
 								    .Name[GHighScoreInitialCursorPos] = ' ';
 						}
 					}
@@ -2460,19 +2460,19 @@ void Front_Update() {
 						SizeUp = 16;
 						SFX_PlayX(17, 8192, 0);
 
-						if (GCareer.HighScore[GLevel][GHighScoreLineIndex]
+						if (Career_HighScores(GLevel)[GHighScoreLineIndex]
 						            .Name[GHighScoreInitialCursorPos] == ' ' ||
-						    GCareer.HighScore[GLevel][GHighScoreLineIndex]
+						    Career_HighScores(GLevel)[GHighScoreLineIndex]
 						            .Name[GHighScoreInitialCursorPos] == 0) {
-							GCareer.HighScore[GLevel][GHighScoreLineIndex]
+							Career_HighScores(GLevel)[GHighScoreLineIndex]
 							    .Name[GHighScoreInitialCursorPos] = 'Z';
 						} else {
-							GCareer.HighScore[GLevel][GHighScoreLineIndex]
+							Career_HighScores(GLevel)[GHighScoreLineIndex]
 							    .Name[GHighScoreInitialCursorPos]--;
 
-							if ((uchar)GCareer.HighScore[GLevel][GHighScoreLineIndex]
+							if ((uchar)Career_HighScores(GLevel)[GHighScoreLineIndex]
 							        .Name[GHighScoreInitialCursorPos] < 'A')
-								GCareer.HighScore[GLevel][GHighScoreLineIndex]
+								Career_HighScores(GLevel)[GHighScoreLineIndex]
 								    .Name[GHighScoreInitialCursorPos] = ' ';
 						}
 					}
@@ -2505,7 +2505,7 @@ void Front_Update() {
 				if (Activated) {
 					SFX_PlayX(18, 8192, 0);
 					sprintf(GCareer.Options.LastHighScoreInitials,
-					        GCareer.HighScore[GLevel][GHighScoreLineIndex].Name);
+					        Career_HighScores(GLevel)[GHighScoreLineIndex].Name);
 
 					GHighScoreLineIndex = -1;
 					Status = STATUS_ENDINGSCREEN;

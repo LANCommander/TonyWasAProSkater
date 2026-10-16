@@ -1,6 +1,7 @@
 /* Decompiled data: the retail executable's initialised globals that src/front/ uses (psxdata.h).
  * Text is string literals where it's used and the tables have the game's types. */
 #include "psxdata.h"
+#include "game/career.h"
 #include "game/tapes.h"
 
 struct CMenu;
@@ -140,8 +141,8 @@ int DAT_800bf260[8] = {
 };
 
 int DAT_800bf280[8];
-int DAT_800bf2a0[10];
-int DAT_800bf2c8[10];
+int DAT_800bf2a0[MAX_LEVELS];
+int DAT_800bf2c8[MAX_LEVELS];
 
 /* THPS2 demo: int */
 int SizeUp[1];

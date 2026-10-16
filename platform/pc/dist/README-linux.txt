@@ -67,7 +67,8 @@ Settings and saves are in ~/.local/share (or $XDG_DATA_HOME):
 
   ~/.local/share/Neversoft/Tony Hawk's Pro Skater/
     Settings.ini         controls, display, draw distance
-    Saves/Careers/       one .career file per saved career
+    Saves/Careers/       one .career file per saved career (and .mods.ini, see Mods)
+    Mods/                mods (see Mods)
     Saves/Replays/       one .replay file per saved replay
 
 The log goes to the terminal (include it with bug reports: ./thps 2> thps.log).
@@ -77,6 +78,19 @@ converted the next time the game lists saves.
 
 Data/Music/Playlist.m3u is the order the soundtrack plays in; edit it to change or reorder the
 songs.
+
+Mods
+----
+
+A mod is a folder with a mod.ini in it. Put it in Data/Mods next to thps, or in
+
+  ~/.local/share/Neversoft/Tony Hawk's Pro Skater/Mods
+
+(or list mod folders in THPS_MODS, separated by :  THPS_MODS=none turns mods off). A mod's Data
+folder replaces the game's files of the same names and adds new ones; its Levels and Skaters
+folders add levels and skaters to the menus. The log lists the mods that loaded and anything
+wrong with them. A career's progress with mods' skaters and levels is kept in <name>.mods.ini
+beside its .career file. How to make mods: docs/modding.md in the source.
 
 Legal
 -----

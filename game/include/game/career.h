@@ -10,6 +10,23 @@
 
 #include "game/types.h"
 
+/* The game's own skaters and levels, and how many the tables hold with the ones mods add
+   (platform/pc/include/pc/mods.h). Mods' skaters follow the stock eleven in Stats[] (GNumSkaters
+   in use); mods' levels follow the stock nine in Levels[], which still ends with an entry with an
+   empty name. */
+#define STOCK_SKATERS 11
+#define MAX_SKATERS 32
+#define STOCK_LEVELS 9
+#define MAX_LEVELS 32 /* Levels[] entries, the empty end entry included */
+#define MOD_SKATERS (MAX_SKATERS - STOCK_SKATERS)
+#define MOD_LEVELS (MAX_LEVELS - 1 - STOCK_LEVELS)
+
+/* the game modes a level is offered in (LevelModes[]; the stock levels are in all of them) */
+#define LEVEL_CAREER 1
+#define LEVEL_SINGLESESSION 2
+#define LEVEL_FREESKATE 4
+#define LEVEL_MULTIPLAYER 8
+
 /* one high-score table entry (demo layout) */
 struct SHighScore {
 	char Name[4]; /* 0x0 */
@@ -76,7 +93,7 @@ struct BoardStats {
 	uchar s[5]; /* ollie, speed, air, balance, turning (demo names) */
 }; /* size 0x5 */
 
-/* one skater (Stats[], 0x800a44fc; 11 entries) */
+/* one skater (Stats[], 0x800a44fc; 11 entries, then the mods') */
 struct SStats {
 	char *PSXName;    /* 0x000 model file ("hawk") */
 	char *PSXName2;   /* 0x004 two-player model ("burnq_2p") */
@@ -97,7 +114,8 @@ struct SStats {
 	SBoard Boards[8];   /* 0x054 */
 }; /* size 0x154 */
 
-/* one level (Levels[], 0x800a5398; 10 entries) */
+/* one level (Levels[], 0x800a5398; 10 entries: 9 levels and the empty end entry; mods' levels
+   go before the end entry) */
 struct SLevel {
 	char *pLevelName;       /* 0x00 "Warehouse" */
 	char *pCityName;        /* 0x04 "Woodland Hills" */
@@ -159,6 +177,32 @@ void Options_SetPreferences();
 void Options_GetPreferences();
 void Career_GiveMedal(int Level, EMedalType medal);
 
+/* Career progress the career save (SCareer) has no room for: the mods' skaters and levels
+   (GCareerExt, kept beside the save by the port: pc_modcontent.cpp). */
+struct SCareerExt {
+	SSkaterCareer CharacterProgress[MOD_SKATERS]; /* the mods' skaters (Tapes: the stock levels) */
+	uchar Tapes[MAX_SKATERS][MOD_LEVELS];         /* every skater's on the mods' levels */
+	SHighScore HighScore[MOD_LEVELS][8];          /* the mods' levels' high scores */
+	int MedalMessagesUsed[MOD_SKATERS];
+};
+
+/* Where a skater's / level's progress is, in GCareer or GCareerExt; every career read and write
+   goes through these. */
+SSkaterCareer *Career_Progress(int skater);
+uchar *Career_Tapes(int skater, int level);
+SHighScore *Career_HighScores(int level); /* 8 ranks */
+int *Career_MedalMessages(int skater);
+/* Whether level is offered in game mode GGame (GGame values: 1 career, 2 free skate, 3 single
+   session, 5-8 two players). */
+int Level_InMode(int level, int game);
+/* A new career's GCareerExt (Career_Init calls it). */
+void Career_InitExt();
+/* After the career save `name` was loaded into GCareer: its GCareerExt (pc_mods.h). */
+void Career_LoadExt(const char *name);
+
 /* globals */
 extern int GLoadedCareerIsSaved;
+extern int GNumSkaters;               /* Stats[] entries in use */
+extern int LevelModes[MAX_LEVELS];    /* LEVEL_* per level */
+extern SCareerExt GCareerExt;
 #endif

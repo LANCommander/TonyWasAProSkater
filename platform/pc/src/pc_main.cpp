@@ -23,6 +23,7 @@
 #define SDL_MAIN_HANDLED /* this file has Runtime::Main: SDL_SetMainReady in PlatformInit */
 #include <SDL2/SDL.h>
 
+#include "pc/mod_content.h"
 #include "pc/platform.h"
 #include "pc/runtime.h"
 #include "pc_assets.h"
@@ -174,9 +175,11 @@ uint32_t Runtime::MissingFunction(uint32_t addr) {
 }
 
 void *Runtime::GameHeap(uint32_t *size) {
-    if (!m_heap && !(m_heap = calloc(1, kGameHeapSize)))
-        PC_Fatal("cannot allocate the game's %u MB of memory", kGameHeapSize >> 20);
-    *size = kGameHeapSize;
+    /* mods' skaters and levels: the selects hold every skater's model and level's picture */
+    uint32_t n = kGameHeapSize + (g_modContent.Any() ? kModHeapSize : 0);
+    if (!m_heap && !(m_heap = calloc(1, n)))
+        PC_Fatal("cannot allocate the game's %u MB of memory", n >> 20);
+    *size = n;
     return m_heap;
 }
 

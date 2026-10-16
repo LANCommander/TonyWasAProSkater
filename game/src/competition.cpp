@@ -23,10 +23,6 @@ extern ushort HOLYCOW_PLACE, FIRST_PLACE, SECOND_PLACE, THIRD_PLACE, LAST_PLACE;
 extern "C" int FUN_80073f9c();
 extern "C" int FUN_80077124(CCompetition *);
 extern char *MedalMessage[9];
-/* GCareer.CharacterProgress[].Tapes viewed from its first Tapes byte (retail addresses it that way) */
-struct SCareerRecord {
-	uchar Flags[14];
-};
 /* The competition state, built by the module's static constructor (_GLOBAL_.I, 0x800770dc) and
    torn down by FUN_80077060. CCompetition's destructor is the implicit one, which never re-stores
    its own vptr; only the inlined ~CClass store (0x800a3464) remains. The out-of-line copy is
@@ -47,9 +43,10 @@ int Competition_WonGameAllGold() {
 	int i = 0;
 	CBruce *g = GSkater[0];
 
-	for (; i < 10; i++) {
+	/* (the game's own competitions: the ending is theirs) */
+	for (; i < STOCK_LEVELS; i++) {
 		if (Levels[i].isCompetition) {
-			if (GCareer.CharacterProgress[0].Tapes[i + g->mSkaterIndex * 14] & 32)
+			if (*Career_Tapes(g->mSkaterIndex, i) & 32)
 				c++;
 		}
 	}
@@ -82,7 +79,8 @@ void Competition_Init() {
 	t = SelectedSkater;
 	c->our_skater_num = t;
 
-	if (t == 10) {
+	/* (Officer Dick, or a mod's skater: not one of the ten competitors) */
+	if (t >= 10) {
 		c->our_skater_num = Rnd(10);
 		c->mCompetitorList[c->our_skater_num] = t;
 	}
@@ -581,7 +579,7 @@ void Competition_WinLoseLogic(EPausedStatus &a0, int &a1) {
 			g->mMedal1 = 0;
 			g->mMedal2 = 0;
 			g->mMedal3 = 0;
-			GCareer.Options.MedalMessagesUsed[gg->mSkaterIndex] |= 1 << e;
+			*Career_MedalMessages(gg->mSkaterIndex) |= 1 << e;
 			GameFMV_StopFMV();
 			Pad_ClearAll();
 			Pad_ClearTriggers(&Pad[0]);
@@ -637,7 +635,7 @@ void Competition_WinLoseLogic(EPausedStatus &a0, int &a1) {
 			g->mMedal1 = 0;
 			g->mMedal2 = 0;
 			g->mMedal3 = 0;
-			GCareer.Options.MedalMessagesUsed[GSkater[0]->mSkaterIndex] |= 1 << GLevel;
+			*Career_MedalMessages(GSkater[0]->mSkaterIndex) |= 1 << GLevel;
 		}
 	}
 }
@@ -847,13 +845,13 @@ void Competition_WinLoseDisplay() {
 
 		c->medal_mask = 0;
 
-		if (GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].Tapes[GLevel] & 0xe0)
+		if (*Career_Tapes(GSkater[0]->mSkaterIndex, GLevel) & 0xe0)
 			c->medal_mask = 1 << GLevel;
 
 		Mess_SetScale(256);
 		Mess_SetRGB(122, 122, 122, 0);
 
-		if (GCareer.Options.MedalMessagesUsed[GSkater[0]->mSkaterIndex] == 328) {
+		if (*Career_MedalMessages(GSkater[0]->mSkaterIndex) == 328) {
 			c->mMedal1->mMaxWobbleAmplitude = c->mMedal1->mWobbleAmplitude = 2;
 			c->mMedal1->mPos.vy = c->mMedal1->mOrgPos.vy - 0x5000;
 
@@ -866,7 +864,7 @@ void Competition_WinLoseDisplay() {
 			if (MedalMessage[8])
 				Mess_DrawText(256, 195, MedalMessage[8], 0, 0, 256, 0);
 		} else {
-			switch ((GCareer.Options.MedalMessagesUsed[GSkater[0]->mSkaterIndex] & c->medal_mask) ^
+			switch ((*Career_MedalMessages(GSkater[0]->mSkaterIndex) & c->medal_mask) ^
 			        c->medal_mask) {
 				case 8:
 					if (MedalMessage[0])
@@ -990,7 +988,7 @@ void Competition_ResetMarquee() {
 		n = SelectedSkater;
 		c->our_skater_num = n;
 
-		if (n == 10) {
+		if (n >= 10) {
 			c->our_skater_num = Rnd(10);
 			c->mCompetitorList[c->our_skater_num] = n;
 		}
@@ -1106,7 +1104,7 @@ void Competition_EndGameLogic(EPausedStatus &a, int &b) {
 			theCompetition.mMedal1 = 0;
 			theCompetition.mMedal2 = 0;
 			theCompetition.mMedal3 = 0;
-			GCareer.Options.MedalMessagesUsed[g->mSkaterIndex] |= 1 << e;
+			*Career_MedalMessages(g->mSkaterIndex) |= 1 << e;
 			GameFMV_StopFMV();
 			Pad_ClearAll();
 			Pad_ClearTriggers(&Pad[0]);
@@ -1155,7 +1153,7 @@ void Competition_EndGameLogic(EPausedStatus &a, int &b) {
 			theCompetition.mMedal1 = 0;
 			theCompetition.mMedal2 = 0;
 			theCompetition.mMedal3 = 0;
-			GCareer.Options.MedalMessagesUsed[GSkater[0]->mSkaterIndex] |= 1 << GLevel;
+			*Career_MedalMessages(GSkater[0]->mSkaterIndex) |= 1 << GLevel;
 		}
 	}
 }
@@ -1199,8 +1197,8 @@ void Competition_EndGameDisplay() {
 			int n = 0;
 			int i;
 
-			for (i = 0; i < 10; i++) {
-				short f = ((SCareerRecord *)GCareer.CharacterProgress[0].Tapes)[GSkater[0]->mSkaterIndex].Flags[i];
+			for (i = 0; i < STOCK_LEVELS; i++) {
+				short f = *Career_Tapes(GSkater[0]->mSkaterIndex, i);
 
 				if (f & 0x20)
 					m[n++] = (EMedalType)5;

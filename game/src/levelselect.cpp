@@ -67,6 +67,25 @@ extern char DAT_800a2310[];
 /* egcs-ABI call, as retail makes it */
 extern "C" void __dl__6CClassPv(void *p);
 
+/* PC: the levels this visit's carousel shows, in order (the ones offered in the game mode: a mod's
+   level names its modes, the game's own are in all of them); DAT_800d237c counts them. The
+   carousel and its pictures go by position in this list. */
+static int LevelSelect_Visible[MAX_LEVELS];
+
+/* PC: the tapes that unlock a level: the career's count (the game's own levels'), and for a mod's
+   level the tapes got on the mods' levels too */
+static int LevelSelect_Tapes(int skater, int level) {
+	int n = Career_Progress(skater)->NumTapes;
+
+	if (level >= STOCK_LEVELS)
+		for (int l = STOCK_LEVELS; l < MAX_LEVELS - 1 && *Levels[l].pLevelName; l++)
+			if (!Levels[l].isCompetition)
+				for (int k = 0; k < 5; k++)
+					n += (*Career_Tapes(skater, l) >> k) & 1;
+
+	return n;
+}
+
 /* LevelSelect_Run__Fi (0x8006658c) */
 int LevelSelect_Run(int a) {
 	DAT_800d2368 = a;
@@ -135,7 +154,7 @@ void LevelSelect_StartPicLoad(int a) {
 /* LevelSelect_ContinueLoading__Fv (0x80066768) */
 /* SLevel (game/career.h) */
 void LevelSelect_ContinueLoading(void) {
-	char buf[16];
+	char buf[64]; /* PC: 16 (mods' levels' pictures have longer names) */
 	int n, t, one;
 
 	FileIO_Continue();
@@ -167,7 +186,7 @@ void LevelSelect_ContinueLoading(void) {
 		if (DAT_800d2360 >= DAT_800d237c)
 			DAT_800d2360 -= DAT_800d237c;
 
-		strcpy(buf, Levels[DAT_800d2360].pImageName);
+		strcpy(buf, Levels[LevelSelect_Visible[DAT_800d2360]].pImageName);
 
 		n = FileIO_Open(buf);
 
@@ -214,7 +233,7 @@ void LevelSelect_DecodePics(void) {
 
 		*ps = v;
 
-		if (DAT_800bf2a0[DAT_800d2364] == 0)
+		if (DAT_800bf2a0[LevelSelect_Visible[DAT_800d2364]] == 0)
 			MakeGreyClut(Pal256X, Pal256Y + Get256SlotNumber(a));
 
 		h = DAT_800d237c / 2;
@@ -328,9 +347,18 @@ void LevelSelect_Screen() {
 	Pack_DefragmentFully();
 	LevelSelect_InitPackSlots();
 
-	for (DAT_800d237c = 0; DAT_800d237c < 10; DAT_800d237c++)
-		if (!*Levels[DAT_800d237c].pLevelName)
+	int numLevels;
+	int *vis = LevelSelect_Visible;
+
+	for (numLevels = 0; numLevels < MAX_LEVELS - 1; numLevels++)
+		if (!*Levels[numLevels].pLevelName)
 			break;
+
+	DAT_800d237c = 0;
+
+	for (int i = 0; i < numLevels; i++)
+		if (Level_InMode(i, GGame))
+			vis[DAT_800d237c++] = i;
 
 	if (GGame == 5 || GGame == 6 || GGame == 8 || GGame == 7)
 		DAT_800d2370 = 1;
@@ -338,13 +366,17 @@ void LevelSelect_Screen() {
 		DAT_800d2370 = 0;
 
 	char *comps[3] = { "Skate Park", "Burnside", "Roswell" };
-	int cur = GCareer.LastLevel;
+	int cur = 0;
+
+	for (int i = 0; i < DAT_800d237c; i++)
+		if (vis[i] == GCareer.LastLevel)
+			cur = i;
 
 	if (GGame == 1) {
-		for (int i = 0; i < DAT_800d237c; i++)
+		for (int i = 0; i < numLevels; i++)
 			DAT_800bf2a0[i] = 0;
 	} else {
-		for (int i = 0; i < DAT_800d237c; i++)
+		for (int i = 0; i < numLevels; i++)
 			DAT_800bf2a0[i] = DAT_800bf2c8[i];
 	}
 
@@ -356,7 +388,7 @@ void LevelSelect_Screen() {
 		last = first + 1;
 	} else {
 		first = 0;
-		last = 11;
+		last = GNumSkaters; /* PC: 11 */
 	}
 
 	for (int s = first; s < last; s++) {
@@ -368,27 +400,27 @@ void LevelSelect_Screen() {
 			while (strcmp(Levels[j].pLevelName, comps[k]))
 				j++;
 
-			uchar f = GCareer.CharacterProgress[s].Tapes[j];
+			uchar f = *Career_Tapes(s, j);
 
 			if (f & 0x20) {
 				medal[k] = 0;
 				DAT_800d236c++;
-				GCareer.CharacterProgress[s].NumGold++;
+				Career_Progress(s)->NumGold++;
 			} else if (f & 0x40) {
 				medal[k] = 1;
 				DAT_800d236c++;
-				GCareer.CharacterProgress[s].NumSilver++;
+				Career_Progress(s)->NumSilver++;
 			} else if (f & 0x80) {
 				medal[k] = 2;
 				DAT_800d236c++;
-				GCareer.CharacterProgress[s].NumBronze++;
+				Career_Progress(s)->NumBronze++;
 			} else {
 				medal[k] = -1;
 			}
 		}
 
-		for (int i = 0; i < DAT_800d237c; i++) {
-			if ((GCareer.CharacterProgress[s].NumTapes >= Levels[i].TapesToUnlock &&
+		for (int i = 0; i < numLevels; i++) {
+			if ((LevelSelect_Tapes(s, i) >= Levels[i].TapesToUnlock &&
 			     DAT_800d236c >= Levels[i].MedalsToUnlock) ||
 			    (DAT_800d2370 && i < 5)) {
 				DAT_800bf2a0[i] = 1;
@@ -397,8 +429,8 @@ void LevelSelect_Screen() {
 		}
 	}
 
-	int ax = Levels[cur].map_loc[0] - 16;
-	int ay = Levels[cur].map_loc[1] - 16;
+	int ax = Levels[vis[cur]].map_loc[0] - 16;
+	int ay = Levels[vis[cur]].map_loc[1] - 16;
 	int arrowTimer[2];
 	int arrowX[2];
 	int arrowY[2];
@@ -461,7 +493,7 @@ void LevelSelect_Screen() {
 	Mess_SetFontScale(255);
 
 	char tapes[3];
-	uchar n = GCareer.CharacterProgress[DAT_800d2368].NumTapes;
+	uchar n = Career_Progress(DAT_800d2368)->NumTapes;
 
 	tapes[2] = 0;
 	tapes[0] = n / 10 + '0';
@@ -516,8 +548,8 @@ void LevelSelect_Screen() {
 	int ttarget[2];
 	int tstep[2];
 
-	strcpy(text[0], Levels[cur].pLevelName);
-	strcpy(text[1], Levels[cur].pCityName);
+	strcpy(text[0], Levels[vis[cur]].pLevelName);
+	strcpy(text[1], Levels[vis[cur]].pCityName);
 	Mess_SetCurrentFont("mainf.fnt");
 
 	tw[0] = Mess_TextWidth(text[0]);
@@ -600,9 +632,9 @@ void LevelSelect_Screen() {
 		topBar->draw(0, 55, 0, -1, -1, -1);
 
 		if (GGame == 1 && state == 0) {
-			if (!Levels[sel].isCompetition) {
+			if (!Levels[vis[sel]].isCompetition) {
 				int x = 266;
-				uchar f = GCareer.CharacterProgress[DAT_800d2368].Tapes[sel];
+				uchar f = *Career_Tapes(DAT_800d2368, vis[sel]);
 
 				for (int k = 0; k < 5; k++) {
 					tapeBox->draw(x, 93, 0, -1, -1, -1);
@@ -613,7 +645,7 @@ void LevelSelect_Screen() {
 					x += 36;
 				}
 			} else {
-				uchar f = GCareer.CharacterProgress[DAT_800d2368].Tapes[sel];
+				uchar f = *Career_Tapes(DAT_800d2368, vis[sel]);
 
 				if (f & 0x20)
 					goalSpr[0]->draw(335, 88, 0, -1, -1, -1);
@@ -633,8 +665,8 @@ void LevelSelect_Screen() {
 
 			for (int k = 0; k < 3; k++) {
 				Mess_SetTextJustify(1);
-				Mess_DrawText(409, y, GCareer.HighScore[sel][k].Name, 0, 0, 256, 0);
-				sprintf(score, "%d", GCareer.HighScore[sel][k].Score);
+				Mess_DrawText(409, y, Career_HighScores(vis[sel])[k].Name, 0, 0, 256, 0);
+				sprintf(score, "%d", Career_HighScores(vis[sel])[k].Score);
 				Mess_SetTextJustify(2);
 				Mess_DrawText(578, y, score, 0, 0, 256, 0);
 
@@ -654,31 +686,31 @@ void LevelSelect_Screen() {
 			Mess_SetCurrentFont("goalf.fnt");
 
 			if (GGame == 1) {
-				if (GCareer.CharacterProgress[DAT_800d2368].NumTapes < Levels[sel].TapesToUnlock) {
-					if (DAT_800d236c < Levels[sel].MedalsToUnlock) {
-						if (Levels[sel].TapesToUnlock >= 2)
+				if (LevelSelect_Tapes(DAT_800d2368, vis[sel]) < Levels[vis[sel]].TapesToUnlock) {
+					if (DAT_800d236c < Levels[vis[sel]].MedalsToUnlock) {
+						if (Levels[vis[sel]].TapesToUnlock >= 2)
 							plural[0] = 's';
 
-						if (Levels[sel].MedalsToUnlock >= 2)
+						if (Levels[vis[sel]].MedalsToUnlock >= 2)
 							plural[2] = 's';
 
-						sprintf(line1, "%d tape%s, %d medal%s", Levels[sel].TapesToUnlock,
-						        &plural[0], Levels[sel].MedalsToUnlock, &plural[2]);
+						sprintf(line1, "%d tape%s, %d medal%s", Levels[vis[sel]].TapesToUnlock,
+						        &plural[0], Levels[vis[sel]].MedalsToUnlock, &plural[2]);
 					} else {
-						if (Levels[sel].TapesToUnlock >= 2)
+						if (Levels[vis[sel]].TapesToUnlock >= 2)
 							plural[0] = 's';
 
-						sprintf(line1, "%d tape%s", Levels[sel].TapesToUnlock, plural);
+						sprintf(line1, "%d tape%s", Levels[vis[sel]].TapesToUnlock, plural);
 					}
-				} else if (DAT_800d236c < Levels[sel].MedalsToUnlock) {
-					if (Levels[sel].MedalsToUnlock >= 2)
+				} else if (DAT_800d236c < Levels[vis[sel]].MedalsToUnlock) {
+					if (Levels[vis[sel]].MedalsToUnlock >= 2)
 						plural[0] = 's';
 
-					sprintf(line1, "%d medal%s", Levels[sel].MedalsToUnlock, plural);
+					sprintf(line1, "%d medal%s", Levels[vis[sel]].MedalsToUnlock, plural);
 				}
 			}
 
-			if (!DAT_800bf2a0[sel]) {
+			if (!DAT_800bf2a0[vis[sel]]) {
 				lineX[0] = 357 - (Mess_TextWidth(line1) >> 1);
 				lineY[0] = 190 - Mess_TextHeightBelowBaseline(line1);
 				Mess_DrawText(lineX[0], lineY[0], line1, 1, 0, 256, 0);
@@ -764,12 +796,12 @@ void LevelSelect_Screen() {
 			tx[1] += tstep[1];
 
 			if (anim == 8) {
-				if (!strcmp(Levels[sel].pLevelName, "Roswell") && !DAT_800bf2a0[sel]) {
+				if (!strcmp(Levels[vis[sel]].pLevelName, "Roswell") && !DAT_800bf2a0[vis[sel]]) {
 					strcpy(text[0], "unknown");
 					strcpy(text[1], "unknown");
 				} else {
-					strcpy(text[0], Levels[sel].pLevelName);
-					strcpy(text[1], Levels[sel].pCityName);
+					strcpy(text[0], Levels[vis[sel]].pLevelName);
+					strcpy(text[1], Levels[vis[sel]].pCityName);
 				}
 
 				Mess_SetCurrentFont("mainf.fnt");
@@ -838,8 +870,8 @@ void LevelSelect_Screen() {
 				SFX_PlayX(144, 0x2000, 0);
 				save->restore(ax, ay);
 
-				ax = Levels[sel].map_loc[0] - 16;
-				ay = Levels[sel].map_loc[1] - 16;
+				ax = Levels[vis[sel]].map_loc[0] - 16;
+				ay = Levels[vis[sel]].map_loc[1] - 16;
 				DrawSync(0);
 				LevelSelect_SelectPackSlot(-1);
 				delete save;
@@ -862,19 +894,19 @@ void LevelSelect_Screen() {
 			Pad_ClearTriggers(&Pad[0]);
 			Pad_ClearTriggers(&Pad[1]);
 
-			DAT_800d1dc4 = sel;
+			DAT_800d1dc4 = vis[sel];
 
-			if (DAT_800bf2a0[sel]) {
+			if (DAT_800bf2a0[vis[sel]]) {
 				SFX_PlayX(145, 0x2000, 0);
 
-				GCareer.LastLevel = sel;
+				GCareer.LastLevel = vis[sel];
 				break;
 			}
 
 			SFX_PlayX(146, 0x2000, 0);
 
 			if (Cheat_LevelSelect) {
-				GCareer.LastLevel = sel;
+				GCareer.LastLevel = vis[sel];
 				break;
 			}
 		}

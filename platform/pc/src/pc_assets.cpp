@@ -31,6 +31,8 @@
 #include "pc/assets.h"
 #include "pc/disc_image.h"
 #include "pc/gdrom.h"
+#include "pc/mod_content.h"
+#include "pc/mods.h"
 #include "pc_assets.h"
 #include "pc/game_data.h"
 #include "pc_runtime.h"
@@ -682,11 +684,18 @@ void Assets::DreamcastFixups() {
 
 /* ---- index: file name -> path -------------------------------------------------------------- */
 
-int Assets::CmpIndex(const void *a, const void *b) {
+/* by name (the index has one entry per name), and by name, then layer (while building it) */
+int Assets::CmpName(const void *a, const void *b) {
     return _stricmp(((const IndexEntry *)a)->name, ((const IndexEntry *)b)->name);
 }
 
-void Assets::IndexDir(const char *dir) {
+int Assets::CmpIndex(const void *a, const void *b) {
+    const IndexEntry *x = (const IndexEntry *)a, *y = (const IndexEntry *)b;
+    int c = _stricmp(x->name, y->name);
+    return c ? c : x->layer - y->layer;
+}
+
+void Assets::IndexDir(const char *dir, int layer) {
     char sub[MAX_PATH];
     os::DirEntry fd;
     os::DirList list(dir);
@@ -697,7 +706,10 @@ void Assets::IndexDir(const char *dir) {
             continue;
         snprintf(sub, sizeof sub, "%s" PC_SEP "%s", dir, fd.name);
         if (fd.isDir) {
-            IndexDir(sub);
+            /* Data/Mods holds the mods, which are indexed as their own layers */
+            if (!layer && !strcmp(dir, Root()) && !_stricmp(fd.name, "Mods"))
+                continue;
+            IndexDir(sub, layer);
             continue;
         }
         if (m_nindex == m_capindex) {
@@ -706,17 +718,44 @@ void Assets::IndexDir(const char *dir) {
         }
         m_index[m_nindex].name = _strdup(fd.name);
         m_index[m_nindex].path = _strdup(sub);
+        m_index[m_nindex].layer = layer;
         m_nindex++;
     }
 }
 
+/* Data, then each mod's Data over it: of the files with one name, the last layer's is kept. */
 void Assets::BuildIndex() {
-    IndexDir(Root());
+    int i, k;
+    IndexDir(Root(), 0);
+    for (i = 0; i < g_mods.Count(); i++)
+        if (g_mods[i].dataDir[0])
+            IndexDir(g_mods[i].dataDir, 1 + i);
     qsort(m_index, m_nindex, sizeof *m_index, CmpIndex);
-    for (int i = 1; i < m_nindex; i++)
-        if (!_stricmp(m_index[i - 1].name, m_index[i].name))
-            PC_Log("note: %s and %s have the same name; the game sees one of them",
-                   m_index[i - 1].path, m_index[i].path);
+    for (i = k = 0; i < m_nindex; i++) {
+        IndexEntry *e = &m_index[i];
+        if (e->layer)
+            g_mods[e->layer - 1].files++;
+        if (k && !_stricmp(m_index[k - 1].name, e->name)) {
+            IndexEntry *prev = &m_index[k - 1];
+            if (e->layer == prev->layer) {
+                PC_Log("note: %s and %s have the same name; the game sees one of them",
+                       prev->path, e->path);
+            } else {
+                g_mods[e->layer - 1].replaced++;
+                PC_Trace("mods: %s replaces %s", e->path, prev->path);
+            }
+            free(prev->name);
+            free(prev->path);
+            *prev = *e;
+            continue;
+        }
+        m_index[k++] = *e;
+    }
+    m_nindex = k;
+    for (i = 0; i < g_mods.Count(); i++)
+        if (g_mods[i].files)
+            PC_Log("mods: \"%s\": %d files, %d of them replacing the game's or an earlier mod's",
+                   g_mods[i].name, g_mods[i].files, g_mods[i].replaced);
     PC_Trace("indexed %d files under %s", m_nindex, Root());
 }
 
@@ -726,7 +765,7 @@ bool Assets::Find(const char *discName, char *path, int n) const {
     BaseName(discName, base, sizeof base);
     key.name = base;
     const IndexEntry *e =
-        (const IndexEntry *)bsearch(&key, m_index, m_nindex, sizeof *m_index, CmpIndex);
+        (const IndexEntry *)bsearch(&key, m_index, m_nindex, sizeof *m_index, CmpName);
     if (!e)
         return false;
     snprintf(path, n, "%s", e->path);
@@ -767,11 +806,13 @@ void Assets::Init() {
         ExtractWadFiles();
         WritePlaylist(e, n);
     }
+    g_mods.Init();
     BuildIndex();
     if (m_dc) {
         DreamcastFixups();
         PC_Log("using the Dreamcast version's files");
     }
+    g_modContent.Load();
 }
 
 } // namespace pc

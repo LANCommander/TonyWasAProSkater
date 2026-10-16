@@ -1299,6 +1299,7 @@ int Front_MemCardUpdate() {
 						MCState = 22;
 					} else {
 						GCareer = *(SCareer *)(pTmp + 160);
+						Career_LoadExt(PC_SaveSelected());
 						GHasCareerLoaded = 1;
 						GLoadedCareerIsSaved = 0;
 						Front_ExtractASCIINameFromSJIS((char *)pTmp + 32, StoredCareerName);

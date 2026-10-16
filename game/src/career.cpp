@@ -7,6 +7,7 @@
 #include "game/bruce.h"
 #include "game/globals.h"
 #include "game/utils.h"
+#include "pc_mods.h"
 
 extern char *DefaultHighScoreInitials[];
 /* The tables of levels 10-19 (THPS1 has 10): retail took their base score from past the end of
@@ -55,13 +56,16 @@ void Career_Init() {
 				GCareer.HighScore[Level][Score].Name[1] = (*pHighScore)[1];
 				GCareer.HighScore[Level][Score].Name[2] = (*pHighScore)[2];
 				GCareer.HighScore[Level][Score].Score =
-				    (Level < 10 ? Levels[Level].HiScore : UnusedLevelHiScore[Level - 10]) +
+				    (Level < STOCK_LEVELS ? Levels[Level].HiScore
+				     : Level < 10         ? 0 /* the end entry's (mods' levels: Career_InitExt) */
+				                          : UnusedLevelHiScore[Level - 10]) +
 				    (7 - Score) * 5000;
 				GCareer.HighScore[Level][Score].Skater = Rnd(10);
 			}
 		}
 	}
 
+	Career_InitExt();
 	GHasCareerLoaded = 0;
 	GLoadedCareerIsSaved = 0;
 
@@ -191,7 +195,7 @@ void Options_Init() {
 /* C++ (CAREER.CPP), next to Career_GiveTape. Whether the current skater has goal (tape) `Goal` of
    the current level. */
 int Career_Got(int Goal) {
-	return (GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].Tapes[GLevel] >> Goal) & 1;
+	return (*Career_Tapes(GSkater[0]->mSkaterIndex, GLevel) >> Goal) & 1;
 }
 
 /* Career_GiveTape__Fii (0x80010724) */
@@ -201,23 +205,24 @@ int Career_Got(int Goal) {
 void Career_GiveTape(int Level, int Goal) {
 	int t = 0;
 
-	GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].Tapes[Level] |= 1 << Goal;
+	*Career_Tapes(GSkater[0]->mSkaterIndex, Level) |= 1 << Goal;
 
 	{
 		int j;
 
-		for (j = 0; j < 10; j++) {
+		/* (the game's own levels: the career save counts theirs) */
+		for (j = 0; j < STOCK_LEVELS; j++) {
 			int i;
 
 			for (i = 0; i < 5; i++) {
 				if (!Levels[j].isCompetition &&
-				    ((GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].Tapes[j] >> i) & 1))
+				    ((*Career_Tapes(GSkater[0]->mSkaterIndex, j) >> i) & 1))
 					t++;
 			}
 		}
 	}
 
-	GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].NumTapes = t;
+	Career_Progress(GSkater[0]->mSkaterIndex)->NumTapes = t;
 	GSkater[0]->mNumTapes++;
 }
 
@@ -230,14 +235,14 @@ void Career_GiveMedal(int Level, EMedalType medal) {
 	int s = 0;
 	int b = 0;
 
-	GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].Tapes[Level] |= 1 << medal;
+	*Career_Tapes(GSkater[0]->mSkaterIndex, Level) |= 1 << medal;
 
 	{
 		int i;
 
-		for (i = 0; i < 10; i++) {
+		for (i = 0; i < STOCK_LEVELS; i++) {
 			if (!Levels[i].isCompetition) {
-				uchar t = GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].Tapes[i];
+				uchar t = *Career_Tapes(GSkater[0]->mSkaterIndex, i);
 
 				if (t & 0x20)
 					g++;
@@ -251,9 +256,9 @@ void Career_GiveMedal(int Level, EMedalType medal) {
 		}
 	}
 
-	GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].NumGold = g;
-	GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].NumSilver = s;
-	GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].NumBronze = b;
+	Career_Progress(GSkater[0]->mSkaterIndex)->NumGold = g;
+	Career_Progress(GSkater[0]->mSkaterIndex)->NumSilver = s;
+	Career_Progress(GSkater[0]->mSkaterIndex)->NumBronze = b;
 }
 
 /* Career_LevelTapes__Fi (0x80010944) */
@@ -266,9 +271,106 @@ int Career_LevelTapes(int Level) {
 		int i;
 
 		for (i = 0; i < 5; i++)
-			if ((GCareer.CharacterProgress[GSkater[0]->mSkaterIndex].Tapes[GLevel] >> i) & 1)
+			if ((*Career_Tapes(GSkater[0]->mSkaterIndex, GLevel) >> i) & 1)
 				t++;
 	}
 
 	return t;
+}
+
+/* ---- PC: the mods' skaters and levels (game/career.h) ---- */
+
+/* where a skater index or level number out of the tables' range reads and writes (a save made
+   with mods that are gone) */
+static SSkaterCareer NoProgress;
+static uchar NoTapes;
+static SHighScore NoHighScores[8];
+static int NoMedalMessages;
+
+SSkaterCareer *Career_Progress(int skater) {
+	if ((unsigned)skater < STOCK_SKATERS)
+		return &GCareer.CharacterProgress[skater];
+	if ((unsigned)skater < MAX_SKATERS)
+		return &GCareerExt.CharacterProgress[skater - STOCK_SKATERS];
+	return &NoProgress;
+}
+
+uchar *Career_Tapes(int skater, int level) {
+	if ((unsigned)level < STOCK_LEVELS)
+		return &Career_Progress(skater)->Tapes[level];
+	if ((unsigned)skater < MAX_SKATERS && (unsigned)level < MAX_LEVELS - 1)
+		return &GCareerExt.Tapes[skater][level - STOCK_LEVELS];
+	return &NoTapes;
+}
+
+SHighScore *Career_HighScores(int level) {
+	if ((unsigned)level < STOCK_LEVELS)
+		return GCareer.HighScore[level];
+	if ((unsigned)level < MAX_LEVELS - 1)
+		return GCareerExt.HighScore[level - STOCK_LEVELS];
+	return NoHighScores;
+}
+
+int *Career_MedalMessages(int skater) {
+	if ((unsigned)skater < STOCK_SKATERS)
+		return &GCareer.Options.MedalMessagesUsed[skater];
+	if ((unsigned)skater < MAX_SKATERS)
+		return &GCareerExt.MedalMessagesUsed[skater - STOCK_SKATERS];
+	return &NoMedalMessages;
+}
+
+int Level_InMode(int level, int game) {
+	int mode;
+
+	if ((unsigned)level >= MAX_LEVELS)
+		return 0;
+
+	switch (game) {
+		case 1:
+			mode = LEVEL_CAREER;
+			break;
+		case 2:
+			mode = LEVEL_FREESKATE;
+			break;
+		case 3:
+			mode = LEVEL_SINGLESESSION;
+			break;
+		default:
+			mode = LEVEL_MULTIPLAYER;
+			break;
+	}
+
+	return (LevelModes[level] & mode) != 0;
+}
+
+/* The mods' part of a new career: no progress, and high-score tables made as Career_Init makes
+   the game's (only for levels mods add, so a game without them draws no extra random numbers). */
+void Career_InitExt() {
+	int count = 0;
+	char **pHighScore;
+	char *p = (char *)&GCareerExt;
+
+	for (int i = 0; i < (int)sizeof(SCareerExt); i++)
+		*p++ = 0;
+
+	for (pHighScore = DefaultHighScoreInitials; *pHighScore; pHighScore++)
+		count++;
+
+	for (int level = STOCK_LEVELS; level < MAX_LEVELS - 1 && *Levels[level].pLevelName; level++) {
+		SHighScore *h = Career_HighScores(level);
+
+		for (int rank = 0; rank < 8; rank++) {
+			pHighScore = &DefaultHighScoreInitials[Rnd(count)];
+			h[rank].Name[0] = (*pHighScore)[0];
+			h[rank].Name[1] = (*pHighScore)[1];
+			h[rank].Name[2] = (*pHighScore)[2];
+			h[rank].Score = Levels[level].HiScore + (7 - rank) * 5000;
+			h[rank].Skater = Rnd(10);
+		}
+	}
+}
+
+void Career_LoadExt(const char *name) {
+	Career_InitExt();
+	PC_ModCareerLoad(name);
 }

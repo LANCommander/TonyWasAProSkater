@@ -1,6 +1,7 @@
 /* CARD.CPP: the memory card: card headers and checksums, writing and loading saves and replays
    (files in the port, pc_saves.h), the card status/event polling and the career auto-load
    (declarations in game/card.h). */
+#include "pc_mods.h"
 #include "pc_saves.h"
 #include "pc_frame.h"
 #include "game/card.h"
@@ -341,8 +342,15 @@ int Card_Write(EFileType FileType, int NumBlocks) {
 			Chunks[n++].n = DataSize2;
 		}
 
-		return !PC_SaveWrite(FileType == THPS_SAVE_FILE ? PC_SAVE_CAREER : PC_SAVE_REPLAY,
-		                     SaveGameName, n, Chunks);
+		if (!PC_SaveWrite(FileType == THPS_SAVE_FILE ? PC_SAVE_CAREER : PC_SAVE_REPLAY,
+		                  SaveGameName, n, Chunks))
+			return 1;
+
+		/* the mods' skaters' and levels' progress, beside it (pc_mods.h) */
+		if (FileType == THPS_SAVE_FILE)
+			PC_ModCareerSave(SaveGameName);
+
+		return 0;
 	}
 
 	for (i = 0; i < 16; i++) {
@@ -911,6 +919,7 @@ int FUN_800154f4(void) {
 
 		if (s4 >= 0) {
 			Card_SetSelectedFile(SLOT_DIR[s4]);
+			Career_LoadExt(PC_SaveSelected());
 			Options_GetPreferences();
 			Options_SetPreferences();
 		}

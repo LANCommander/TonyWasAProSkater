@@ -265,6 +265,24 @@ at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.cpp`): each sou
 played in place of a stand-in in the bank's sample data, tuned to the PS1 banks' pitch. The Dreamcast
 logos (Crave, Treyarch, Sofdec) are not played. Needs the OpenGL renderer.
 
+### Mods
+
+Mods (`src/pc_mods.cpp`, `src/pc_modcontent.cpp`; the format is in
+[`docs/modding.md`](../../docs/modding.md)) are folders with a `mod.ini`, found in `Data/Mods`, in
+`Mods` beside Settings.ini, and in the folders `THPS_MODS` lists; their manifests are logged as
+they load. Each mod's `Data` folder is indexed after the game's (`Assets::BuildIndex`: one
+index, a layer per mod, the last layer's file of a name wins), so every file the game opens by
+name can be replaced or added without the game's code knowing. `Levels/*.ini` and
+`Skaters/*.ini` add levels and skaters: they are written into the game's tables after its own
+(`Levels[]`, `Stats[]`, sized `MAX_LEVELS`/`MAX_SKATERS` in `game/career.h`, with `GNumSkaters`
+and `LevelModes[]`). The level select shows the levels of the current game mode
+(`Level_InMode`); the skater selects step over Officer Dick while he is locked
+(`Front_StepSkater`). Career progress goes through `Career_Progress`/`Career_Tapes`/
+`Career_HighScores`/`Career_MedalMessages`: the game's skaters and levels in `GCareer` as
+before, the mods' in `GCareerExt`, which `PC_ModCareerLoad`/`PC_ModCareerSave` keep in
+`<name>.mods.ini` beside the career, by name. When mods add levels or skaters the game's heap
+is 8 MB (64-bit: 16 MB) bigger: the selects hold every skater's model and every level's picture.
+
 ## Checking changes
 
 The port's changes are checked by running it deterministically (`THPS_DETERMINISTIC=1`, scripted
@@ -285,6 +303,7 @@ A file is the game's save data without the PS1 card header (icon, Shift-JIS titl
 most recently is loaded at startup, as on the PS1, without the "loading from memory card" pause.
 PS1 saves in `.mcs` form (MemcardRex, emulators) put in the `Saves` folder are converted the next
 time the game lists saves (at startup, or on a save or load screen) and renamed `.mcs.imported`.
+A career's progress with mods' skaters and levels is in `Careers\<name>.mods.ini` (see Mods).
 
 ## Graphics
 
@@ -430,6 +449,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 |---|---|
 | `THPS_DISC` | the disc image for the first-startup extraction (else found next to the exe or in `extern/`); a `.gdi` is the Dreamcast disc |
 | `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
+| `THPS_MODS` | more mods: mod folders or folders of mods, `;`-separated (Linux `:`), loaded after `Data/Mods` and the player's `Mods`; `none` loads no mods at all |
 | `THPS_SAVE_DIR` | the saves folder (default `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`; Linux `~/.local/share/Neversoft/Tony Hawk's Pro Skater/Saves`) |
 | `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |
 | `THPS_WINDOW=WxH` | a window of that size (drawing area), whatever Settings.ini says; headless too |

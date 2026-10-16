@@ -25,7 +25,7 @@ public:
     void Path(char *out, int n, const char *rel);
 
     /* The file under Data/ with this name, in any folder ("\\SUICIDE.STR;1", "skware.psx"): true
-     * and its path, or false. */
+     * and its path, or false. A mod's file of that name wins (pc/mods.h). */
     bool Find(const char *discName, char *path, int n) const;
     /* The same for a movie or song ("\\HAWK.STR;1"): the STR, else the Dreamcast's film of it
      * ("hawk.sfd"; ATVILOGO is activision.sfd, LOGO never.sfd, BURNQUIS burnquist.sfd). */
@@ -37,6 +37,7 @@ public:
 private:
     struct IndexEntry {
         char *name, *path;
+        int layer;   /* 0: Data itself, else 1 + the mod (pc/mods.h) whose Data it is in */
     };
 
     const char *Root();
@@ -49,8 +50,9 @@ private:
     bool ManifestIsDreamcast();
     void ExtractDreamcast(const StrFile *str, int nstr);
     void DreamcastFixups();
+    static int CmpName(const void *a, const void *b);
     static int CmpIndex(const void *a, const void *b);
-    void IndexDir(const char *dir);
+    void IndexDir(const char *dir, int layer);
     void BuildIndex();
 
     char m_root[MAX_PATH] = {};

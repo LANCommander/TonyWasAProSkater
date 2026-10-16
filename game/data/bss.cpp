@@ -3,6 +3,7 @@
  * pointers, so that a 64-bit build has room for them). Value types without pointers are plain
  * arrays of their size. */
 #include "psxdata.h"
+#include "game/career.h"
 #include "game/panel.h"
 #include "game/tricktips.h"
 
@@ -207,12 +208,12 @@ char DAT_800d33d4[3][15][16];
 SlicedImage *DAT_800d36a4[3][15];
 
 /* the skater selects and the career level select */
-int DAT_800d3758[12];
-int DAT_800d3788[11];
-int DAT_800d37b4[12];
-int DAT_800d37e4[11];
-char *DAT_800d3810[12];
-int DAT_800d3840[10];
+int DAT_800d3758[MAX_SKATERS + 1];
+int DAT_800d3788[MAX_SKATERS];
+int DAT_800d37b4[MAX_SKATERS + 1];
+int DAT_800d37e4[MAX_SKATERS];
+char *DAT_800d3810[MAX_LEVELS + 2];
+int DAT_800d3840[MAX_LEVELS];
 char DAT_800d3868[32];
 
 /* mess */

@@ -31,6 +31,9 @@ class Saves {
     /* Fills the chunks from the start of the payload: false if the file is missing, isn't a save
      * of that type, or is shorter than the chunks. */
     bool Read(int type, const char *name, int n, const PCSaveChunk *chunks);
+    /* The file beside a career save that keeps its progress with mods' skaters and levels
+     * (<name>.mods.ini; pc/mod_content.h). */
+    bool CareerModsPath(const char *name, char *out, int n);
 
   private:
     const char *RootDir();

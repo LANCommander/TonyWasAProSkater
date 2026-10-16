@@ -85,7 +85,7 @@ void CBruce::GetStats(int Skater) {
 		int highest_board = 0;
 
 		while (highest_board < 7) {
-			if (GCareer.CharacterProgress[mSkaterIndex].NumTapes <
+			if (Career_Progress(mSkaterIndex)->NumTapes <
 			    Stats[mSkaterIndex].Boards[highest_board + 1].Req)
 				break;
 

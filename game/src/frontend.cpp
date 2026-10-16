@@ -104,9 +104,6 @@ struct C28 {
 	char c[28];
 };
 
-/* GCareer.CharacterProgress as the C sources addressed it, through a pointer rather than the
-   declared array (gcc lays the tapes cheat's loops out differently for the two) */
-#define CAREER_PROGRESS ((SSkaterCareer *)((uchar *)&GCareer + 8))
 /* The C sources' own views of a few globals, for the functions whose code depends on them
    (`using` in the function): gcc treats an array of unknown size, or a trailing one-element array,
    differently from the declared types (it may not load ahead of the test, it indexes from the
@@ -206,7 +203,7 @@ extern int DAT_800d22ec;
 extern int DAT_800d22f0;
 extern int DAT_800d22d8;
 extern int DAT_800be438[];
-extern int DAT_800d3788[11];
+extern int DAT_800d3788[MAX_SKATERS];
 extern int DAT_800d231c[2];
 extern int DAT_800d230c;
 extern int DAT_800d2310;
@@ -490,7 +487,7 @@ void Front_InitBoardPictures2P(void) {
 		DAT_800d22c8 = 1;
 
 		for (int i = 0; i < DAT_800d2c1c[0]; i++) {
-			if (GCareer.CharacterProgress[DAT_800d22d0[p]].NumTapes >=
+			if (Career_Progress(DAT_800d22d0[p])->NumTapes >=
 			    Stats[DAT_800d22d0[p]].Boards[i].Req) {
 				strcpy(DAT_800d2c2c[p][0][i], Stats[DAT_800d22d0[p]].Boards[i].File);
 
@@ -787,7 +784,7 @@ int Front_BoardSelect2P(int player) {
 		n[p] = 0;
 
 		while (n[p] < lastBoard) {
-			if (GCareer.CharacterProgress[DAT_800d22d0[p]].NumTapes <
+			if (Career_Progress(DAT_800d22d0[p])->NumTapes <
 			    Stats[DAT_800d22d0[p]].Boards[n[p] + 1].Req)
 				break;
 
@@ -1224,7 +1221,7 @@ int Front_BoardSelect2P(int player) {
 					textX[p] += textSpeed[p];
 
 					if (textTimer[p] == 0) {
-						if (GCareer.CharacterProgress[DAT_800d22d0[p]].NumTapes >=
+						if (Career_Progress(DAT_800d22d0[p])->NumTapes >=
 						    Stats[DAT_800d22d0[p]].Boards[deck[p]].Req)
 							strcpy(text[p], Stats[DAT_800d22d0[p]].Boards[deck[p]].Name);
 						else
@@ -1277,7 +1274,7 @@ int Front_BoardSelect2P(int player) {
 				GBoardStats[p].s[3] = 3;
 				GBoardStats[p].s[4] = DAT_800be42c[trucks[p]];
 
-				if (GCareer.CharacterProgress[DAT_800d22d0[p]].NumTapes >=
+				if (Career_Progress(DAT_800d22d0[p])->NumTapes >=
 				    Stats[DAT_800d22d0[p]].Boards[deck[p]].Req) {
 					int j;
 
@@ -1381,7 +1378,7 @@ void Front_InitBoardPictures1P(void) {
 	DAT_800d33a4[2] = GCareer.LastWheel[0];
 
 	for (int i = 0; i < DAT_800d33c4[0]; i++) {
-		if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes >= Stats[DAT_800d22f0].Boards[i].Req)
+		if (Career_Progress(DAT_800d22f0)->NumTapes >= Stats[DAT_800d22f0].Boards[i].Req)
 			strcpy(DAT_800d33d4[0][i], Stats[DAT_800d22f0].Boards[i].File);
 		else
 			strcpy(DAT_800d33d4[0][i], "b1lock01.bmp");
@@ -1652,7 +1649,7 @@ int Front_BoardSelect1P(int player) {
 	base[3] = Stats[DAT_800d22f0].Stats[3];
 
 	while (n < 7) {
-		if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes <
+		if (Career_Progress(DAT_800d22f0)->NumTapes <
 		    Stats[DAT_800d22f0].Boards[n + 1].Req)
 			break;
 
@@ -2036,7 +2033,7 @@ int Front_BoardSelect1P(int player) {
 				textX += textSpeed;
 
 				if (textTimer == 0) {
-					if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes >=
+					if (Career_Progress(DAT_800d22f0)->NumTapes >=
 					    Stats[DAT_800d22f0].Boards[deck].Req) {
 						strcpy(text, Stats[DAT_800d22f0].Boards[deck].Name);
 					} else if (GGame == 1) {
@@ -2110,7 +2107,7 @@ int Front_BoardSelect1P(int player) {
 			GBoardStats[0].s[3] = Stats[DAT_800d22f0].Boards[n].Stats[3];
 			GBoardStats[0].s[4] = DAT_800be438[trucks];
 
-			if (GCareer.CharacterProgress[DAT_800d22f0].NumTapes >=
+			if (Career_Progress(DAT_800d22f0)->NumTapes >=
 			    Stats[DAT_800d22f0].Boards[deck].Req) {
 				int j;
 
@@ -2172,6 +2169,21 @@ int Front_BoardSelect1P(int player) {
 /* Front_InitSkaterSpool2P__Fv (0x80055eb8) */
 /* Credits state reset. The start position is the midpoint of two career values on a circular
    scale of 11, taking the shorter way round. */
+/* PC: the skater the selects show after (dir 1) or before (dir -1) skater s: the game's ten,
+   Officer Dick (10) once unlocked, then the mods' skaters. */
+static int Front_StepSkater(int s, int dir, int secret) {
+	do {
+		s += dir;
+
+		if (s >= GNumSkaters)
+			s = 0;
+		else if (s < 0)
+			s = GNumSkaters - 1;
+	} while (s == 10 && !secret);
+
+	return s;
+}
+
 void Front_InitSkaterSpool2P(void) {
 	int i;
 	unsigned char hi, lo;
@@ -2179,7 +2191,7 @@ void Front_InitSkaterSpool2P(void) {
 	DAT_800d231c[0] = 0;
 	DAT_800d231c[1] = 0;
 
-	for (i = 0; i < 11; i++)
+	for (i = 0; i < GNumSkaters; i++)
 		DAT_800d3788[i] = 0;
 
 	DAT_800d230c = -1;
@@ -2187,15 +2199,15 @@ void Front_InitSkaterSpool2P(void) {
 	lo = GCareer.LastSkater[1] < GCareer.LastSkater[0] ? GCareer.LastSkater[1] : GCareer.LastSkater[0];
 
 	{
-		int h1 = hi - 11;
+		int h1 = hi - GNumSkaters;
 
 		if (lo - h1 < hi - lo) {
-			int h2 = hi + 11;
+			int h2 = hi + GNumSkaters;
 
 			DAT_800d2310 = (lo + h2) / 2;
 
-			if (DAT_800d2310 >= 11)
-				DAT_800d2310 -= 11;
+			if (DAT_800d2310 >= GNumSkaters)
+				DAT_800d2310 -= GNumSkaters;
 		} else {
 			DAT_800d2310 = (lo + hi) / 2;
 		}
@@ -2225,21 +2237,22 @@ void Front_SpoolNextSkater2P() {
 	if (a == -1) {
 		DAT_800d230c = 0;
 	} else {
-		if (a < 5)
-			n = 10;
-		else if (a < 6) {
+		/* out from the middle skater: 0, -1, +1, -2, ... */
+		if (a < GNumSkaters / 2)
+			n = GNumSkaters - 1;
+		else if (a == GNumSkaters / 2) {
 			DAT_800d2314 = 1;
 			return;
 		} else
-			n = 11;
+			n = GNumSkaters;
 
 		DAT_800d230c = n - a;
 	}
 
 	DAT_800d22f4 = DAT_800d230c + DAT_800d2310;
 
-	if (!(DAT_800d22f4 < 11))
-		DAT_800d22f4 = DAT_800d22f4 - 11;
+	if (!(DAT_800d22f4 < GNumSkaters))
+		DAT_800d22f4 = DAT_800d22f4 - GNumSkaters;
 
 	DAT_800d3758[DAT_800d22f4] = Spool_PSX(Stats[DAT_800d22f4].FrontName, 2, 1);
 }
@@ -2266,15 +2279,15 @@ void Front_FreeSkaterSpool2P() {
 
 	v = DAT_800d230c + DAT_800d2310;
 
-	if (v >= 11)
-		v -= 11;
+	if (v >= GNumSkaters)
+		v -= GNumSkaters;
 
 	j = 0;
 
 	if (DAT_800d2314 == 0)
 		DAT_800d3788[v] = 1;
 
-	for (j = 0; j < 11; j++) {
+	for (j = 0; j < GNumSkaters; j++) {
 		if (DAT_800d3788[j]) {
 			ProcessNewPSX(DAT_800d3758[j]);
 			Spool_ClearPSX(Stats[j].FrontName);
@@ -2435,7 +2448,6 @@ int Front_SkaterSelect2P(void) {
 	int speed[2];
 	int shown[2];
 	int result;
-	int numSkaters;
 	SViewport *vp;
 	int i;
 	int p;
@@ -2458,12 +2470,10 @@ int Front_SkaterSelect2P(void) {
 
 	result = 0;
 	DAT_800d1c20 = 0;
-	numSkaters = 10;
 
 	for (i = 0; i < 11; i++) {
-		if (GCareer.CharacterProgress[i].NumTapes >= 30) {
+		if (Career_Progress(i)->NumTapes >= 30) {
 			DAT_800d1c20 = 1;
-			numSkaters = 11;
 		}
 	}
 
@@ -2473,7 +2483,7 @@ int Front_SkaterSelect2P(void) {
 		if (!DAT_800d1c24 && DAT_800d1c20 && DAT_800d2304[1 - k] != 10)
 			DAT_800d2304[k] = 10;
 
-		if (DAT_800d2304[k] == 10 && !DAT_800d1c20)
+		if ((DAT_800d2304[k] == 10 && !DAT_800d1c20) || DAT_800d2304[k] >= GNumSkaters)
 			DAT_800d2304[k] = k;
 	}
 
@@ -2482,12 +2492,8 @@ int Front_SkaterSelect2P(void) {
 	Pad_ClearTriggers(&Pad[0]);
 	Pad_ClearTriggers(&Pad[1]);
 
-	if (DAT_800d2304[0] == DAT_800d2304[1]) {
-		DAT_800d2304[1] = DAT_800d2304[0] + 1;
-
-		if (DAT_800d2304[1] >= numSkaters)
-			DAT_800d2304[1] = 0;
-	}
+	if (DAT_800d2304[0] == DAT_800d2304[1])
+		DAT_800d2304[1] = Front_StepSkater(DAT_800d2304[0], 1, DAT_800d1c20);
 
 	Pack_DefragmentFully();
 	Front_InitSkaterPack(2);
@@ -2800,8 +2806,7 @@ int Front_SkaterSelect2P(void) {
 						}
 					}
 
-					if (++DAT_800d2304[p] >= numSkaters)
-						DAT_800d2304[p] = 0;
+					DAT_800d2304[p] = Front_StepSkater(DAT_800d2304[p], 1, DAT_800d1c20);
 
 					DAT_800d231c[p] = DAT_800d3788[DAT_800d2304[p]];
 					Front_LoadSkaterTextures2P();
@@ -2836,8 +2841,7 @@ int Front_SkaterSelect2P(void) {
 						}
 					}
 
-					if (--DAT_800d2304[p] < 0)
-						DAT_800d2304[p] = numSkaters - 1;
+					DAT_800d2304[p] = Front_StepSkater(DAT_800d2304[p], -1, DAT_800d1c20);
 
 					DAT_800d231c[p] = DAT_800d3788[DAT_800d2304[p]];
 					Front_LoadSkaterTextures2P();
@@ -3037,7 +3041,7 @@ int Front_SkaterSelect2P(void) {
 				best[p] = 0;
 
 				while (best[p] < 7) {
-					if (GCareer.CharacterProgress[DAT_800d2304[p]].NumTapes <
+					if (Career_Progress(DAT_800d2304[p])->NumTapes <
 					    Stats[DAT_800d2304[p]].Boards[best[p] + 1].Req)
 						break;
 
@@ -3272,7 +3276,7 @@ void Front_InitSkaterSpool1P(void) {
 	DAT_800d2338 = -1;
 	DAT_800d2340 = 0;
 
-	for (i = 0; i < 11; i++)
+	for (i = 0; i < GNumSkaters; i++)
 		DAT_800d37e4[i] = 0;
 
 	DAT_800d2344 = 0;
@@ -3300,21 +3304,22 @@ void Front_SpoolNextSkater1P() {
 	if (a == -1) {
 		DAT_800d2338 = 0;
 	} else {
-		if (a < 5)
-			n = 10;
-		else if (a < 6) {
+		/* out from the middle skater: 0, -1, +1, -2, ... */
+		if (a < GNumSkaters / 2)
+			n = GNumSkaters - 1;
+		else if (a == GNumSkaters / 2) {
 			DAT_800d2340 = 1;
 			return;
 		} else
-			n = 11;
+			n = GNumSkaters;
 
 		DAT_800d2338 = n - a;
 	}
 
 	DAT_800d2324 = DAT_800d2338 + DAT_800d233c;
 
-	if (!(DAT_800d2324 < 11))
-		DAT_800d2324 = DAT_800d2324 - 11;
+	if (!(DAT_800d2324 < GNumSkaters))
+		DAT_800d2324 = DAT_800d2324 - GNumSkaters;
 
 	if (*Stats[DAT_800d2324].FrontName)
 		DAT_800d37b4[DAT_800d2324] = Spool_PSX(Stats[DAT_800d2324].FrontName, 2, 1);
@@ -3333,15 +3338,15 @@ void Front_FreeSkaterSpool1P() {
 
 	v = DAT_800d2338 + DAT_800d233c;
 
-	if (v >= 11)
-		v -= 11;
+	if (v >= GNumSkaters)
+		v -= GNumSkaters;
 
 	i = 0;
 
 	if (DAT_800d2340 == 0)
 		DAT_800d37e4[v] = 1;
 
-	for (i = 0; i < 11; i++) {
+	for (i = 0; i < GNumSkaters; i++) {
 		if (*Stats[i].FrontName && DAT_800d37e4[i]) {
 			Front_ResetSkaterPack();
 			ProcessNewPSX(DAT_800d37b4[i]);
@@ -3492,21 +3497,19 @@ int Front_SkaterSelect1P() {
 	int i;
 
 	int result = 0;
-	int numSkaters = 10;
 
 	DAT_800d1c60 = 0;
 	DAT_800d1c40 = GCareer.LastSkater[0];
 
 	for (i = 0; i < 11; i++) {
-		if (GCareer.CharacterProgress[i].NumTapes >= 30) {
+		if (Career_Progress(i)->NumTapes >= 30) {
 			DAT_800d1c60 = 1;
-			numSkaters = 11;
 		}
 	}
 
 	if (!DAT_800d1c64 && DAT_800d1c60)
 		DAT_800d1c40 = 10;
-	else if (DAT_800d1c40 == 10 && !DAT_800d1c60)
+	else if ((DAT_800d1c40 == 10 && !DAT_800d1c60) || DAT_800d1c40 >= GNumSkaters)
 		DAT_800d1c40 = 0;
 
 	DAT_800d1c64 = DAT_800d1c60;
@@ -3600,7 +3603,7 @@ int Front_SkaterSelect1P() {
 	viewport[1] = 480;
 
 	for (int k = 0; k < 11; k++) {
-		if (GCareer.CharacterProgress[k].NumTapes) {
+		if (Career_Progress(k)->NumTapes) {
 			noTapes = 0;
 			break;
 		}
@@ -3833,10 +3836,10 @@ int Front_SkaterSelect1P() {
 					}
 				}
 
-				if (dir == 0 && ++DAT_800d1c40 >= numSkaters)
-					DAT_800d1c40 = 0;
-				else if (dir == 1 && --DAT_800d1c40 < 0)
-					DAT_800d1c40 = numSkaters - 1;
+				if (dir == 0)
+					DAT_800d1c40 = Front_StepSkater(DAT_800d1c40, 1, DAT_800d1c60);
+				else if (dir == 1)
+					DAT_800d1c40 = Front_StepSkater(DAT_800d1c40, -1, DAT_800d1c60);
 
 				DAT_800d2344 = 0;
 				Front_ResetSkaterPack();
@@ -3920,7 +3923,7 @@ int Front_SkaterSelect1P() {
 			if (--blink == 0)
 				blink = 96;
 
-			if (!noTapes && !state && !GCareer.CharacterProgress[DAT_800d1c40].NumTapes &&
+			if (!noTapes && !state && !Career_Progress(DAT_800d1c40)->NumTapes &&
 			    blink >= 23 && GGame == 1) {
 				Mess_SetCurrentFont("stats1.fnt");
 				Mess_SetRGB(250, 190, 60, 0);
@@ -3959,7 +3962,7 @@ int Front_SkaterSelect1P() {
 				arrow[3]->draw(585, 95, 0, -1, -1, -1);
 		}
 
-		if (medalTimer && GGame == 1 && GCareer.CharacterProgress[DAT_800d1c40].NumTapes) {
+		if (medalTimer && GGame == 1 && Career_Progress(DAT_800d1c40)->NumTapes) {
 			itemBox->draw(395, 313, 0, -1, -1, -1);
 			Mess_SetCurrentFont("tapes1.fnt");
 			Mess_SetTextJustify(1);
@@ -3987,7 +3990,7 @@ int Front_SkaterSelect1P() {
 			int best = 0;
 
 			while (best < 7) {
-				if (GCareer.CharacterProgress[DAT_800d1c40].NumTapes <
+				if (Career_Progress(DAT_800d1c40)->NumTapes <
 				    Stats[DAT_800d1c40].Boards[best + 1].Req)
 					break;
 
@@ -4058,7 +4061,7 @@ int Front_SkaterSelect1P() {
 				medalTimer = 3;
 		} else if (medalTimer) {
 			Mess_SetCurrentFont("tapes1.fnt");
-			SSkaterCareer *pCareer = &GCareer.CharacterProgress[DAT_800d1c40];
+			SSkaterCareer *pCareer = Career_Progress(DAT_800d1c40);
 
 			*flags = pCareer->NumTapes;
 			uint n = *flags;
@@ -5097,7 +5100,7 @@ extern "C" void FUN_8005d00c(void) {
 		s = FUN_80063a5c(o2, 8, FrontLoader_TakeFile((char *)"Pressx.bmp"), 0, 440, 64, 128);
 
 	DAT_800d1d04 = s;
-	DAT_800d1d18 = GCareer.CharacterProgress[DAT_800d234c].Tapes[DAT_800d1cf4];
+	DAT_800d1d18 = *Career_Tapes(DAT_800d234c, DAT_800d1cf4);
 	o3 = (char *)__nw__6CClassUi(SIZEOF_SPRITE);
 	s = 0;
 
@@ -5483,19 +5486,23 @@ int Front_MainMenu(int a) {
 	FrontLoader_Defragment();
 
 	if (DAT_800d1d24) {
-		for (i = 0; i < 11; i++) {
-			CAREER_PROGRESS[i].NumTapes = 0;
-			CAREER_PROGRESS[i].NumGold = 0;
-			CAREER_PROGRESS[i].NumSilver = 0;
-			CAREER_PROGRESS[i].NumBronze = 0;
+		for (i = 0; i < GNumSkaters; i++) {
+			Career_Progress(i)->NumTapes = 0;
+			Career_Progress(i)->NumGold = 0;
+			Career_Progress(i)->NumSilver = 0;
+			Career_Progress(i)->NumBronze = 0;
 
 			for (j = 0; j < 10; j++) {
-				CAREER_PROGRESS[i].Tapes[j] = 255;
-				CAREER_PROGRESS[i].NumTapes += 5;
-				CAREER_PROGRESS[i].NumGold += 1;
-				CAREER_PROGRESS[i].NumSilver += 1;
-				CAREER_PROGRESS[i].NumBronze += 1;
+				*Career_Tapes(i, j) = 255;
+				Career_Progress(i)->NumTapes += 5;
+				Career_Progress(i)->NumGold += 1;
+				Career_Progress(i)->NumSilver += 1;
+				Career_Progress(i)->NumBronze += 1;
 			}
+
+			/* PC: the mods' levels too (their tapes aren't in the career's counts) */
+			for (; j < MAX_LEVELS - 1; j++)
+				*Career_Tapes(i, j) = 255;
 		}
 	}
 
@@ -7120,7 +7127,7 @@ int FUN_800605c0(int a) {
 		cnt[i] = 0;
 
 		for (j = 0; j < 9; j++) {
-			cnt[i] += (CAREER_PROGRESS[i].Tapes[j] >> 5) & 1;
+			cnt[i] += (*Career_Tapes(i, j) >> 5) & 1;
 		}
 	}
 
@@ -7161,7 +7168,7 @@ int FUN_80060738(int arg, int *p) {
 	SMenuFlags7 b;
 
 	for (i = 0; i < 11; i++) {
-		if (GCareer.CharacterProgress[i].Tapes[8] & 224)
+		if (*Career_Tapes(i, 8) & 224)
 			flag = 1;
 	}
 
@@ -7195,19 +7202,23 @@ int FUN_80060854(int a) {
 		DAT_800d1d7c = 1;
 		DAT_800d1d80 = 1;
 
-		for (i = 0; i < 11; i++) {
-			CAREER_PROGRESS[i].NumTapes = 0;
-			CAREER_PROGRESS[i].NumGold = 0;
-			CAREER_PROGRESS[i].NumSilver = 0;
-			CAREER_PROGRESS[i].NumBronze = 0;
+		for (i = 0; i < GNumSkaters; i++) {
+			Career_Progress(i)->NumTapes = 0;
+			Career_Progress(i)->NumGold = 0;
+			Career_Progress(i)->NumSilver = 0;
+			Career_Progress(i)->NumBronze = 0;
 
 			for (j = 0; j < 10; j++) {
-				CAREER_PROGRESS[i].Tapes[j] = 255;
-				CAREER_PROGRESS[i].NumTapes += 5;
-				CAREER_PROGRESS[i].NumGold += 1;
-				CAREER_PROGRESS[i].NumSilver += 1;
-				CAREER_PROGRESS[i].NumBronze += 1;
+				*Career_Tapes(i, j) = 255;
+				Career_Progress(i)->NumTapes += 5;
+				Career_Progress(i)->NumGold += 1;
+				Career_Progress(i)->NumSilver += 1;
+				Career_Progress(i)->NumBronze += 1;
 			}
+
+			/* PC: the mods' levels too (their tapes aren't in the career's counts) */
+			for (; j < MAX_LEVELS - 1; j++)
+				*Career_Tapes(i, j) = 255;
 		}
 	} else if (v == 114) {
 		Cheat_LevelSelect = Cheat_LevelSelect ^ 1;

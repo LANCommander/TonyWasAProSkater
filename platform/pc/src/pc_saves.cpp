@@ -178,6 +178,14 @@ bool Saves::SavePath(int type, const char *name, char *out, int n) {
     return true;
 }
 
+bool Saves::CareerModsPath(const char *name, char *out, int n) {
+    if (!SavePath(PC_SAVE_CAREER, name, out, n))
+        return false;
+    size_t len = strlen(out), ext = strlen(s_typeExt[PC_SAVE_CAREER]);
+    snprintf(out + len - ext, n - (len - ext), ".mods.ini");
+    return true;
+}
+
 /* ---- PS1 saves ----------------------------------------------------------------------------- */
 
 /* One .mcs file: a 128-byte card directory frame, then what Card_Write wrote. */

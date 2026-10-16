@@ -43,8 +43,67 @@ typedef struct {
     uint32_t BoardChecksum, WheelChecksum, TruckChecksum;
     GameBoard Boards[8];
 } GameStats;
-#define GAME_SKATERS 11
-extern GameStats Stats[GAME_SKATERS];
+#define GAME_SKATERS 11      /* the game's own (game/career.h STOCK_SKATERS) */
+#define GAME_MAX_SKATERS 32  /* with the mods' (MAX_SKATERS) */
+extern GameStats Stats[GAME_MAX_SKATERS];
+extern int32_t GNumSkaters; /* in use */
+
+/* SLevel (game/career.h): the levels; the game's nine, the mods', then an entry with an empty
+ * name */
+typedef struct {
+    char *pLevelName, *pCityName, *pVab; /* "Warehouse", "Woodland Hills", "ware" */
+    int32_t isCompetition, isLocked;
+    char *pTRGName; /* "SkWare_T" */
+    uint32_t GoldScore, SilverScore, BronzeScore;
+    char *pImageName; /* "levsel0.bmp" */
+    int32_t map_loc[2];
+    char *pLoadImage, *pBackImage, *pGoalName;
+    int32_t TapesToUnlock, MedalsToUnlock, HiScore, ProScore, Crowd;
+    int32_t ExtraPolyBuffer[2], TrickTipMask[2], FMV;
+    int32_t IntroStartPosX, IntroStartPosY, IntroStartPosZ;
+    int16_t IntroStartAngX, IntroStartAngY, IntroStartAngZ;
+} GameLevel;
+#define GAME_LEVELS 9      /* the game's own (STOCK_LEVELS) */
+#define GAME_MAX_LEVELS 32 /* entries, the end entry included (MAX_LEVELS) */
+#define GAME_MOD_LEVELS (GAME_MAX_LEVELS - 1 - GAME_LEVELS)
+#define GAME_MOD_SKATERS (GAME_MAX_SKATERS - GAME_SKATERS)
+extern GameLevel Levels[GAME_MAX_LEVELS];
+/* the game modes a level is in (LEVEL_*) */
+#define GAME_LEVEL_CAREER 1
+#define GAME_LEVEL_SINGLESESSION 2
+#define GAME_LEVEL_FREESKATE 4
+#define GAME_LEVEL_MULTIPLAYER 8
+extern int32_t LevelModes[GAME_MAX_LEVELS];
+
+/* SCareer (game/career.h): the career save */
+typedef struct {
+    uint8_t NumTapes, NumBronze, NumSilver, NumGold;
+    uint8_t Tapes[10]; /* per level: goals in bits 0-4, gold/silver/bronze 0x20/0x40/0x80 */
+} GameSkaterCareer;
+typedef struct {
+    char Name[4];
+    uint8_t Skater;
+    uint32_t Score;
+} GameHighScore;
+typedef struct {
+    int32_t Version, MaxTapes;
+    GameSkaterCareer CharacterProgress[GAME_SKATERS];
+    char pada2[2];
+    GameHighScore HighScore[20][8];
+    char LastSkater[2], LastDeck[2], LastWheel[2], LastTrucks[2];
+    uint8_t LastLevel;
+    uint16_t TimeStamp;
+    uint8_t Options[0x1a0];
+} GameCareer;
+extern GameCareer GCareer;
+/* SCareerExt: the career's progress with the mods' skaters and levels */
+typedef struct {
+    GameSkaterCareer CharacterProgress[GAME_MOD_SKATERS];
+    uint8_t Tapes[GAME_MAX_SKATERS][GAME_MOD_LEVELS];
+    GameHighScore HighScore[GAME_MOD_LEVELS][8];
+    int32_t MedalMessagesUsed[GAME_MOD_SKATERS];
+} GameCareerExt;
+extern GameCareerExt GCareerExt;
 
 /* the sound effects (SFX_PlayX, game/data/unnamed.cpp): per id the VAB voice word (bit 31 loops,
  * bit 30 the level's bank, program in bits 16-22, a mask of its tones in the low half), then

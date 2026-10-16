@@ -264,8 +264,8 @@ int Crowd[6];
 /* SVideoRestart (THPS2 demo: SVideoRestart) */
 int GVideoRestart[5];
 
-/* SStats[11] (THPS2 demo: SStats[14]) */
-SStats Stats[11] = {
+/* SStats[11] (THPS2 demo: SStats[14]), then room for the mods' skaters */
+SStats Stats[MAX_SKATERS] = {
 	{
 		"hawk", "hawk", "hawk_fe", 0, 0, 1, 2, 18, 8, {}, {3, 7, 7, 4}, "Tony Hawk",
 		{"31", "USA", "Carlsbad", "16", "Goofy", "6'2"}, 0x1e64cc11, 0x59bd3dd8, 0x52158ad3,
@@ -328,8 +328,9 @@ SStats Stats[11] = {
 	},
 };
 
-/* SLevel[10] (THPS2 demo: SLevel[10]) */
-SLevel Levels[10] = {
+/* SLevel[10] (THPS2 demo: SLevel[10]), then room for the mods' levels (the end entry moves after
+   them) */
+SLevel Levels[MAX_LEVELS] = {
 	{
 		"Warehouse", "Woodland Hills", "ware", 0, 0, "SkWare_T", 0, 0, 0, "levsel0.bmp", {136, 358},
 		"load_war.bmp", "back_war.bmp", "boxes", 0, 0, 5000, 15000, 0, {50000, 50000},
@@ -479,6 +480,11 @@ SViewport BottomRightBigViewport = {512, 240, 208, 88, 10, 30000, 0};
 
 /* SCareer (THPS2 demo: SCareer) */
 int GCareer[628];
+
+/* PC: the mods' skaters and levels (game/career.h) */
+int GNumSkaters = STOCK_SKATERS;
+int LevelModes[MAX_LEVELS] = {15, 15, 15, 15, 15, 15, 15, 15, 15};
+SCareerExt GCareerExt;
 
 int DAT_800a7214[3];
 
@@ -645,7 +651,7 @@ int DAT_800bf100[1] = {
 };
 
 /* DAT_800bf104 (a PadBuffer, zero until its static constructor builds it): src/frontend.cpp (FUN_8005de08) */
-SlicedImage *DAT_800bf2f0[10];
+SlicedImage *DAT_800bf2f0[MAX_LEVELS];
 
 /* GVInfo2 (0x800bf3d8) is GVInfo1[1] (data/video.cpp) */
 
