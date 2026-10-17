@@ -155,7 +155,7 @@ CBody::CBody() : mFric(1, 1, 1), mAngFric(1, 1, 1) {
 	mNode = 0xffff;
 	mShadowScale = 50;
 	mShadowThreshold = 300;
-	mCBodyFlags |= 18;
+	mCBodyFlags |= CBODY_AUTO_SUSPEND | CBODY_FLAG_10;
 	mRMinor = 50;
 }
 
@@ -181,7 +181,7 @@ void CBody::AttachTo(CBody **pp_list) {
 /* Unlinks the body from a list (taking it off the suspended list first if it is
    suspended and the list is another one). */
 void CBody::DeleteFrom(CBody **pp_list) {
-	if ((mCBodyFlags & 1) && pp_list != &SuspendedList)
+	if ((mCBodyFlags & CBODY_SUSPENDED) && pp_list != &SuspendedList)
 		UnSuspend();
 
 	if (mNextItem)
@@ -225,31 +225,31 @@ void CBody::Suspend(CBody **pp_list) {
 	DeleteFrom(pp_list);
 	AttachTo(&SuspendedList);
 
-	mCBodyFlags |= 1;
+	mCBodyFlags |= CBODY_SUSPENDED;
 }
 
 /* UnSuspend__5CBody (0x80043a80) */
 /* Moves a suspended body from the suspended list back onto the list it came from. */
 void CBody::UnSuspend() {
-	if (!(mCBodyFlags & 1))
+	if (!(mCBodyFlags & CBODY_SUSPENDED))
 		return;
 
 	DeleteFrom(&SuspendedList);
 	AttachTo(mppOriginalList);
 
-	mCBodyFlags &= ~1;
+	mCBodyFlags &= ~CBODY_SUSPENDED;
 }
 
 /* ShadowOn__5CBody (0x80043ae0) */
 /* Turns the body's shadow on. */
 void CBody::ShadowOn() {
-	mCBodyFlags |= 8;
+	mCBodyFlags |= CBODY_SHADOW;
 }
 
 /* KillShadow__5CBody (0x80043af4) */
 /* Turns the body's shadow off and deletes its shadow bit. */
 void CBody::KillShadow() {
-	mCBodyFlags &= ~8;
+	mCBodyFlags &= ~CBODY_SHADOW;
 
 	if (mpShadow) {
 		delete mpShadow;
@@ -262,7 +262,7 @@ void CBody::KillShadow() {
 /* Exact demo twin; written from its MAIN.SYM (up/trans in the flag block). The
    shadow quad comes from CBit's pool allocator (operator new, null-checked). */
 void CBody::UpdateShadow() {
-	if (mCBodyFlags & 8) {
+	if (mCBodyFlags & CBODY_SHADOW) {
 		SVECTOR up;
 		int trans;
 
@@ -611,7 +611,7 @@ void Ob_AI(CBody **a) {
 
 			m->mPlayerDist = d;
 
-			if ((m->mCBodyFlags & 2) && SUSPEND_DISTANCE < d) {
+			if ((m->mCBodyFlags & CBODY_AUTO_SUSPEND) && SUSPEND_DISTANCE < d) {
 				m->Suspend(a);
 			} else {
 				FUN_800440ec(m);
@@ -630,7 +630,7 @@ void Ob_AI(CBody **a) {
 
 /* Ob_QuickAI__FPP5CBody (0x80044620) */
 /* Fuzzy demo twin; locals from its MAIN.SYM. Runs AI on every body in the list;
-   bodies flagged 0x40 are deleted on the second pass (0x80 marks the first). */
+   dead bodies are deleted on the second pass (CBODY_DELETE_PENDING marks the first). */
 void Ob_QuickAI(CBody **ppBody) {
 	CBody *pBody;
 	CBody *pNext;
@@ -660,7 +660,7 @@ void Ob_MaybeUnSuspendOrCull() {
 	n = (CBody *)b->mNextItem;
 
 	for (;;) {
-		if (b->mCBodyFlags & 2) {
+		if (b->mCBodyFlags & CBODY_AUTO_SUSPEND) {
 			unsigned d = Utils_CrapDist(MechList->mPos, b->mPos);
 
 			if (GNumberOfPlayers == 2) {

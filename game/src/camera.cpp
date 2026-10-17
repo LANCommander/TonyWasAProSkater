@@ -101,7 +101,7 @@ CCamera::CCamera(CBody *tripod, ushort mike_index)
 
 	NumCameras++;
 	mRMinor = 0;
-	mCBodyFlags &= ~2;
+	mCBodyFlags &= ~CBODY_AUTO_SUSPEND;
 }
 
 /* _._7CCamera (0x800788b8) */

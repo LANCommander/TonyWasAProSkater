@@ -38,7 +38,7 @@ CBackground::CBackground(uint checksum, const CSVector &ang_vel) {
 
 	mModel = Spool_GetModel(checksum, mRegion);
 	mFlags &= ~2;
-	mCBodyFlags &= ~6;
+	mCBodyFlags &= ~(CBODY_AUTO_SUSPEND | CBODY_INACTIVE);
 	AttachTo(&BackgroundList);
 
 	mIndex = CurrentIndex++;

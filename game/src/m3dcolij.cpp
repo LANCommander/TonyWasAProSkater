@@ -815,7 +815,7 @@ CBody *M3dColij_LineToSphere(const CVector &OldPos, const CVector &NewPos, CVect
 		int Radius;
 		int RadiusSquared;
 
-		if (pBody->mCBodyFlags & 0x40)
+		if (pBody->mCBodyFlags & CBODY_DEAD)
 			continue;
 
 		if (pBody == pIgnore)

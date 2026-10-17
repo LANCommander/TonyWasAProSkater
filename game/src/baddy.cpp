@@ -58,7 +58,7 @@ void CBaddy::Die() {
 	if (!IsDead()) {
 		SendDeathPulse();
 
-		mCBodyFlags |= 0x40;
+		mCBodyFlags |= CBODY_DEAD;
 		mFlags |= 0x41;
 	}
 }
@@ -739,7 +739,7 @@ CScriptOnlyBaddy::CScriptOnlyBaddy(short *p_info, int node) {
 	mDoScript = 1;
 	mNode = node;
 	mFlags |= 0x41;
-	mCBodyFlags &= ~0x10;
+	mCBodyFlags &= ~CBODY_FLAG_10;
 	AttachTo(&BaddyList);
 
 	mRMinor = 0;

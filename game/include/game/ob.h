@@ -41,10 +41,20 @@ enum EItemFlags {
 	ITEM_HIDDEN_ALL = ITEM_HIDDEN | ITEM_HIDDEN_MECHLIST,
 };
 
-/* CBody::mCBodyFlags */
+/* CBody::mCBodyFlags. Every use is listed here; the demo's are the same, and 0x04, 0x10 and 0x20
+   are vestigial in both (set but never read, or read but never set). */
 enum ECBodyFlags {
-	CBODY_DEAD = 0x40,          /* Die(): Ob_AI / Ob_QuickAI delete it ... */
-	CBODY_DELETE_PENDING = 0x80 /* ... on the pass after the one that sets this */
+	CBODY_SUSPENDED = 0x01,      /* on SuspendedList (Suspend/UnSuspend); mppOriginalList is home */
+	CBODY_AUTO_SUSPEND = 0x02,   /* Ob_AI suspends it past SUSPEND_DISTANCE, Ob_MaybeUnSuspendOrCull
+	                                brings it back. On by default; off for skaters, cameras,
+	                                backgrounds and MANUALSUSPENDCONTROL nodes */
+	CBODY_INACTIVE = 0x04,       /* created from a NODE_SEEDABLEBADDY (Trig_CreateObject's Inactive);
+	                                CBackground clears it. Never read */
+	CBODY_SHADOW = 0x08,         /* ShadowOn/KillShadow: UpdateShadow draws mpShadow */
+	CBODY_FLAG_10 = 0x10,        /* on by default, cleared only by CScriptOnlyBaddy. Never read */
+	CBODY_KEEP = 0x20,           /* DeleteList skips it. Never set */
+	CBODY_DEAD = 0x40,           /* Die(): Ob_AI / Ob_QuickAI delete it ... */
+	CBODY_DELETE_PENDING = 0x80, /* ... on the pass after the one that sets this */
 };
 
 /* the world item (vtable 0x800a05f4; not the CREDITS or front-end classes also named CItem) */

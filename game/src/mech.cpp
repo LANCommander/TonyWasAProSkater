@@ -192,7 +192,7 @@ CBruce::CBruce() : mPanel(this) {
 	AttachTo((CBody **)&MechList);
 
 	NumMechs++;
-	mCBodyFlags &= ~2;
+	mCBodyFlags &= ~CBODY_AUTO_SUSPEND;
 
 	if (NumMechs == 1)
 		mpPad = Pad;
@@ -374,7 +374,7 @@ void CBruce::GetHookPosition(CVector &Pos, uchar Index) {
 /* Kills the skater unless already dead: flags the body and item as dead. */
 void CBruce::Die() {
 	if (!IsDead()) {
-		mCBodyFlags |= 0x40;
+		mCBodyFlags |= CBODY_DEAD;
 		mFlags |= 0x41;
 	}
 }

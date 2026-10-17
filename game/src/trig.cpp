@@ -516,10 +516,10 @@ CBody *Trig_CreateObject(int NodeIndex) {
 		NewObject->mSeed = Seedable;
 
 		if (ManualSuspendControl)
-			NewObject->mCBodyFlags &= ~2;
+			NewObject->mCBodyFlags &= ~CBODY_AUTO_SUSPEND;
 
 		if (Inactive)
-			NewObject->mCBodyFlags |= 4;
+			NewObject->mCBodyFlags |= CBODY_INACTIVE;
 
 		if (!NotSuspendedAtStart) {
 			CBody **ppList = 0;

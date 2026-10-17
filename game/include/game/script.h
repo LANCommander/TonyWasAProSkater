@@ -56,7 +56,7 @@ enum ETrigCreateFlag {
 	CREATEDATSTART = 1,         /* created when the level loads (else by a pulse) */
 	ACTIVEWHENCREATED = 2,      /* not suspended when created */
 	SUSPENDEDWHENCREATED = 3,
-	MANUALSUSPENDCONTROL = 4,   /* clears mCBodyFlags 2 */
+	MANUALSUSPENDCONTROL = 4,   /* clears CBODY_AUTO_SUSPEND */
 	RADIALSUSPENDCONTROL = 5,
 };
 

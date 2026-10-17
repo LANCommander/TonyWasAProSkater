@@ -67,7 +67,7 @@ void FUN_80071d60(void);
 
 /* DeleteList__FP5CBody (0x80071b00) */
 /* C++: deletes every body on a list (virtual deleting destructor) except the ones with
-   CBody flag 0x20 */
+   CBODY_KEEP (which nothing sets) */
 void DeleteList(CBody *p) {
 	CBody *n;
 
@@ -77,7 +77,7 @@ void DeleteList(CBody *p) {
 	n = (CBody *)p->mNextItem;
 
 	for (;;) {
-		if (!(p->mCBodyFlags & 32))
+		if (!(p->mCBodyFlags & CBODY_KEEP))
 			delete p;
 
 		p = n;
