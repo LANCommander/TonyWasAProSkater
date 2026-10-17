@@ -212,7 +212,7 @@ void CollideWithSkater(CCar *pCar, CBruce *pSkater, const MATRIX &tm, short *pBo
 				pSkater->Vibrate(8, 1, 150);
 				SFX_Grunt(pSkater);
 				SFX_PlayX(SND_SMACKMETAL, 0x2000, 0);
-				pSkater->Trick_Trick(78, GameText.pCarPlant, -1000, 0);
+				pSkater->Trick_Trick(TRICK_CAR_PLANT, GameText.pCarPlant, -1000, 0);
 
 				{
 					int n = BitCount;

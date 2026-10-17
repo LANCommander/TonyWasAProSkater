@@ -147,10 +147,10 @@ CBruce::CBruce() : mPanel(this) {
 	m424 = 0;
 	mExtraFlags |= 1;
 
-	for (i = 0; i < 80; i++)
+	for (i = 0; i < TRICK_COUNT; i++)
 		m428[i] = 0;
 
-	for (i = 0; i < 80; i++)
+	for (i = 0; i < TRICK_COUNT; i++)
 		m568[i] = 0;
 
 	m764 = 0;

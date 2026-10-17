@@ -1247,7 +1247,7 @@ void ExecuteCommandList(ushort *pCommands, int Node, int WaitForSpooling) {
 
 								if (pGapTrick->Type != -1) {
 									if (pGapTrick->Type < 20000) {
-										pCurrentPlayer->Trick_Trick(77, pGapTrick->Name,
+										pCurrentPlayer->Trick_Trick(TRICK_GAP, pGapTrick->Name,
 										                            -pGapTrick->Score, 0);
 										SFX_PlayX(SND_GAP, 0x2000, 0);
 									} else {

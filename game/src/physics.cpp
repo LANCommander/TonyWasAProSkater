@@ -201,13 +201,13 @@ void CBruce::Trick_TakeOff() {
 	mNoSpin = 0;
 	Panel_TakeOff(this, 0);
 
-	for (i = 0; i < 80; i++)
+	for (i = 0; i < TRICK_COUNT; i++)
 		m568[i] = 0;
 
 	if (GGame == 2) {
 		int j;
 
-		for (j = 0; j < 80; j++)
+		for (j = 0; j < TRICK_COUNT; j++)
 			m428[j] = 0;
 	}
 }
@@ -215,7 +215,7 @@ void CBruce::Trick_TakeOff() {
 /* Trick_RepeatScore__6CBruceii (0x8002f290) */
 /* Depreciates a trick's score by how often it has been done (the per-trick
    count m428[Trick]): 0-1 times full, 2 times 75%, 3 times 1/2, 4 times 1/4, otherwise 1/10. */
-int CBruce::Trick_RepeatScore(int Trick, int Score) {
+int CBruce::Trick_RepeatScore(ETrick Trick, int Score) {
 	switch (m428[Trick]) {
 		case 0:
 		case 1:
@@ -240,7 +240,7 @@ int CBruce::Trick_RepeatScore(int Trick, int Score) {
 /* Trick_Trick__6CBruceiPcii (0x8002f340) */
 /* Scores a trick: counts it, depreciates its score by how often it was done (a
    negative score is taken as-is), zeroes it on a rail in some mode, and adds it to the panel. */
-void CBruce::Trick_Trick(int Trick, char *pName, int Score, int) {
+void CBruce::Trick_Trick(ETrick Trick, char *pName, int Score, int) {
 	if (m760) {
 		if (GGame == 7)
 			mTime = 0;
@@ -309,25 +309,25 @@ void CBruce::Trick_Land() {
 
 			switch (n) {
 				case 1:
-					Trick_Trick(74, "180 OLLIE", -50, 0);
+					Trick_Trick(TRICK_SPIN, "180 OLLIE", -50, 0);
 					break;
 				case 2:
-					Trick_Trick(74, "360 OLLIE", -100, 0);
+					Trick_Trick(TRICK_SPIN, "360 OLLIE", -100, 0);
 					break;
 				case 3:
-					Trick_Trick(74, "540 OLLIE", -150, 0);
+					Trick_Trick(TRICK_SPIN, "540 OLLIE", -150, 0);
 					break;
 				case 4:
-					Trick_Trick(74, "720 OLLIE", -200, 0);
+					Trick_Trick(TRICK_SPIN, "720 OLLIE", -200, 0);
 					break;
 				case 5:
-					Trick_Trick(74, "900 OLLIE", -250, 0);
+					Trick_Trick(TRICK_SPIN, "900 OLLIE", -250, 0);
 					break;
 				case 6:
-					Trick_Trick(74, "1080 OLLIE", -300, 0);
+					Trick_Trick(TRICK_SPIN, "1080 OLLIE", -300, 0);
 					break;
 				case 7:
-					Trick_Trick(74, "MEGA OLLIE", -350, 0);
+					Trick_Trick(TRICK_SPIN, "MEGA OLLIE", -350, 0);
 					break;
 			}
 
@@ -417,7 +417,7 @@ void CBruce::Trick_Bail() {
 	else
 		Crowd_Oww(Speed >> 12);
 
-	for (i = 0; i < 80; i++) {
+	for (i = 0; i < TRICK_COUNT; i++) {
 		m428[i] -= m568[i];
 		m568[i] = 0;
 	}
@@ -483,7 +483,7 @@ void CBruce::StateTransition(EPhysicsState NewState, int) {
 	}
 
 	if (mPhysicsState == PHYSICS_IN_WALLRIDE && NewState == PHYSICS_IN_AIR) {
-		Trick_Trick(64, "WALL RIDE", 500, 0);
+		Trick_Trick(TRICK_WALL_RIDE, "WALL RIDE", 500, 0);
 
 		int Flipped = (mExtraFlags & 2) != 0;
 
@@ -783,13 +783,13 @@ inline void CBruce::StartHandPlant(int RailTrick, int Flags) {
 	if (RailTrick && (Flags & 0x2000000)) {
 		char *pName = Group[RailTrick].pName;
 
-		Trick_Trick(RailTrick, pName, Group[RailTrick].Score, 0);
+		Trick_Trick((ETrick)RailTrick, pName, Group[RailTrick].Score, 0);
 		Debug_RunAnim(Group[RailTrick].Anim, 1536);
 
 		m368 |= 0x4800;
 		SFX_PlayX(SND_SPECIAL, 0x2000, 0);
 	} else {
-		Trick_Trick(79, "Handplant", 1000, 0);
+		Trick_Trick(TRICK_HANDPLANT, "Handplant", 1000, 0);
 		Debug_RunAnim1(34, 8, 1544);
 
 		m368 |= 0x4800;
@@ -875,7 +875,7 @@ inline void CBruce::StartGrind(int RailTrick) {
 
 		m368 = 0x80001000;
 		Score = Group[RailTrick].Score;
-		Trick_Trick(RailTrick, Group[RailTrick].pName, Score, 0);
+		Trick_Trick((ETrick)RailTrick, Group[RailTrick].pName, Score, 0);
 
 		m364 = 1;
 		m2EC = 0;
@@ -928,7 +928,7 @@ inline void CBruce::StartGrind(int RailTrick) {
 	m368 = 0x80001000;
 	mGrindTrick = Direction;
 	Score = DAT_800a7edc[Direction];
-	Trick_Trick(Direction + 66, DAT_800a7ef0[Direction], Score, 0);
+	Trick_Trick((ETrick)(TRICK_GRIND + Direction), DAT_800a7ef0[Direction], Score, 0);
 
 	m364 = 1;
 
@@ -1064,7 +1064,7 @@ void CBruce::HandleStickToRail() {
 		Flags = Stats[mSkaterIndex].ComboID + (m268 << 8) + (m278 << 4) + 3;
 		int f;
 
-		for (RailTrick = 32; (f = Group[RailTrick].Flags) > 0; RailTrick++) {
+		for (RailTrick = TRICK_SPECIAL; (f = Group[RailTrick].Flags) > 0; RailTrick++) {
 			if ((pTab[RailTrick].Flags & 0xfffff) == Flags) {
 				Flags = pTab[RailTrick].Flags;
 				break;
@@ -1209,7 +1209,7 @@ void CBruce::HandleHoldTrick() {
 		int t = f & 0xff;
 
 		if (f & 0x6000)
-			n = Trick_RepeatScore(t, Group[t].Score) / 20;
+			n = Trick_RepeatScore((ETrick)t, Group[t].Score) / 20;
 
 		if (n)
 			Trick_HoldTrick(n);
@@ -1238,13 +1238,13 @@ void CBruce::ScoreCurrentTrick() {
 	if (State & 0x4000) {
 		Score = Group[Trick].Score;
 		m424++;
-		Trick_Trick(Trick, Group[Trick].pName, Score, 0);
+		Trick_Trick((ETrick)Trick, Group[Trick].pName, Score, 0);
 
 		m368 |= 0x800;
 	} else if (State & 0x2000) {
 		Score = Group[Trick].Score;
 		m424++;
-		Trick_Trick(Trick, Group[Trick].pName, Score, 0);
+		Trick_Trick((ETrick)Trick, Group[Trick].pName, Score, 0);
 
 		if (Group[Trick].Frames)
 			m368 |= 0x800;
@@ -1405,7 +1405,7 @@ void CBruce::HandleTricksNew() {
 			int i;
 			STrick *p;
 
-			for (p = &Group[32], i = 32; p->Flags > 0; i++, p++) {
+			for (p = &Group[TRICK_SPECIAL], i = TRICK_SPECIAL; p->Flags > 0; i++, p++) {
 				if ((p->Flags & 0xfffff) == Key) {
 					mAnimSpeed = p->w2;
 
@@ -1460,7 +1460,7 @@ void CBruce::HandleTricksNew() {
 		}
 
 		if (!Combo && (Button & 1) && Group[Dir].Anim != 78) {
-			Dir += 16;
+			Dir += TRICK_GRAB;
 			mAnimSpeed = Group[Dir].w2;
 			m368 = Dir | 0x4000;
 
@@ -2199,7 +2199,8 @@ NoSparks:
 	CVector Diff = mPos - mLastScorePos;
 
 	if (Diff.Length() > 30) {
-		Trick_HoldTrick(Trick_RepeatScore(mGrindTrick + 66, DAT_800a7edc[mGrindTrick]) / 5);
+		Trick_HoldTrick(
+			Trick_RepeatScore((ETrick)(TRICK_GRIND + mGrindTrick), DAT_800a7edc[mGrindTrick]) / 5);
 
 		mLastScorePos = mPos;
 	}
@@ -3081,9 +3082,9 @@ void CBruce::DoOnGroundPhysics() {
 int arccos(int a) {
 	if (a == 0x2253c038) {
 		Stats[10] = DAT_800a7f40;
-		Group[63] = DAT_800a8094;
-		Group[64] = DAT_800a80c0;
-		Group[65] = DAT_800a80ec;
+		Group[TRICK_DICK_YEEEEHAW_FRONTFLIP] = DAT_800a8094;
+		Group[TRICK_DICK_ASSUME_THE_POSITION] = DAT_800a80c0;
+		Group[TRICK_DICK_NECKBREAK_GRIND] = DAT_800a80ec;
 	}
 
 	return 0;
@@ -3422,7 +3423,7 @@ void CBruce::DoInAirPhysics() {
    override tests and the per-arm sums. Operand order (Stats + (flag ? 3 : 0)) + Bonus fixes the
    load order (base, then bonus byte). */
 void CBruce::DoFootPlantPhysics() {
-	Trick_Trick(65, "FOOTPLANT", 100, 0);
+	Trick_Trick(TRICK_FOOTPLANT, "FOOTPLANT", 100, 0);
 
 	mJumpStrength = 15 - (GetStat(0) + GetStat(2)) / 2;
 	StateTransition(PHYSICS_IN_AIR, 5587);
@@ -4006,13 +4007,13 @@ void CBruce::HandleJump() {
 
 					if (m268 == 1 && XFrames - m26C < 35) {
 						Trick_TakeOff();
-						Trick_Trick(65, "FASTPLANT", 250, 0);
+						Trick_Trick(TRICK_FOOTPLANT, "FASTPLANT", 250, 0);
 
 						mVel.vy -= 0x5000;
 						Debug_RunAnim1(45, 16, 6508);
 					} else {
 						Trick_TakeOff();
-						Trick_Trick(75, "NOLLIE", 200, 0);
+						Trick_Trick(TRICK_NOLLIE, "NOLLIE", 200, 0);
 						Debug_RunAnim(13, 6515);
 					}
 
@@ -4792,29 +4793,29 @@ void CBruce::DoPhysics() {
 
 	switch (Stats[mSkaterIndex].Stats[4]) {
 		case 0:
-			Group[9] = DAT_800a727c;
-			Group[10] = DAT_800a72a8;
-			Group[6] = DAT_800a7250;
+			Group[TRICK_FLIP_UP_RIGHT] = DAT_800a727c;
+			Group[TRICK_FLIP_DOWN_RIGHT] = DAT_800a72a8;
+			Group[TRICK_FLIP_DOWN_LEFT] = DAT_800a7250;
 			break;
 		case 1:
-			Group[9] = DAT_800a7300;
-			Group[10] = DAT_800a732c;
-			Group[6] = DAT_800a72d4;
+			Group[TRICK_FLIP_UP_RIGHT] = DAT_800a7300;
+			Group[TRICK_FLIP_DOWN_RIGHT] = DAT_800a732c;
+			Group[TRICK_FLIP_DOWN_LEFT] = DAT_800a72d4;
 			break;
 		case 2:
-			Group[9] = DAT_800a7250;
-			Group[10] = DAT_800a72a8;
-			Group[6] = DAT_800a72d4;
+			Group[TRICK_FLIP_UP_RIGHT] = DAT_800a7250;
+			Group[TRICK_FLIP_DOWN_RIGHT] = DAT_800a72a8;
+			Group[TRICK_FLIP_DOWN_LEFT] = DAT_800a72d4;
 			break;
 		case 3:
-			Group[9] = DAT_800a727c;
-			Group[10] = DAT_800a732c;
-			Group[6] = DAT_800a7250;
+			Group[TRICK_FLIP_UP_RIGHT] = DAT_800a727c;
+			Group[TRICK_FLIP_DOWN_RIGHT] = DAT_800a732c;
+			Group[TRICK_FLIP_DOWN_LEFT] = DAT_800a7250;
 			break;
 		case 4:
-			Group[9] = DAT_800a727c;
-			Group[10] = DAT_800a732c;
-			Group[6] = DAT_800a7250;
+			Group[TRICK_FLIP_UP_RIGHT] = DAT_800a727c;
+			Group[TRICK_FLIP_DOWN_RIGHT] = DAT_800a732c;
+			Group[TRICK_FLIP_DOWN_LEFT] = DAT_800a7250;
 			break;
 	}
 
@@ -5064,7 +5065,7 @@ void CBruce::DoPhysics() {
 			int i;
 
 			if (mpGrindGapTrick) {
-				Trick_Trick(77, mpGrindGapTrick->Name, -mpGrindGapTrick->Score, 0);
+				Trick_Trick(TRICK_GAP, mpGrindGapTrick->Name, -mpGrindGapTrick->Score, 0);
 				SFX_PlayX(SND_GAP, 0x2000, 0);
 
 				mpGrindGapTrick = 0;

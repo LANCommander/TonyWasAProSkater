@@ -149,8 +149,8 @@ class CBruce : public CSuper {
 	Item *mpWallItem;       /* 0x418 */
 	SMemHandle mWallHandle; /* 0x41c */
 	int m424;               /* 0x424 */
-	int m428[80];           /* 0x428: per-trick counts */
-	int m568[80];           /* 0x568: per-trick counts this combo */
+	int m428[TRICK_COUNT];  /* 0x428: per-trick (ETrick) counts */
+	int m568[TRICK_COUNT];  /* 0x568: per-trick (ETrick) counts this combo */
 	int m6A8;               /* 0x6a8 */
 	char pad6ac[0x6c4 - 0x6ac];
 	int mLoopSnd;                   /* 0x6c4 */
@@ -249,7 +249,7 @@ class CBruce : public CSuper {
 	/* sizeof(CBruce) == 0xe1c */
 
 	void Trick_TakeOff();
-	int Trick_RepeatScore(int Trick, int Score);
+	int Trick_RepeatScore(ETrick Trick, int Score);
 	void Trick_HoldTrick(int Score);
 	void Trick_Bonus(int Score);
 	void FrigDarkenObject();
@@ -272,7 +272,7 @@ class CBruce : public CSuper {
 
 	void TempRestore();
 	void Trick_PlayerInit(ushort Player);
-	void Trick_Trick(int Trick, char *pName, int Score, int);
+	void Trick_Trick(ETrick Trick, char *pName, int Score, int);
 	void Trick_Land();
 	void Trick_Bail();
 	void Vibrate(int a, int b, int c);

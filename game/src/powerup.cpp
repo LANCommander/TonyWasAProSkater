@@ -406,15 +406,15 @@ void CPowerUp::TakeEffect(CBruce *pMech) {
 
 				switch (mType) {
 					case POWERUP_TYPE_CREDIT_100:
-						pMech->Trick_Trick(76, "Bonus 100", -100, 0);
+						pMech->Trick_Trick(TRICK_BONUS, "Bonus 100", -100, 0);
 						SFX_SetVoicePitch(Pong, 900);
 						break;
 					case POWERUP_TYPE_CREDIT_200:
-						pMech->Trick_Trick(76, "Bonus 200", -200, 0);
+						pMech->Trick_Trick(TRICK_BONUS, "Bonus 200", -200, 0);
 						SFX_SetVoicePitch(Pong, 1114);
 						break;
 					case POWERUP_TYPE_CREDIT_500:
-						pMech->Trick_Trick(76, "Bonus 500", -500, 0);
+						pMech->Trick_Trick(TRICK_BONUS, "Bonus 500", -500, 0);
 						SFX_SetVoicePitch(Pong, 1500);
 						break;
 				}

@@ -43,8 +43,100 @@ class CTrick {
 	void Set(Message *pMessage, char *pName, int Points, int Depreciate);
 };
 
-/* the trick table entry (`STrick Group[]`, 44 bytes; entries from 32 on are rail tricks keyed by
-   style + two button codes) */
+/* A trick number: the index into the trick table Group[] (game/data/physics.cpp) for the tricks it
+   holds (0-65), and for every trick its slot in the skater's repeat counts (CBruce::m428/m568),
+   which CBruce::Trick_Trick bumps and Trick_RepeatScore depreciates the score by. The flips are
+   Flip + d-pad, the slot being the direction bits (1 up, 2 down, 4 left, 8 right); the grabs are
+   Grab + d-pad at TRICK_GRAB + direction. Slots with no trick (impossible directions, Anim 78) are
+   left out. Flips 6, 9 and 10 are blank in the table and filled per skater from Stats[].Stats[4]
+   by DoPhysics. The specials (from TRICK_SPECIAL) are three or four per skater, found by
+   Stats[].ComboID + combo direction + direction + button; arccos swaps Officer Dick's three for
+   Private Carrera's. The tricks scored by code past the table reuse numbers (theirs and the
+   table's), so those share a repeat count. No source names survive; these are the game's text. */
+enum ETrick {
+	TRICK_NONE = 0,
+
+	/* flips (Flip + direction) */
+	TRICK_360_SHOVE_IT = 1,       /* up */
+	TRICK_IMPOSSIBLE = 2,         /* down */
+	TRICK_KICKFLIP = 4,           /* left */
+	TRICK_KICKFLIP_TO_INDY = 5,   /* up-left */
+	TRICK_FLIP_DOWN_LEFT = 6,     /* per skater: VARIAL or SEX CHANGE */
+	TRICK_HEELFLIP = 8,           /* right */
+	TRICK_FLIP_UP_RIGHT = 9,      /* per skater: FINGER FLIP, HARDFLIP or VARIAL */
+	TRICK_FLIP_DOWN_RIGHT = 10,   /* per skater: FRONT FOOT IMPOSSIBLE or 360 FLIP */
+
+	/* grabs (Grab + direction) */
+	TRICK_GRAB = 16,
+	TRICK_JAPAN_AIR = 17,         /* up */
+	TRICK_TAILGRAB = 18,          /* down */
+	TRICK_METHOD = 20,            /* left */
+	TRICK_MADONNA = 21,           /* up-left */
+	TRICK_STALEFISH = 22,         /* down-left */
+	TRICK_INDY_NOSEBONE = 24,     /* right */
+	TRICK_ROCKET_AIR = 25,        /* up-right */
+	TRICK_BENIHANA = 26,          /* down-right */
+
+	/* specials, by skater (Stats[].ComboID) */
+	TRICK_SPECIAL = 32,
+	TRICK_HAWK_THE_900 = 32,
+	TRICK_HAWK_KICKFLIP_MCTWIST = 33,
+	TRICK_HAWK_540_BOARD_VARIAL = 34,
+	TRICK_HAWK_360_FLIP_TO_MUTE = 35,
+	TRICK_LASEK_KICKFLIP_MCTWIST = 36,
+	TRICK_LASEK_FINGERFLIP_AIRWALK = 37,
+	TRICK_LASEK_VARIAL_HEELFLIP_JUDO = 38,
+	TRICK_BURNQUIST_BACKFLIP = 39,
+	TRICK_BURNQUIST_ONE_FOOTED_SMITH = 40,
+	TRICK_BURNQUIST_BURNTWIST = 41,
+	TRICK_GLIFBERG_KICKFLIP_MCTWIST = 42,
+	TRICK_GLIFBERG_CHRIST_AIR = 43,
+	TRICK_GLIFBERG_FRONT_BACK_KICKFLIP = 44,
+	TRICK_MUSKA_FRONTFLIP = 45,
+	TRICK_MUSKA_ONE_FOOT_5_0_THUMPIN = 46,
+	TRICK_MUSKA_360_SHOVE_IT_REWIND = 47,
+	TRICK_ROWLEY_BACKFLIP = 48,
+	TRICK_ROWLEY_DOUBLE_HARDFLIP = 49,
+	TRICK_ROWLEY_DARKSLIDE = 50,
+	TRICK_CAMPBELL_FRONTFLIP = 51,
+	TRICK_CAMPBELL_CASPER_SLIDE = 52,
+	TRICK_CAMPBELL_KICKFLIP_UNDERFLIP = 53,
+	TRICK_REYNOLDS_BACKFLIP = 54,
+	TRICK_REYNOLDS_HEELFLIP_TO_BLUNTSLIDE = 55,
+	TRICK_REYNOLDS_TRIPLE_KICKFLIP = 56,
+	TRICK_THOMAS_FRONTFLIP = 57,
+	TRICK_THOMAS_ONE_FOOTED_NOSEGRIND = 58,
+	TRICK_THOMAS_540_FLIP = 59,
+	TRICK_STEAMER_BACKFLIP = 60,
+	TRICK_STEAMER_PRIMO_GRIND = 61,
+	TRICK_STEAMER_JUDO_MADONNA = 62,
+	TRICK_DICK_YEEEEHAW_FRONTFLIP = 63,   /* Carrera: SOMI SPIN */
+	TRICK_DICK_ASSUME_THE_POSITION = 64,  /* Carrera: HO-HO HO */
+	TRICK_DICK_NECKBREAK_GRIND = 65,      /* Carrera: THE WELL HARDFLIP */
+
+	/* scored by code, not in the table */
+	TRICK_WALL_RIDE = 64,
+	TRICK_FOOTPLANT = 65,         /* and FASTPLANT */
+	TRICK_GRIND = 66,             /* + the grind (StartGrind's Direction, 2-8) */
+	TRICK_FS_BOARDSLIDE = 68,
+	TRICK_BS_BOARDSLIDE = 69,
+	TRICK_5_0_GRIND = 70,
+	TRICK_NOSEGRIND = 71,
+	TRICK_50_50_GRIND = 72,
+	TRICK_SMITH_GRIND = 73,
+	TRICK_CROOKED_GRIND = 74,
+	TRICK_SPIN = 74,              /* the "N OLLIE" spin on landing */
+	TRICK_NOLLIE = 75,
+	TRICK_BONUS = 76,             /* a bonus power-up */
+	TRICK_GAP = 77,
+	TRICK_CAR_PLANT = 78,
+	TRICK_HANDPLANT = 79,
+
+	TRICK_COUNT = 80
+};
+
+/* the trick table entry (`STrick Group[]`, 44 bytes, by ETrick; entries from TRICK_SPECIAL on are
+   the specials, keyed by style + two button codes) */
 struct STrick {
 	int Flags;    /* 0x00 */
 	int Anim;     /* 0x04 */
