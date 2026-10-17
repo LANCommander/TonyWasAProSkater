@@ -251,6 +251,8 @@ void OtDrawer::CmdGlow(const uint32_t *w)
 {
     constexpr int SEGS = 48, RINGS = 12;
     m_flat = 1;
+    for (int k = 0; k < 4; k++)
+        m_flatZ[k] = (float)(int32_t)w[11];
     if (glows_retail())
         return;
     m_glowDrawn = 1;

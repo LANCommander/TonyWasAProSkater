@@ -926,6 +926,8 @@ void GlGpu::TriangleF(const GlPrim *p, const float xy[3][2], const uint8_t rgb[3
     uint16_t info = PrimInfo(p);
     for (int i = 0; i < 3; i++)
         Put(&o[i], p, info, xy[i][0], xy[i][1], rgb[i][0], rgb[i][1], rgb[i][2], 0, 0);
+    float zs[3] = { p->z, p->z, p->z };
+    FlatDepth(o, 3, zs);
 }
 
 void GlGpu::Rect(const GlPrim *p, int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b,

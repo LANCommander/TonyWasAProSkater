@@ -30,9 +30,10 @@ void PC_DrawMark2D(const void *entry);
  * polygons). Words: this, centre (y << 16 | x, 16-bit), centre colour, rim colour, fringe colour
  * (0x00BBGGRR), angle of section 0 minus one step | step << 16 (4096ths of a turn), fringe width,
  * then the 8 sections' radii two to a word; radii vertical, in 16ths of a pixel (horizontal ones
- * are 400/256 of that). */
+ * are 400/256 of that); last its view depth (as PC_DRAW_DEPTH's, 0: none). Other glows (the
+ * power-ups') begin with a PC_DRAW_DEPTH. */
 #define PC_DRAW_GLOW 0x00f1a702u
-#define PC_DRAW_GLOW_WORDS 11
+#define PC_DRAW_GLOW_WORDS 12
 /* A flat begin with view depths for the packets up to the end: effects made in screen space
  * around projected points (sparks, splashes, steam and water jets). Words: this, then the integer
  * view z of a polygon's vertices 0-3 (rectangles take the first). Inside the native 3D layer they

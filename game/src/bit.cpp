@@ -1331,15 +1331,41 @@ static u_long FadeBGR(u_long bgr, int fade) {
 	        (((bgr >> 16) & 0xff) * fade >> 8) << 16);
 }
 
+/* A glow's view depth for the port: its centre's (vz) brought forward by its outer radius (on
+   screen Radius * 400 / z, as Bit_Display sizes it), so that geometry it touches doesn't cut it
+   but geometry in front hides it. */
+static int GlowDepth(CGlow *pGlow, int vz) {
+	uint n = pGlow->mNumSections;
+	uint outer = 0;
+
+	for (uint i = 0; i < n; i++) {
+		uint r = pGlow->mpSections[i].Radius;
+
+		for (uint f = 0; f < pGlow->mNumFringes; f++)
+			r += pGlow->mpFringes[f * n + i].Width;
+
+		if (r > outer)
+			outer = r;
+	}
+
+	int z = vz - (int)outer * 400 / pCurrentViewport->Zoom;
+	return z > 1 ? z : 1;
+}
+
 /* A plain glow (a light's: one fringe, all sections drawn) for the port to draw smoothly
-   (PC_DRAW_GLOW, pc_draw.h); others are drawn as the PS1 had them. */
+   (PC_DRAW_GLOW, pc_draw.h); others (the power-ups') are drawn as the PS1 had them. Both with
+   their view depth. */
 static int AddGlowMark(P_TAG *OTPos, CGlow *pGlow, int CentreX, int CentreY, int vz, int fade) {
 	u_long w[PC_DRAW_GLOW_WORDS];
 	uint i;
+	int z = GlowDepth(pGlow, vz);
 
 	if (pGlow->mNumSections != 8 || pGlow->mNumFringes != 1 || pGlow->mSkipTriangles ||
-	    (pGlow->mMask & 0xff) != 0xff)
-		return AddFlatMark(OTPos, PC_DRAW_FLAT_BEGIN);
+	    (pGlow->mMask & 0xff) != 0xff) {
+		int zs[4] = {z, z, z, z};
+
+		return AddDepthMark(OTPos, zs);
+	}
 
 	w[0] = PC_DRAW_GLOW;
 	w[1] = ((u_long)(ushort)CentreY << 16) | (ushort)CentreX;
@@ -1361,6 +1387,8 @@ static int AddGlowMark(P_TAG *OTPos, CGlow *pGlow, int CentreX, int CentreY, int
 
 		w[7 + i / 2] = (r0 > 0xffff ? 0xffff : r0) | (r1 > 0xffff ? 0xffff : r1) << 16;
 	}
+
+	w[11] = z;
 
 	return AddMark(OTPos, w, PC_DRAW_GLOW_WORDS);
 }
@@ -1475,7 +1503,8 @@ void Bit_Display() {
 			P_TAG *OTPos = pDoubleBuffer->pOT + ((RotCoords.vz & 0x3ffc) >> 2);
 
 			/* the glow is made in screen space around its centre's projection: the port draws
-			   it as given (linked first, so the end marker follows the glow's packets) */
+			   it as given at its depth (AddGlowMark; this is linked first, so the end marker
+			   follows the glow's packets) */
 			if (!AddFlatMark(OTPos, PC_DRAW_FLAT_END))
 				return;
 
