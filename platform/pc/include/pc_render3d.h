@@ -57,6 +57,18 @@ int R3d_ProcessPolys(int fast, uint32_t *list, int count);
 /* M3d_RenderSetup(camera, viewport, ot), after the game's: a 3D layer starts at ot. */
 void R3d_RenderSetup(const void *viewport, struct P_TAG *ot);
 
+/* The Dreamcast's skater shadows (Options > Graphics > Shadows, pc_video.h PC_DrawDcShadows).
+ * The PS1 draws a skater's shadow as one dark quad per body part, its ellipsoid projected along
+ * the light onto the ground plane under the skater. The Dreamcast draws the same quads, soft
+ * (bodyshadow.pvr), into a 128x128 texture of the skater's own each frame, and lays that over the
+ * level faces around the skater (projected along the light), so the shadow follows ramps, steps
+ * and rails. M3dElips_RenderShadow hands each quad here: centre +- e +- f, relative to the camera
+ * on the world axes; light = towards the light (4096 = 1); part = the part's centre; grey = the
+ * PS1's shadow colour (128 = full, fainter higher up); key = the skater's (its mShadowPos); view =
+ * the camera's view matrix (4096 = 1). 1 if taken, 0 if the game should draw the PS1's quad. */
+int R3d_ShadowQuad(const void *key, const short view[3][3], const int centre[3], const int e[3],
+                   const int f[3], const int light[3], const int part[3], int grey);
+
 #ifdef __cplusplus
 }
 #endif

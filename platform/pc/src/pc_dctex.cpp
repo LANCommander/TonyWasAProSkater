@@ -15,9 +15,14 @@
  * (4 pixels each, twiddled) and one byte per block, the blocks twiddled. Rectangles (9) are
  * plain rows. Mipmap chains go from 1x1 up; the full size comes last in twiddled chains (any
  * padding is in front), and VQ chains are padded at the end. */
+#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <vector>
+
+#include "pc/assets.h"
 #include "pc/dc_textures.h"
 #include "pc_dctex.h"
 #include "pc_runtime.h"
@@ -134,7 +139,75 @@ bool DcTextures::Decode(uint16_t handle, int *pw, int *ph, uint8_t **out)
 {
     if (!handle || handle > m_last)
         return false;
-    const HdTex *t = &m_tex[handle];
+    return DecodeTex(&m_tex[handle], pw, ph, out);
+}
+
+bool DcTextures::DecodePvr(const uint8_t *file, uint32_t size, int *pw, int *ph, uint8_t **out)
+{
+    uint32_t o = 0;
+    if (size >= 16 && !memcmp(file, "GBIX", 4))
+        o = 8 + rd32(file + 4);
+    if (o + 16 > size || memcmp(file + o, "PVRT", 4))
+        return false;
+    HdTex t = {};
+    t.pf = file[o + 8];
+    t.df = file[o + 9];
+    t.w = rd16(file + o + 12);
+    t.h = rd16(file + o + 14);
+    t.data = (uint8_t *)file + o + 16;
+    t.size = size - (o + 16);
+    return t.w && t.h && DecodeTex(&t, pw, ph, out);
+}
+
+uint16_t DcTextures::ShadowBlob()
+{
+    /* a checksum no game texture has */
+    static const uint32_t kChecksum = 0x5ad0b10bu;
+    if (m_shadowBlob)
+        return m_shadowBlob;
+    char path[1024];
+    FILE *f;
+    if (g_assets.Find("bodyshadow.pvr", path, sizeof path) && (f = fopen(path, "rb"))) {
+        std::vector<uint8_t> file;
+        uint8_t buf[4096];
+        size_t got;
+        while ((got = fread(buf, 1, sizeof buf, f)) > 0)
+            file.insert(file.end(), buf, buf + got);
+        fclose(f);
+        uint32_t size = (uint32_t)file.size(), o = 0;
+        const uint8_t *d = file.data();
+        if (size >= 16 && !memcmp(d, "GBIX", 4))
+            o = 8 + rd32(d + 4);
+        if (o + 16 <= size && !memcmp(d + o, "PVRT", 4))
+            Add(kChecksum, rd16(d + o + 12), rd16(d + o + 14), d[o + 8], d[o + 9], d + o + 16,
+                size - (o + 16));
+        else
+            PC_Log("dc: can't read %s", path);
+    }
+    if (!Find(kChecksum)) {
+        /* white, opaque inside 70% of the radius, fading to nothing at the edge (ARGB4444
+         * rows, as the Dreamcast's) */
+        static const int n = 64;
+        std::vector<uint8_t> img(n * n * 2);
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++) {
+                float dx = (x + 0.5f) / (n / 2) - 1, dy = (y + 0.5f) / (n / 2) - 1;
+                float t = (sqrtf(dx * dx + dy * dy) - 0.7f) / 0.3f;
+                t = t < 0 ? 0 : t > 1 ? 1 : t;
+                uint16_t a = (uint16_t)(15.0f * (1 - t * t * (3 - 2 * t)) + 0.5f);
+                uint16_t p = (uint16_t)(a << 12 | 0x0fff);
+                img[(y * n + x) * 2] = (uint8_t)p;
+                img[(y * n + x) * 2 + 1] = (uint8_t)(p >> 8);
+            }
+        Add(kChecksum, n, n, 2, 9, img.data(), (uint32_t)img.size());
+    }
+    m_shadowBlob = Find(kChecksum);
+    Ref(m_shadowBlob, 1);   /* kept for good */
+    return m_shadowBlob;
+}
+
+bool DcTextures::DecodeTex(const HdTex *t, int *pw, int *ph, uint8_t **out)
+{
     int w = t->w, h = t->h, df = t->df;
     const uint8_t *d = t->data;
     uint32_t size = t->size;
@@ -315,5 +388,6 @@ uint16_t PC_HdTexFind(uint32_t checksum) { return pc::g_dcTextures.Find(checksum
 void PC_HdTexRef(uint16_t handle, int delta) { pc::g_dcTextures.Ref(handle, delta); }
 uint32_t PC_DcFaceTexIndex(void *texture) { return pc::g_dcTextures.FaceTexIndex(texture); }
 void *PC_DcFaceTex(uint32_t word) { return pc::g_dcTextures.FaceTex(word); }
+uint16_t PC_DcShadowBlob(void) { return pc::g_dcTextures.ShadowBlob(); }
 
 }

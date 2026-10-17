@@ -419,6 +419,7 @@ enum {
 	GFX_DRAW_DISTANCE,
 	GFX_OBJECT_DISTANCE,
 	GFX_FOG,
+	GFX_SHADOWS,
 	GFX_APPLY,
 	GFX_BACK,
 	GFX_ROWS
@@ -426,6 +427,7 @@ enum {
 #define KEEP_FRAMES (15 * 60)
 static const char *const s_modeLabels[PC_VIDEO_MODES] = { "WINDOWED", "BORDERLESS", "FULLSCREEN" };
 static const char *const s_fogLabels[PC_FOG_MODES] = { "NORMAL", "LIGHT", "OFF" };
+static const char *const s_shadowLabels[PC_SHADOWS_MODES] = { "PLAYSTATION", "DREAMCAST" };
 /* the distance steps, in percent (Settings.ini may hold others in between); the last, the entire
    level, only for the draw distance */
 static const int s_distances[] = { 100, 200, 300, 400, PC_DISTANCE_FULL };
@@ -6524,7 +6526,8 @@ static int SameWindow(const PcVideoSettings *a, const PcVideoSettings *b) {
 
 static int SameSettings(const PcVideoSettings *a, const PcVideoSettings *b) {
 	return SameWindow(a, b) && a->draw_distance == b->draw_distance &&
-	       a->object_distance == b->object_distance && a->fog == b->fog;
+	       a->object_distance == b->object_distance && a->fog == b->fog &&
+	       a->shadows == b->shadows;
 }
 
 extern "C" void PC_GraphicsOptions(int a) {
@@ -6629,6 +6632,9 @@ extern "C" void PC_GraphicsOptions(int a) {
 			} else if (d && sel == GFX_FOG) {
 				edit.fog = (edit.fog + d + PC_FOG_MODES) % PC_FOG_MODES;
 				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
+			} else if (d && sel == GFX_SHADOWS) {
+				edit.shadows = (edit.shadows + d + PC_SHADOWS_MODES) % PC_SHADOWS_MODES;
+				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
 			}
 
 			if (p->MenuAccept.Triggered && sel == GFX_APPLY) {
@@ -6712,6 +6718,11 @@ extern "C" void PC_GraphicsOptions(int a) {
 					Text(NAME_X, y, 1, "FOG");
 					Text(SLOT_X1 - 60, y, 0, s_fogLabels[edit.fog]);
 					break;
+				case GFX_SHADOWS:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "SHADOWS");
+					Text(SLOT_X1 - 60, y, 0, s_shadowLabels[edit.shadows]);
+					break;
 				case GFX_APPLY:
 					SetColour(on, SameSettings(&edit, &cur));
 					Text(NAME_X, y, 1, "APPLY");
@@ -6739,6 +6750,8 @@ extern "C" void PC_GraphicsOptions(int a) {
 			sprintf(buf, "%s %s", "HOW FAR OBJECTS STAY", "DETAILED AND VISIBLE");
 		} else if (sel == GFX_FOG) {
 			sprintf(buf, "%s %s", "LIGHT FOGS ONLY THE", "FARTHEST PART");
+		} else if (sel == GFX_SHADOWS) {
+			sprintf(buf, "%s %s", "DREAMCAST LAYS A SOFT SHADOW", "OVER THE LEVEL");
 		} else if (sel == GFX_APPLY && !SameSettings(&edit, &cur)) {
 			sprintf(buf, "%s %s", "ACCEPT TO SWITCH", "");
 		} else {

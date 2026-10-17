@@ -51,6 +51,7 @@ class Video {
     int FogStart(int dpqmin, int dpqmax);
     int ObjectDistance(int d);
     bool Full();
+    bool DcShadows();
     void SetLevelSize(int size) { m_levelSize = size; }
     unsigned SuspendDistance(unsigned d);
 

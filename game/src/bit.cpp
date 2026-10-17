@@ -23,6 +23,8 @@ extern "C" {
 #include "game/psyq.h"
 #include "game/spool.h"
 #include "pc_draw.h"
+#include "pc_dctex.h"
+#include "pc_video.h"
 
 /* a 3-int vector the chunk-bit normal maths works in */
 typedef struct {
@@ -449,6 +451,26 @@ int CFT4Bit::Fade(int Kill) {
 
 	mCodeBGR = (CodeBGR & 0xff000000) | (b << 16) | (g << 8) | r;
 	return 0;
+}
+
+/* PC: with the Dreamcast's shadows (pc_video.h), quads of the "Shadow" texture (the bodies'
+   shadow bits: power-ups, skaters in two-player games) draw its soft bodyshadow.pvr instead, as
+   the Dreamcast's Bit_Init gives that texture entry (pc_dctex.h). The entry for it: the HD image
+   across the whole quad, in the shadow texture's blend mode. */
+static Texture *QuadBitTexture(Texture *t) {
+	static Texture dc;
+
+	if (!pShadowTexture || t->Checksum != pShadowTexture->Checksum || !PC_DrawDcShadows())
+		return t;
+
+	if (!dc.clut) {
+		dc.clut = PC_DcShadowBlob();
+		dc.u1 = dc.u3 = 255;
+		dc.v2 = dc.v3 = 255;
+	}
+
+	dc.tpage = (ushort)((t->tpage & 0x60) | PC_HD_TPAGE);
+	return &dc;
 }
 
 /* __8CQuadBit (0x80028394) */
@@ -2224,7 +2246,7 @@ void Bit_Display() {
 			Temp = (pQuad->mPos >> 12) - camera_pos;
 			proj = geom_project_lv(&Temp);
 
-			stored = pQuad->mpTexture;
+			stored = QuadBitTexture(pQuad->mpTexture);
 			apoly = (POLY_FT4 *)pPoly;
 			newppoly = pPoly + sizeof(POLY_FT4);
 

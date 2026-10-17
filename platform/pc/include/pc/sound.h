@@ -75,13 +75,13 @@ public:
 
     /* ---- the Dreamcast's sound banks (pc_dcsound.cpp) ---- */
 
-    /* A PCM sample, played at `rate` x the PCM tuning at pitch 0x1000. loop: repeat
-     * [loopStart, loopEnd) after the end (loopEnd 0 = the end). Returns its id, or -1 if full.
-     * Its stand-in (kPcmStub bytes) goes in a bank's data where the sample would be. */
-    int PcmAdd(const int16_t *pcm, uint32_t frames, int rate, int loop, uint32_t loopStart,
-               uint32_t loopEnd);
-    static void PcmStub(int id, uint8_t out[kPcmStub]);
-    int PcmLooped(int id) const;
+    /* A PCM sample. As on the Dreamcast, a channel's pitch is relative to kPcmUnity: at 0x400
+     * it plays at `rate`, at 0x800 an octave up. Returns its id, or -1 if full. Its stand-ins
+     * (PcmStub, kPcmStub bytes) go in a bank's data where the sample would be: one that plays it
+     * once, or one that repeats the whole sample (the Dreamcast's loops). */
+    static constexpr int kPcmUnity = 0x400;
+    int PcmAdd(const int16_t *pcm, uint32_t frames, int rate);
+    static void PcmStub(int id, int loop, uint8_t out[kPcmStub]);
 
 private:
     static constexpr int kMaxBanks = 8;
@@ -96,17 +96,13 @@ private:
         int16_t *data = nullptr;
         uint32_t frames = 0;
         unsigned mul = 0;           /* step per output frame at pitch 0x1000, in 1/0x1000 */
-        int loop = 0;
-        uint32_t loopStart = 0, loopEnd = 0;
     };
 
     /* The registered PCM samples, by id. */
     class PcmTable {
     public:
-        int Add(const int16_t *pcm, uint32_t frames, int rate, int loop, uint32_t loopStart,
-                uint32_t loopEnd);
+        int Add(const int16_t *pcm, uint32_t frames, int rate);
         const Pcm *Get(int id) const { return id >= 0 && id < m_n ? &s_pcm[id] : nullptr; }
-        int Looped(int id) const { return id >= 0 && id < m_n && s_pcm[id].loop; }
 
     private:
         static Pcm s_pcm[kPcmMax];  /* one table: static storage, not in the object */
@@ -120,6 +116,7 @@ private:
         uint32_t frames = 0;        /* the sample's frames */
         uint32_t loopFrames = 0;    /* frames of the loop after them (0: plays once) */
         const Pcm *pcm = nullptr;   /* or a Dreamcast stand-in's PCM */
+        int pcmLoop = 0;            /* and whether the stand-in repeats it */
     };
 
     /* A loaded VAB's sample data and the samples found in it. */

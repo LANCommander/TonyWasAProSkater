@@ -47,7 +47,13 @@ checksum table, palettes, texture records), with these differences:
   233 have identical vertices, so geometry/collision is essentially the PS1 level with new UVs
   and textures. School: 964 of 983 shared models identical.
 - **Skaters**: same 19 parts, hierarchy packet byte-identical and the `0x2c` anim packet nearly
-  the same size, but each part is remodelled (Hawk's torso: 20 verts/21 faces → 59/95).
+  the same size, but each part is remodelled (Hawk's torso: 20 verts/21 faces → 59/95), and the
+  models are in a different order (the DC's own skater table has its part numbers). The one
+  hard-coded part number that matters is Muska's: the PS1 code hides part 12 (`0x1000`, the
+  part only his anim `0x3f` shows); on the DC that model (checksum `6d63a734`) is part 9 and its
+  code hides `0x200`. The port finds the part by checksum (`CBruce::MuskaPartMask`), so his arm
+  is no longer hidden with DC data. (`Head`, used only by the big-head cheat, also differs:
+  Muska's DC head is part 16.)
 
 So DC models only make sense **as whole files with their own textures**; mixing per file (DC
 skaters in a PS1 level or vice versa) works because each `.PSX` is self-contained.
@@ -138,17 +144,34 @@ id, loop_start, loop_end (bytes; 0 or the size), 0, 0}`; 8-bit samples are signe
 `id = program*1000 + tone` of the matching VAB (a few ids such as 100006 or 8002 have no VAB
 slot; a few PS1 tones have no entry and stay silent). Compared with the PS1 VABs:
 
-- **Pitch**: the DC sample count over the PS1's, times the PS1 tone's playback rate at note 60
-  (from its centre note/fine tune), over the KAT rate, is 0.94-0.95 for nearly every sound across
-  banks, rates (8000/11025/22050) and centre notes: the PS1 plays them one semitone below the
-  KAT rate. The port plays them at `rate * 2^(-1/12)` (`PCM_TUNE` in `pc_sound.cpp`), so they sound as on
-  the PS1 (outliers are the sounds the DC re-cut).
-- **Loudness**: median RMS ratio DC/PS1 0.96: mixed at unity.
+- **Pitch** (what the DC itself does, from `1ST_READ.BIN`): `playSFX` (`0x8c098060`) starts a
+  sound at its KAT rate and **drops the table's note**; `SetVoicePitch` (`0x8c098720`) and the
+  play call's pitch are cents relative to that rate, `1200 * log2(p / 1024)`: 0x400 is the
+  sample's own rate. The port does the same (`Sound::kPcmUnity`; the stand-in tones' centre note
+  is 84 so note 60 keys on at 0x400), so the rolling loops (700-1023 by speed) and the credit
+  pick-ups (900/1114/1500) play at the DC's pitches. (The PS1 tunes the same sounds about a
+  semitone lower; the port used to copy that, and before that treated the game's absolute SPU
+  pitches as relative to 0x1000, which played the rolling loops 4x too slow.)
+- **Loudness**: median RMS ratio DC/PS1 0.96. The DC driver's volume is a square law (every
+  setter: attenuation `-23.08 * ln((v/16383)^2)` in the AICA's 0.375 dB steps), and its table's
+  volumes are balanced for it; the port's mixer applies the square to DC voices.
+- **Looping**: the DC never reads a KAT entry's loop flag or loop points: a sound repeats (the
+  whole sample) when its table word has bit 31. The same sample loops for one id and not another
+  (front end vs game, and per level), so each VAB program has a looping copy at program + 64
+  (`DcSound::kLoopProg`) and `DcSound::Table` points the DC's looping sounds at it (bit 31 itself
+  stays the PS1's, which the game's voice keeping and stops follow).
 - **Tone attributes**: `playSFX` only reads centre/fine, ADSR and the sample index from the VAB.
+- **Lookup** (DC `playSFX` at `0x8c098060`, loader `0x8c097ba0`): the loader turns each id into
+  `(program % 100) << 16 | 1 << tone`, and a sound is the entry equal to its table word
+  `& 0x1fffffff` (bit 30 picks the level bank), searched from the **last** entry. Duplicated ids
+  (SKATE2 `2003`: the S-K-A-T-E letters and the tape; DOWNTOWN `1` and `2`) therefore take the
+  later entry. The DC table (`1ST_READ.BIN` `0x10dcd4`) moved some sounds (id 0, the rolling loop,
+  is tone 6) and rebalanced volumes; `DcSound::Table` copies it.
 
 `src/pc_dcsound.cpp` builds a VAB from the `.kat` when the game asks for the `.vab`: centre note
-60, the PS1 banks' usual ADSR (looped `a9ff/5fcc`, one-shots `80ff/1fc0`), and per sound a
-32-byte stand-in sample (`DCPC` + id in a near-silent ADPCM block, then an end block). The
+84 (note 60 = 0x400, the KAT rate), each program twice (once, then looping at + 64), the PS1
+banks' usual ADSR (looped `a9ff/5fcc`, one-shots `80ff/1fc0`), and per sound a
+32-byte stand-in sample (`DCPC` + id + loop flag in a near-silent ADPCM block, then an end block). The
 samples go to the sound's PCM registry (`PC_SoundPcmAdd`, once per bank); a channel keyed on at a
 stand-in plays the PCM with the channel's pitch, volume and envelope, and zeroes its envelope at
 the end like an ADPCM one-shot (the voice-freeing rule). Verified: every key-on in a
@@ -157,6 +180,41 @@ front-end-to-gameplay run hits a PCM sample.
 ### 4. Front end (low value)
 
 Mostly identical; optional: the 16-bit `B_*.PVR` bail photos and `W_*.PVR`/`WT*.PVR` wheels.
+
+### 5. Skater shadows: done (2026-10-17, an option)
+
+The lighting is the PS1's: the DC executable has the same light tables (the default light at
+`0x8c15d540`, the skater's at `0x8c1a51c4`, byte for byte `DAT_800a8118`), and `DoLightingSetup`
+is empty there too (CBruce's vtable `0x8c124018`, slot `0x8c0cc560`). The shadow is drawn
+differently (`1ST_READ.BIN`, loaded at `0x8c010000`):
+
+- `Bit_Init` (`0x8c061e00`) looks up the "Shadow" texture entry (`0x2a3b2550`, `pShadowTexture` =
+  `0x8c152488`), checks it has no image (handle `0xffff` in the DC data) and gives it
+  `bodyshadow.pvr`: 64x64 ARGB4444, white, opaque inside ~70% of the radius, soft to the edge.
+- Each frame starts (`0x8c0901c0`) with a pass over the skaters (`0x8c08de40` ->
+  `0x8c085e00`, a RenderSuperItem variant) that renders each one's shadow into a 128x128 render
+  target of its own, made on first use with the name "Shadow" (`0x8c0722a0`; `kmBeginScene` on a
+  texture `0x8c074c40`, `kmEndScene` `0x8c074d60`). Per body part and shadow light it calls the DC's
+  `M3dElips_RenderShadow` (`0x8c08e140`): the PS1's ellipsoid maths in floats, the quad's corners
+  taken into the texture by a matrix (`ftrv`, clamped to 0..128), drawn with `bodyshadow.pvr`
+  translucent (strip mode 1, vertex colour `0xffffffff`).
+- The shadow records (`0x8c15d344`, 0xf8 bytes, at most 2: one per player) hold the texture
+  handle and that matrix. The world renderer (`0x8c087ba0`, around `0x8c088600..0x8c089330`)
+  collects the level faces under each shadow, gives them texture coordinates through the matrix and
+  a fade in vertex alpha, and draws them again with the shadow texture, alpha-blended.
+
+The port does the same with `[Video] Shadows = Dreamcast` (Options > Graphics; default
+PlayStation): `M3dElips_RenderShadow` hands its quads to `R3d_ShadowQuad`, the GL backend draws
+them into a 128x128 texture per skater at each 3D layer's start, and the draw shader darkens the
+native level faces under it (projected along the light, where they face it; fading above the
+skater and below the ground). The darkening at the centre (0.75 at the PS1's full grey) is a guess:
+the DC's blend factors weren't decoded. With the PS1's data a similar disc is made in code. The
+other "Shadow" bits (power-ups, the skaters' blobs in two-player games) draw `bodyshadow.pvr` as
+well, in their PS1 subtractive blend: `Bit_Display` hands them an HD texture entry for it instead
+of the "Shadow" one (the DC changes the entry itself; swapping at draw time keeps the option
+switchable). Ghidra setup for the SH-4 code: an import as raw binary
+(`SuperH4:LE:32:default`, base `0x8c010000`) needs `FPSCR_SZ`/`FPSCR_PR` set to 0 over the code,
+or the float code decompiles as two paths per instruction.
 
 ## Next
 

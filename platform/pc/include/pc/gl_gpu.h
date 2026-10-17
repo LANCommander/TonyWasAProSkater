@@ -50,7 +50,7 @@ struct GlPrim {
  * handle, u, v in 256ths of one repeat. */
 struct GlVert {
     float x, y, z;
-    uint8_t r, g, b, a;
+    uint8_t r, g, b, a;   /* a: PC_GL_A_SHADOWED, else 0 */
     float u, v;
     uint16_t clut, info;
     uint8_t tw[4];
@@ -62,6 +62,23 @@ struct GlVert {
 #define PC_GL_I_DEPTH    0x2000   /* emulated primitive with a view depth in z (set internally) */
 #define PC_GL_I_VIEW     0x4000   /* view-space position, projected by the layer */
 #define PC_GL_I_SKY      0x8000   /* behind everything: depth 1, never written */
+
+/* GlVert.a of a native face that the Dreamcast's skater shadows fall on (the level, not models) */
+#define PC_GL_A_SHADOWED 255
+
+/* A skater's shadow over a native 3D layer (the Dreamcast's, pc_render3d.h R3d_ShadowQuad): its
+ * blobs, drawn into a texture of its own, and the planes that map a view-space point p onto it:
+ * texture s = dot(s.xyz, p) + s.w, likewise t, and the height above the ground towards the light
+ * h (h.xyz is the light's direction). */
+struct GlShadow {
+    static constexpr int kQuads = 32;
+    float s[4], t[4], h[4];
+    float top;        /* the height of the skater's highest part: nothing above it is shadowed */
+    float size;       /* half the texture's width, in world units */
+    float strength;   /* the darkening at the shadow's centre */
+    int nquads;
+    float quad[kQuads][4][2];   /* the blobs' corners in the texture (0..1): -e-f, +e-f, -e+f, +e+f */
+};
 
 /* A native 3D layer's screen and projection. */
 struct GlLayerParams {
@@ -109,6 +126,8 @@ class GlGpu {
     static constexpr int MAX_SURFACES = 4;
     static constexpr int MAX_HD = 8192;
     static constexpr int MAX_VERTS = 64 * 1024;
+    static constexpr int kShadows = 2;          /* per layer: one for each player, as the Dreamcast */
+    static constexpr int kShadowSize = 128;     /* a shadow's texture, as the Dreamcast's */
 
     /* The interface of pc_gpu_gl.h, one method per PC_Gl* function (see there). */
     int Init(int fixed_scale, int out_w, int out_h);
@@ -124,6 +143,8 @@ class GlGpu {
     void Line(const GlPrim *p, const GlVertex *a, const GlVertex *b);
     void Fill(int x, int y, int w, int h, uint32_t rgb24);
     void HiResImage(int x, int y, int w, int h, const uint16_t *src, int sw, int sh);
+    /* The skaters' shadows the next layer's faces get (n <= kShadows; 0: none). */
+    void LayerShadows(const GlShadow *s, int n);
     void LayerBegin(const GlLayerParams *lp, const GlVert *v, int nv);
     void LayerArea(int ofs_x, int ofs_y, const int clip[4], int wide);
     void LayerDraw(int first, int count, int cls, uint16_t hd);
@@ -184,6 +205,8 @@ class GlGpu {
     void FillPart(int x0, int y0, int x1, int y1);
     /* layers */
     int LayerTargets(RenderTarget **ts);
+    bool ShadowSetup();
+    void ShadowUniforms(int n);
     void SetLayerArea(int ofs_x, int ofs_y, const int clip[4], int wide);
     /* screens' pixels */
     void ReadPixels(int x0, int y0, int x1, int y1, uint16_t *out);
@@ -223,6 +246,12 @@ class GlGpu {
     int m_dbgFill = 0;                     /* THPS_DBG_FILL, once m_dbgFillRead */
     bool m_dbgFillRead = false;
     Layer m_layer = {};
+    /* the skaters' shadows (LayerShadows): the blob image, a texture per shadow, the program that
+     * draws the blobs into them, and the draw program's uniforms */
+    int m_shadowState = 0;                 /* 0: not set up yet, 1: ready, -1: failed */
+    GLuint m_shadowProg = 0, m_shadowVao = 0, m_shadowVbo = 0, m_shadowBlob = 0;
+    GLuint m_shadowTex[kShadows] = {}, m_shadowFbo[kShadows] = {};
+    GLint m_drawUShN = 0, m_drawUShS = 0, m_drawUShT = 0, m_drawUShH = 0, m_drawUShP = 0;
     GLuint m_hd[MAX_HD] = {};              /* HD textures by handle (pc_dctex.h), made when first drawn */
     /* 8-bit channel -> 5 bits: exact for every value a 5-bit one was stored as (n * 255 / 31,
      * rounded), and the PS1's truncation for the in-between values drawing produces. */

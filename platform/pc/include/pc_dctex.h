@@ -32,6 +32,10 @@ uint16_t PC_HdTexFind(uint32_t checksum);
 /* A texture entry starts or stops using it; at 0 users its OpenGL texture is freed. */
 void PC_HdTexRef(uint16_t handle, int delta);
 
+/* The Dreamcast's soft shadow image (bodyshadow.pvr, or one like it with the PS1's data): its
+ * handle, for the Dreamcast's shadows (pc_video.h PC_DrawDcShadows). */
+uint16_t PC_DcShadowBlob(void);
+
 /* A Dreamcast face's word 4: PC_DC_FACE_TEX | the index of its Texture entry. */
 #define PC_DC_FACE_TEX 0x80000000u
 uint32_t PC_DcFaceTexIndex(void *texture);

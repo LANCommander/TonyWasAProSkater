@@ -36,6 +36,7 @@ namespace {
 
 const char *const s_modeNames[PC_VIDEO_MODES] = { "Windowed", "Borderless", "Fullscreen" };
 const char *const s_fogNames[PC_FOG_MODES] = { "Normal", "Light", "Off" };
+const char *const s_shadowNames[PC_SHADOWS_MODES] = { "PlayStation", "Dreamcast" };
 
 int ClampDistance(int d)
 {
@@ -137,6 +138,7 @@ void Video::SettingsDefaults()
     m_set.draw_distance = 100;
     m_set.object_distance = 100;
     m_set.fog = PC_FOG_NORMAL;
+    m_set.shadows = PC_SHADOWS_PS1;
 }
 
 int Video::SettingsLine(const char *section, const char *key, char *value)
@@ -172,6 +174,10 @@ int Video::SettingsLine(const char *section, const char *key, char *value)
         for (i = 0; i < PC_FOG_MODES; i++)
             if (!SDL_strncasecmp(value, s_fogNames[i], strlen(s_fogNames[i])))
                 m_set.fog = i;
+    } else if (!SDL_strcasecmp(key, "Shadows")) {
+        for (i = 0; i < PC_SHADOWS_MODES; i++)
+            if (!SDL_strncasecmp(value, s_shadowNames[i], strlen(s_shadowNames[i])))
+                m_set.shadows = i;
     } else {
         PC_Log("Settings.ini: unknown setting \"%s\" in [Video]", key);
     }
@@ -191,7 +197,9 @@ void Video::WriteSettings(FILE *f)
           "; DrawDistance is how far the level is drawn, in percent of the original (50-400;\n"
           "; the fog moves out with it), or Full for the entire level (the fog then reaches\n"
           "; across it); ObjectDistance how far models keep their detail and stay visible\n"
-          "; (50-400). Fog = Normal, Light (only the far half) or Off.\n",
+          "; (50-400). Fog = Normal, Light (only the far half) or Off. Shadows = PlayStation\n"
+          "; (flat blobs under the skater) or Dreamcast (a soft shadow laid over the level\n"
+          "; around the skater, as the Dreamcast version draws it).\n",
           f);
     fprintf(f, "\n[Video]\nMode = %s\nWindowSize = %dx%d\n", s_modeNames[m_set.mode], m_set.win_w,
             m_set.win_h);
@@ -204,7 +212,8 @@ void Video::WriteSettings(FILE *f)
         fputs("DrawDistance = Full\n", f);
     else
         fprintf(f, "DrawDistance = %d\n", m_set.draw_distance);
-    fprintf(f, "ObjectDistance = %d\nFog = %s\n", m_set.object_distance, s_fogNames[m_set.fog]);
+    fprintf(f, "ObjectDistance = %d\nFog = %s\nShadows = %s\n", m_set.object_distance,
+            s_fogNames[m_set.fog], s_shadowNames[m_set.shadows]);
 }
 
 int Video::Save()
@@ -214,8 +223,8 @@ int Video::Save()
 
 /* ---- draw distance ---- */
 
-/* THPS_DRAWDIST (percent or "full"), THPS_OBJDIST and THPS_FOG (0-2) override Settings.ini, for
- * tests */
+/* THPS_DRAWDIST (percent or "full"), THPS_OBJDIST, THPS_FOG (0-2) and THPS_SHADOWS (0-1)
+ * override Settings.ini, for tests */
 void Video::DrawEnv()
 {
     const char *e;
@@ -228,6 +237,14 @@ void Video::DrawEnv()
         m_set.object_distance = ClampDistance(atoi(e));
     if ((e = getenv("THPS_FOG")) && atoi(e) >= 0 && atoi(e) < PC_FOG_MODES)
         m_set.fog = atoi(e);
+    if ((e = getenv("THPS_SHADOWS")) && atoi(e) >= 0 && atoi(e) < PC_SHADOWS_MODES)
+        m_set.shadows = atoi(e);
+}
+
+bool Video::DcShadows()
+{
+    DrawEnv();
+    return m_set.shadows == PC_SHADOWS_DC && R3d_Native();
 }
 
 bool Video::Full()
@@ -652,5 +669,6 @@ int PC_DrawFogShift(int dpqmin, int dpqmax, int dpqshift) { return pc::g_video.F
 int PC_DrawFogStart(int dpqmin, int dpqmax) { return pc::g_video.FogStart(dpqmin, dpqmax); }
 int PC_DrawObjectDistance(int d) { return pc::g_video.ObjectDistance(d); }
 int PC_DrawFull(void) { return pc::g_video.Full(); }
+int PC_DrawDcShadows(void) { return pc::g_video.DcShadows(); }
 void PC_DrawSetLevelSize(int size) { pc::g_video.SetLevelSize(size); }
 unsigned PC_DrawSuspendDistance(unsigned d) { return pc::g_video.SuspendDistance(d); }

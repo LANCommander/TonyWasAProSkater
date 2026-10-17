@@ -848,7 +848,7 @@ void CreateSkatersAndCameras(void) {
 	pBruce->GetStats(0);
 
 	if (Stats[pBruce->mSkaterIndex].ComboID == 16384)
-		pBruce->mSubObjectDisplayMask |= 4096;
+		pBruce->mSubObjectDisplayMask |= pBruce->MuskaPartMask();
 
 	if (GNumberOfPlayers == 2 && GGame != 7) {
 		p2 = new CBruce();

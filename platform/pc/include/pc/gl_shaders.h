@@ -18,7 +18,12 @@
  *
  * Colour depth 3 (info bits 7-8; the PS1 game never uses it) is an HD texture (pc_dctex.h), bound
  * to u_hd: 256 texture units = one repeat, filtered, its alpha (1555/4444 images) blending on top
- * of the PS1's semi-transparency. */
+ * of the PS1's semi-transparency.
+ *
+ * The Dreamcast's skater shadows (pc::GlShadow, u_shN of them): native level faces (vertex alpha
+ * PC_GL_A_SHADOWED) are darkened by each shadow's texture at their view-space point projected
+ * along the light, where they face the light (their normal from the position's derivatives),
+ * fading out above the skater's highest part and far below the ground. */
 #ifndef PC_GPU_GL_SHADERS_H
 #define PC_GPU_GL_SHADERS_H
 
@@ -36,6 +41,8 @@ static const char *gl_draw_vs =
     "flat out uvec4 v_twin;\n"
     "flat out uvec4 v_uvr;\n"
     "out float v_z;\n"
+    "out vec3 v_view;\n"                          /* native 3D: the view-space position */
+    "flat out float v_shadowed;\n"
     "uniform float u_shift;\n"
     "uniform vec4 u_proj;\n"
     "uniform vec4 u_target;\n"                    /* the VRAM area drawn on: x, y, w, h */
@@ -47,12 +54,15 @@ static const char *gl_draw_vs =
     "        gl_Position = vec4(o * v.z + u_proj.z * k * v.xy, 0.0, v.z);\n"
     "        gl_ClipDistance[0] = v.z - u_proj.w;\n"
     "        v_z = v.z;\n"
+    "        v_view = v;\n"
     "    } else {\n"
     "        vec2 p = (a_pos.xy + u_shift - u_target.xy) * k - 1.0;\n"
     "        gl_Position = vec4(p, 0.0, 1.0) * a_pos.z;\n"
     "        gl_ClipDistance[0] = 1.0;\n"
     "        v_z = (a_tex.y & 0x2000u) != 0u ? a_pos.z : 0.0;\n"
+    "        v_view = vec3(0.0);\n"
     "    }\n"
+    "    v_shadowed = a_color.a;\n"
     "    v_color = a_color.rgb;\n"
     "    v_uv = a_uv;\n"
     "    v_tex = a_tex;\n"
@@ -71,15 +81,32 @@ static const char *gl_draw_fs =
     "flat in uvec4 v_twin;\n"
     "flat in uvec4 v_uvr;\n"
     "in float v_z;\n"
+    "in vec3 v_view;\n"
+    "flat in float v_shadowed;\n"
     "uniform usampler2D u_vram;\n"
     "uniform sampler2D u_hd;\n"
     "uniform vec2 u_uvfix;\n"
     "uniform int u_pass;\n"
     "uniform int u_dpass;\n"
+    "uniform int u_shN;\n"                        /* the skaters' shadows (GlShadow) */
+    "uniform vec4 u_shS[2], u_shT[2], u_shH[2];\n"
+    "uniform vec4 u_shP[2];\n"                    /* top, size, strength */
+    "uniform sampler2D u_sh0, u_sh1;\n"
     "layout(location = 0, index = 0) out vec4 o_color;\n"
     "layout(location = 0, index = 1) out vec4 o_blend;\n"
     "uint vram(int x, int y) { return texelFetch(u_vram, ivec2(x & 1023, y & 511), 0).r; }\n"
+    /* how much shadow tex casts on view-space point p of a surface with normal n */
+    "float shadowOf(sampler2D tex, vec4 s, vec4 t, vec4 h, vec4 prm, vec4 p, vec3 n) {\n"
+    "    vec2 st = vec2(dot(s, p), dot(t, p));\n"
+    "    if (any(lessThan(st, vec2(0.0))) || any(greaterThan(st, vec2(1.0)))) return 0.0;\n"
+    "    float y = dot(h, p), size = prm.y;\n"
+    "    float fade = clamp((prm.x + 0.25 * size - y) / (0.25 * size), 0.0, 1.0) *\n"
+    "                 clamp((y + 3.0 * size) / (2.0 * size), 0.0, 1.0);\n"
+    "    float facing = smoothstep(0.1, 0.4, dot(n, h.xyz));\n"
+    "    return textureLod(tex, st, 0.0).r * prm.z * fade * facing;\n"
+    "}\n"
     "void main() {\n"
+    "    vec3 view_dx = dFdx(v_view), view_dy = dFdy(v_view);\n"
     /* texture coordinates at the pixel's corner, rounded to the nearest texel like the PS1. On an
      * emulated primitive drawn smaller than its texture (a Dreamcast image laid out at the PS1's
      * size) the move would reach past its first texel: at most half a texel, which is what it
@@ -129,6 +156,19 @@ static const char *gl_draw_fs =
     "        if (stp) mask = 1.0;\n"
     "    }\n"
     "    if ((u_pass == 1 && blend) || (u_pass == 2 && !blend)) discard;\n"
+    /* the skaters' shadows (not on subtractive faces: darkening those would lighten) */
+    "    if (u_shN > 0 && v_shadowed > 0.5 && (info & 0x4000u) != 0u && !(blend && abr == 2)) {\n"
+    "        vec3 n = cross(view_dx, view_dy);\n"
+    "        if (dot(n, n) > 0.0) {\n"
+    "            n = normalize(dot(n, v_view) > 0.0 ? -n : n);\n"
+    "            vec4 p = vec4(v_view, 1.0);\n"
+    "            float k = shadowOf(u_sh0, u_shS[0], u_shT[0], u_shH[0], u_shP[0], p, n);\n"
+    "            if (u_shN > 1)\n"
+    "                k = 1.0 - (1.0 - k) * (1.0 - shadowOf(u_sh1, u_shS[1], u_shT[1], u_shH[1],\n"
+    "                                                      u_shP[1], p, n));\n"
+    "            c *= 1.0 - k;\n"
+    "        }\n"
+    "    }\n"
     "    float keep = 0.0;\n"
     "    if (blend) {\n"
     "        if (abr == 0) { c *= 0.5; keep = 0.5; }\n"
@@ -186,6 +226,27 @@ static const char *gl_present_fs =
     "out vec4 o_color;\n"
     "void main() {\n"
     "    o_color = vec4(texture(u_tex, v_uv).rgb, 1.0);\n"
+    "}\n";
+
+/* A skater's shadow blobs into its shadow texture (0..1 square), coverage in every channel,
+ * blended over what is there (src + dst * (1 - src)). */
+static const char *gl_shadow_vs =
+    "#version 330 core\n"
+    "layout(location = 0) in vec2 a_pos;\n"
+    "layout(location = 1) in vec2 a_uv;\n"
+    "out vec2 v_uv;\n"
+    "void main() {\n"
+    "    gl_Position = vec4(a_pos * 2.0 - 1.0, 0.0, 1.0);\n"
+    "    v_uv = a_uv;\n"
+    "}\n";
+
+static const char *gl_shadow_fs =
+    "#version 330 core\n"
+    "in vec2 v_uv;\n"
+    "uniform sampler2D u_tex;\n"
+    "out vec4 o_color;\n"
+    "void main() {\n"
+    "    o_color = vec4(texture(u_tex, v_uv).a);\n"
     "}\n";
 
 #endif

@@ -3,14 +3,18 @@
  * A .kat (little endian) is u32 count, then count 44-byte entries {u32 type (1), offset, size,
  * rate, loop, bits (8 = signed 8-bit, 16 = s16), id, loop start, loop end (bytes; 0 or the size:
  * the whole sample), 0, 0}, then the sample data. id = program * 1000 + tone of the PS1 bank of
- * the same name (WARE.KAT for ware.vab): the same sounds, at 22050 Hz (some 11025 or 8000), most
+ * the same name (WARE.KAT for ware.vab; the Dreamcast takes the program mod 100, so Mall's 100006
+ * is program 0, tone 6): the same sounds, at 22050 Hz (some 11025 or 8000), most
  * of them 8-bit. A few PS1 tones have no entry (silent), and a few entries no PS1 tone.
  *
  * The VAB made from it has the PS1 layout the game reads (FUN_8004b188, playSFX): header,
  * 128 program entries, 16 tone entries of 32 bytes per program, 256 sample sizes, the samples.
- * Each entry's tone plays its PCM stand-in (pc_sound.h); the tone's centre note is 60, so the
- * game's note 60 plays the sample at its own (tuned) rate, and its ADSR is the one the PS1 banks
- * use for that kind of sound: looped ones fade in and out, one-shots start and stop at once. */
+ * Each entry's tone plays its PCM stand-in (pc_sound.h). The pitches are the Dreamcast's
+ * (1ST_READ.BIN playSFX 0x8c098060, SetVoicePitch 0x8c098720): a sound plays at its .kat rate
+ * (the table's notes are ignored), and a pitch the game sets is relative to 0x400 (cents =
+ * 1200 * log2(pitch / 1024)): so the centre note is 84, and note 60 keys on at 0x400
+ * (Sound::kPcmUnity). Its ADSR is the one the PS1 banks use for that kind of sound: looped ones
+ * fade in and out, one-shots start and stop at once. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +41,9 @@ constexpr int kAdsr2Loop = 0x5fcc;
 
 /* The VAB's header up to its samples: header, programs, tones, sample sizes. */
 constexpr int VabHead(int progs) { return 0x820 + progs * 512 + 512; }
+
+/* The centre note at which note 60 keys on at Sound::kPcmUnity (0x1000 two octaves down). */
+constexpr int kCentreNote = 84;
 
 uint32_t Le32(const uint8_t *p) {
     return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24;
@@ -77,28 +84,29 @@ DcSound::Bank *DcSound::LoadBank(const char *kat) {
     b = &m_banks[m_nbanks++];
     *b = Bank{};
     snprintf(b->name, sizeof b->name, "%s", kat);
-    for (i = 0; i < n; i++) {
+    /* the last entry of an id wins: the Dreamcast looks a sound up from the end */
+    for (i = n; i-- > 0;) {
         const uint8_t *e = d + 4 + i * kKatEntry;
         uint32_t off = Le32(e + 4), len = Le32(e + 8), rate = Le32(e + 12), loop = Le32(e + 16),
                  bits = Le32(e + 20), id = Le32(e + 24), ls = Le32(e + 28), le = Le32(e + 32);
-        uint32_t prog = id / 1000, tone = id % 1000, bps = bits / 8, frames, j;
+        uint32_t prog = id / 1000 % 100, tone = id % 1000, bps = bits / 8, frames, j;
         int16_t *pcm;
         int pid;
         if (Le32(e) != 1 || (bits != 8 && bits != 16) || off > (uint32_t)size ||
             len > (uint32_t)size - off || !rate)
             continue;
-        if (prog >= kProgsMax || tone >= kTones) {
+        if (prog >= kLoopProg || tone >= kTones) {
             PC_Trace("%s: sound %u has no place in a VAB", kat, id);
             continue;
         }
         if (b->tone[prog * kTones + tone])
-            continue;   /* the first of two with one id */
+            continue;   /* a later one has this id */
         frames = len / bps;
         pcm = (int16_t *)malloc((frames ? frames : 1) * sizeof *pcm);
         for (j = 0; j < frames; j++)
             pcm[j] = bits == 8 ? (int16_t)((int8_t)d[off + j] * 256)
                                : (int16_t)(d[off + 2 * j] | d[off + 2 * j + 1] << 8);
-        pid = g_sound.PcmAdd(pcm, frames, (int)rate, loop != 0, ls / bps, le / bps);
+        pid = g_sound.PcmAdd(pcm, frames, (int)rate);
         free(pcm);
         if (pid < 0) {
             PC_Log("%s: too many samples", kat);
@@ -127,13 +135,14 @@ uint8_t *DcSound::Vab(const char *vab, int *outSize) {
     snprintf(kat, sizeof kat, "%.*s.kat", (int)n - 4, base);
     if (!(b = LoadBank(kat)))
         return nullptr;
-    for (prog = 0; prog < kProgsMax; prog++) {
-        tones[prog] = 0;
+    /* programs 0.. play each sound once, kLoopProg.. the same sounds repeating */
+    for (prog = 0; prog < kLoopProg; prog++) {
+        tones[prog] = tones[kLoopProg + prog] = 0;
         for (t = 0; t < kTones; t++)
             if (b->tone[prog * kTones + t]) {
-                tones[prog] = t + 1;
-                progs = prog + 1;
-                vags++;
+                tones[prog] = tones[kLoopProg + prog] = t + 1;
+                progs = kLoopProg + prog + 1;
+                vags += 2;
             }
     }
     if (!progs)
@@ -161,18 +170,17 @@ uint8_t *DcSound::Vab(const char *vab, int *outSize) {
         pa[4] = 64;
         for (t = 0; t < kTones; t++) {
             uint8_t *ta = v + 0x820 + (prog * kTones + t) * 32;
-            int pid = b->tone[prog * kTones + t] - 1;
-            int looped = 0;
+            int pid = b->tone[prog % kLoopProg * kTones + t] - 1;
+            int looped = prog >= kLoopProg;
             ta[2] = 127;                            /* volume, pan, centre note, fine, range */
             ta[3] = 64;
-            ta[4] = 60;
+            ta[4] = kCentreNote;
             ta[7] = 127;
             *(int16_t *)(ta + 20) = (int16_t)prog;
             *(int16_t *)(ta + 22) = 1;
             if (pid >= 0) {
-                Sound::PcmStub(pid, v + head + ++vags * Sound::kPcmStub - Sound::kPcmStub);
+                Sound::PcmStub(pid, looped, v + head + ++vags * Sound::kPcmStub - Sound::kPcmStub);
                 *(int16_t *)(ta + 22) = (int16_t)vags;
-                looped = g_sound.PcmLooped(pid);
             }
             *(uint16_t *)(ta + 16) = looped ? kAdsr1Loop : kAdsr1OneShot;
             *(uint16_t *)(ta + 18) = looped ? kAdsr2Loop : kAdsr2OneShot;
@@ -226,7 +234,8 @@ constexpr uint32_t k_dcSfx[GAME_SFX_COUNT * 2] = {
 
 /* The bits that pick the voice: the bank, the program and the tones. The rest stay the PS1's: bit
  * 31 (the game keeps a looping sound's voice until it stops it, which the PS1 code does for the
- * PS1 table's loops) and the Dreamcast's bit 29, which playSFX doesn't know. */
+ * PS1 table's loops) and the Dreamcast's bit 29, which playSFX doesn't know. The Dreamcast's bit
+ * 31 picks the program's looping copy (kLoopProg). */
 constexpr uint32_t kSfxVoiceBits = 0x407fffffu;
 
 } // namespace
@@ -234,8 +243,12 @@ constexpr uint32_t kSfxVoiceBits = 0x407fffffu;
 void DcSound::Table() {
     for (int i = 0; i < GAME_SFX_COUNT; i++) {
         uint32_t ps1 = (uint32_t)DAT_800b8a9c[2 * i];
-        DAT_800b8a9c[2 * i] = (int32_t)((ps1 & ~kSfxVoiceBits) | (k_dcSfx[2 * i] & kSfxVoiceBits));
-        DAT_800b8a9c[2 * i + 1] = (int32_t)k_dcSfx[2 * i + 1];
+        uint32_t dc = k_dcSfx[2 * i];
+        DAT_800b8a9c[2 * i] = (int32_t)((ps1 & ~kSfxVoiceBits) | (dc & kSfxVoiceBits) |
+                                        (dc >> 31 ? kLoopProg << 16 : 0));
+        /* the volume; the Dreamcast drops the note above it (playSFX keys every sound at its
+           .kat rate) */
+        DAT_800b8a9c[2 * i + 1] = (int32_t)(k_dcSfx[2 * i + 1] & 0xffff);
     }
 }
 

@@ -77,6 +77,20 @@ void CBruce::BoardOn() {
 	    ~((1 << pStats->Board) | (1 << pStats->Wheel1) | (1 << pStats->Wheel2));
 }
 
+/* The port's: the display mask bit of the part Muska (ComboID 0x4000) shows only in anim 0x3f.
+   Retail hard-codes 0x1000, part 12 of the PS1 muska.psx; the Dreamcast's files order the
+   models differently (that model is part 9 there, and its code hides 0x200), and bit 12 hid one
+   of his arm's parts. So the part is found by its model checksum; none (a mod's model): 0. */
+uint CBruce::MuskaPartMask() {
+	const SPSXRegion *r = &PSXRegion[mRegion];
+
+	for (int i = 0; i < r->NumModels && i < 32; i++)
+		if (r->pModelChecksums[i] == 0x6d63a734)
+			return 1u << i;
+
+	return 0;
+}
+
 /* GetStats__6CBrucei (0x80041ce0) */
 /* Demo twin; locals from its MAIN.SYM. Fills player Skater's four stat bytes: in a
    career game, from the best board the skater's tape count has unlocked; otherwise all 3. */
@@ -666,9 +680,9 @@ void CBruce::AI() {
 
 				if (Stats[mSkaterIndex].ComboID == 0x4000) {
 					if (mAnim != 0x3f)
-						mSubObjectDisplayMask = mSubObjectDisplayMask | 0x1000;
+						mSubObjectDisplayMask = mSubObjectDisplayMask | MuskaPartMask();
 					else
-						mSubObjectDisplayMask = mSubObjectDisplayMask & ~0x1000;
+						mSubObjectDisplayMask = mSubObjectDisplayMask & ~MuskaPartMask();
 				}
 
 				if ((Cheat_FPS || Cheat_StatsOverride) && this == GSkater[0]) {

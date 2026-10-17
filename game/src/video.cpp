@@ -1031,9 +1031,9 @@ void GetDataChunk(CBruce *pSkater, int NChunks) {
 
 	if (Stats[pSkater->mSkaterIndex].ComboID == 0x4000) {
 		if (pSkater->mAnim != 0x3f)
-			pSkater->mSubObjectDisplayMask |= 0x1000;
+			pSkater->mSubObjectDisplayMask |= pSkater->MuskaPartMask();
 		else
-			pSkater->mSubObjectDisplayMask &= ~0x1000;
+			pSkater->mSubObjectDisplayMask &= ~pSkater->MuskaPartMask();
 	}
 
 	if (NChunks != 1)

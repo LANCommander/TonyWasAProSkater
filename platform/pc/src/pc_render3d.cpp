@@ -33,7 +33,12 @@
  * fade-to-colour mode to retail (A/B of the native version; not for Dreamcast models),
  * THPS_R3D_NCLIP=1 culls back faces with retail's integer screen-space test, THPS_R3D_DUMP=1 writes
  * the last layer's faces next to each THPS_SHOT (with THPS_DBG_FILL=bbggrr, pc_gpu_gl.cpp, painting
- * the screen clears, cracks in the level stand out). */
+ * the screen clears, cracks in the level stand out).
+ *
+ * Shadows. With the Dreamcast's (Options > Graphics > Shadows), M3dElips_RenderShadow hands each
+ * skater's body-part quads to R3d_ShadowQuad instead of drawing them; at the layer's start they
+ * become a shadow texture per skater (GlGpu::LayerShadows) that the level's faces in the layer
+ * are darkened by, projected along the light (pc/gl_shaders.h). */
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -48,6 +53,7 @@
 #include "pc_geom.h"
 #include "pc_render3d.h"
 #include "pc_runtime.h"
+#include "pc_video.h"
 #include "pc/precise.h"
 #include "pc/render3d.h"
 #include "pc/draw.h"
@@ -244,7 +250,7 @@ int DcFace(Addr a0, Addr tex, uint32_t f, uint32_t *uvw, uint16_t *hd, float *uf
 }
 
 void PutVert(GlVert *o, const Corner *c, uint16_t clut, uint16_t info, const uint8_t *tw,
-             const uint8_t *uvr)
+             const uint8_t *uvr, uint8_t a = 0)
 {
     o->x = c->x;
     o->y = c->y;
@@ -252,7 +258,7 @@ void PutVert(GlVert *o, const Corner *c, uint16_t clut, uint16_t info, const uin
     o->r = (uint8_t)(c->r + 0.5f);
     o->g = (uint8_t)(c->g + 0.5f);
     o->b = (uint8_t)(c->b + 0.5f);
-    o->a = 0;
+    o->a = a;
     o->u = c->u;
     o->v = c->v;
     o->clut = clut;
@@ -533,6 +539,7 @@ void Renderer3D::RenderSetup(const void *viewport, P_TAG *ot)
     b->valid = 1;
     b->sorted = 0;
     b->nf = b->nv = 0;
+    b->nshadow = 0;
     b->h = (float)pc_geom.h;
     b->ofx = (float)pc_geom.ofx / 65536.0f;
     b->ofy = (float)pc_geom.ofy / 65536.0f;
@@ -682,6 +689,10 @@ void Renderer3D::Faces(Batch *b, Addr face, int n, int fast, const Water *water)
     int sky = !fast && m_lastKind == T_BG;
     int32_t fade = (int32_t)M32(SCR(S_FADECOLOUR));
     int wxl = 0, wxr = 0, wpad = fast ? ViewportPad(&wxl, &wxr) : 0;
+    /* the level's faces take the skaters' shadows, models' don't */
+    uint8_t shadowed = m_lastKind == T_ITEM || m_lastKind == T_FAST || m_lastKind == T_BLOCK
+                           ? PC_GL_A_SHADOWED
+                           : 0;
 
     for (int k = 0; k < n; k++) {
         uint32_t w0 = M32(face);
@@ -950,7 +961,7 @@ void Renderer3D::Faces(Batch *b, Addr face, int n, int fast, const Water *water)
             nv = tri ? 3 : 6;
             GlVert *o = b->AllocVerts(nv);
             for (int i = 0; i < nv; i++)
-                PutVert(&o[i], &cn[order[!tri][i]], clut, info, tw, uvr);
+                PutVert(&o[i], &cn[order[!tri][i]], clut, info, tw, uvr, shadowed);
         } else {
             /* crosses the water: only the part on the drawn side (FUN_80086500 flagged the
              * corners on the other one), as a fan around the clipped outline */
@@ -974,9 +985,9 @@ void Renderer3D::Faces(Batch *b, Addr face, int n, int fast, const Water *water)
             nv = (m - 2) * 3;
             GlVert *o = b->AllocVerts(nv);
             for (int i = 0; i < m - 2; i++) {
-                PutVert(&o[i * 3], &out[0], clut, info, tw, uvr);
-                PutVert(&o[i * 3 + 1], &out[i + 1], clut, info, tw, uvr);
-                PutVert(&o[i * 3 + 2], &out[i + 2], clut, info, tw, uvr);
+                PutVert(&o[i * 3], &out[0], clut, info, tw, uvr, shadowed);
+                PutVert(&o[i * 3 + 1], &out[i + 1], clut, info, tw, uvr, shadowed);
+                PutVert(&o[i * 3 + 2], &out[i + 2], clut, info, tw, uvr, shadowed);
             }
             m_st.water++;
         }
@@ -1046,6 +1057,150 @@ int Renderer3D::ProcessPolys(int fast, uint32_t *list, int count)
     }
     Faces(b, (Addr)list, count, fast, wp);
     return 1;
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * The Dreamcast's skater shadows */
+
+bool Renderer3D::ShadowQuad(const void *key, const short view[3][3], const int centre[3],
+                            const int e[3], const int f[3], const int light[3], const int part[3],
+                            int grey)
+{
+    if (!m_native || !PC_DrawDcShadows())
+        return false;
+    Batch *b = m_cur >= 0 ? &m_b[m_cur] : nullptr;
+    if (!b || !b->valid || b->ot != CurrentOrderingTable)
+        return false;
+    ShadowSet *s = nullptr;
+    for (int i = 0; i < b->nshadow && !s; i++)
+        if (b->shadow[i].key == key)
+            s = &b->shadow[i];
+    if (!s) {
+        if (b->nshadow == GlGpu::kShadows)
+            return false;
+        s = &b->shadow[b->nshadow++];
+        s->key = key;
+        s->n = 0;
+        s->grey = 0;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++)
+                s->view[i][j] = view[i][j] / 4096.0f;
+            s->light[i] = light[i] / 4096.0f;
+        }
+    }
+    if ((float)grey > s->grey)
+        s->grey = (float)grey;
+    if (s->n < GlShadow::kQuads) {
+        float(*q)[3] = s->quad[s->n];
+        for (int i = 0; i < 3; i++) {
+            q[0][i] = (float)centre[i];
+            q[1][i] = (float)e[i];
+            q[2][i] = (float)f[i];
+            s->part[s->n][i] = (float)part[i];
+        }
+        s->n++;
+    }
+    return true;
+}
+
+namespace {
+
+float Dot(const float *a, const float *b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+
+void Cross(const float *a, const float *b, float *o)
+{
+    o[0] = a[1] * b[2] - a[2] * b[1];
+    o[1] = a[2] * b[0] - a[0] * b[2];
+    o[2] = a[0] * b[1] - a[1] * b[0];
+}
+
+bool Normalise(float *v)
+{
+    float l = sqrtf(Dot(v, v));
+    if (l < 1e-6f)
+        return false;
+    v[0] /= l;
+    v[1] /= l;
+    v[2] /= l;
+    return true;
+}
+
+} // namespace
+
+/* A skater's quads as a shadow texture over the view: its square lies across the light around the
+ * quads' middle O, with axes a and b, and a point P (relative to the camera) lands on it at
+ * ((P - O).a, (P - O).b) / its width + 1/2; along the light its height above the ground is
+ * (P - O).l. In view space (V = R P) a world direction d is measured by R^-T d. */
+bool Renderer3D::ShadowMap(const ShadowSet *s, GlShadow *out)
+{
+    static const float darkest = 0.75f;   /* the shadow's centre at full strength */
+    static const int se[4] = { -1, 1, -1, 1 }, sf[4] = { -1, -1, 1, 1 };
+    float l[3] = { s->light[0], s->light[1], s->light[2] };
+    if (s->n == 0 || !Normalise(l))
+        return false;
+    float o[3] = { 0, 0, 0 };
+    for (int q = 0; q < s->n; q++)
+        for (int i = 0; i < 3; i++)
+            o[i] += s->quad[q][0][i] / (float)s->n;
+    float ref[3] = { 0, 0, 0 }, a[3], b[3];
+    ref[fabsf(l[1]) > 0.7f ? 2 : 1] = 1;
+    Cross(ref, l, a);
+    Normalise(a);
+    Cross(l, a, b);
+
+    float size = 0, top = -1e30f, uv[GlShadow::kQuads][4][2];
+    for (int q = 0; q < s->n; q++) {
+        const float(*c)[3] = s->quad[q];
+        for (int k = 0; k < 4; k++) {
+            float p[3];
+            for (int i = 0; i < 3; i++)
+                p[i] = c[0][i] + se[k] * c[1][i] + sf[k] * c[2][i] - o[i];
+            uv[q][k][0] = Dot(p, a);
+            uv[q][k][1] = Dot(p, b);
+            size = fmaxf(size, fmaxf(fabsf(uv[q][k][0]), fabsf(uv[q][k][1])));
+        }
+        float p[3] = { s->part[q][0] - o[0], s->part[q][1] - o[1], s->part[q][2] - o[2] };
+        top = fmaxf(top, Dot(p, l));
+    }
+    size *= 1.1f;   /* the blobs' soft edges stay inside */
+    if (size < 1)
+        return false;
+
+    /* R^-T = the cofactors of R (world to view) over its determinant */
+    const float(*r)[3] = s->view;
+    float cof[3][3], det;
+    Cross(r[1], r[2], cof[0]);
+    Cross(r[2], r[0], cof[1]);
+    Cross(r[0], r[1], cof[2]);
+    det = Dot(r[0], cof[0]);
+    if (fabsf(det) < 1e-6f)
+        return false;
+    float av[3], bv[3], lv[3];
+    for (int i = 0; i < 3; i++) {
+        av[i] = Dot(cof[i], a) / det;
+        bv[i] = Dot(cof[i], b) / det;
+        lv[i] = Dot(cof[i], l) / det;
+    }
+    float w = 2 * size;
+    for (int i = 0; i < 3; i++) {
+        out->s[i] = av[i] / w;
+        out->t[i] = bv[i] / w;
+        out->h[i] = lv[i];
+    }
+    out->s[3] = 0.5f - Dot(o, a) / w;
+    out->t[3] = 0.5f - Dot(o, b) / w;
+    out->h[3] = -Dot(o, l);
+    out->top = top;
+    out->size = size;
+    float g = s->grey / 128.0f;
+    out->strength = darkest * (g < 0 ? 0 : g > 1 ? 1 : g);
+    out->nquads = s->n;
+    for (int q = 0; q < s->n; q++)
+        for (int k = 0; k < 4; k++) {
+            out->quad[q][k][0] = uv[q][k][0] / w + 0.5f;
+            out->quad[q][k][1] = uv[q][k][1] / w + 0.5f;
+        }
+    return out->strength > 0;
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -1140,6 +1295,11 @@ void Renderer3D::LayerStart(uint32_t id)
     lp.hither = b->hither;
     m_lastOfs[0] = lp.ofs_x;
     m_lastOfs[1] = lp.ofs_y;
+    GlShadow shadows[GlGpu::kShadows];
+    int nshadows = 0;
+    for (int i = 0; i < b->nshadow; i++)
+        nshadows += ShadowMap(&b->shadow[i], &shadows[nshadows]);
+    g_glGpu.LayerShadows(shadows, nshadows);
     g_glGpu.LayerBegin(&lp, b->sv, b->nv);
     b->next = 0;
     m_layer = b;
@@ -1234,3 +1394,5 @@ void R3d_FarEnd(void) { pc::g_renderer3d.FarEnd(); }
 int R3d_Transform(int kind, R3dTransformFn fn, void *v, int n, void *o) { return pc::g_renderer3d.Transform(kind, fn, v, n, o); }
 int R3d_ProcessPolys(int fast, uint32_t *list, int count) { return pc::g_renderer3d.ProcessPolys(fast, list, count); }
 void R3d_RenderSetup(const void *viewport, P_TAG *ot) { pc::g_renderer3d.RenderSetup(viewport, ot); }
+int R3d_ShadowQuad(const void *key, const short view[3][3], const int centre[3], const int e[3],
+                   const int f[3], const int light[3], const int part[3], int grey) { return pc::g_renderer3d.ShadowQuad(key, view, centre, e, f, light, part, grey); }

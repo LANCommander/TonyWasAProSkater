@@ -15,13 +15,17 @@ public:
     uint8_t *Vab(const char *vab, int *size);
 
     /* Point the game's sound effects at the .kat sounds the Dreamcast version plays for them
-     * (some moved, so the PS1 table would play the wrong ones), at its volumes. Once, before the
-     * game runs. */
+     * (some moved, so the PS1 table would play the wrong ones), at its volumes, looping where it
+     * loops. Once, before the game runs. */
     static void Table();
 
 private:
     static constexpr int kProgsMax = 128;   /* a VAB's programs */
     static constexpr int kTones = 16;       /* tones per program */
+    /* A .kat's programs (0..8 on the disc) play once; kLoopProg + the program repeats the sound,
+     * for the table's sounds the Dreamcast loops (bit 31 of its entry picks a looping voice
+     * there; the .kat's own loop flags and points are never read). */
+    static constexpr int kLoopProg = 64;
     static constexpr int kMaxBanks = 32;
 
     struct Bank {

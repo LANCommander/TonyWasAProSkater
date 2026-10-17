@@ -13,6 +13,7 @@ extern "C" {
 #include "game/globals.h"
 #include "game/m3dasm.h"
 #include "m3dasm/lastvec.h"
+#include "pc_render3d.h"
 
 #define Box ((short *)&pModel->Box)
 extern int M3dElips_MinDotProd;
@@ -143,6 +144,18 @@ void M3dElips_RenderShadow(SModel *pModel, MATRIX *pTransform, CSVector *pNormal
 	M3dMaths_SetLastVec(pLightVec);
 	M3dMaths_AddScaledLastVec12(&f, -(DotProds.vz << 12) / n_dot_l);
 	M3dMaths_GetLastVec(&f_Proj);
+
+	{
+		/* PC: the Dreamcast's shadows take the quad instead (pc_render3d.h) */
+		int c[3] = { Centre.vx, Centre.vy, Centre.vz };
+		int ce[3] = { e_Proj.vx, e_Proj.vy, e_Proj.vz };
+		int cf[3] = { f_Proj.vx, f_Proj.vy, f_Proj.vz };
+		int light[3] = { pLightVec->vx, pLightVec->vy, pLightVec->vz };
+		int part[3] = { t.vx, t.vy, t.vz };
+
+		if (R3d_ShadowQuad(pPoint, pCurrentCamera->View.m, c, ce, cf, light, part, rgb.r))
+			return;
+	}
 
 	geom_ld_mat(pc_geom.rot, &pCurrentCamera->View);
 	geom_load_vector(pc_geom.tr, 0, 0, 0);

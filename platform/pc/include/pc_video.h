@@ -16,6 +16,10 @@ enum { PC_VIDEO_WINDOWED, PC_VIDEO_BORDERLESS, PC_VIDEO_FULLSCREEN, PC_VIDEO_MOD
 /* distance fog: as the level sets it, only over the far half of its range, or none */
 enum { PC_FOG_NORMAL, PC_FOG_LIGHT, PC_FOG_OFF, PC_FOG_MODES };
 
+/* the skaters' shadows: the PS1's flat blobs, or the Dreamcast's shadow texture projected onto
+ * the level (native 3D renderer only, pc_render3d.h R3d_Shadows) */
+enum { PC_SHADOWS_PS1, PC_SHADOWS_DC, PC_SHADOWS_MODES };
+
 typedef struct {
     int mode;              /* PC_VIDEO_* */
     int win_w, win_h;      /* windowed: the window's drawing area, in pixels */
@@ -25,6 +29,7 @@ typedef struct {
                               PC_DISTANCE_FULL */
     int object_distance;   /* percent of the models' level-of-detail and fade-out distances */
     int fog;               /* PC_FOG_* */
+    int shadows;           /* PC_SHADOWS_* */
 } PcVideoSettings;
 
 /* the range Settings.ini allows for draw_distance and object_distance */
@@ -70,6 +75,8 @@ int PC_DrawFull(void);
 void PC_DrawSetLevelSize(int size);
 /* the distance beyond which bodies are suspended (Ob_AI): as far as they can be seen */
 unsigned PC_DrawSuspendDistance(unsigned d);
+/* 1: the Dreamcast's shadows (Settings.ini Shadows; THPS_SHADOWS=0|1 overrides) */
+int PC_DrawDcShadows(void);
 
 #ifdef __cplusplus
 }

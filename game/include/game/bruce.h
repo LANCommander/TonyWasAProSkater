@@ -312,6 +312,7 @@ class CBruce : public CSuper {
 	void DoPhysics();
 	void BoardOff();
 	void BoardOn();
+	uint MuskaPartMask();
 	void GetStats(int Skater);
 	void GlowUpdate();
 	void CalculateDynamicLighting(uint *p_face, Item *p_item);

@@ -42,11 +42,6 @@ namespace {
 constexpr int kBufFrames = 512;
 constexpr unsigned kPitchOne = 0x1000u;
 
-/* The Dreamcast's samples are the PS1's sounds at a higher rate, and the PS1's banks tune them
- * (VAB centre note and fine tune) to play one semitone below the rate the Dreamcast files give:
- * comparing the two versions' lengths of the same sound, across banks, rates and centre notes,
- * gives 0.94-0.95 for nearly all. So the rate is scaled by that. */
-constexpr double kPcmTune = 0.943874; /* 2^(-1/12) */
 constexpr char kPcmMagic[] = "DCPC";
 
 constexpr int kBankShift = 24;          /* a sample's id: (bank + 1) << kBankShift | offset */
@@ -135,6 +130,7 @@ int Sound::Bank::DecodeSample(uint32_t offset, Sample *out, const PcmTable &pcm)
         int id;
         memcpy(&id, m_data + offset + 6, 4);
         out->pcm = pcm.Get(id);
+        out->pcmLoop = m_data[offset + 10];
         return 1;
     }
     for (;;) {
@@ -462,11 +458,10 @@ int Sound::Voice::NextFrame(int *out) {
     const Sample *s = m_s;
     if (s->pcm) {
         const Pcm *p = s->pcm;
-        uint32_t end = p->loop && p->loopEnd ? p->loopEnd : p->frames;
-        if (m_pos >= end) {
-            if (!p->loop || p->loopStart >= end)
+        if (m_pos >= p->frames) {
+            if (!s->pcmLoop || !p->frames)
                 return 0;
-            m_pos = p->loopStart;
+            m_pos = 0;
         }
         *out = p->data[m_pos++];
         return 1;
@@ -504,6 +499,14 @@ bool Sound::Voice::Render(int &l, int &r) {
         return false;
     int s = m_prev + (((m_cur - m_prev) * (int)m_frac) >> 12);
     int x = (s * m_level) >> 15;
+    if (m_s->pcm) {
+        /* the Dreamcast's volume law: its driver turns a volume v (0..16383) into the AICA's
+           attenuation as -20 log10((v / 16383)^2) dB (1ST_READ.BIN 0x8c0983c2 and the other
+           volume setters), so the gain is the square; its table's volumes are set for that */
+        l = (int)(((int64_t)x * m_volL * (m_volL < 0 ? -m_volL : m_volL)) >> 28);
+        r = (int)(((int64_t)x * m_volR * (m_volR < 0 ? -m_volR : m_volR)) >> 28);
+        return true;
+    }
     l = (x * m_volL) >> 14;
     r = (x * m_volR) >> 14;
     return true;
@@ -824,8 +827,7 @@ void Sound::MusicMute(int mute) {
 
 /* ---- PCM samples ----------------------------------------------------------------------------- */
 
-int Sound::PcmTable::Add(const int16_t *pcm, uint32_t frames, int rate, int loop,
-                         uint32_t loopStart, uint32_t loopEnd) {
+int Sound::PcmTable::Add(const int16_t *pcm, uint32_t frames, int rate) {
     if (m_n == kPcmMax)
         return -1;
     int id = m_n;
@@ -833,31 +835,26 @@ int Sound::PcmTable::Add(const int16_t *pcm, uint32_t frames, int rate, int loop
     p->data = (int16_t *)malloc((frames ? frames : 1) * sizeof *p->data);
     memcpy(p->data, pcm, frames * sizeof *p->data);
     p->frames = frames;
-    p->mul = (unsigned)(rate * kPcmTune / kRate * 4096.0 + 0.5);
-    p->loop = loop;
-    p->loopStart = loopStart;
-    p->loopEnd = loopEnd > frames ? frames : loopEnd;
+    p->mul = (unsigned)((double)rate / kRate * kPitchOne / kPcmUnity * kPitchOne + 0.5);
     m_n++;
     return id;
 }
 
-int Sound::PcmAdd(const int16_t *pcm, uint32_t frames, int rate, int loop, uint32_t loopStart,
-                  uint32_t loopEnd) {
+int Sound::PcmAdd(const int16_t *pcm, uint32_t frames, int rate) {
     Lock();
-    int id = m_pcm.Add(pcm, frames, rate, loop, loopStart, loopEnd);
+    int id = m_pcm.Add(pcm, frames, rate);
     Unlock();
     return id;
 }
 
-int Sound::PcmLooped(int id) const { return m_pcm.Looped(id); }
-
-/* Block 0 carries the marker and the id, block 1 ends the stand-in (it also reads as near-silent
- * ADPCM). */
-void Sound::PcmStub(int id, uint8_t out[kPcmStub]) {
+/* Block 0 carries the marker, the id and the loop flag, block 1 ends the stand-in (it also reads
+ * as near-silent ADPCM). */
+void Sound::PcmStub(int id, int loop, uint8_t out[kPcmStub]) {
     memset(out, 0, kPcmStub);
     out[0] = 12;
     memcpy(out + 2, kPcmMagic, 4);
     memcpy(out + 6, &id, 4);
+    out[10] = loop != 0;
     out[16 + 1] = 1;
 }
 

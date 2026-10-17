@@ -21,6 +21,12 @@ public:
     void Ref(uint16_t handle, int delta);
     /* The texture's full-size image as RGBA8 rows (malloc'd), w x h; false if there is none. */
     bool Decode(uint16_t handle, int *w, int *h, uint8_t **rgba);
+    /* The same for a .pvr file's image (its GBIX and PVRT headers, then the image). */
+    bool DecodePvr(const uint8_t *file, uint32_t size, int *w, int *h, uint8_t **rgba);
+
+    /* The Dreamcast's soft shadow (bodyshadow.pvr; with the PS1's data a disc like it, made
+     * here), registered the first time: its handle (pc_dctex.h PC_DcShadowBlob). */
+    uint16_t ShadowBlob();
 
     /* A Dreamcast face's word 4: PC_DC_FACE_TEX | the index of its Texture entry. */
     uint32_t FaceTexIndex(void *texture);
@@ -41,12 +47,14 @@ private:
     };
 
     uint16_t *Slot(uint32_t checksum);
+    bool DecodeTex(const HdTex *t, int *w, int *h, uint8_t **rgba);
     void Add(uint32_t checksum, int w, int h, int pf, int df, const uint8_t *data, uint32_t size);
 
     HdTex m_tex[kMaxHd] = {};   /* handle = index; 0 unused */
     int m_last = 0;             /* the last handle given out (all zero: the object stays in bss) */
     uint16_t m_hash[kMaxHd * 2] = {};
     int m_decodeWarned = 0;
+    uint16_t m_shadowBlob = 0;   /* ShadowBlob's handle */
     /* The game's Texture entries that Dreamcast faces name (PC_DC_FACE_TEX | index). An entry the
      * game frees and another takes the place of gets the same index again. */
     void *m_faceTex[kMaxFaceTex] = {};

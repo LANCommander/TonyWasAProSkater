@@ -440,6 +440,14 @@ int GlGpu::Init(int fixed_scale, int out_w, int out_h)
     glUseProgram(m_drawProg);
     glUniform1i(glGetUniformLocation(m_drawProg, "u_vram"), 0);
     glUniform1i(glGetUniformLocation(m_drawProg, "u_hd"), 1);
+    /* the shadows' textures stay bound to units 2 and 3 (ShadowSetup) */
+    glUniform1i(glGetUniformLocation(m_drawProg, "u_sh0"), 2);
+    glUniform1i(glGetUniformLocation(m_drawProg, "u_sh1"), 3);
+    m_drawUShN = glGetUniformLocation(m_drawProg, "u_shN");
+    m_drawUShS = glGetUniformLocation(m_drawProg, "u_shS");
+    m_drawUShT = glGetUniformLocation(m_drawProg, "u_shT");
+    m_drawUShH = glGetUniformLocation(m_drawProg, "u_shH");
+    m_drawUShP = glGetUniformLocation(m_drawProg, "u_shP");
     glUseProgram(m_copyProg);
     glUniform1i(glGetUniformLocation(m_copyProg, "u_vram"), 0);
     glUseProgram(m_presentProg);
@@ -525,6 +533,15 @@ void GlGpu::Shutdown()
     glDeleteBuffers(4, bufs);
     glDeleteTextures(4, texs);
     glDeleteFramebuffers(1, &m_rbFbo);
+    if (m_shadowState) {
+        glDeleteProgram(m_shadowProg);
+        glDeleteVertexArrays(1, &m_shadowVao);
+        glDeleteBuffers(1, &m_shadowVbo);
+        glDeleteTextures(1, &m_shadowBlob);
+        glDeleteTextures(kShadows, m_shadowTex);
+        glDeleteFramebuffers(kShadows, m_shadowFbo);
+        m_shadowState = 0;
+    }
     for (int i = 0; i < m_nsurf; i++)
         m_surf[i].Destroy();
     m_nsurf = 0;
@@ -1069,6 +1086,124 @@ void GlGpu::LayerArea(int ofs_x, int ofs_y, const int clip[4], int wide)
     }
 }
 
+/* The skaters' shadows, the first time a layer has one: the blob (PC_DcShadowBlob), a texture and
+ * framebuffer per shadow, bound to units 2 and up for the draw program, and the program that
+ * draws the blobs. */
+bool GlGpu::ShadowSetup()
+{
+    if (m_shadowState)
+        return m_shadowState > 0;
+    m_shadowState = -1;
+    m_shadowProg = Program(gl_shadow_vs, gl_shadow_fs);
+    if (!m_shadowProg)
+        return false;
+    glUseProgram(m_shadowProg);
+    glUniform1i(glGetUniformLocation(m_shadowProg, "u_tex"), 0);
+    glGenVertexArrays(1, &m_shadowVao);
+    glGenBuffers(1, &m_shadowVbo);
+    glBindVertexArray(m_shadowVao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_shadowVbo);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindVertexArray(0);
+
+    int w = 0, h = 0;
+    uint8_t *rgba = nullptr;
+    if (!g_dcTextures.Decode(PC_DcShadowBlob(), &w, &h, &rgba)) {
+        PC_Log("gl: no shadow image");
+        return false;
+    }
+    m_shadowBlob = Texture(GL_RGBA8, w, h, GL_RGBA, GL_UNSIGNED_BYTE, GL_LINEAR);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    free(rgba);
+    for (int i = 0; i < kShadows; i++) {
+        m_shadowTex[i] = Texture(GL_RGBA8, kShadowSize, kShadowSize, GL_RGBA, GL_UNSIGNED_BYTE,
+                                 GL_LINEAR);
+        m_shadowFbo[i] = Framebuffer(m_shadowTex[i]);
+        if (!m_shadowFbo[i]) {
+            PC_Log("gl: no framebuffer for the shadows");
+            return false;
+        }
+        glActiveTexture(GL_TEXTURE2 + i);
+        glBindTexture(GL_TEXTURE_2D, m_shadowTex[i]);
+        glActiveTexture(GL_TEXTURE0);
+    }
+    m_shadowState = 1;
+    return true;
+}
+
+/* The draw program's shadow uniforms for the layer's n shadows. */
+void GlGpu::ShadowUniforms(int n)
+{
+    glUseProgram(m_drawProg);
+    glUniform1i(m_drawUShN, n);
+}
+
+void GlGpu::LayerShadows(const GlShadow *s, int n)
+{
+    if (n > kShadows)
+        n = kShadows;
+    if (n > 0 && !ShadowSetup())
+        n = 0;
+    if (n <= 0) {
+        ShadowUniforms(0);
+        return;
+    }
+    Flush();
+    /* the blobs into each shadow's texture */
+    static float vb[GlShadow::kQuads * 6 * 4];
+    static const int order[6] = { 0, 1, 2, 1, 3, 2 };
+    static const float uv[4][2] = { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } };
+    glUseProgram(m_shadowProg);
+    glBindVertexArray(m_shadowVao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_shadowVbo);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_shadowBlob);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glViewport(0, 0, kShadowSize, kShadowSize);
+    glClearColor(0, 0, 0, 0);
+    float S[kShadows][4], T[kShadows][4], H[kShadows][4], P[kShadows][4];
+    for (int i = 0; i < n; i++) {
+        const GlShadow &sh = s[i];
+        int nq = sh.nquads < GlShadow::kQuads ? sh.nquads : GlShadow::kQuads;
+        float *o = vb;
+        for (int q = 0; q < nq; q++)
+            for (int k = 0; k < 6; k++) {
+                *o++ = sh.quad[q][order[k]][0];
+                *o++ = sh.quad[q][order[k]][1];
+                *o++ = uv[order[k]][0];
+                *o++ = uv[order[k]][1];
+            }
+        glBindFramebuffer(GL_FRAMEBUFFER, m_shadowFbo[i]);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)((o - vb) * sizeof(float)), vb, GL_STREAM_DRAW);
+        glDrawArrays(GL_TRIANGLES, 0, nq * 6);
+        memcpy(S[i], sh.s, sizeof S[i]);
+        memcpy(T[i], sh.t, sizeof T[i]);
+        memcpy(H[i], sh.h, sizeof H[i]);
+        P[i][0] = sh.top;
+        P[i][1] = sh.size;
+        P[i][2] = sh.strength;
+        P[i][3] = 0;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_BLEND);
+    glBindVertexArray(0);
+    ShadowUniforms(n);
+    glUniform4fv(m_drawUShS, n, &S[0][0]);
+    glUniform4fv(m_drawUShT, n, &T[0][0]);
+    glUniform4fv(m_drawUShH, n, &H[0][0]);
+    glUniform4fv(m_drawUShP, n, &P[0][0]);
+}
+
 void GlGpu::LayerBegin(const GlLayerParams *lp, const GlVert *v, int nv)
 {
     Layer &l = m_layer;
@@ -1157,6 +1292,8 @@ void GlGpu::LayerEnd()
         return;
     Flush();
     l.active = 0;
+    if (m_shadowState > 0)
+        ShadowUniforms(0);
     MarkDrawn(l.wide, l.mark[0], l.mark[1], l.mark[2], l.mark[3]);
 }
 

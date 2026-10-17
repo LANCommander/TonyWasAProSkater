@@ -368,6 +368,24 @@ fade-to-colour mode of some levels) still go through the retail code and that lo
 (`THPS_RENDER3D=psx THPS_GL_PRECISE=0 THPS_GL_PERSPECTIVE=0`), OpenGL at 1x samples the same
 points the PS1 rasteriser does.
 
+**Shadows** (`[Video] Shadows = PlayStation | Dreamcast`, Options > Graphics). The PS1 draws a
+skater's shadow as one hard-edged dark quad per body part: the part's ellipsoid projected along the
+light onto the single ground plane found under the skater (`M3dElips_RenderShadow`), so it hangs
+in the air over ramp lips and steps. The Dreamcast version draws the same quads, soft
+(`bodyshadow.pvr`: white, round alpha falloff), into a 128x128 texture per skater each frame and
+lays that texture over the level faces around the skater, projected along the light (found in its
+executable: the shadow pass `0x8c085e00` before each frame, the world renderer's second pass over
+the faces under each shadow in `0x8c087ba0`; see `docs/dreamcast-assets.md`). With `Dreamcast`,
+`M3dElips_RenderShadow` hands its quads to `R3d_ShadowQuad`; at each 3D layer's start
+`GlGpu::LayerShadows` draws them into the skater's texture, and the draw shader darkens the level's
+native faces by it (not models: no shadow on the skater itself), only where a face looks towards the
+light and fading out above the skater and well below the ground. Needs the native 3D renderer (the
+PS1's quads are drawn otherwise); with the PS1's data a disc like `bodyshadow.pvr` is made in code
+(`PC_DcShadowBlob`). The other shadows, single blobs under power-ups and under the skaters in
+two-player games (`CBody::UpdateShadow`: quad bits of the "Shadow" texture), draw that image too,
+as the Dreamcast's `Bit_Init` gives it to the "Shadow" texture entry: `Bit_Display` swaps their
+entry for an HD one (`QuadBitTexture` in `game/src/bit.cpp`), in the same subtractive blend.
+
 The build compiles every source under `game/src`, generates the glue in `build/pc/gen/` and
 links. `build/pc/build_report.txt` lists compile errors, header comments no definition matched
 and unresolved symbols.
@@ -448,7 +466,8 @@ its size.
 the controls screen; the options menu `FUN_80060274` gets the extra row on PC)
 sets the display mode, the resolution and widescreen: left and right step through the display's
 modes (windowed: those that fit on the desktop). Apply switches the window and asks to keep the change;
-Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go back.
+Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go back. The draw
+distance, object distance, fog and shadows (PlayStation or Dreamcast, see Graphics) apply at once.
 
 ## Running and debugging
 
@@ -462,6 +481,7 @@ Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go 
 | `THPS_WINDOW=WxH` | a window of that size (drawing area), whatever Settings.ini says; headless too |
 | `THPS_WIDESCREEN=0\|1` | widescreen off or on, whatever Settings.ini says |
 | `THPS_DRAWDIST=pct\|full`, `THPS_OBJDIST=pct`, `THPS_FOG=0\|1\|2` | draw distance (50-400, or the entire level), object distance (50-400) and fog (normal, light, off), whatever Settings.ini says |
+| `THPS_SHADOWS=0\|1` | the skaters' shadows: the PS1's or the Dreamcast's, whatever Settings.ini says |
 | `THPS_FAR_RANGE=n` | entire level: items reaching beyond n (default 30000) take the double-precision path; a small n compares it with the PS1 transforms on near items |
 | `THPS_HEADLESS=1` | no visible window (for automated runs: OpenGL draws into a hidden one) |
 | `THPS_GL_SCALE=n` | OpenGL: draw the screens at n times the PS1 resolution (default: the window's resolution) |

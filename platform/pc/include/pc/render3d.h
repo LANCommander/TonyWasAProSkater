@@ -30,6 +30,9 @@ public:
     int ProcessPolys(int fast, uint32_t *list, int count);
     /* M3d_RenderSetup(camera, viewport, ot), after the game's: a 3D layer starts at ot. */
     void RenderSetup(const void *viewport, P_TAG *ot);
+    /* A body part's shadow quad, for the Dreamcast's shadows (pc_render3d.h R3d_ShadowQuad). */
+    bool ShadowQuad(const void *key, const short view[3][3], const int centre[3], const int e[3],
+                    const int f[3], const int light[3], const int part[3], int grey);
 
     /* PC_DrawOT, for each packet before it is drawn: true if it was a layer marker (its words are
      * not GPU commands). ChainEnd at the end of the chain. */
@@ -59,8 +62,21 @@ private:
         uint32_t src;       /* the face's address in the model (THPS_R3D_DUMP) */
     };
 
+    /* A skater's shadow quads in a layer (ShadowQuad), relative to the camera on the world axes. */
+    struct ShadowSet {
+        const void *key;
+        float view[3][3];    /* the camera's rotation, world to view */
+        float light[3];      /* towards the light */
+        float grey;          /* the PS1's shadow colour, 128 = full */
+        int n;
+        float quad[GlShadow::kQuads][3][3];   /* centre, e, f */
+        float part[GlShadow::kQuads][3];      /* the parts' centres */
+    };
+
     /* The faces of one M3d_RenderSetup's layer. */
     struct Batch {
+        ShadowSet shadow[GlGpu::kShadows];
+        int nshadow;
         uint32_t gen;
         const P_TAG *ot;    /* the layer's ordering table (4096 entries) */
         int valid, sorted, next;
@@ -95,6 +111,7 @@ private:
                uint32_t z);
     void Faces(Batch *b, uintptr_t face, int n, int fast, const Water *water);
 
+    static bool ShadowMap(const ShadowSet *s, GlShadow *out);
     void DrawUpto(uint32_t bucket);
     void LayerEnd();
     void LayerStart(uint32_t id);
