@@ -128,12 +128,12 @@ int DAT_800be438[3] = {
 /* THPS2 demo: char[30] */
 unsigned char DemoName[16];
 
-int DAT_800bf0d4[2] = {
-	40, 39,
+int DAT_800bf0d4[3] = {
+	40, 39, 44,
 };
 
-int DAT_800bf0e0[2] = {
-	184, 172,
+int DAT_800bf0e0[3] = {
+	184, 172, 184,
 };
 
 int DAT_800bf260[8] = {
