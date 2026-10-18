@@ -420,6 +420,7 @@ enum {
 	GFX_OBJECT_DISTANCE,
 	GFX_FOG,
 	GFX_SHADOWS,
+	GFX_ANTIALIASING,
 	GFX_APPLY,
 	GFX_BACK,
 	GFX_ROWS
@@ -6527,7 +6528,7 @@ static int SameWindow(const PcVideoSettings *a, const PcVideoSettings *b) {
 static int SameSettings(const PcVideoSettings *a, const PcVideoSettings *b) {
 	return SameWindow(a, b) && a->draw_distance == b->draw_distance &&
 	       a->object_distance == b->object_distance && a->fog == b->fog &&
-	       a->shadows == b->shadows;
+	       a->shadows == b->shadows && a->antialiasing == b->antialiasing;
 }
 
 extern "C" void PC_GraphicsOptions(int a) {
@@ -6635,6 +6636,12 @@ extern "C" void PC_GraphicsOptions(int a) {
 			} else if (d && sel == GFX_SHADOWS) {
 				edit.shadows = (edit.shadows + d + PC_SHADOWS_MODES) % PC_SHADOWS_MODES;
 				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
+			} else if (d && sel == GFX_ANTIALIASING) {
+				/* off, 2x, 4x, 8x */
+				i = edit.antialiasing >= 8 ? 3 : edit.antialiasing >= 4 ? 2 : edit.antialiasing >= 2;
+				i = (i + d + 4) % 4;
+				edit.antialiasing = i ? 1 << i : 0;
+				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
 			}
 
 			if (p->MenuAccept.Triggered && sel == GFX_APPLY) {
@@ -6723,6 +6730,17 @@ extern "C" void PC_GraphicsOptions(int a) {
 					Text(NAME_X, y, 1, "SHADOWS");
 					Text(SLOT_X1 - 60, y, 0, s_shadowLabels[edit.shadows]);
 					break;
+				case GFX_ANTIALIASING:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "ANTIALIASING");
+
+					if (edit.antialiasing)
+						sprintf(buf, (char *)"%d X", edit.antialiasing);
+					else
+						strcpy(buf, "OFF");
+
+					Text(SLOT_X1 - 60, y, 0, buf);
+					break;
 				case GFX_APPLY:
 					SetColour(on, SameSettings(&edit, &cur));
 					Text(NAME_X, y, 1, "APPLY");
@@ -6752,6 +6770,8 @@ extern "C" void PC_GraphicsOptions(int a) {
 			sprintf(buf, "%s %s", "LIGHT FOGS ONLY THE", "FARTHEST PART");
 		} else if (sel == GFX_SHADOWS) {
 			sprintf(buf, "%s %s", "DREAMCAST LAYS A SOFT SHADOW", "OVER THE LEVEL");
+		} else if (sel == GFX_ANTIALIASING) {
+			sprintf(buf, "%s %s", "SMOOTHS THE EDGES OF", "POLYGONS");
 		} else if (sel == GFX_APPLY && !SameSettings(&edit, &cur)) {
 			sprintf(buf, "%s %s", "ACCEPT TO SWITCH", "");
 		} else {

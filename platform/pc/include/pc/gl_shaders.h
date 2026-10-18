@@ -37,6 +37,7 @@ static const char *gl_draw_vs =
     "layout(location = 5) in uvec4 a_uvr;\n"       /* texels the face spans: u, v min, max */
     "out vec3 v_color;\n"
     "out vec2 v_uv;\n"
+    "centroid out vec2 v_uvc;\n"                  /* v_uv, inside the face (antialiasing) */
     "flat out uvec2 v_tex;\n"
     "flat out uvec4 v_twin;\n"
     "flat out uvec4 v_uvr;\n"
@@ -65,6 +66,7 @@ static const char *gl_draw_vs =
     "    v_shadowed = a_color.a;\n"
     "    v_color = a_color.rgb;\n"
     "    v_uv = a_uv;\n"
+    "    v_uvc = a_uv;\n"
     "    v_tex = a_tex;\n"
     "    v_twin = a_twin;\n"
     "    v_uvr = a_uvr;\n"
@@ -77,6 +79,7 @@ static const char *gl_draw_fs =
     "#version 330 core\n"
     "in vec3 v_color;\n"
     "in vec2 v_uv;\n"
+    "centroid in vec2 v_uvc;\n"
     "flat in uvec2 v_tex;\n"
     "flat in uvec4 v_twin;\n"
     "flat in uvec4 v_uvr;\n"
@@ -114,7 +117,7 @@ static const char *gl_draw_fs =
     "    uint info = v_tex.y;\n"
     "    vec2 fix = u_uvfix.x * dFdx(v_uv) + u_uvfix.y * dFdy(v_uv);\n"
     "    if ((info & 0x4000u) == 0u) fix = clamp(fix, -0.5, 0.5);\n"
-    "    vec2 uv = v_uv - fix + 0.5;\n"
+    "    vec2 uv = v_uvc - fix + 0.5;\n"
     /* native faces and emulated 2D triangles (uv_range in pc_gpu_gl.cpp) stay inside the texels
      * they span; the rest keep the full range unclamped (rects and sprites rely on wrapping) */
     "    if ((info & 0x4000u) != 0u || v_uvr != uvec4(0u, 0u, 255u, 255u))\n"
@@ -126,7 +129,7 @@ static const char *gl_draw_fs =
     "    bool blend = semi;\n"
     "    float hd_a = 1.0;\n"
     /* derivatives outside the branch: a 2x2 pixel quad can span primitives of both kinds */
-    "    vec2 hd_uv = v_uv / 256.0, hd_dx = dFdx(hd_uv), hd_dy = dFdy(hd_uv);\n"
+    "    vec2 hd_uv = v_uvc / 256.0, hd_dx = dFdx(v_uv / 256.0), hd_dy = dFdy(v_uv / 256.0);\n"
     "    if ((info & 0x380u) == 0x380u) {\n"
     "        vec4 t = textureGrad(u_hd, hd_uv, hd_dx, hd_dy);\n"
     "        if (t.a < 0.03) discard;\n"

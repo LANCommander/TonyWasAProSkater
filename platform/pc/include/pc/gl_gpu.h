@@ -104,13 +104,23 @@ struct RenderTarget {
     int pw, ph;               /* size in pixels */
     float sx, sy;             /* pixels per VRAM pixel */
     GLuint tex, depth, fbo;   /* RGBA8 colour, DEPTH32F for the native 3D layers (pc_render3d.cpp) */
+    /* Antialiasing (GlGpu::SetSamples): with samples > 0 drawing goes to the multisampled ms_fbo
+     * (colour ms_color, and depth), and tex/fbo hold its resolved pixels, brought up to date by
+     * Resolve before anything reads them. */
+    int samples;
+    GLuint ms_color, ms_fbo;
+    mutable bool stale;       /* ms_fbo was drawn on since the last Resolve */
 
     /* VRAM area x,y w*h, with pad columns of margin on either side, drawn at pw*ph pixels (at
-     * most max_tex). false on failure. */
-    bool Create(int x, int y, int w, int h, int pad, int pw, int ph, GLint max_tex);
+     * most max_tex), with samples samples per pixel (0: single). false on failure. */
+    bool Create(int x, int y, int w, int h, int pad, int pw, int ph, int samples, GLint max_tex);
     void Destroy();
     /* Bind for drawing (the whole target is the viewport). */
     void Use() const;
+    /* tex/fbo as drawn (leaves no framebuffer bound and the scissor test off). */
+    void Resolve() const;
+    /* The pixels px0,py0..px1,py1 (exclusive) were written to fbo: copy them to ms_fbo too. */
+    void Written(int px0, int py0, int px1, int py1) const;
     /* Scissor to the area x0,y0..x1,y1 (inclusive): of the VRAM area, or with wide of the whole
      * drawing area (margins included); false if none of it is here. */
     bool Scissor(int x0, int y0, int x1, int y1, int wide) const;
@@ -134,6 +144,9 @@ class GlGpu {
     void Shutdown();
     void NoteScreen(int x, int y, int w, int h);
     void SetWidescreen(int on) { m_widescreen = on; }
+    /* Multisample antialiasing of the screens: samples per pixel (0 or 1: off; at most what the
+     * driver offers). Remakes the display surfaces when it changes. */
+    void SetSamples(int n);
     int WideClip(int clip[4]);
     void Triangle(const GlPrim *p, const GlVertex *a, const GlVertex *b,
                   const GlVertex *c);
@@ -235,6 +248,8 @@ class GlGpu {
     int m_outW = 0, m_outH = 0;            /* the window's drawable size (pixels) */
     int m_widescreen = 0;                  /* SetWidescreen */
     int m_pad = 0;                         /* widescreen margin of gameplay screens, in PS1 pixels */
+    int m_samples = 0;                     /* SetSamples: the display surfaces' samples (0: off) */
+    GLint m_maxSamples = 0;
     GLint m_maxTex = 0;
     GLuint m_rbFbo = 0, m_rbTex = 0;       /* RGBA8 1024x512: readback */
     GLuint m_dispTex = 0;                  /* RGBA8 1024x512: pictures shown instead (movies) */

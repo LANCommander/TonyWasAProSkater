@@ -30,6 +30,7 @@ typedef struct {
     int object_distance;   /* percent of the models' level-of-detail and fade-out distances */
     int fog;               /* PC_FOG_* */
     int shadows;           /* PC_SHADOWS_* */
+    int antialiasing;      /* multisample antialiasing: samples per pixel, 0 (off), 2, 4 or 8 */
 } PcVideoSettings;
 
 /* the range Settings.ini allows for draw_distance and object_distance */

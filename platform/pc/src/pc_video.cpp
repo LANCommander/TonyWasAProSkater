@@ -38,6 +38,12 @@ const char *const s_modeNames[PC_VIDEO_MODES] = { "Windowed", "Borderless", "Ful
 const char *const s_fogNames[PC_FOG_MODES] = { "Normal", "Light", "Off" };
 const char *const s_shadowNames[PC_SHADOWS_MODES] = { "PlayStation", "Dreamcast" };
 
+/* antialiasing samples per pixel: 0 (off), 2, 4 or 8 */
+int AaSamples(int n)
+{
+    return n >= 8 ? 8 : n >= 4 ? 4 : n >= 2 ? 2 : 0;
+}
+
 int ClampDistance(int d)
 {
     return d < PC_DISTANCE_MIN ? PC_DISTANCE_MIN : d > PC_DISTANCE_MAX ? PC_DISTANCE_MAX : d;
@@ -139,6 +145,7 @@ void Video::SettingsDefaults()
     m_set.object_distance = 100;
     m_set.fog = PC_FOG_NORMAL;
     m_set.shadows = PC_SHADOWS_PS1;
+    m_set.antialiasing = 0;
 }
 
 int Video::SettingsLine(const char *section, const char *key, char *value)
@@ -178,6 +185,8 @@ int Video::SettingsLine(const char *section, const char *key, char *value)
         for (i = 0; i < PC_SHADOWS_MODES; i++)
             if (!SDL_strncasecmp(value, s_shadowNames[i], strlen(s_shadowNames[i])))
                 m_set.shadows = i;
+    } else if (!SDL_strcasecmp(key, "Antialiasing")) {
+        m_set.antialiasing = AaSamples(atoi(value));
     } else {
         PC_Log("Settings.ini: unknown setting \"%s\" in [Video]", key);
     }
@@ -199,7 +208,8 @@ void Video::WriteSettings(FILE *f)
           "; across it); ObjectDistance how far models keep their detail and stay visible\n"
           "; (50-400). Fog = Normal, Light (only the far half) or Off. Shadows = PlayStation\n"
           "; (flat blobs under the skater) or Dreamcast (a soft shadow laid over the level\n"
-          "; around the skater, as the Dreamcast version draws it).\n",
+          "; around the skater, as the Dreamcast version draws it). Antialiasing = Off, 2x, 4x\n"
+          "; or 8x smooths the edges of polygons (multisampling).\n",
           f);
     fprintf(f, "\n[Video]\nMode = %s\nWindowSize = %dx%d\n", s_modeNames[m_set.mode], m_set.win_w,
             m_set.win_h);
@@ -214,6 +224,10 @@ void Video::WriteSettings(FILE *f)
         fprintf(f, "DrawDistance = %d\n", m_set.draw_distance);
     fprintf(f, "ObjectDistance = %d\nFog = %s\nShadows = %s\n", m_set.object_distance,
             s_fogNames[m_set.fog], s_shadowNames[m_set.shadows]);
+    if (m_set.antialiasing)
+        fprintf(f, "Antialiasing = %dx\n", m_set.antialiasing);
+    else
+        fputs("Antialiasing = Off\n", f);
 }
 
 int Video::Save()
@@ -398,6 +412,7 @@ void Video::Apply(const PcVideoSettings &s)
     if (m_set.mode != PC_VIDEO_WINDOWED)
         m_lastFull = m_set.mode;
     g_glGpu.SetWidescreen(m_set.widescreen);
+    g_glGpu.SetSamples(m_set.antialiasing);
     ApplyWindow();
 }
 
@@ -511,8 +526,12 @@ bool Video::InitGl(int scale)
         if (getenv("THPS_WIDESCREEN"))
             m_set.widescreen = atoi(getenv("THPS_WIDESCREEN")) != 0;
         g_glGpu.SetWidescreen(m_set.widescreen);
-        if (g_glGpu.Init(fixed, dw, dh) == 0)
+        if (g_glGpu.Init(fixed, dw, dh) == 0) {
+            if (getenv("THPS_MSAA"))
+                m_set.antialiasing = AaSamples(atoi(getenv("THPS_MSAA")));
+            g_glGpu.SetSamples(m_set.antialiasing);
             return true;
+        }
         g_glGpu.Shutdown();
         SDL_GL_DeleteContext(m_glctx);
         m_glctx = nullptr;

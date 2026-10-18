@@ -262,11 +262,12 @@ void CopyArea(const Target *from, const Target *to, int x, int y, int w, int h)
     Span(from->sy, from->y, y, y + h - 1, &fy0, &fy1);
     Span(to->sx, to->x, x, x + w - 1, &tx0, &tx1);
     Span(to->sy, to->y, y, y + h - 1, &ty0, &ty1);
-    glDisable(GL_SCISSOR_TEST);
+    from->Resolve();
     glBindFramebuffer(GL_READ_FRAMEBUFFER, from->fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, to->fbo);
     glBlitFramebuffer(fx0, fy0, fx1, fy1, tx0, ty0, tx1, ty1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    to->Written(tx0, ty0, tx1, ty1);
 }
 
 }   // namespace
@@ -277,12 +278,15 @@ void CopyArea(const Target *from, const Target *to, int x, int y, int w, int h)
 void RenderTarget::Destroy()
 {
     glDeleteFramebuffers(1, &fbo);
+    glDeleteFramebuffers(1, &ms_fbo);
     glDeleteRenderbuffers(1, &depth);
+    glDeleteRenderbuffers(1, &ms_color);
     glDeleteTextures(1, &tex);
     *this = RenderTarget{};
 }
 
-bool RenderTarget::Create(int x_, int y_, int w_, int h_, int pad, int pw_, int ph_, GLint max_tex)
+bool RenderTarget::Create(int x_, int y_, int w_, int h_, int pad, int pw_, int ph_, int samples_,
+                          GLint max_tex)
 {
     *this = RenderTarget{};
     if (pw_ < 1 || ph_ < 1 || pw_ > max_tex || ph_ > max_tex)
@@ -297,13 +301,22 @@ bool RenderTarget::Create(int x_, int y_, int w_, int h_, int pad, int pw_, int 
     ph = ph_;
     sx = (float)pw_ / (float)w;
     sy = (float)ph_ / (float)h_;
+    samples = samples_ > 1 ? samples_ : 0;
     tex = Texture(GL_RGBA8, pw_, ph_, GL_RGBA, GL_UNSIGNED_BYTE, GL_NEAREST);
     fbo = Framebuffer(tex);
     glGenRenderbuffers(1, &depth);
     glBindRenderbuffer(GL_RENDERBUFFER, depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, pw_, ph_);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT32F, pw_, ph_);
+    if (fbo && samples) {
+        glGenRenderbuffers(1, &ms_color);
+        glBindRenderbuffer(GL_RENDERBUFFER, ms_color);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, pw_, ph_);
+        glGenFramebuffers(1, &ms_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, ms_fbo);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, ms_color);
+    }
     if (fbo) {
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, samples ? ms_fbo : fbo);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth);
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -321,8 +334,33 @@ bool RenderTarget::Create(int x_, int y_, int w_, int h_, int pad, int pw_, int 
 
 void RenderTarget::Use() const
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, samples ? ms_fbo : fbo);
     glViewport(0, 0, pw, ph);
+    stale = samples != 0;
+}
+
+void RenderTarget::Resolve() const
+{
+    glDisable(GL_SCISSOR_TEST);
+    if (!stale)
+        return;
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, ms_fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+    glBlitFramebuffer(0, 0, pw, ph, 0, 0, pw, ph, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    stale = false;
+}
+
+void RenderTarget::Written(int px0, int py0, int px1, int py1) const
+{
+    if (!samples)
+        return;
+    /* (each sample gets the pixel's value) */
+    glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ms_fbo);
+    glBlitFramebuffer(px0, py0, px1, py1, px0, py0, px1, py1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 bool RenderTarget::Scissor(int x0, int y0, int x1, int y1, int wide) const
@@ -418,6 +456,7 @@ int GlGpu::Init(int fixed_scale, int out_w, int out_h)
         return -1;
     }
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &m_maxTex);
+    glGetIntegerv(GL_MAX_SAMPLES, &m_maxSamples);
     m_fixedScale = fixed_scale > 0 ? fixed_scale : 0;
     m_outW = out_w > 0 ? out_w : 640;
     m_outH = out_h > 0 ? out_h : 480;
@@ -492,7 +531,7 @@ int GlGpu::Init(int fixed_scale, int out_w, int out_h)
     m_dispTex = Texture(GL_RGBA8, VRAM_W, VRAM_H, GL_RGBA, GL_UNSIGNED_BYTE,
                         m_filter ? GL_LINEAR : GL_NEAREST);
     m_rbFbo = Framebuffer(m_rbTex);
-    if (!m_base.Create(0, 0, VRAM_W, VRAM_H, 0, VRAM_W, VRAM_H, m_maxTex) || !m_rbFbo) {
+    if (!m_base.Create(0, 0, VRAM_W, VRAM_H, 0, VRAM_W, VRAM_H, 0, m_maxTex) || !m_rbFbo) {
         fprintf(stderr, "[gl] framebuffer setup failed\n");
         return -1;
     }
@@ -1327,6 +1366,8 @@ void GlGpu::ReadPixels(int x0, int y0, int x1, int y1, uint16_t *out)
             continue;
         Span(t->sx, t->x, ax0, ax1 - 1, &sx0, &sx1);
         Span(t->sy, t->y, ay0, ay1 - 1, &sy0, &sy1);
+        t->Resolve();
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_rbFbo);
         glBindFramebuffer(GL_READ_FRAMEBUFFER, t->fbo);
         glBlitFramebuffer(sx0, sy0, sx1, sy1, ax0, ay0, ax1, ay1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
@@ -1441,6 +1482,7 @@ uint32_t *GlGpu::ReadArea(int x, int y, int w, int h, int *out_w, int *out_h)
         return NULL;
     Flush();
     Prepare();
+    t->Resolve();
     glBindFramebuffer(GL_READ_FRAMEBUFFER, t->fbo);
     glPixelStorei(GL_PACK_ALIGNMENT, 4);
     glReadPixels(px0, py0, sw, sh, GL_BGRA, GL_UNSIGNED_BYTE, out);
@@ -1506,7 +1548,8 @@ void GlGpu::SurfaceAdd(int x, int y, int w, int h)
     if (m_nsurf == MAX_SURFACES)
         SurfaceRetire(0);
     SurfaceSize(w, h, pad, &pw, &ph);
-    if (!m_surf[m_nsurf].Create(x, y, w, h, pad, pw, ph, m_maxTex)) {
+    if (!m_surf[m_nsurf].Create(x, y, w, h, pad, pw, ph, m_samples, m_maxTex) &&
+        (!m_samples || !m_surf[m_nsurf].Create(x, y, w, h, pad, pw, ph, 0, m_maxTex))) {
         fprintf(stderr, "[gl] no %dx%d surface for the screen at %d,%d\n", pw, ph, x, y);
         return;
     }
@@ -1575,7 +1618,26 @@ void GlGpu::SetOutputSize(int w, int h)
     for (int n = m_nsurf; n > 0; n--) {
         Target t = m_surf[0];
         SurfaceRetire(0);
-        SurfaceAdd(t.x, t.y, t.w, t.h);
+        SurfaceAdd(t.rx, t.y, t.rw, t.h);
+    }
+}
+
+void GlGpu::SetSamples(int n)
+{
+    if (n > m_maxSamples)
+        n = m_maxSamples;
+    if (n < 2)
+        n = 0;
+    if (n == m_samples)
+        return;
+    m_samples = n;
+    if (!m_active)
+        return;
+    Flush();
+    for (int k = m_nsurf; k > 0; k--) {
+        Target t = m_surf[0];
+        SurfaceRetire(0);
+        SurfaceAdd(t.rx, t.y, t.rw, t.h);
     }
 }
 
@@ -1595,6 +1657,8 @@ void GlGpu::Present(void *sdl_window, int x, int y, int w, int h, int enabled,
     SetOutputSize(ww, wh);
     PictureRect(1, 1, pic);   /* 4:3 (movies) */
     Prepare();
+    for (int i = 0; i < m_nsurf; i++)
+        m_surf[i].Resolve();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, ww, wh);
     glDisable(GL_SCISSOR_TEST);
