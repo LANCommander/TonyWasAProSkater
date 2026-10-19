@@ -52,8 +52,10 @@ checksum table, palettes, texture records), with these differences:
   hard-coded part number that matters is Muska's: the PS1 code hides part 12 (`0x1000`, the
   part only his anim `0x3f` shows); on the DC that model (checksum `6d63a734`) is part 9 and its
   code hides `0x200`. The port finds the part by checksum (`CBruce::MuskaPartMask`), so his arm
-  is no longer hidden with DC data. (`Head`, used only by the big-head cheat, also differs:
-  Muska's DC head is part 16.)
+  is no longer hidden with DC data. The skater table's `Board`, `Wheel1`, `Wheel2` and `Head`
+  (the bytes at `+0x10` of each `0x16c` entry at `1ST_READ.BIN` `0x8c1a99d8`) are the DC's too:
+  Hawk's and Reynolds' boards are parts 16-18, not 0-2, so a bail's `BoardOff` hid one of their
+  body parts. `Assets::DreamcastFixups` puts the DC's numbers in `Stats[]`.
 
 So DC models only make sense **as whole files with their own textures**; mixing per file (DC
 skaters in a PS1 level or vice versa) works because each `.PSX` is self-contained.
@@ -165,7 +167,10 @@ slot; a few PS1 tones have no entry and stay silent). Compared with the PS1 VABs
   `(program % 100) << 16 | 1 << tone`, and a sound is the entry equal to its table word
   `& 0x1fffffff` (bit 30 picks the level bank), searched from the **last** entry. Duplicated ids
   (SKATE2 `2003`: the S-K-A-T-E letters and the tape; DOWNTOWN `1` and `2`) therefore take the
-  later entry. The DC table (`1ST_READ.BIN` `0x10dcd4`) moved some sounds (id 0, the rolling loop,
+  later entry. DOWNTOWN's later `1` is a loop, not glass: the DC's `playSFX` refuses
+  `SND_GLASS2` (58) in Downtown outright, and its `Shatter_MaybeMakeGlassShatterSound`
+  (`0x8c0f5140`) first plays `SND_GLASS1` at the shatter position (SKATE2 `7000`), so the port
+  does the same with DC data (`shatter.cpp`). The DC table (`1ST_READ.BIN` `0x10dcd4`) moved some sounds (id 0, the rolling loop,
   is tone 6) and rebalanced volumes; `DcSound::Table` copies it.
 
 `src/pc_dcsound.cpp` builds a VAB from the `.kat` when the game asks for the `.vab`: centre note

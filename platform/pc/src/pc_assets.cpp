@@ -667,11 +667,23 @@ void Assets::ExtractDreamcast(const StrFile *str, int nstr) {
 
 /* After indexing, with the Dreamcast's files: each skater's front-end model is its full model
  * where there is no front-end one (the Dreamcast's skater table leaves those names empty and
- * the select screen shows the full model; only Muska has one). */
+ * the select screen shows the full model; only Muska has one). And the skaters' part numbers
+ * are the Dreamcast table's (1ST_READ.BIN 0x8c1a99d8 + 0x16c n, +0x10): its models order their
+ * parts differently (Hawk's board and wheels are parts 16-18, not 0-2), so a bail's BoardOff
+ * hid one of his body parts and the big head cheat grew a wheel. */
 void Assets::DreamcastFixups() {
+    static const uint8_t kDcParts[GAME_SKATERS][4] = {
+        {16, 17, 18, 4},  {16, 18, 17, 9},  {16, 17, 18, 9},  {16, 18, 17, 3},
+        {17, 18, 18, 16}, {16, 17, 18, 15}, {16, 17, 18, 5},  {16, 18, 17, 3},
+        {16, 17, 18, 8},  {16, 18, 17, 15}, {16, 18, 17, 9},
+    };
     char name[64], path[MAX_PATH];
     for (int i = 0; i < GAME_SKATERS; i++) {
         GameStats *e = &::Stats[i];
+        e->Board = kDcParts[i][0];
+        e->Wheel1 = kDcParts[i][1];
+        e->Wheel2 = kDcParts[i][2];
+        e->Head = kDcParts[i][3];
         if (!e->PSXName || !e->FrontName || !*e->FrontName)
             continue;
         snprintf(name, sizeof name, "%.50s.psx", e->FrontName);
@@ -822,5 +834,7 @@ void Assets::Init() {
 extern "C" {
 
 int PC_ImageLayoutSize(const char *name, int w, int h, int *lw, int *lh) { return pc::g_assets.ImageLayoutSize(name, w, h, lw, lh); }
+
+int PC_DreamcastData(void) { return pc::g_assets.Dreamcast(); }
 
 }

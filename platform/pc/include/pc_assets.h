@@ -33,6 +33,9 @@ int PC_ImageLayoutSize(const char *name, int w, int h, int *lw, int *lh);
 /* The same for a loaded .bmp (FileIO marks it in memory; pc_fileio.cpp). */
 int PC_BmpLayoutSize(const void *bmp, int *lw, int *lh);
 
+/* 1: the game files are the Dreamcast version's */
+int PC_DreamcastData(void);
+
 #ifdef __cplusplus
 }
 #endif
