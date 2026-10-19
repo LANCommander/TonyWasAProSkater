@@ -10,6 +10,7 @@
 #include "game/m3d.h"
 #include "game/m3dasm.h"
 #include "pc_dctex.h"
+#include "pc_assets.h"
 #include "game/colij.h"
 #include "game/camera.h"
 #include "game/globals.h"
@@ -542,6 +543,18 @@ void Shatter_MaybeMakeGlassShatterSound(void) {
 	ESfx s;
 
 	if (ShatterSound) {
+		/* PC: as the Dreamcast version does (1ST_READ.BIN 0x8c0f5140): SND_GLASS1 at the
+		   shatter, then the level's glass below; but never SND_GLASS2 in Downtown (its playSFX
+		   0x8c098060 refuses it), where downtown.kat's sound for it is a loop, not glass. */
+		if (PC_DreamcastData()) {
+			SFX_PlayPos(SND_GLASS1, ShatterSoundPos, 0);
+
+			if (GLevel == 4) {
+				ShatterSound = 0;
+				return;
+			}
+		}
+
 		if (GLevel == 1)
 			s = SND_GLASS2;
 		else {
