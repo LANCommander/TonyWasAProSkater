@@ -22,7 +22,13 @@
  * banks .kat files. All are extracted unchanged; the images it redrew larger are shown at the
  * PS1 layout's size with all their pixels (PC_ImageLayoutSize). The first line of Manifest.txt
  * says which disc the files came from; with the Dreamcast's, the game gets more RAM (its files are bigger), never opens a PS1
- * disc image, and the skaters' front-end models (the Dreamcast has none) are their full ones. */
+ * disc image, and the skaters' front-end models (the Dreamcast has none) are their full ones.
+ *
+ * Both versions' files can be there at once, each in its own folder next to thps.exe ("Data
+ * (PlayStation)" and "Data (Dreamcast)"; ChooseData): with both discs on the first startup, or
+ * when the other version's disc turns up next to thps.exe later (Data is then renamed to its
+ * version's folder). Settings.ini's Data (Options > Graphics) picks the one the game plays with
+ * when it starts. THPS_DATA_DIR names one folder and turns this off. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -38,7 +44,9 @@
 #include "pc_runtime.h"
 #include "pc/platform.h"
 #include "pc/runtime.h"
+#include "pc/settings.h"
 #include "pc/sfd.h"
+#include "pc/video.h"
 
 /* the Manifest.txt tag of the Dreamcast's files (pasted into its header line) */
 #define DC_MANIFEST_TAG "source: dreamcast"
@@ -94,6 +102,11 @@ constexpr struct {
     {"kat", "Sounds"}, {"fnt", "Fonts"},    {"pre", "Packs"},    {"rec", "Demos"},
     {"txt", "Text"},
 };
+
+/* With both versions' files, the folders next to thps.exe that hold them (PC_DATA_* order); with
+ * one version's, Data. */
+constexpr const char *kVersionDirs[PC_DATA_MODES] = {"Data (PlayStation)", "Data (Dreamcast)"};
+constexpr const char *kVersionNames[PC_DATA_MODES] = {"PlayStation", "Dreamcast"};
 
 /* Not game data: the Dreamcast executable, boot files and leftovers. */
 constexpr const char *kDcSkip[] = {"1ST_READ.BIN", "IP.BIN", "TEST.BIN", "SIZES.FOO",
@@ -297,7 +310,9 @@ bool FindGdiIn(const char *dir, char *out, int n, int depth) {
         return false;
     while (list.Next(&fd)) {
         char sub[MAX_PATH];
-        if (!fd.isDir || fd.name[0] == '.' || !_stricmp(fd.name, "Data"))
+        if (!fd.isDir || fd.name[0] == '.' || !_stricmp(fd.name, "Data") ||
+            !_stricmp(fd.name, kVersionDirs[PC_DATA_PS1]) ||
+            !_stricmp(fd.name, kVersionDirs[PC_DATA_DC]))
             continue;
         snprintf(sub, sizeof sub, "%s" PC_SEP "%s", dir, fd.name);
         if (FindGdiIn(sub, out, n, depth - 1))
@@ -306,7 +321,8 @@ bool FindGdiIn(const char *dir, char *out, int n, int depth) {
     return false;
 }
 
-bool FindGdi(char *out, int n) {
+/* nearOnly: only THPS_DISC or next to thps.exe, not the development layout's */
+bool FindGdi(char *out, int n, bool nearOnly = false) {
     char exeDir[MAX_PATH], dir[MAX_PATH];
     const char *e = getenv("THPS_DISC");
     if (e) {
@@ -317,8 +333,17 @@ bool FindGdi(char *out, int n) {
     os::ExeDir(exeDir, sizeof exeDir);
     if (FindGdiIn(exeDir, out, n, 1) || FindGdiIn(g_runtime.DataDir(), out, n, 1))
         return true;
+    if (nearOnly)
+        return false;
     snprintf(dir, sizeof dir, "%s" PC_SEP ".." PC_SEP "..", exeDir);
     return FindGdiIn(dir, out, n, 1);
+}
+
+/* A disc image of that version (PC_DATA_*). */
+bool FindDisc(int version, bool nearOnly) {
+    char path[MAX_PATH];
+    return version == PC_DATA_DC ? FindGdi(path, sizeof path, nearOnly)
+                                 : DiscImage::FindImage(path, sizeof path, nearOnly) != 0;
 }
 
 struct DcFile {
@@ -793,12 +818,22 @@ bool Assets::FindFilm(const char *discName, char *path, int n) const {
     return Find(film, path, n);
 }
 
-void Assets::Init() {
-    StrFile e[kMovieCount];
+/* Extract what is missing from m_root, from the disc of version m_dc. */
+void Assets::Extract(const StrFile *e, int n) {
+    if (m_dc) {
+        ExtractDreamcast(e, n);
+        WritePlaylist(e, n);
+    } else {
+        ExtractStrFiles(e, n);
+        ExtractWadFiles();
+        WritePlaylist(e, n);
+    }
+}
+
+/* One version's files in m_root: the disc they come from is what Manifest.txt says, else (first
+ * startup) the PS1 image if there is one, else a Dreamcast .gdi. */
+void Assets::ExtractOne(const StrFile *e, int n) {
     char path[MAX_PATH];
-    int n = ListStrFiles(e);
-    /* the disc the files come from: what Manifest.txt says, else (first startup) the PS1 image
-     * if there is one, else a Dreamcast .gdi */
     m_dc = ManifestIsDreamcast();
     if (!m_dc && !WadComplete() && !DiscImage::FindImage(path, sizeof path)) {
         if (!FindGdi(path, sizeof path))
@@ -809,15 +844,94 @@ void Assets::Init() {
                      "THPS_DISC to either.");
         m_dc = true;
     }
-    if (m_dc) {
-        ExtractDreamcast(e, n);
-        WritePlaylist(e, n);
-        g_discImage.SetNone(true);
-    } else {
-        ExtractStrFiles(e, n);
-        ExtractWadFiles();
-        WritePlaylist(e, n);
+    Extract(e, n);
+}
+
+/* The folders next to thps.exe. One version's files are in Data. When the other version's disc
+ * is next to thps.exe too (on the first startup, or later), each version gets its own folder
+ * (kVersionDirs; Data is renamed to its version's) and Settings.ini's Data says which one the
+ * game plays with. Returns with m_root and m_dc set to it. */
+void Assets::ChooseData(const StrFile *e, int n) {
+    char exe[MAX_PATH], dirs[PC_DATA_MODES][MAX_PATH], single[MAX_PATH];
+    bool have[PC_DATA_MODES];
+    int v, want;
+    os::ExeDir(exe, sizeof exe);
+    for (v = 0; v < PC_DATA_MODES; v++) {
+        snprintf(dirs[v], sizeof dirs[v], "%s" PC_SEP "%s", exe, kVersionDirs[v]);
+        have[v] = os::Exists(dirs[v]);
     }
+    snprintf(single, sizeof single, "%s" PC_SEP "Data", exe);
+    if (!have[PC_DATA_PS1] && !have[PC_DATA_DC]) {
+        snprintf(m_root, sizeof m_root, "%s", single);
+        if (os::Exists(single)) {
+            /* (an extraction interrupted on the first startup is finished first) */
+            if (!WadComplete()) {
+                ExtractOne(e, n);
+                return;
+            }
+            v = ManifestIsDreamcast() ? PC_DATA_DC : PC_DATA_PS1;
+            if (!FindDisc(!v, true)) {
+                m_dc = v == PC_DATA_DC;
+                Extract(e, n);
+                return;
+            }
+            PC_Log("found the %s disc: the %s files move to %s, the %s files go to %s",
+                   kVersionNames[!v], kVersionNames[v], dirs[v], kVersionNames[!v], dirs[!v]);
+            if (!os::RenameOver(single, dirs[v]))
+                PC_Fatal("cannot rename %s to %s (is a file in it open?)", single, dirs[v]);
+            /* the game goes on with the version it had (Options > Graphics switches) */
+            g_video.SetData(v);
+            g_settings.Save();
+        } else if (!FindDisc(PC_DATA_PS1, false) || !FindDisc(PC_DATA_DC, false)) {
+            ExtractOne(e, n);
+            return;
+        } else {
+            PC_Log("found both discs: their files go to %s and %s", dirs[PC_DATA_PS1],
+                   dirs[PC_DATA_DC]);
+        }
+        have[PC_DATA_PS1] = have[PC_DATA_DC] = true;
+    } else {
+        /* the other version's disc next to thps.exe later */
+        for (v = 0; v < PC_DATA_MODES; v++)
+            if (!have[v] && FindDisc(v, true))
+                have[v] = true;
+    }
+    want = g_video.Settings().data;
+    if (want < 0 || want >= PC_DATA_MODES || !have[want])
+        want = have[PC_DATA_DC] && !have[PC_DATA_PS1] ? PC_DATA_DC : PC_DATA_PS1;
+    /* the other version first, so the one played with is set up last; the other is left out if
+     * its files are incomplete and its disc is gone */
+    for (int k = 0; k < PC_DATA_MODES; k++) {
+        v = k ? want : !want;
+        if (!have[v])
+            continue;
+        snprintf(m_root, sizeof m_root, "%s", dirs[v]);
+        m_dc = v == PC_DATA_DC;
+        if (v != want && !WadComplete() && !FindDisc(v, false)) {
+            PC_Log("%s is incomplete and its disc is gone: the %s version is not available",
+                   dirs[v], kVersionNames[v]);
+            have[v] = false;
+            continue;
+        }
+        Extract(e, n);
+    }
+    m_both = have[PC_DATA_PS1] && have[PC_DATA_DC];
+}
+
+void Assets::Init() {
+    StrFile e[kMovieCount];
+    int n = ListStrFiles(e);
+    g_settings.Load();
+    if (getenv("THPS_DATA_DIR")) {
+        snprintf(m_root, sizeof m_root, "%s", getenv("THPS_DATA_DIR"));
+        ExtractOne(e, n);
+    } else {
+        ChooseData(e, n);
+    }
+    if (m_dc)
+        g_discImage.SetNone(true);
+    if (m_both)
+        PC_Log("game files: %s (both versions are there; Options > Graphics switches)", m_root);
     g_mods.Init();
     BuildIndex();
     if (m_dc) {
@@ -836,5 +950,7 @@ extern "C" {
 int PC_ImageLayoutSize(const char *name, int w, int h, int *lw, int *lh) { return pc::g_assets.ImageLayoutSize(name, w, h, lw, lh); }
 
 int PC_DreamcastData(void) { return pc::g_assets.Dreamcast(); }
+
+int PC_DataBothVersions(void) { return pc::g_assets.BothVersions(); }
 
 }

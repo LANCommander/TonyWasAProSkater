@@ -34,7 +34,12 @@ Data folder from the Windows version works as it is.
 
 The Dreamcast version's data can be used instead (higher-resolution textures, remodelled
 skaters, better-quality music): put the .gdi file and its track files next to thps instead.
-If both discs are there, the PlayStation one is used.
+
+Or keep both versions: with both discs next to thps on the first startup, each one's
+files go into a folder of their own, "Data (PlayStation)" and "Data (Dreamcast)". If the
+other disc is put next to thps later, Data is renamed to its version's folder and the other
+version's files are copied next to it. Options > Graphics > Game Files then switches between
+them (the game restarts to switch). Mods in Data's Mods folder move with it.
 
 THPS_DISC=<path to .bin or .gdi> picks a disc image anywhere else.
 

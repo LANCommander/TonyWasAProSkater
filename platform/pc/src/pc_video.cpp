@@ -37,6 +37,7 @@ namespace {
 const char *const s_modeNames[PC_VIDEO_MODES] = { "Windowed", "Borderless", "Fullscreen" };
 const char *const s_fogNames[PC_FOG_MODES] = { "Normal", "Light", "Off" };
 const char *const s_shadowNames[PC_SHADOWS_MODES] = { "PlayStation", "Dreamcast" };
+const char *const s_dataNames[PC_DATA_MODES] = { "PlayStation", "Dreamcast" };
 
 /* antialiasing samples per pixel: 0 (off), 2, 4 or 8 */
 int AaSamples(int n)
@@ -147,6 +148,7 @@ void Video::SettingsDefaults()
     m_set.shadows = PC_SHADOWS_PS1;
     m_set.antialiasing = 0;
     m_set.vsync = 1;
+    m_set.data = PC_DATA_PS1;
 }
 
 int Video::SettingsLine(const char *section, const char *key, char *value)
@@ -191,6 +193,10 @@ int Video::SettingsLine(const char *section, const char *key, char *value)
     } else if (!SDL_strcasecmp(key, "VSync")) {
         m_set.vsync = !SDL_strncasecmp(value, "on", 2) || *value == '1' ||
                       !SDL_strncasecmp(value, "yes", 3);
+    } else if (!SDL_strcasecmp(key, "Data")) {
+        for (i = 0; i < PC_DATA_MODES; i++)
+            if (!SDL_strncasecmp(value, s_dataNames[i], strlen(s_dataNames[i])))
+                m_set.data = i;
     } else {
         PC_Log("Settings.ini: unknown setting \"%s\" in [Video]", key);
     }
@@ -215,7 +221,9 @@ void Video::WriteSettings(FILE *f)
           "; around the skater, as the Dreamcast version draws it). Antialiasing = Off, 2x, 4x\n"
           "; or 8x smooths the edges of polygons (multisampling). VSync = On shows each frame\n"
           "; at the display's next refresh (no tearing); the game's speed is the same whatever\n"
-          "; the display's refresh rate.\n",
+          "; the display's refresh rate. Data = PlayStation or Dreamcast: which version's game\n"
+          "; files to play with when both discs' are extracted (each in its own Data folder);\n"
+          "; read when the game starts.\n",
           f);
     fprintf(f, "\n[Video]\nMode = %s\nWindowSize = %dx%d\n", s_modeNames[m_set.mode], m_set.win_w,
             m_set.win_h);
@@ -234,7 +242,7 @@ void Video::WriteSettings(FILE *f)
         fprintf(f, "Antialiasing = %dx\n", m_set.antialiasing);
     else
         fputs("Antialiasing = Off\n", f);
-    fprintf(f, "VSync = %s\n", m_set.vsync ? "On" : "Off");
+    fprintf(f, "VSync = %s\nData = %s\n", m_set.vsync ? "On" : "Off", s_dataNames[m_set.data]);
 }
 
 int Video::Save()
@@ -414,6 +422,8 @@ void Video::ApplyWindow()
 void Video::Apply(const PcVideoSettings &s)
 {
     m_set = s;
+    if (m_set.data < 0 || m_set.data >= PC_DATA_MODES)
+        m_set.data = PC_DATA_PS1;
     if (m_set.mode < 0 || m_set.mode >= PC_VIDEO_MODES)
         m_set.mode = PC_VIDEO_WINDOWED;
     if (m_set.mode != PC_VIDEO_WINDOWED)

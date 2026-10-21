@@ -247,8 +247,7 @@ plays with its first song's settings.
 ### The Dreamcast version's data
 
 The first extraction can come from the **Dreamcast** disc instead (Treyarch's port; a `.gdi`
-dump with its track files next to `thps.exe`, or `THPS_DISC=<file>.gdi`; a PS1 image is used
-first if both are there). Its files are loose on the disc (`src/pc_gdrom.cpp` reads the GD-ROM's
+dump with its track files next to `thps.exe`, or `THPS_DISC=<file>.gdi`). Its files are loose on the disc (`src/pc_gdrom.cpp` reads the GD-ROM's
 ISO 9660 area) and go to the same folders; `Manifest.txt`'s first line records the source. The
 models and levels are version 6 `.psx` files: the same format with 16-bit PowerVR textures up to
 256x256 (filtered, tiling, with alpha) and remodelled skaters. They are loaded without their
@@ -271,6 +270,17 @@ shown. Its sound banks (`.kat`: the same sounds as 8/16-bit PCM at 22 kHz instea
 at about 11 kHz) become the VABs the game loads (`src/pc_dcsound.cpp`): each sound is a PCM sample
 played in place of a stand-in in the bank's sample data, tuned to the PS1 banks' pitch. The Dreamcast
 logos (Crave, Treyarch, Sofdec) are not played. Needs the OpenGL renderer.
+
+Both versions' files can be kept (`Assets::ChooseData`): each version then has a folder of its own
+next to `thps.exe`, `Data (PlayStation)` and `Data (Dreamcast)`, in place of `Data`. With both
+disc images there on the first startup both are extracted into them; when `Data` is complete
+and the other version's disc turns up next to `thps.exe` (or in `THPS_DISC`; the development
+layout's images don't count), `Data` is renamed to its version's folder (the game goes on with
+that version) and the other version is extracted beside it. Settings.ini's `Data = PlayStation |
+Dreamcast` picks the folder at startup; Options > Graphics shows it as GAME FILES only when both
+are there, and applying a change offers to restart the game (`PC_RequestRestart`: the same
+command line as a new process). Each folder has its own `Manifest.txt`, playlist and `Mods`.
+`THPS_DATA_DIR` names one folder and turns this off.
 
 ### Mods
 
@@ -495,7 +505,7 @@ window, `THPS_FAST`, `THPS_DETERMINISTIC`) never wait for a display.
 | variable | effect |
 |---|---|
 | `THPS_DISC` | the disc image for the first-startup extraction (else found next to the exe or in `extern/`); a `.gdi` is the Dreamcast disc |
-| `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`) |
+| `THPS_DATA_DIR` | where the extracted data lives (default `Data` next to `thps.exe`, or with both versions' files the folder Settings.ini's `Data` picks) |
 | `THPS_MODS` | more mods: mod folders or folders of mods, `;`-separated (Linux `:`), loaded after `Data/Mods` and the player's `Mods`; `none` loads no mods at all |
 | `THPS_SAVE_DIR` | the saves folder (default `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater\Saves`; Linux `~/.local/share/Neversoft/Tony Hawk's Pro Skater/Saves`) |
 | `THPS_SCALE=n` | headless: window size n x 320x240 (default 3) |

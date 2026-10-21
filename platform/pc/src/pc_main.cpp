@@ -972,11 +972,44 @@ int Runtime::Main() {
     return 0;
 }
 
+void Runtime::RequestRestart() {
+    m_restart = true;
+    g_input.RequestQuit();
+}
+
+/* The game again, as a new process with the same command line (the frame loop calls this instead
+ * of exiting when PC_RequestRestart asked for it): the extracted data is chosen at startup. */
+void Runtime::Restart() {
+    PC_Log("restarting");
+    fflush(NULL);
+#ifdef _WIN32
+    char exe[MAX_PATH];
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    memset(&si, 0, sizeof si);
+    si.cb = sizeof si;
+    GetModuleFileNameA(NULL, exe, sizeof exe);
+    if (CreateProcessA(exe, GetCommandLineA(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+    } else {
+        PC_Log("cannot start %s again (error %lu)", exe, GetLastError());
+    }
+#else
+    /* the window and audio go first: the new image would inherit their connections */
+    SDL_Quit();
+    char *none[] = {(char *)PC_EXE_NAME, NULL};
+    execv("/proc/self/exe", m_argv ? m_argv : none);
+    PC_Log("cannot start the game again: %s", strerror(errno));
+#endif
+    os::Exit(0);
+}
+
 } // namespace pc
 
 int main(int argc, char **argv) {
     (void)argc;
-    (void)argv;
+    pc::g_runtime.SetArgs(argv);
     return pc::g_runtime.Main();
 }
 
@@ -985,4 +1018,5 @@ int main(int argc, char **argv) {
 void *PC_GameHeap(uint32_t *size) { return pc::g_runtime.GameHeap(size); }
 uint32_t PC_MissingFunction(uint32_t addr) { return pc::g_runtime.MissingFunction(addr); }
 extern "C" void PC_RunStaticCtors(void) { pc::g_runtime.RunStaticCtors(); }
+void PC_RequestRestart(void) { pc::g_runtime.RequestRestart(); }
 /* (C++ linkage, as pc_debug.cpp and pc_draw.cpp declare it) */

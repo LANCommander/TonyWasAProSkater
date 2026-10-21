@@ -53,6 +53,7 @@ extern "C" {
 #include "game/init.h"
 #include "game/shell.h"
 #include "pc_runtime.h"
+#include "pc_assets.h"
 
 /* the PS1 (egcs) vtable of a CClass object as the C sources walk it: entry 0 unused, then
    {this offset, function} pairs; slot 1 the (deleting) destructor, slot 2 VerticalMenu::draw */
@@ -422,6 +423,7 @@ enum {
 	GFX_SHADOWS,
 	GFX_ANTIALIASING,
 	GFX_VSYNC,
+	GFX_DATA, /* only with both versions' files (PC_DataBothVersions) */
 	GFX_APPLY,
 	GFX_BACK,
 	GFX_ROWS
@@ -430,6 +432,7 @@ enum {
 static const char *const s_modeLabels[PC_VIDEO_MODES] = { "WINDOWED", "BORDERLESS", "FULLSCREEN" };
 static const char *const s_fogLabels[PC_FOG_MODES] = { "NORMAL", "LIGHT", "OFF" };
 static const char *const s_shadowLabels[PC_SHADOWS_MODES] = { "PLAYSTATION", "DREAMCAST" };
+static const char *const s_dataLabels[PC_DATA_MODES] = { "PLAYSTATION", "DREAMCAST" };
 /* the distance steps, in percent (Settings.ini may hold others in between); the last, the entire
    level, only for the draw distance */
 static const int s_distances[] = { 100, 200, 300, 400, PC_DISTANCE_FULL };
@@ -6530,12 +6533,21 @@ static int SameSettings(const PcVideoSettings *a, const PcVideoSettings *b) {
 	return SameWindow(a, b) && a->draw_distance == b->draw_distance &&
 	       a->object_distance == b->object_distance && a->fog == b->fog &&
 	       a->shadows == b->shadows && a->antialiasing == b->antialiasing &&
-	       a->vsync == b->vsync;
+	       a->vsync == b->vsync && a->data == b->data;
+}
+
+static int RowShown(int i) {
+	return i != GFX_DATA || PC_DataBothVersions();
+}
+
+/* the saved settings play with the other version's files: they are read at startup */
+static int NeedsRestart(const PcVideoSettings *s) {
+	return PC_DataBothVersions() && s->data != (PC_DreamcastData() ? PC_DATA_DC : PC_DATA_PS1);
 }
 
 extern "C" void PC_GraphicsOptions(int a) {
 	PcVideoSettings cur, edit, old;
-	int sel = 0, keep = 0, i;
+	int sel = 0, keep = 0, restart = 0, rows, i;
 	int base_scale = Mess_GetFontScale();
 	int small_scale = base_scale * 3 / 4;
 	(void)a;
@@ -6583,11 +6595,21 @@ extern "C" void PC_GraphicsOptions(int a) {
 		ResetOT();
 
 		/* ---- input */
-		if (keep) {
+		if (restart) {
+			if (p->MenuAccept.Triggered) {
+				/* (the game quits at the end of this frame) */
+				PC_RequestRestart();
+				SFX_PlayX(SND_SELECT1, 8192, 0);
+			} else if (p->MenuBack.Triggered) {
+				restart = 0;
+				SFX_PlayX(SND_GOBACK2, 8192, 0);
+			}
+		} else if (keep) {
 			if (p->MenuAccept.Triggered) {
 				keep = 0;
 				cur = edit;
 				PC_VideoSave();
+				restart = NeedsRestart(&cur);
 				SFX_PlayX(SND_SELECT1, 8192, 0);
 			} else if (p->MenuBack.Triggered || --keep == 0) {
 				keep = 0;
@@ -6601,12 +6623,16 @@ extern "C" void PC_GraphicsOptions(int a) {
 			int d = right - left;
 
 			if (Repeat(&p->MenuUp)) {
-				sel = sel ? sel - 1 : GFX_ROWS - 1;
+				do
+					sel = sel ? sel - 1 : GFX_ROWS - 1;
+				while (!RowShown(sel));
 				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
 			}
 
 			if (Repeat(&p->MenuDown)) {
-				sel = sel == GFX_ROWS - 1 ? 0 : sel + 1;
+				do
+					sel = sel == GFX_ROWS - 1 ? 0 : sel + 1;
+				while (!RowShown(sel));
 				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
 			}
 
@@ -6647,6 +6673,9 @@ extern "C" void PC_GraphicsOptions(int a) {
 			} else if (d && sel == GFX_VSYNC) {
 				edit.vsync ^= 1;
 				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
+			} else if (d && sel == GFX_DATA) {
+				edit.data = (edit.data + d + PC_DATA_MODES) % PC_DATA_MODES;
+				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
 			}
 
 			if (p->MenuAccept.Triggered && sel == GFX_APPLY) {
@@ -6657,6 +6686,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 					cur = edit;
 					PC_VideoSave();
+					restart = NeedsRestart(&cur);
 					SFX_PlayX(SND_SELECT1, 8192, 0);
 				} else {
 					old = cur;
@@ -6679,9 +6709,14 @@ extern "C" void PC_GraphicsOptions(int a) {
 		/* ---- draw */
 		Mess_SetFontScale(small_scale);
 
-		for (i = 0; i < GFX_ROWS; i++) {
-			int y = ROW_TOP + (i + (i >= GFX_APPLY)) * ROW_HEIGHT + 7;
-			int on = i == sel && !keep;
+		for (i = rows = 0; i < GFX_ROWS; i++) {
+			int y = ROW_TOP + (rows + (i >= GFX_APPLY)) * ROW_HEIGHT + 7;
+			int on = i == sel && !keep && !restart;
+
+			if (!RowShown(i))
+				continue;
+
+			rows++;
 
 			switch (i) {
 				case GFX_MODE:
@@ -6751,6 +6786,11 @@ extern "C" void PC_GraphicsOptions(int a) {
 					Text(NAME_X, y, 1, "VSYNC");
 					Text(SLOT_X1 - 60, y, 0, edit.vsync ? "ON" : "OFF");
 					break;
+				case GFX_DATA:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "GAME FILES");
+					Text(SLOT_X1 - 60, y, 0, s_dataLabels[edit.data]);
+					break;
 				case GFX_APPLY:
 					SetColour(on, SameSettings(&edit, &cur));
 					Text(NAME_X, y, 1, "APPLY");
@@ -6762,9 +6802,13 @@ extern "C" void PC_GraphicsOptions(int a) {
 			}
 		}
 
-		if (keep) {
+		if (restart) {
 			Mess_SetRGB(182, 132, 36, 0);
-			Text(NAME_X, ROW_TOP + (GFX_ROWS + 1) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
+			Text(NAME_X, ROW_TOP + (rows + 1) * ROW_HEIGHT + 7, 1, "RESTART TO SWITCH");
+			sprintf(buf, "%s %s", "ACCEPT TO RESTART NOW", "  BACK FOR LATER");
+		} else if (keep) {
+			Mess_SetRGB(182, 132, 36, 0);
+			Text(NAME_X, ROW_TOP + (rows + 1) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
 			sprintf(buf, (char *)"ACCEPT TO KEEP   BACK TO UNDO   %d", (keep + 59) / 60);
 		} else if (sel == GFX_MODE || (sel == GFX_RESOLUTION && edit.mode != PC_VIDEO_BORDERLESS)) {
 			sprintf(buf, "%s %s", "LEFT OR RIGHT TO CHANGE", "");
@@ -6784,6 +6828,8 @@ extern "C" void PC_GraphicsOptions(int a) {
 			sprintf(buf, "%s %s", "SMOOTHS THE EDGES OF", "POLYGONS");
 		} else if (sel == GFX_VSYNC) {
 			sprintf(buf, "%s %s", "SHOWS EACH FRAME AT THE", "SCREENS REFRESH");
+		} else if (sel == GFX_DATA) {
+			sprintf(buf, "%s %s", "THE MODELS MUSIC AND SOUNDS", "OF EITHER VERSION");
 		} else if (sel == GFX_APPLY && !SameSettings(&edit, &cur)) {
 			sprintf(buf, "%s %s", "ACCEPT TO SWITCH", "");
 		} else {

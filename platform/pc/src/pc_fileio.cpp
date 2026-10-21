@@ -127,8 +127,9 @@ int FileIo::Open(const char *name) {
     if (!g_assets.Find(name, m_path, sizeof m_path)) {
         size_t n = strlen(name);
         if (!g_assets.Dreamcast() || n < 4 || _stricmp(name + n - 4, ".vab"))
-            PC_Fatal("The game asked for %s, which is not in the Data folder. Delete "
-                     "Data" PC_SEP "Manifest.txt to extract the game files from the disc again.", name);
+            PC_Fatal("The game asked for %s, which is not in %s. Delete %s" PC_SEP
+                     "Manifest.txt to extract the game files from the disc again.", name,
+                     g_assets.Root(), g_assets.Root());
         free(m_image);
         if ((m_image = g_dcSound.Vab(name, &m_size))) {
             snprintf(m_path, sizeof m_path, "%s (from its .kat)", name);

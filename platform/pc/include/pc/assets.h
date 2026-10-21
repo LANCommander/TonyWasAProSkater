@@ -13,15 +13,21 @@ public:
      * lists the files) and, if anything is missing, the disc image. */
     void Init();
 
-    /* true if Data/ holds the Dreamcast version's files (extracted from its disc). */
+    /* true if the game plays with the Dreamcast version's files (extracted from its disc). */
     bool Dreamcast() const { return m_dc; }
+    /* true if both versions' files are there, each in its own folder (pc_assets.cpp ChooseData);
+     * Settings.ini's Data (PC_DATA_*, pc_video.h) picks one at startup. */
+    bool BothVersions() const { return m_both; }
+
+    /* The Data directory the game plays from: THPS_DATA_DIR, else Data next to thps.exe, or the
+     * chosen version's folder there when both versions' files are. */
+    const char *Root();
 
     /* An image the Dreamcast redrew larger (name, its size w x h): true and the size the PS1 game
      * lays it out at, in VRAM pixels (pc_assets.h). false for any other image or the PS1's data. */
     bool ImageLayoutSize(const char *name, int w, int h, int *lw, int *lh) const;
 
-    /* `rel` ("Music\\Playlist.m3u") under the Data directory (THPS_DATA_DIR, else Data next to
-     * thps.exe). */
+    /* `rel` ("Music\\Playlist.m3u") under the Data directory (Root). */
     void Path(char *out, int n, const char *rel);
 
     /* The file under Data/ with this name, in any folder ("\\SUICIDE.STR;1", "skware.psx"): true
@@ -40,7 +46,6 @@ private:
         int layer;   /* 0: Data itself, else 1 + the mod (pc/mods.h) whose Data it is in */
     };
 
-    const char *Root();
     void MakeDirs(const char *rel);
     void StrPath(const StrFile *e, char *path, int n);
     void ExtractStrFiles(const StrFile *e, int n);
@@ -49,6 +54,9 @@ private:
     void ExtractWadFiles();
     bool ManifestIsDreamcast();
     void ExtractDreamcast(const StrFile *str, int nstr);
+    void Extract(const StrFile *e, int n);
+    void ExtractOne(const StrFile *e, int n);
+    void ChooseData(const StrFile *e, int n);
     void DreamcastFixups();
     static int CmpName(const void *a, const void *b);
     static int CmpIndex(const void *a, const void *b);
@@ -56,7 +64,8 @@ private:
     void BuildIndex();
 
     char m_root[MAX_PATH] = {};
-    bool m_dc = false;   /* Data/ holds the Dreamcast version's files */
+    bool m_dc = false;   /* m_root holds the Dreamcast version's files */
+    bool m_both = false; /* both versions' folders are there */
     /* file name -> path, sorted by name (malloc'd) */
     IndexEntry *m_index = nullptr;
     int m_nindex = 0, m_capindex = 0;

@@ -17,7 +17,7 @@ constexpr int kSector = 2352;
 
 DiscImage g_discImage;
 
-int DiscImage::FindImage(char *path, int n) {
+int DiscImage::FindImage(char *path, int n, bool nearOnly) {
     const char *dir = g_runtime.DataDir();
     /* next to thps.exe, or the development layout (thps.exe in build/pc or build/pc/release) */
 #define S PC_SEP
@@ -33,6 +33,8 @@ int DiscImage::FindImage(char *path, int n) {
         return len < 4 || _stricmp(e + len - 4, ".gdi") ? os::IsFile(path) : 0;
     }
     for (const char *fmt : fmts) {
+        if (nearOnly && strstr(fmt, ".."))
+            continue;
         snprintf(path, n, fmt, dir);
         if (os::IsFile(path))
             return 1;

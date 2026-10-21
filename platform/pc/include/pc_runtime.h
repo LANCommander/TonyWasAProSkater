@@ -41,6 +41,8 @@ uint32_t PC_MissingFunction(uint32_t addr);
 extern void (*pc_hires_before_draw)(void);
 
 void PC_RequestQuit(void);
+/* Quit, then start the game again with the same command line (pc/runtime.h). */
+void PC_RequestRestart(void);
 
 #ifdef __cplusplus
 }

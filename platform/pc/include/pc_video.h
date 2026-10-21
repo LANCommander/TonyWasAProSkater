@@ -20,6 +20,10 @@ enum { PC_FOG_NORMAL, PC_FOG_LIGHT, PC_FOG_OFF, PC_FOG_MODES };
  * the level (native 3D renderer only, pc_render3d.h R3d_Shadows) */
 enum { PC_SHADOWS_PS1, PC_SHADOWS_DC, PC_SHADOWS_MODES };
 
+/* the game files to play with when both versions' are extracted (pc/assets.h): the PS1's or the
+ * Dreamcast's; read at startup, so a change takes effect when the game starts again */
+enum { PC_DATA_PS1, PC_DATA_DC, PC_DATA_MODES };
+
 typedef struct {
     int mode;              /* PC_VIDEO_* */
     int win_w, win_h;      /* windowed: the window's drawing area, in pixels */
@@ -32,6 +36,7 @@ typedef struct {
     int shadows;           /* PC_SHADOWS_* */
     int antialiasing;      /* multisample antialiasing: samples per pixel, 0 (off), 2, 4 or 8 */
     int vsync;             /* 1: show each frame at the display's next refresh (no tearing) */
+    int data;              /* PC_DATA_* */
 } PcVideoSettings;
 
 /* the range Settings.ini allows for draw_distance and object_distance */

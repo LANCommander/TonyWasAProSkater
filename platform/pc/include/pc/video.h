@@ -38,6 +38,8 @@ class Video {
     /* Switch the window to s now (Settings.ini is written by Save). */
     void Apply(const PcVideoSettings &s);
     int Save();
+    /* the Data setting (PC_DATA_*), without applying anything (pc/assets.h) */
+    void SetData(int data) { m_set.data = data; }
     /* Settings.ini's [Video] section (pc_settings.h) */
     void SettingsDefaults();
     int SettingsLine(const char *section, const char *key, char *value);

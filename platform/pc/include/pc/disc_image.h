@@ -10,8 +10,9 @@ namespace pc {
 
 class DiscImage {
 public:
-    /* The image's path, if there is one (no error otherwise): 1 and the path. */
-    static int FindImage(char *path, int n);
+    /* The image's path, if there is one (no error otherwise): 1 and the path. nearOnly: only
+     * THPS_DISC or next to thps.exe, not the development layout's. */
+    static int FindImage(char *path, int n, bool nearOnly = false);
     /* No PS1 image is used (the data came from the Dreamcast disc): reads fail. */
     void SetNone(bool on) { m_none = on; }
     /* n raw sectors from lba. */

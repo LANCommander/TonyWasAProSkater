@@ -33,6 +33,12 @@ public:
     const char *UserDir();
     /* The game's static constructors, once (what libsn's __main does on the PS1). */
     void RunStaticCtors();
+    /* main()'s arguments, for Restart. */
+    void SetArgs(char **argv) { m_argv = argv; }
+    /* PC_RequestRestart: quit at the end of the frame, then start the game again (Restart). */
+    void RequestRestart();
+    bool RestartRequested() const { return m_restart; }
+    void Restart() __attribute__((noreturn));
     /* A generated stub for a function with no implementation was called: log it (once). */
     uint32_t MissingFunction(uint32_t addr);
     /* Name of a PS1 code address, for logs ("FUN_8002ab20", "DrawOTag", ...). */
@@ -42,6 +48,8 @@ private:
     void PlatformInit();
 
     char m_dataDir[MAX_PATH] = "";
+    char **m_argv = nullptr;
+    bool m_restart = false;
     char m_userDir[MAX_PATH] = "";
     void *m_heap = nullptr;
     bool m_ctorsDone = false;

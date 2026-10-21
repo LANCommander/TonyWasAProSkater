@@ -15,6 +15,7 @@
 #include "pc/draw.h"
 #include "pc/input.h"
 #include "pc/render3d.h"
+#include "pc/runtime.h"
 #include "pc/stream.h"
 #include "pc/video.h"
 
@@ -58,8 +59,11 @@ void FrameClock::RunFrame(bool present) {
     pc_heartbeat = pc_heartbeat + 1;
     g_input.PumpEvents();
     DebugHooks();
-    if (g_input.QuitRequested())
+    if (g_input.QuitRequested()) {
+        if (g_runtime.RestartRequested())
+            g_runtime.Restart();
         os::Exit(0);
+    }
 }
 
 int FrameClock::Poll() {

@@ -17,7 +17,9 @@
  * Or the files come from the Dreamcast version's disc (a .gdi), into the same folders: models
  * and levels as version 6 .psx (pc_dctex.h), sound banks as .kat (pc_dcsound.h), films as .sfd
  * (MPEG-1 + ADX: pc_sfd.h; Playlist.m3u then lists them), images unchanged (some at higher
- * resolutions). */
+ * resolutions).
+ *
+ * Or both: then each version's files are in a folder of their own instead of Data (pc/assets.h). */
 #ifndef PC_ASSETS_H
 #define PC_ASSETS_H
 
@@ -35,6 +37,9 @@ int PC_BmpLayoutSize(const void *bmp, int *lw, int *lh);
 
 /* 1: the game files are the Dreamcast version's */
 int PC_DreamcastData(void);
+/* 1: both versions' files are extracted, each in its own folder next to thps.exe ("Data
+ * (PlayStation)", "Data (Dreamcast)"); Settings.ini's Data picks the one played with at startup */
+int PC_DataBothVersions(void);
 
 #ifdef __cplusplus
 }
