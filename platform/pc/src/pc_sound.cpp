@@ -344,10 +344,34 @@ void Sound::Voice::EnvTick() {
 
 /* ---- channels ---------------------------------------------------------------------------------- */
 
+/* libsnd's SsPitchFromNote, integer for integer: a tone's fine tune (the VAB's `shift`) is ADDED
+ * to the note's, then the semitone and the fine step come from tables of 0x8000 * 2^(i/12) and
+ * 0x8000 * 2^(i/1536), rounded down. Two octaves or more above the centre is 0x3fff. */
 int Sound::NotePitch(int note, int fine, int centre, int centreFine) {
-    double d = (double)(note - centre) * 128.0 + (double)(fine - centreFine);
-    double p = 4096.0 * pow(2.0, d / (12.0 * 128.0));
-    return p < 0.0 ? 0 : p > 0x3fff ? 0x3fff : (int)(p + 0.5);
+    static uint16_t s_semitone[12], s_fine[128];
+    if (!s_semitone[0]) {
+        for (int i = 0; i < 128; i++)
+            s_fine[i] = (uint16_t)floor(32768.0 * pow(2.0, i / 1536.0));
+        for (int i = 0; i < 12; i++)
+            s_semitone[i] = (uint16_t)floor(32768.0 * pow(2.0, i / 12.0));
+    }
+    int f = (int16_t)((centreFine & 0xff) + fine);
+    int n = note + f / 128 - (centre & 0xff);
+    f -= f / 128 * 128;
+    if (f < 0) {
+        f += 128;
+        n--;
+    }
+    n = (int16_t)n;
+    int octave = n / 12 - 2, semi = n % 12;
+    if (semi < 0) {
+        semi += 12;
+        octave--;
+    }
+    if (octave >= 0)
+        return 0x3fff;
+    int p = (s_semitone[semi] * s_fine[f]) >> 16;
+    return ((p + (1 << (-octave - 1))) >> -octave) & 0xffff;
 }
 
 void Sound::Voice::Set(const Sample *next, int pitch, int volL, int volR, uint16_t adsr1,
