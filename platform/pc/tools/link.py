@@ -4,7 +4,7 @@ Generated into build/pc/gen/:
   psx_syms.ld    every `psx_<addr>` symbol (a function the code or the data names by its retail
                  address): its native code (pcfn_<addr>), or its stub
   stubs.c        pcstub_<addr>: every other known function entry (logs a call)
-  thunks.s       virtual-dispatch thunks and destructor-call adapters
+  thunks.c       virtual-dispatch thunks and destructor-call adapters (plain C)
   names.c        PC_SymbolName for logs
   data_names.c   PC_DataByName: the game's data (game/data) by name, for THPS_POKE
 """
@@ -199,84 +199,152 @@ def sdl_flags():
     return shlex.split(cflags), shlex.split(libs)
 
 
-def thunks_x64(metas, unowned):
-    """link()'s thunks for x86-64 (Windows or System V calling convention): the same jobs, with
-    the arguments in registers. egcs vtable entries are 16 bytes here ({delta, index, function},
-    the first all zeros), so slot k's delta is at 16 + 16k and its function at 24 + 16k."""
-    this, arg2, arg2d = ("%rcx", "%rdx", "%edx") if WINDOWS else ("%rdi", "%rsi", "%esi")
+# the parameter types a thunk forwards as one word each (intptr_t): scalars and pointers
+WORD_TYPES = {"bool", "char", "signed char", "unsigned char", "short", "short int",
+              "signed short", "signed short int", "unsigned short", "unsigned short int", "int",
+              "signed", "signed int", "unsigned", "unsigned int", "long", "long int",
+              "signed long", "signed long int", "unsigned long", "unsigned long int", "wchar_t"}
 
-    def delete_flag():
-        # in_chrg (arg2): 3 for the object a delete statement marked, else 0
-        return ["\txorl %s, %s" % (arg2d, arg2d),
-                "\tcmpq _pc_delete_marked(%%rip), %s" % this,
-                "\tjne 1f",
-                "\tmovq %s, _pc_delete_freed(%%rip)" % this,
-                "\tmovq $0, _pc_delete_marked(%rip)",
-                "\tmovl $3, %s" % arg2d,
-                "1:"]
 
-    def jump_to(a):
-        return ["\tjmp _pc_delete_unowned" if a == unowned else "\tjmp _psx_%08x" % a]
+def enum_names():
+    """The enum type names in game/include: `enum Name {` and `typedef enum {...} Name;`. (An enum
+    parameter is one word; a class or struct by value is not, so the thunks can't forward it.)"""
+    names = set()
+    for path in glob.glob(os.path.join(ROOT, "game", "include", "**", "*.h"), recursive=True):
+        text = open(path, encoding="utf-8", errors="replace").read()
+        names.update(re.findall(r"\benum\s+(\w+)\s*[{:]", text))
+        names.update(re.findall(r"\btypedef\s+enum\b[^{;]*\{[^}]*\}\s*(\w+)\s*;", text))
+        names.update(re.findall(r"\btypedef\s+enum\s+\w+\s+(\w+)\s*;", text))
+    return names
 
-    asm, done = [], set()
+
+def check_params(sig, params, enums):
+    """Fail the build when a parameter of the demangled signature sig isn't one word."""
+    for p in params:
+        if "*" in p or "&" in p:
+            continue  # pointers and references
+        toks = [t for t in p.split() if t not in ("const", "volatile")]
+        key = " ".join(toks)
+        if key in WORD_TYPES or key.split("::")[-1] in enums:
+            continue
+        if "float" in toks or "double" in toks:
+            what = "floating point"
+        elif toks.count("long") >= 2:
+            what = "a 64-bit integer"
+        else:
+            what = "a class or struct by value (or a type not known to be one word)"
+        raise SystemExit("link: %s: parameter '%s' is %s; the thunks forward each parameter as one "
+                         "word (pass a pointer or a reference)" % (sig, p, what))
+
+
+def thunks_c(metas, unowned, enums):
+    """link()'s thunks.c: the virtual-dispatch thunks and the destructor and delete adapters, in
+    plain C. Each forwards its parameters by name, as intptr_t words (check_params has rejected the
+    rest). Returns (the C source, the C names of the functions it defines).
+
+    - pcvt_<key>(this, args): calls the retail vtable's entry (slot + 1) with this + delta.
+      Dtor thunks (`~`) first compute in_chrg from the original this (delete_flag).
+    - pcdtorcall_<a>(this): base-object destructor call (in_chrg 0); pcdtorcalld_<a>: the
+      complete-object one (in_chrg from delete_flag).
+    - pcdel_<a>(p): operator delete for a delete statement, skipped for the object its destructor
+      already freed; pc_delete_unowned when a is libsn's (unowned).
+    - pcfn_<a>: a constructor (the native one, then `this`), or a destructor (the native base one,
+      then the delete when in_chrg bit 0 is set)."""
+    ext = {}     # external name -> its declaration (psx_<addr> etc. are bound by psx_syms.ld)
+    body = []
+    emitted = set()
+    arity = {}   # thunk key -> its number of parameters (one definition per key)
+    done = set()
+
+    def psx(a):
+        ext["psx_%08x" % a] = "extern void psx_%08x();" % a
+        return "psx_%08x" % a
+
+    def callee(a):  # the function a delete of address a runs
+        if a == unowned:
+            ext["pc_delete_unowned"] = "extern void pc_delete_unowned();"
+            return "pc_delete_unowned"
+        return psx(a)
+
+    def delete_flag():  # in_chrg: 3 for the object a delete statement marked, else 0
+        return ["if (self == pc_delete_marked) { pc_delete_freed = self; pc_delete_marked = 0;"
+                " in_chrg = 3; }",
+                "else in_chrg = 0;"]
+
+    def define(cname, lines):
+        body.extend(lines)
+        emitted.add(cname)
+
     for m in metas:
         for t in m.get("thunks", []):
-            if t["key"] in done:
+            key = t["key"]
+            name = "pcvt_" + key
+            n = 0 if t["dtor"] else len(t["params"])
+            if key in arity:
+                if arity[key] != n:
+                    raise SystemExit("link: thunk %s is called with %d and %d parameters (%s)"
+                                     % (key, arity[key], n, t["sig"]))
                 continue
-            done.add(t["key"])
-            slot = t["slot"]
-            asm += ["\t.globl _pcvt_%s" % t["key"], "_pcvt_%s:" % t["key"]]
+            arity[key] = n
+            ext[t["off"]] = "extern int %s;" % t["off"]
+            entry = "PsxVtEntry *e = (PsxVtEntry *)*(void **)((char *)self + %s) + %d;" % (
+                t["off"], t["slot"] + 1)
             if t["dtor"]:
-                asm += delete_flag()
-            asm += ["\tmovslq _%s(%%rip), %%rax" % t["off"],
-                    "\tmovq (%s,%%rax), %%r11" % this,
-                    "\tmovswq %d(%%r11), %%rax" % (16 + 16 * slot),
-                    "\taddq %%rax, %s" % this,
-                    "\tjmp *%d(%%r11)" % (24 + 16 * slot)]
+                define(name, ["void %s(void *self, intptr_t in_chrg) {" % name,
+                              "    " + entry] + ["    " + ln for ln in delete_flag()] + [
+                    "    ((void (*)(void *, intptr_t))e->pfn)((char *)self + e->delta, in_chrg);",
+                    "}"])
+            else:
+                check_params(t["sig"], t["params"], enums)
+                ps = ["a%d" % (i + 1) for i in range(n)]
+                define(name, [
+                    "uint64_t %s(%s) {" % (name, ", ".join(["void *self"] +
+                                                           ["intptr_t " + p for p in ps])),
+                    "    " + entry,
+                    "    return ((uint64_t (*)(%s))e->pfn)(%s);" % (
+                        ", ".join(["void *"] + ["intptr_t"] * n),
+                        ", ".join(["(char *)self + e->delta"] + ps)),
+                    "}"])
         for a in m.get("dtor_calls", []):
             if ("d", a) not in done:
                 done.add(("d", a))
-                asm += ["\t.globl _pcdtorcall_%08x" % a, "_pcdtorcall_%08x:" % a,
-                        "\txorl %s, %s" % (arg2d, arg2d), "\tjmp _psx_%08x" % a]
+                define("pcdtorcall_%08x" % a, [
+                    "void pcdtorcall_%08x(void *self) { %s(self, 0); }" % (a, psx(a))])
         for a in m.get("dtor_calls_d", []):
             if ("dd", a) not in done:
                 done.add(("dd", a))
-                asm += ["\t.globl _pcdtorcalld_%08x" % a, "_pcdtorcalld_%08x:" % a] + \
-                    delete_flag() + ["\tjmp _psx_%08x" % a]
+                define("pcdtorcalld_%08x" % a, ["void pcdtorcalld_%08x(void *self) {" % a,
+                                                "    intptr_t in_chrg;"] +
+                       ["    " + ln for ln in delete_flag()] +
+                       ["    %s(self, in_chrg);" % psx(a), "}"])
         for a in m.get("del_wrappers", []):
             if ("del", a) not in done:
                 done.add(("del", a))
-                asm += ["\t.globl _pcdel_%08x" % a, "_pcdel_%08x:" % a,
-                        "\tcmpq _pc_delete_freed(%%rip), %s" % this,
-                        "\tjne 1f",
-                        "\tmovq $0, _pc_delete_freed(%rip)",
-                        "\tret",
-                        "1:",
-                        "\tmovq $0, _pc_delete_marked(%rip)"] + jump_to(a)
-    # constructors: call the native one with the same arguments (the register ones untouched, 8
-    # stack ones copied), return `this`
+                define("pcdel_%08x" % a, [
+                    "void pcdel_%08x(void *p) {" % a,
+                    "    if (p == pc_delete_freed) { pc_delete_freed = 0; return; }",
+                    "    pc_delete_marked = 0;",
+                    "    %s(p);" % callee(a),
+                    "}"])
+    # constructors defined in C++: the native one with the same parameters, then `this` (egcs)
     for m in metas:
         for a in m.get("ctor_defs", []):
             if ("ctor", a) in done:
                 continue
             done.add(("ctor", a))
-            asm += ["\t.globl _pcfn_%08x" % a, "_pcfn_%08x:" % a, "\tpushq %rbx",
-                    "\tmovq %s, %%rbx" % this]
-            if WINDOWS:  # 32 bytes of home space, then the stack arguments
-                asm += ["\tsubq $96, %rsp"]
-                for i in range(8):
-                    asm += ["\tmovq %d(%%rsp), %%rax" % (144 + 8 * i),
-                            "\tmovq %%rax, %d(%%rsp)" % (32 + 8 * i)]
-            else:
-                asm += ["\tsubq $64, %rsp"]
-                for i in range(8):
-                    asm += ["\tmovq %d(%%rsp), %%rax" % (80 + 8 * i),
-                            "\tmovq %%rax, %d(%%rsp)" % (8 * i)]
-            asm += ["\tcall _pcctor_%08x" % a,
-                    "\taddq $%d, %%rsp" % (96 if WINDOWS else 64),
-                    "\tmovq %rbx, %rax", "\tpopq %rbx", "\tret"]
-    # destructors: the egcs one is (this, in_chrg): the native base-object destructor, then
-    # free if in_chrg bit 0 is set
+            info = m.get("ctor_sigs", {}).get(str(a))
+            if info is None:
+                raise SystemExit("link: constructor 0x%08x has no signature (rebuild the TUs)" % a)
+            check_params(info["sig"], info["params"], enums)
+            ps = ["a%d" % (i + 1) for i in range(len(info["params"]))]
+            ext["pcctor_%08x" % a] = "extern void pcctor_%08x();" % a
+            define("pcfn_%08x" % a, [
+                "void *pcfn_%08x(%s) {" % (a, ", ".join(["void *self"] + ["intptr_t " + p for p in ps])),
+                "    pcctor_%08x(%s);" % (a, ", ".join(["self"] + ps)),
+                "    return self;",
+                "}"])
+    # destructors defined in C++: the egcs one is (this, in_chrg): the native base-object
+    # destructor, then the delete when in_chrg bit 0 is set
     for m in metas:
         for a, cls, dl in m.get("dtor_defs", []):
             if ("dtor", a) in done:
@@ -284,20 +352,28 @@ def thunks_x64(metas, unowned):
             done.add(("dtor", a))
             if not dl:
                 raise SystemExit("no operator delete for %s (destructor 0x%08x)" % (cls, a))
-            asm += ["\t.globl _pcfn_%08x" % a, "_pcfn_%08x:" % a,
-                    "\tpushq %rbx", "\tpushq %r12", "\tsubq $40, %rsp",
-                    "\tmovq %s, %%rbx" % this, "\tmovl %s, %%r12d" % arg2d,
-                    "\tcall _pcdtor_%08x" % a,
-                    "\tmovq %%rbx, %s" % this, "\tmovl %r12d, %eax",
-                    "\taddq $40, %rsp", "\tpopq %r12", "\tpopq %rbx",
-                    "\ttestb $1, %al", "\tjz 1f"] + jump_to(dl) + ["1:", "\tret"]
-    return asm
+            ext["pcdtor_%08x" % a] = "extern void pcdtor_%08x();" % a
+            define("pcfn_%08x" % a, [
+                "void pcfn_%08x(void *self, intptr_t in_chrg) {" % a,
+                "    pcdtor_%08x(self);" % a,
+                "    if (in_chrg & 1) %s(self);" % callee(dl),
+                "}"])
+    head = ["/* generated by link.py (thunks_c) */",
+            "#include <stdint.h>",
+            "",
+            "/* an egcs vtable entry (game/data/psxdata.h): {delta, index, function}, after an",
+            "   all-zero entry; slot k is entry k + 1 */",
+            "typedef struct { short delta; short index; void *pfn; } PsxVtEntry;",
+            "extern void *pc_delete_marked, *pc_delete_freed;"]
+    head += [ext[k] for k in sorted(ext)]
+    return "\n".join(head + [""] + body) + "\n", emitted
 
 
-def psx_symbols(syms, game, stubs, gen):
+def psx_symbols(syms, game, stubs, gen, aliases=()):
     """link()'s psx_syms.ld: every `psx_<addr>` the code or the data names is a function, its
     native code (pcfn_<addr>) or its stub. (As PE spells the names: `_psx_80012345`, and
-    `_psx_80012345_a1` for a second name objcopy needed.)"""
+    `_psx_80012345_a1` for a second name objcopy needed.) `aliases`: (name, name it equals), for
+    the thunks' second names."""
     ld = []
     stub_set = set(stubs)
     for s in sorted(syms):
@@ -307,6 +383,7 @@ def psx_symbols(syms, game, stubs, gen):
             ld.append("%s = %s%s_%08x;\n" % (name, USCORE, "pcfn" if a in game else "pcstub", a))
         else:
             raise SystemExit("link: %s is no function (data is linked by name)" % s)
+    ld += ["%s = %s;\n" % (al, base) for al, base in aliases]
     write_if_changed(os.path.join(gen, "psx_syms.ld"), "".join(ld))
 
 
@@ -455,137 +532,23 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
     # records its pointer (pc_delete_mark); the destructor call for exactly that object passes
     # in_chrg 3 and notes the object as freed, so the operator delete g++ emits next is skipped
     # (_pcdel_*). Base-class destructor calls (_pcdtorcall_*) always pass 0.
-    def delete_flag():
-        return ["\txorl %edx, %edx",
-                "\tcmpl _pc_delete_marked, %eax",
-                "\tjne 1f",
-                "\tmovl %eax, _pc_delete_freed",
-                "\tmovl $0, _pc_delete_marked",
-                "\tmovl $3, %edx",
-                "1:"]
-
     # libsn's operator delete freed into the BIOS heap, which the game never allocates from: on
     # PC it is the native pc_delete_unowned (build.py NATIVE_RENAME)
     unowned = psyq.get("__builtin_delete", [None])[0]
-
-    def jump_to(a):
-        if a == unowned:
-            return ["\tjmp _pc_delete_unowned"]
-        return ["\tjmp _psx_%08x" % a]
-
-    asm = ["\t.text"]
-    done = set()
-    # (x64: thunks_x64; the loops below are i386's)
-    tmetas = [] if X64 else metas
-    if X64:
-        asm += thunks_x64(metas, unowned)
-    for m in tmetas:
-        for t in m.get("thunks", []):
-            if t["key"] in done:
-                continue
-            done.add(t["key"])
-            slot = t["slot"]
-            asm += ["\t.globl _pcvt_%s" % t["key"], "_pcvt_%s:" % t["key"],
-                    "\tmovl 4(%esp), %eax"]
-            if t["dtor"]:
-                asm += delete_flag()
-            asm += ["\tmovl _%s, %%ecx" % t["off"],
-                    "\tmovl (%eax,%ecx), %ecx"]
-            if t["dtor"]:
-                asm += ["\tpushl %edx",
-                        "\tmovswl %d(%%ecx), %%edx" % (8 + 8 * slot),
-                        "\taddl %edx, %eax",
-                        "\tpushl %eax", "\tcall *%d(%%ecx)" % (12 + 8 * slot),
-                        "\taddl $8, %esp", "\tret"]
-            else:
-                asm += ["\tmovswl %d(%%ecx), %%edx" % (8 + 8 * slot),
-                        "\taddl %edx, %eax",
-                        "\tmovl %eax, 4(%esp)", "\tjmp *%d(%%ecx)" % (12 + 8 * slot)]
-        for a in m.get("dtor_calls", []):
-            if ("d", a) in done:
-                continue
-            done.add(("d", a))
-            asm += ["\t.globl _pcdtorcall_%08x" % a, "_pcdtorcall_%08x:" % a,
-                    "\tpushl $0", "\tpushl 8(%esp)", "\tcall _psx_%08x" % a,
-                    "\taddl $8, %esp", "\tret"]
-        for a in m.get("dtor_calls_d", []):
-            if ("dd", a) in done:
-                continue
-            done.add(("dd", a))
-            asm += ["\t.globl _pcdtorcalld_%08x" % a, "_pcdtorcalld_%08x:" % a,
-                    "\tmovl 4(%esp), %eax"] + delete_flag() + [
-                    "\tpushl %edx", "\tpushl %eax", "\tcall _psx_%08x" % a,
-                    "\taddl $8, %esp", "\tret"]
-        for a in m.get("del_wrappers", []):
-            if ("del", a) in done:
-                continue
-            done.add(("del", a))
-            asm += ["\t.globl _pcdel_%08x" % a, "_pcdel_%08x:" % a,
-                    "\tmovl 4(%esp), %eax",
-                    "\tcmpl _pc_delete_freed, %eax",
-                    "\tjne 1f",
-                    "\tmovl $0, _pc_delete_freed",
-                    "\tret",
-                    "1:",
-                    "\tmovl $0, _pc_delete_marked"] + jump_to(a)
-    # constructors defined in C++: call the native one with the caller's argument words, then
-    # return `this` as egcs constructors do
-    for m in tmetas:
-        for a in m.get("ctor_defs", []):
-            if ("ctor", a) in done:
-                continue
-            done.add(("ctor", a))
-            asm += ["\t.globl _pcfn_%08x" % a, "_pcfn_%08x:" % a,
-                    "\tpushl %ebx",
-                    "\tpushl %esi",
-                    "\tpushl %edi",
-                    "\tmovl 16(%esp), %ebx",          # this
-                    "\tsubl $48, %esp",
-                    "\tleal 64(%esp), %esi",          # first argument word
-                    "\tmovl %esp, %edi",
-                    "\tmovl $12, %ecx",
-                    "\tcld",
-                    "\trep movsl",
-                    "\tcall _pcctor_%08x" % a,
-                    "\taddl $48, %esp",
-                    "\tmovl %ebx, %eax",
-                    "\tpopl %edi",
-                    "\tpopl %esi",
-                    "\tpopl %ebx",
-                    "\tret"]
-    # destructors defined in C++: the egcs destructor is (this, in_chrg); run the native
-    # base-object destructor (body, then the base classes'), then free if in_chrg bit 0 is set
-    for m in tmetas:
-        for a, cls, dl in m.get("dtor_defs", []):
-            if ("dtor", a) in done:
-                continue
-            done.add(("dtor", a))
-            asm += ["\t.globl _pcfn_%08x" % a, "_pcfn_%08x:" % a,
-                    "\tpushl 4(%esp)",
-                    "\tcall _pcdtor_%08x" % a,
-                    "\taddl $4, %esp",
-                    "\ttestb $1, 8(%esp)",
-                    "\tjz 1f"]
-            if not dl:
-                raise SystemExit("no operator delete for %s (destructor 0x%08x)" % (cls, a))
-            asm += jump_to(dl) + ["1:", "\tret"]
-    # extra names objcopy needed when two symbols in one object map to the same thunk
+    # Thunks (thunks_c): the virtual dispatch, the destructor-call and delete adapters, and the
+    # constructor and destructor wrappers, in C
+    thunk_src, thunk_names = thunks_c(metas, unowned, enum_names())
+    write_if_changed(os.path.join(gen, "thunks.c"), thunk_src)
+    # extra names objcopy needed when two symbols in one object map to the same thunk: psx_syms.ld
+    # gives each the name it stands for
     aliases = set()
     for m in metas:
         aliases.update(m.get("aliases", []))
+    alias_ld = []
     for al in sorted(aliases):
         base = re.sub(r"_a\d+$", "", al)
-        if base + ":" in asm:
-            k = asm.index(base + ":")
-            asm[k:k] = ["\t.globl %s" % al, "%s:" % al]
-    asm_text = "\n".join(asm) + "\n"
-    if not USCORE:
-        # the names above are 32-bit PE's (`_pcvt_...`, `_pc_delete_marked`); x64 PE and ELF
-        # have no '_' prefix
-        asm_text = re.sub(r"(?<![\w$.])_(?=pc|psx_)", "", asm_text)
-    if not WINDOWS:
-        asm_text += "\t.section .note.GNU-stack,\"\",@progbits\n"
-    write_if_changed(os.path.join(gen, "thunks.s"), asm_text)
+        if (base[1:] if USCORE else base) in thunk_names:
+            alias_ld.append((al, base))
 
     # psx_<addr>: the functions the game's code and data refer to by retail address, each its
     # native code (or stub). The data itself is linked by name (game/data's objects).
@@ -593,7 +556,7 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
     syms.update("_psx_%08x" % a for a in list(game) + stubs)
     for m in metas:
         syms.update(m.get("psx_syms", []))
-    psx_symbols(syms, game, stubs, gen)
+    psx_symbols(syms, game, stubs, gen, alias_ld)
     data_names(ctx, gen)
     # the build's version (PC_Version, pc_runtime.h)
     ver, ver_full, ver_nums = build_version(version)
@@ -606,12 +569,9 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
     gflags = rt_flags + ["-O1", "-Wno-unused-label", "-Wno-unused-but-set-variable",
                          "-Wno-maybe-uninitialized"]
     jobs = [(os.path.join(gen, n), os.path.join(gen, n[:-2] + ".o"))
-            for n in ["stubs.c", "names.c", "data_names.c", "version.c"]]
+            for n in ["thunks.c", "stubs.c", "names.c", "data_names.c", "version.c"]]
     with cf.ThreadPoolExecutor() as ex:
         gen_objs = list(ex.map(lambda j: cc(j[0], j[1], gflags), jobs))
-    th_o = os.path.join(gen, "thunks.o")
-    run([gcc, MFLAG, "-c", os.path.join(gen, "thunks.s"), "-o", th_o])
-    gen_objs.append(th_o)
     gen_objs += ctx.data["objs"]
 
 

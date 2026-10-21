@@ -429,12 +429,17 @@ def itanium_member(sym):
     return (parts[-2], parts[-1]) if len(parts) >= 2 and i < len(sym) and sym[i] == "E" else None
 
 
-def param_count(d):
-    """The number of parameters in a demangled signature."""
+def param_types(d):
+    """The parameter types of a demangled signature, in order (`this` is not among them)."""
     inner = d[d.find("(") + 1:d.rfind(")")].strip()
     if not inner or inner == "void":
-        return 0
-    return len(portsrc._split_top(inner, ","))
+        return []
+    return [p.strip() for p in portsrc._split_top(inner, ",")]
+
+
+def param_count(d):
+    """The number of parameters in a demangled signature."""
+    return len(param_types(d))
 
 
 def is_virtual(classes, cls, meth, d):
@@ -729,6 +734,10 @@ class Resolver:
                     # link.py wraps the native constructor at the retail address.
                     renames[sym] = "_pcctor_%08x" % addr
                     info.setdefault("ctor_defs", []).append(addr)
+                    # the constructor's parameters: link.py's C wrapper forwards them
+                    sig = dem.get(name, name)
+                    info.setdefault("ctor_sigs", {})[str(addr)] = {"sig": sig,
+                                                                   "params": param_types(sig)}
                 else:
                     renames[sym] = "_pcfn_%08x" % addr
                 info["defines"][hex(addr)] = name
@@ -824,7 +833,7 @@ class Resolver:
         if "::" in q and not nonvirtual:
             cls, meth = q.rsplit("::", 1)
             if is_virtual(self.classes, cls, meth, d):
-                return self.vthunk(cls, meth, info)
+                return self.vthunk(cls, meth, info, sig=d)
         if sig in self.syms_by_sig:
             return "_psx_%08x" % self.syms_by_sig[sig]
         if sig in BUILTIN_CXX:
@@ -840,15 +849,17 @@ class Resolver:
             return "_psx_%08x" % a
         return None
 
-    def vthunk(self, cls, meth, info, dtor=False):
+    def vthunk(self, cls, meth, info, dtor=False, sig=None):
         c = self.classes[cls]
         slot = c["slots"].index(meth)
         root = c["root"]
         # the vptr offset is only known after compilation: emitted by the thunk generator from a
         # probe of offsetof(root, __vptr) in this TU (see gen_vptr_probe)
         key = "%s_%s_%d_%s" % (tukey(self.tu), root, slot, "d" if dtor else "m")
+        # sig: the called method's demangled signature; its parameters are forwarded by link.py
         info["thunks"].append({"key": key, "off": "pcvptroff_%s_%s" % (tukey(self.tu), root),
-                               "slot": slot, "dtor": dtor})
+                               "slot": slot, "dtor": dtor, "sig": sig or "",
+                               "params": param_types(sig) if sig and not dtor else []})
         return "_pcvt_" + key
 
 

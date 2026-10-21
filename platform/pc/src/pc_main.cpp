@@ -251,11 +251,24 @@ void Runtime::RunStaticCtors() {
 using Reg = Diagnostics::Reg;
 static constexpr uintptr_t LOW_PAGE = Diagnostics::kLowPage;
 
+/* The CPU. x86 (PC_CPU_X86: i386, PC_CPU_X64: x86-64) can read the faulting thread's registers and
+ * decode its instructions, so the fixups below can emulate a faulting instruction and resume it.
+ * Other CPUs (PC_CPU_OTHER) only report the fault and a frame-pointer backtrace. Everything that
+ * needs the x86 registers or decoder is under `#ifndef PC_CPU_OTHER`. */
+#if defined(__x86_64__) || defined(_M_X64)
+#define PC_CPU_X64 1
+#elif defined(__i386__) || defined(_M_IX86)
+#define PC_CPU_X86 1
+#else
+#define PC_CPU_OTHER 1
+#endif
+
+#ifndef PC_CPU_OTHER
 /* The interrupted thread's registers, as the fault handlers below see them (Windows CONTEXT,
  * POSIX ucontext), in x86 encoding order: ax cx dx bx sp bp si di (r8-r15 on x64). */
-#ifdef __x86_64__
+#if defined(PC_CPU_X64)
 #define NREGS 16
-#else
+#elif defined(PC_CPU_X86)
 #define NREGS 8
 #endif
 struct CpuState {
@@ -263,22 +276,24 @@ struct CpuState {
     Reg *ip;
     uint32_t *flags;
 };
+#endif
 
 namespace {
 
 #ifdef _WIN32
-#ifdef __x86_64__
+#ifndef PC_CPU_OTHER
+#if defined(PC_CPU_X64)
 #define CTX_IP(c) ((c)->Rip)
 #define CTX_BP(c) ((c)->Rbp)
-#else
+#elif defined(PC_CPU_X86)
 #define CTX_IP(c) ((c)->Eip)
 #define CTX_BP(c) ((c)->Ebp)
 #endif
 void CpuOf(CONTEXT *c, CpuState *cpu) {
-#ifdef __x86_64__
+#if defined(PC_CPU_X64)
     DWORD64 *g[NREGS] = {&c->Rax, &c->Rcx, &c->Rdx, &c->Rbx, &c->Rsp, &c->Rbp, &c->Rsi, &c->Rdi,
                          &c->R8,  &c->R9,  &c->R10, &c->R11, &c->R12, &c->R13, &c->R14, &c->R15};
-#else
+#elif defined(PC_CPU_X86)
     DWORD *g[NREGS] = {&c->Eax, &c->Ecx, &c->Edx, &c->Ebx, &c->Esp, &c->Ebp, &c->Esi, &c->Edi};
 #endif
     int i;
@@ -287,14 +302,16 @@ void CpuOf(CONTEXT *c, CpuState *cpu) {
     cpu->ip = (Reg *)&CTX_IP(c);
     cpu->flags = (uint32_t *)&c->EFlags;
 }
+#endif
 #else
-#ifdef __x86_64__
+#ifndef PC_CPU_OTHER
+#if defined(PC_CPU_X64)
 #define UC_IP REG_RIP
 #define UC_BP REG_RBP
 const int kRegs[NREGS] = {REG_RAX, REG_RCX, REG_RDX, REG_RBX, REG_RSP, REG_RBP,
                           REG_RSI, REG_RDI, REG_R8,  REG_R9,  REG_R10, REG_R11,
                           REG_R12, REG_R13, REG_R14, REG_R15};
-#else
+#elif defined(PC_CPU_X86)
 #define UC_IP REG_EIP
 #define UC_BP REG_EBP
 const int kRegs[NREGS] = {REG_EAX, REG_ECX, REG_EDX, REG_EBX,
@@ -309,7 +326,9 @@ void CpuOf(ucontext_t *uc, CpuState *cpu) {
     cpu->flags = (uint32_t *)&g[REG_EFL];
 }
 #endif
+#endif
 
+#ifndef PC_CPU_OTHER
 /* An instruction's prefixes: legacy ones skipped, REX (x64) decoded. */
 struct Prefixes {
     const uint8_t *p; /* the opcode */
@@ -324,7 +343,7 @@ Prefixes ReadPrefixes(const uint8_t *p) {
             x.opsize16 = 1;
         p++;
     }
-#ifdef __x86_64__
+#if defined(PC_CPU_X64)
     if ((*p & 0xf0) == 0x40)
         x.rex = *p++;
 #endif
@@ -364,7 +383,7 @@ int DecodeModRM(const uint8_t *m, int rex, MemOperand *o) {
             o->base = base | (rex & 1) << 3;
         }
     } else if (rm == 5 && mod == 0) {
-#ifdef __x86_64__
+#if defined(PC_CPU_X64)
         o->riprel = 1;
 #endif
         memcpy(&o->disp, q, 4);
@@ -381,6 +400,7 @@ int DecodeModRM(const uint8_t *m, int rex, MemOperand *o) {
     o->len = (int)(q - m);
     return 1;
 }
+#endif
 
 /* The return addresses up the stack, for symbolize.py: a frame-pointer walk (everything is built
  * with -fno-omit-frame-pointer), or on 64-bit Windows, whose frame pointers make no chain, the
@@ -389,7 +409,7 @@ int DecodeModRM(const uint8_t *m, int rex, MemOperand *o) {
 int StackWalk(Reg ip, Reg fp, void *wctx, Reg *out, int max) {
     Reg *bp = (Reg *)fp;
     int n = 0;
-#if defined(_WIN32) && defined(__x86_64__)
+#if defined(_WIN32) && defined(PC_CPU_X64)
     if (wctx) {
         CONTEXT c = *(CONTEXT *)wctx;
         while (n < max && c.Rip) {
@@ -429,6 +449,7 @@ void PrintBacktrace(Reg ip, Reg fp, int depth, void *wctx) {
     fflush(stderr);
 }
 
+#ifndef PC_CPU_OTHER
 /* Opcodes (one byte) that take a ModRM byte. */
 int HasModRM1(uint8_t op) {
     if (op < 0x40)
@@ -442,6 +463,19 @@ void DumpStack(Reg ip, Reg fp, void *wctx) {
     fprintf(stderr, "    ip=%08llx\n    backtrace:\n", (unsigned long long)ip);
     PrintBacktrace(ip, fp, 24, wctx);
 }
+#endif
+
+#ifdef PC_CPU_OTHER
+/* The end of a crash on a CPU with no register dump: a backtrace from this frame (the signal or
+ * exception handler's frame record links to the interrupted frame), then as CrashReport below. */
+void ReportCrash() {
+    fprintf(stderr, "\n    backtrace (run tools/symbolize.py on these):\n");
+    PrintBacktrace(0, (Reg)__builtin_frame_address(0), 32, NULL);
+    if (!getenv("THPS_HEADLESS"))
+        os::ErrorBox("The game crashed; see the console log.");
+    os::Exit(3);
+}
+#endif
 
 /* The system's entries into Diagnostics. */
 #ifdef _WIN32
@@ -471,6 +505,7 @@ void *WatchdogThread(void *arg) {
 
 } // namespace
 
+#ifndef PC_CPU_OTHER
 /* On the PS1, 0x00000000-0x001fffff is Runtime::Main RAM too, so the game's NULL-ish pointers read and
  * write harmless low memory. Such an access faults here; it is redone against the low page
  * (64 KB, zero until written) by adding its address to the instruction's base (or index)
@@ -542,6 +577,7 @@ void Diagnostics::FixLowAccessDone(CpuState &c) {
     m_fix.active = 0;
     *c.flags &= ~0x100u;
 }
+#endif
 
 /* The low page: aligned to its size, so the index-register bias divides exactly. */
 void Diagnostics::AllocLowPage() {
@@ -559,6 +595,7 @@ extern "C" void __attribute__((noinline)) PC_CrashHook(void) { __asm__ volatile(
 
 namespace pc {
 
+#ifndef PC_CPU_OTHER
 /* The R3000 never traps on division: `div` by zero leaves LO = (dividend < 0 ? 1 : -1) (or all
  * ones unsigned) and HI = dividend, and INT_MIN / -1 gives LO = INT_MIN, HI = 0. The game relies
  * on that (retail uses unchecked div). x86 div/idiv trap instead: give the MIPS result in
@@ -642,8 +679,31 @@ void Diagnostics::CrashReport(CpuState &c, void *wctx) {
         os::ErrorBox("The game crashed; see the console log.");
     os::Exit(3);
 }
+#endif
 
 #ifdef _WIN32
+#ifdef PC_CPU_OTHER
+/* No registers to read here, so no fixups: a fault is reported as it is. */
+long Diagnostics::OnException(void *exceptionPointers) {
+    EXCEPTION_POINTERS *ep = (EXCEPTION_POINTERS *)exceptionPointers;
+    EXCEPTION_RECORD *r = ep->ExceptionRecord;
+    DWORD code = r->ExceptionCode;
+    if (code != EXCEPTION_ACCESS_VIOLATION && code != EXCEPTION_ILLEGAL_INSTRUCTION &&
+        code != EXCEPTION_INT_DIVIDE_BY_ZERO && code != EXCEPTION_STACK_OVERFLOW &&
+        code != EXCEPTION_PRIV_INSTRUCTION)
+        return EXCEPTION_CONTINUE_SEARCH;
+    PC_CrashHook();
+    fprintf(stderr, "\n*** crash: exception %08lx at address %08llx", code,
+            (unsigned long long)(uintptr_t)r->ExceptionAddress);
+    if (code == EXCEPTION_ACCESS_VIOLATION)
+        fprintf(stderr, " (%s %08llx)", r->ExceptionInformation[0] == 8   ? "execute"
+                                        : r->ExceptionInformation[0] ? "write"
+                                                                     : "read",
+                (unsigned long long)r->ExceptionInformation[1]);
+    ReportCrash();
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+#else
 long Diagnostics::OnException(void *exceptionPointers) {
     EXCEPTION_POINTERS *ep = (EXCEPTION_POINTERS *)exceptionPointers;
     EXCEPTION_RECORD *r = ep->ExceptionRecord;
@@ -689,8 +749,21 @@ long Diagnostics::OnException(void *exceptionPointers) {
     CrashReport(cpu, c);
     return EXCEPTION_CONTINUE_SEARCH;
 }
+#endif
 
 void Diagnostics::InstallCrashHandler() { AddVectoredExceptionHandler(1, CrashHandler); }
+#else
+#ifdef PC_CPU_OTHER
+/* No registers to read here, so no fixups: a fault is reported as it is. */
+void Diagnostics::OnSignal(int sig, void *siginfo, void *ctx) {
+    siginfo_t *si = (siginfo_t *)siginfo;
+    (void)ctx;
+    PC_CrashHook();
+    fprintf(stderr, "\n*** crash: signal %d (%s)", sig, strsignal(sig));
+    if (sig == SIGSEGV || sig == SIGBUS)
+        fprintf(stderr, " (address %08llx)", (unsigned long long)(uintptr_t)si->si_addr);
+    ReportCrash();
+}
 #else
 void Diagnostics::OnSignal(int sig, void *siginfo, void *ctx) {
     siginfo_t *si = (siginfo_t *)siginfo;
@@ -720,6 +793,7 @@ void Diagnostics::OnSignal(int sig, void *siginfo, void *ctx) {
                 (unsigned long long)(uintptr_t)si->si_addr);
     CrashReport(cpu, NULL);
 }
+#endif
 
 void Diagnostics::InstallCrashHandler() {
     stack_t ss;
@@ -742,7 +816,7 @@ void Diagnostics::InstallCrashHandler() {
 /* Print the caller's native backtrace (frame-pointer walk) for symbolize.py. */
 void Diagnostics::Backtrace(const char *why) {
     fprintf(stderr, "*** %s\n    backtrace:\n", why);
-#if defined(_WIN32) && defined(__x86_64__)
+#if defined(_WIN32) && defined(PC_CPU_X64)
     {
         CONTEXT c;
         RtlCaptureContext(&c);
@@ -756,7 +830,7 @@ void Diagnostics::Backtrace(const char *why) {
 /* THPS_WATCH: a hardware write watchpoint on a 4-byte word (debug register 0) of the Runtime::Main
  * thread. */
 void Diagnostics::Watch(const char *addr) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(PC_CPU_OTHER)
     CONTEXT c;
     memset(&c, 0, sizeof c);
     c.ContextFlags = CONTEXT_DEBUG_REGISTERS;
@@ -768,13 +842,22 @@ void Diagnostics::Watch(const char *addr) {
         PC_Log("watching writes to %08llx", (unsigned long long)c.Dr0);
 #else
     (void)addr;
+#ifdef _WIN32
+    PC_Log("THPS_WATCH: the debug registers are x86 only");
+#else
     PC_Log("THPS_WATCH: only on Windows (use a gdb watchpoint)");
+#endif
 #endif
 }
 
 /* ---- hang watchdog ----------------------------------------------------------------------------- */
 
 #ifdef _WIN32
+#ifdef PC_CPU_OTHER
+void Diagnostics::DumpMainThread() {
+    fprintf(stderr, "    (no backtrace: the thread's registers are not read on this CPU)\n");
+}
+#else
 void Diagnostics::DumpMainThread() {
     CONTEXT c;
     memset(&c, 0, sizeof c);
@@ -784,10 +867,18 @@ void Diagnostics::DumpMainThread() {
         DumpStack(CTX_IP(&c), CTX_BP(&c), &c);
     ResumeThread((HANDLE)m_mainThread);
 }
+#endif
 #else
 void Diagnostics::OnDumpSignal(void *ctx) {
+#ifdef PC_CPU_OTHER
+    /* the handler's frame record links to the interrupted frame, so walk from here */
+    (void)ctx;
+    fprintf(stderr, "    ip unknown on this CPU\n    backtrace:\n");
+    PrintBacktrace(0, (Reg)__builtin_frame_address(0), 24, NULL);
+#else
     ucontext_t *uc = (ucontext_t *)ctx;
     DumpStack((Reg)uc->uc_mcontext.gregs[UC_IP], (Reg)uc->uc_mcontext.gregs[UC_BP], NULL);
+#endif
 }
 
 void Diagnostics::DumpMainThread() { pthread_kill(m_mainThread, SIGUSR2); }
