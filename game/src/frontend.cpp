@@ -421,6 +421,7 @@ enum {
 	GFX_FOG,
 	GFX_SHADOWS,
 	GFX_ANTIALIASING,
+	GFX_VSYNC,
 	GFX_APPLY,
 	GFX_BACK,
 	GFX_ROWS
@@ -6528,7 +6529,8 @@ static int SameWindow(const PcVideoSettings *a, const PcVideoSettings *b) {
 static int SameSettings(const PcVideoSettings *a, const PcVideoSettings *b) {
 	return SameWindow(a, b) && a->draw_distance == b->draw_distance &&
 	       a->object_distance == b->object_distance && a->fog == b->fog &&
-	       a->shadows == b->shadows && a->antialiasing == b->antialiasing;
+	       a->shadows == b->shadows && a->antialiasing == b->antialiasing &&
+	       a->vsync == b->vsync;
 }
 
 extern "C" void PC_GraphicsOptions(int a) {
@@ -6642,6 +6644,9 @@ extern "C" void PC_GraphicsOptions(int a) {
 				i = (i + d + 4) % 4;
 				edit.antialiasing = i ? 1 << i : 0;
 				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
+			} else if (d && sel == GFX_VSYNC) {
+				edit.vsync ^= 1;
+				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
 			}
 
 			if (p->MenuAccept.Triggered && sel == GFX_APPLY) {
@@ -6741,6 +6746,11 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 					Text(SLOT_X1 - 60, y, 0, buf);
 					break;
+				case GFX_VSYNC:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "VSYNC");
+					Text(SLOT_X1 - 60, y, 0, edit.vsync ? "ON" : "OFF");
+					break;
 				case GFX_APPLY:
 					SetColour(on, SameSettings(&edit, &cur));
 					Text(NAME_X, y, 1, "APPLY");
@@ -6754,7 +6764,7 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 		if (keep) {
 			Mess_SetRGB(182, 132, 36, 0);
-			Text(NAME_X, ROW_TOP + (GFX_ROWS + 2) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
+			Text(NAME_X, ROW_TOP + (GFX_ROWS + 1) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
 			sprintf(buf, (char *)"ACCEPT TO KEEP   BACK TO UNDO   %d", (keep + 59) / 60);
 		} else if (sel == GFX_MODE || (sel == GFX_RESOLUTION && edit.mode != PC_VIDEO_BORDERLESS)) {
 			sprintf(buf, "%s %s", "LEFT OR RIGHT TO CHANGE", "");
@@ -6772,6 +6782,8 @@ extern "C" void PC_GraphicsOptions(int a) {
 			sprintf(buf, "%s %s", "DREAMCAST LAYS A SOFT SHADOW", "OVER THE LEVEL");
 		} else if (sel == GFX_ANTIALIASING) {
 			sprintf(buf, "%s %s", "SMOOTHS THE EDGES OF", "POLYGONS");
+		} else if (sel == GFX_VSYNC) {
+			sprintf(buf, "%s %s", "SHOWS EACH FRAME AT THE", "SCREENS REFRESH");
 		} else if (sel == GFX_APPLY && !SameSettings(&edit, &cur)) {
 			sprintf(buf, "%s %s", "ACCEPT TO SWITCH", "");
 		} else {

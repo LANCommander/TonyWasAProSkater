@@ -477,8 +477,18 @@ the controls screen; the options menu `FUN_80060274` gets the extra row on PC)
 sets the display mode, the resolution and widescreen: left and right step through the display's
 modes (windowed: those that fit on the desktop). Apply switches the window and asks to keep the change;
 Accept keeps it and saves Settings.ini, Back or 15 seconds without an answer go back. The draw
-distance, object distance, fog, shadows (PlayStation or Dreamcast, see Graphics) and
-antialiasing apply at once.
+distance, object distance, fog, shadows (PlayStation or Dreamcast, see Graphics),
+antialiasing and VSync apply at once.
+
+**VSync** (`[Video] VSync = On | Off`, Options > Graphics; default On). The game keeps its own
+60 Hz vblank clock (`FrameClock`, `src/pc_frame.cpp`; gameplay steps every other vblank, at 30 Hz,
+as on the PS1); VSync only decides when a finished frame is shown: the buffer swap waits for the
+display's next refresh, so there is no tearing. When the clock has fallen behind and runs several
+ticks at once (`FrameClock::Poll`), only the last of them is shown, so waiting for the display
+never slows the game down. A display at another rate shows the frames as its refreshes fall (at
+144 Hz, each 30 Hz frame for 4 or 5 refreshes); `docs/high-refresh-rate.md` covers drawing more
+frames than the game simulates. Automated runs (a hidden
+window, `THPS_FAST`, `THPS_DETERMINISTIC`) never wait for a display.
 
 ## Running and debugging
 
@@ -494,6 +504,7 @@ antialiasing apply at once.
 | `THPS_DRAWDIST=pct\|full`, `THPS_OBJDIST=pct`, `THPS_FOG=0\|1\|2` | draw distance (50-400, or the entire level), object distance (50-400) and fog (normal, light, off), whatever Settings.ini says |
 | `THPS_SHADOWS=0\|1` | the skaters' shadows: the PS1's or the Dreamcast's, whatever Settings.ini says |
 | `THPS_MSAA=0\|2\|4\|8` | antialiasing samples per pixel (0: off), whatever Settings.ini says |
+| `THPS_VSYNC=0\|1` | VSync off or on, whatever Settings.ini says |
 | `THPS_FAR_RANGE=n` | entire level: items reaching beyond n (default 30000) take the double-precision path; a small n compares it with the PS1 transforms on near items |
 | `THPS_HEADLESS=1` | no visible window (for automated runs: OpenGL draws into a hidden one) |
 | `THPS_GL_SCALE=n` | OpenGL: draw the screens at n times the PS1 resolution (default: the window's resolution) |

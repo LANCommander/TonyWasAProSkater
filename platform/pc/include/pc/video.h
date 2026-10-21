@@ -20,8 +20,11 @@ class Video {
     void Shutdown();
     /* THPS_HEADLESS=1 suppressed the window. */
     bool IsHeadless() const { return m_headless; }
-    /* Show the display (or the picture shown instead, pc_screen.h) in the window. Once per frame. */
+    /* Show the display (or the picture shown instead, pc_screen.h) in the window. Once per frame;
+     * with vsync it returns at the display's next refresh. */
     void Present();
+    /* Whether presenting waits for the display's refresh (VSync on, and the driver allows it). */
+    bool VSyncActive() const { return m_vsyncOn; }
     /* An SDL_Event from the event pump: Alt+Enter, window resizes. */
     void Event(const void *sdlEvent);
 
@@ -65,11 +68,13 @@ class Video {
     void ApplyWindow();
     void AddRes(int w, int h);
     bool InitGl(int scale);
+    void ApplySwapInterval();
 
     SDL_Window *m_window = nullptr;
     void *m_glctx = nullptr;   /* SDL_GLContext */
     bool m_headless = false;
     bool m_videoInited = false;
+    bool m_vsyncOn = false;    /* ApplySwapInterval */
 
     PcVideoSettings m_set = {};
     int m_lastFull = PC_VIDEO_BORDERLESS;   /* where Alt+Enter goes from a window */

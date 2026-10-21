@@ -24,7 +24,7 @@ public:
 private:
     int64_t Now() const;
     void Init();
-    void RunFrame();
+    void RunFrame(bool present = true);
     void WaitFrame();
     void DebugHooks();
 

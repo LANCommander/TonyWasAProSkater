@@ -146,6 +146,7 @@ void Video::SettingsDefaults()
     m_set.fog = PC_FOG_NORMAL;
     m_set.shadows = PC_SHADOWS_PS1;
     m_set.antialiasing = 0;
+    m_set.vsync = 1;
 }
 
 int Video::SettingsLine(const char *section, const char *key, char *value)
@@ -187,6 +188,9 @@ int Video::SettingsLine(const char *section, const char *key, char *value)
                 m_set.shadows = i;
     } else if (!SDL_strcasecmp(key, "Antialiasing")) {
         m_set.antialiasing = AaSamples(atoi(value));
+    } else if (!SDL_strcasecmp(key, "VSync")) {
+        m_set.vsync = !SDL_strncasecmp(value, "on", 2) || *value == '1' ||
+                      !SDL_strncasecmp(value, "yes", 3);
     } else {
         PC_Log("Settings.ini: unknown setting \"%s\" in [Video]", key);
     }
@@ -209,7 +213,9 @@ void Video::WriteSettings(FILE *f)
           "; (50-400). Fog = Normal, Light (only the far half) or Off. Shadows = PlayStation\n"
           "; (flat blobs under the skater) or Dreamcast (a soft shadow laid over the level\n"
           "; around the skater, as the Dreamcast version draws it). Antialiasing = Off, 2x, 4x\n"
-          "; or 8x smooths the edges of polygons (multisampling).\n",
+          "; or 8x smooths the edges of polygons (multisampling). VSync = On shows each frame\n"
+          "; at the display's next refresh (no tearing); the game's speed is the same whatever\n"
+          "; the display's refresh rate.\n",
           f);
     fprintf(f, "\n[Video]\nMode = %s\nWindowSize = %dx%d\n", s_modeNames[m_set.mode], m_set.win_w,
             m_set.win_h);
@@ -228,6 +234,7 @@ void Video::WriteSettings(FILE *f)
         fprintf(f, "Antialiasing = %dx\n", m_set.antialiasing);
     else
         fputs("Antialiasing = Off\n", f);
+    fprintf(f, "VSync = %s\n", m_set.vsync ? "On" : "Off");
 }
 
 int Video::Save()
@@ -413,7 +420,26 @@ void Video::Apply(const PcVideoSettings &s)
         m_lastFull = m_set.mode;
     g_glGpu.SetWidescreen(m_set.widescreen);
     g_glGpu.SetSamples(m_set.antialiasing);
+    ApplySwapInterval();
     ApplyWindow();
+}
+
+/* VSync: wait for the display's refresh at each swap. Never for automated runs (a hidden window,
+ * THPS_FAST, THPS_DETERMINISTIC), which must not be paced by a monitor. */
+void Video::ApplySwapInterval()
+{
+    const char *fast = getenv("THPS_FAST"), *det = getenv("THPS_DETERMINISTIC");
+    bool want = m_set.vsync && !m_headless && !(fast && atoi(fast)) && !(det && atoi(det));
+    if (!m_glctx)
+        return;
+    m_vsyncOn = want && SDL_GL_SetSwapInterval(1) == 0;
+    if (!m_vsyncOn)
+        SDL_GL_SetSwapInterval(0);
+    if (want && !m_vsyncOn)
+        PC_Log("video: no vsync (%s)", SDL_GetError());
+    SDL_DisplayMode m;
+    if (m_vsyncOn && SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(m_window), &m) == 0)
+        PC_Log("video: vsync on, display at %d Hz", m.refresh_rate);
 }
 
 void Video::AddRes(int w, int h)
@@ -519,8 +545,11 @@ bool Video::InitGl(int scale)
         m_glctx = SDL_GL_CreateContext(m_window);
     if (m_glctx) {
         int dw, dh;
-        /* the port paces itself to the PS1's 60 Hz; waiting for the monitor as well would stall */
-        SDL_GL_SetSwapInterval(0);
+        /* the game runs at 60 Hz off its own clock (pc/frame_clock.h); vsync only decides when
+         * a finished frame is shown */
+        if (getenv("THPS_VSYNC"))
+            m_set.vsync = atoi(getenv("THPS_VSYNC")) != 0;
+        ApplySwapInterval();
         ApplyWindow();
         SDL_GL_GetDrawableSize(m_window, &dw, &dh);
         if (getenv("THPS_WIDESCREEN"))

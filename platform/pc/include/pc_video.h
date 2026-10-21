@@ -31,6 +31,7 @@ typedef struct {
     int fog;               /* PC_FOG_* */
     int shadows;           /* PC_SHADOWS_* */
     int antialiasing;      /* multisample antialiasing: samples per pixel, 0 (off), 2, 4 or 8 */
+    int vsync;             /* 1: show each frame at the display's next refresh (no tearing) */
 } PcVideoSettings;
 
 /* the range Settings.ini allows for draw_distance and object_distance */

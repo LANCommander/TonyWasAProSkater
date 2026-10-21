@@ -41,8 +41,10 @@ void FrameClock::Init() {
 }
 
 /* One frame: input, streaming, the game's frame handler, then show the display area (the game
- * flips buffers from its handler and never waits for a frame while playing). */
-void FrameClock::RunFrame() {
+ * flips buffers from its handler and never waits for a frame while playing). A frame that is late
+ * with the next one also due isn't shown when vsync is on: each present then waits for the
+ * display's refresh, and the frames that catch up on the clock mustn't. */
+void FrameClock::RunFrame(bool present) {
     m_frames++;
     g_streamer.Frame();
     g_otDrawer.RunDone();
@@ -51,7 +53,8 @@ void FrameClock::RunFrame() {
         m_handler();
         m_inHandler = false;
     }
-    g_video.Present();
+    if (present || !g_video.VSyncActive())
+        g_video.Present();
     pc_heartbeat = pc_heartbeat + 1;
     g_input.PumpEvents();
     DebugHooks();
@@ -69,7 +72,7 @@ int FrameClock::Poll() {
     now = Now();
     while (now >= m_next && n < 4) {
         m_next += m_freq / kHz;
-        RunFrame();
+        RunFrame(now < m_next || n == 3);
         n++;
     }
     if (now - m_next > m_freq / 4)
