@@ -52,6 +52,9 @@ game or Settings.ini (https://github.com/mdqinc/SDL_GameControllerDB).
   Pause                      Escape                    Start
   Menu accept / back         Return / Escape           A / B
 
+Names (save names, high-score initials, the HORSE word) can be typed on the keyboard; Backspace
+erases. The arrows still pick letters too.
+
 Options > Graphics sets the display mode (windowed, borderless, fullscreen), the resolution and
 widescreen. Alt+Enter switches between windowed and fullscreen.
 

@@ -9,6 +9,7 @@ extern "C" {
 }
 
 #include "pc_screen.h"
+#include "pc_input.h"
 #include "game/front.h"
 #include "game/career.h"
 #include "game/m3d.h"
@@ -223,6 +224,42 @@ void Horse_DisplayWords(int *p) {
 
 		Mess_DrawText(426 - (1 - i) * 340, 48, buf, 0, 0, 256, 0);
 	}
+}
+
+/* PC: the HORSE word typed on the keyboard (PC_InputTextChar), keeping the cycling's rules: a
+   letter goes in under the cursor, which steps on (up to the tenth place); Backspace only takes
+   the last letter off a word of four or more. Spaces are ignored. Returns whether the word changed. */
+static int Horse_TypeWord(void) {
+	char *pWord = GCareer.Options.HorseWord;
+	int c, typed = 0;
+
+	while ((c = PC_InputTextChar()) != 0) {
+		int len, p;
+
+		for (len = 0; len < 10 && pWord[len] != ' ' && pWord[len] != 0; len++)
+			;
+
+		if (c == '\b') {
+			p = GHorseCursorPos;
+
+			if ((pWord[p] == ' ' || pWord[p] == 0) && p > 0)
+				p--;
+
+			if (p == len - 1 && len >= 4) {
+				pWord[p] = ' ';
+				GHorseCursorPos = p;
+				typed = 1;
+			}
+		} else if (c != ' ') {
+			pWord[GHorseCursorPos] = c;
+			typed = 1;
+
+			if (GHorseCursorPos < 9)
+				GHorseCursorPos++;
+		}
+	}
+
+	return typed;
 }
 
 /* InitStatsSwisch__Fv (0x8001648c) */
@@ -2332,6 +2369,11 @@ void Front_Update() {
 				}
 			}
 
+			if (Horse_TypeWord()) {
+				SizeUp = 16;
+				SFX_PlayX(SND_COUNTDING, 8192, 0);
+			}
+
 			GCareer.Options.HorseLen = 10;
 
 			{
@@ -2475,6 +2517,12 @@ void Front_Update() {
 								Career_HighScores(GLevel)[GHighScoreLineIndex]
 								    .Name[GHighScoreInitialCursorPos] = ' ';
 						}
+					}
+
+					if (Front_TypeName(Career_HighScores(GLevel)[GHighScoreLineIndex].Name, 3,
+					                   &GHighScoreInitialCursorPos)) {
+						SizeUp = 16;
+						SFX_PlayX(SND_COUNTDING, 8192, 0);
 					}
 
 					if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {

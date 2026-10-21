@@ -702,13 +702,16 @@ void Input::PumpEvents() {
             m_quit = true;
         if (e.type == SDL_JOYDEVICEADDED)
             DeviceAdded(e.jdevice.which);
+        /* typed keys go by the events, so they keep their order and repeat when held */
+        if (e.type == SDL_KEYDOWN && m_textMode && !(e.key.keysym.mod & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)))
+            TypeKey(e.key.keysym.scancode);
         g_video.Event(&e);
     }
 }
 
 /* Once per game frame, before the actions are read: sample the keyboard and gamepads. */
 void Input::Update() {
-    uint8_t down[SDL_NUM_SCANCODES];
+    uint8_t down[SDL_NUM_SCANCODES], scripted[SDL_NUM_SCANCODES] = {};
     const Uint8 *k;
     uint32_t acts = 0;
     int sc, a;
@@ -719,11 +722,22 @@ void Input::Update() {
         down[sc] = k ? k[sc] : 0;
     if (SDL_GetModState() & KMOD_ALT)
         down[SDL_SCANCODE_RETURN] = 0; /* Alt+Enter switches fullscreen (Video::Event) */
-    ScriptedKeys(down);
+    ScriptedKeys(scripted);
     for (sc = 0; sc < SDL_NUM_SCANCODES; sc++) {
+        down[sc] |= scripted[sc];
         m_keyPressed[sc] = down[sc] && !m_keyDown[sc];
         m_keyDown[sc] = down[sc];
     }
+    /* text mode lasts while the game asks for typed keys (TextChar) */
+    m_textMode = m_textLease > 0;
+    if (m_textLease)
+        m_textLease--;
+    if (!m_textMode)
+        m_nTyped = 0;
+    else
+        for (sc = 0; sc < SDL_NUM_SCANCODES; sc++)
+            if (scripted[sc] && m_keyPressed[sc])
+                TypeKey(sc); /* THPS_KEYS types too */
     m_scripted = ScriptedButtons();
     PollGamepads();
     if (pc_trace) {
@@ -770,7 +784,7 @@ bool Input::ActionDown(int player, PcAction a) {
         return true;
     for (s = 0; s < kBindSlots; s++) {
         int key = m_key[a][s], pad = m_players[player].pad[a][s];
-        if (player == 0 && key != PC_BIND_NONE && m_keyDown[key])
+        if (player == 0 && key != PC_BIND_NONE && m_keyDown[key] && !(m_textMode && TextKey(key)))
             return true;
         if (slot >= 0 && pad != PC_BIND_NONE && (m_pads[slot].down >> pad & 1))
             return true;
@@ -805,6 +819,38 @@ bool Input::ClearPressed(int player) {
            (m_pads[m_players[player].slot].pressed >> kPadX & 1);
 }
 
+/* ---- typing ----------------------------------------------------------------------------------- */
+
+/* What a key types in text mode: its letter in the keyboard's layout (upper case), ' ', '\b' for
+ * Backspace; 0 for the rest, which keep their bindings. */
+int Input::TextKey(int sc) {
+    SDL_Keycode k = SDL_GetKeyFromScancode((SDL_Scancode)sc);
+    if (k >= SDLK_a && k <= SDLK_z)
+        return 'A' + (k - SDLK_a);
+    if (k == SDLK_SPACE)
+        return ' ';
+    if (k == SDLK_BACKSPACE)
+        return '\b';
+    return 0;
+}
+
+void Input::TypeKey(int sc) {
+    int c = TextKey(sc);
+    if (c && m_nTyped < (int)sizeof m_typed)
+        m_typed[m_nTyped++] = (char)c;
+}
+
+/* The next key typed (TextKey), 0 for none; asking keeps text mode on for this frame and the next. */
+int Input::TextChar() {
+    int c;
+    m_textLease = 2;
+    if (!m_textMode || !m_nTyped)
+        return 0;
+    c = m_typed[0];
+    memmove(m_typed, m_typed + 1, --m_nTyped);
+    return c;
+}
+
 }   // namespace pc
 
 /* ---- the game's interface (pc_input.h, pc_settings.h, pc_runtime.h) ---- */
@@ -822,6 +868,7 @@ void PC_InputRumble(int player, int small, int large) { pc::g_input.Rumble(playe
 int PC_InputPlayerConnected(int player) { return pc::g_input.PlayerConnected(player); }
 int PC_InputGamepadConnected(int player) { return pc::g_input.GamepadConnected(player); }
 int PC_InputActionDown(int player, PcAction a) { return pc::g_input.ActionDown(player, a); }
+int PC_InputTextChar(void) { return pc::g_input.TextChar(); }
 
 
 void PC_RequestQuit(void) { pc::g_input.RequestQuit(); }

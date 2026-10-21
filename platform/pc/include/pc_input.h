@@ -76,6 +76,12 @@ int PC_InputPlayerConnected(int player);
 int PC_InputGamepadConnected(int player);
 int PC_InputActionDown(int player, PcAction a);
 
+/* Typing a name (the name entry screens): the next key typed on the keyboard, as 'A'..'Z', ' ',
+ * or '\b' (Backspace); 0 for none. Calling it every frame puts the keyboard in text mode for that
+ * frame and the next: the letters, Space and Backspace type instead of doing what they're bound to
+ * (the arrows, Return and Escape still do). Keys typed outside text mode are dropped. */
+int PC_InputTextChar(void);
+
 #ifdef __cplusplus
 }
 #endif

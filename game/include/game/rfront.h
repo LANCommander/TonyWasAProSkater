@@ -21,6 +21,7 @@ struct SCachedBackground {
 
 /* functions */
 int GetUpDown();
+int Front_TypeName(char *Name, int Len, int *pCursor); /* PC: keyboard typing on the name screens */
 void Front_RestoreBackground();
 void Front_InitMemCardMenus(int a, EMemCardState b, EPausedStatus c);
 void Front_SetSaveAction(ESaveAction v);

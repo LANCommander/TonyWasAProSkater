@@ -24,6 +24,7 @@ extern "C" {
 #include "game/globals.h"
 #include "game/main.h"
 #include "pc_saves.h"
+#include "pc_input.h"
 
 /* a polymorphic object as Front_FreeMemCardMenus deletes it: through its egcs vtable's
    deleting-destructor entry (slot 0: this adjustment, then the function) */
@@ -131,6 +132,32 @@ int GetUpDown(void) {
 	}
 
 	return r;
+}
+
+/* PC: a name typed on the keyboard (PC_InputTextChar) into Name[0..Len-1] at *pCursor. A letter or
+   space goes in under the cursor, which steps on (staying on the last place); Backspace blanks the
+   place under the cursor, or the one before it when that is blank already. Returns whether
+   anything was typed. */
+int Front_TypeName(char *Name, int Len, int *pCursor) {
+	int c, typed = 0;
+
+	while ((c = PC_InputTextChar()) != 0) {
+		typed = 1;
+
+		if (c == '\b') {
+			if ((Name[*pCursor] == ' ' || Name[*pCursor] == 0) && *pCursor > 0)
+				(*pCursor)--;
+
+			Name[*pCursor] = ' ';
+		} else {
+			Name[*pCursor] = c;
+
+			if (*pCursor < Len - 1)
+				(*pCursor)++;
+		}
+	}
+
+	return typed;
 }
 
 /* Front_DirtyRectText__FiiPCc (0x80011324) */
@@ -810,6 +837,11 @@ int Front_MemCardUpdate() {
 					if (SaveGameName[CursorPos] < 65)
 						SaveGameName[CursorPos] = ' ';
 				}
+			}
+
+			if (Front_TypeName(SaveGameName, 10, &CursorPos)) {
+				SizeUp = 16;
+				SFX_PlayX(SND_COUNTDING, 0x2000, 0);
 			}
 
 			if (Pad[0].MenuLeft.Triggered || Pad[1].MenuLeft.Triggered) {
