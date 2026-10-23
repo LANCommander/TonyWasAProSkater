@@ -7,6 +7,7 @@
 #include "game/bruce.h"
 #include "game/globals.h"
 #include "game/utils.h"
+#include "game/rfront.h"
 #include "pc_mods.h"
 
 extern char *DefaultHighScoreInitials[];
@@ -68,6 +69,7 @@ void Career_Init() {
 	Career_InitExt();
 	GHasCareerLoaded = 0;
 	GLoadedCareerIsSaved = 0;
+	StoredCareerName[0] = 0;
 
 	{
 		int i;

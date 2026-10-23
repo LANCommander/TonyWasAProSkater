@@ -391,6 +391,10 @@ int PC_SaveListType(void) { return pc::g_saves.ListType(); }
 void PC_SaveSelect(const char *name) { pc::g_saves.Select(name); }
 const char *PC_SaveSelected(void) { return pc::g_saves.Selected(); }
 void PC_SaveCardHeader(void *head, int type, const char *name) { pc::Saves::CardHeader(head, type, name); }
+int PC_SaveNameValid(const char *name) {
+    char clean[PC_SAVE_NAME_LEN + 1];
+    return pc::CleanName(name, clean);
+}
 int PC_SaveExists(int type, const char *name) { return pc::g_saves.Exists(type, name); }
 int PC_SaveWrite(int type, const char *name, int n, const PCSaveChunk *chunks) { return pc::g_saves.Write(type, name, n, chunks); }
 int PC_SaveRead(int type, const char *name, int n, const PCSaveChunk *chunks) { return pc::g_saves.Read(type, name, n, chunks); }

@@ -751,7 +751,15 @@ int Front_MemCardUpdate() {
 							break;
 						}
 
-						if (GHasCareerLoaded) {
+						/* PC: "CONTINUE GAME" sets GHasCareerLoaded for a career that was never saved,
+						   which has no name to save under (retail wrote a nameless save; the port's
+						   saves are files named after it, pc_saves.h): ask for one, as for a new
+						   career (asking before replacing a save of that name) */
+						if (GHasCareerLoaded && !PC_SaveNameValid(StoredCareerName)) {
+							GHasCareerLoaded = 0;
+							MCState = 2;
+							InitEnterName();
+						} else if (GHasCareerLoaded) {
 							{
 								int i;
 

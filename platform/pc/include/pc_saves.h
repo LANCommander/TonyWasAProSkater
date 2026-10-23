@@ -50,6 +50,8 @@ void PC_SaveCardHeader(void *head, int type, const char *name);
 /* The type of the last PC_SaveListDir. */
 int PC_SaveListType(void);
 
+/* 1 if a save can be named name: something is left of it with trailing blanks dropped. */
+int PC_SaveNameValid(const char *name);
 int PC_SaveExists(int type, const char *name);
 /* 1 on success. The file is replaced whole (through a temporary file). */
 int PC_SaveWrite(int type, const char *name, int n, const PCSaveChunk *chunks);
