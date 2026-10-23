@@ -3265,13 +3265,11 @@ void FUN_80058fc8(void) {
 void FlickerSync(void) {
 	PC_FrameWait(1);
 
-	/* the interlace field (libgpu's GetODE): odd and even frames */
-	for (;;) {
+	/* the interlace field (libgpu's GetODE): odd and even frames. Checked before polling, as the
+	   PS1 does: with vsync a frame often comes due as soon as the last one has been shown, and
+	   running it first would skip the right field and wait two more frames. */
+	while ((int)(PC_FrameCount() & 1) == DAT_800d1c44)
 		PC_FramePoll();
-
-		if ((int)(PC_FrameCount() & 1) != DAT_800d1c44)
-			break;
-	}
 
 	DAT_800d1c44 ^= 1;
 }
