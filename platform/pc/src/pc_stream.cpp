@@ -9,7 +9,11 @@
  *
  * A Dreamcast film plays its ADX audio, kept a little ahead of the mixer instead of paced by
  * sectors. Its end tells pc_music.cpp, which loops the song (a film's frames aren't counted by the
- * game, so its end frame never comes). */
+ * game, so its end frame never comes).
+ *
+ * The game's music levels route only the CD's left channel, to both sides (the PS1's songs and
+ * logo movie are mono XA, which the CD plays on both channels). A film's audio is stereo: its
+ * channels each get their side's level instead, or its right channel would be lost. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -210,6 +214,7 @@ void Streamer::Play(int id) {
             return;
         }
         m_id = id;
+        ApplyMix();
     }
     if (m_f)
         PC_FSEEK(m_f, 0, SEEK_SET);
@@ -254,6 +259,22 @@ bool Streamer::Busy() const {
         if (f.state == FrameState::Ready || f.state == FrameState::Filling)
             return true;
     return false;
+}
+
+void Streamer::Mix(const uint8_t levels[4]) {
+    memcpy(m_mix, levels, sizeof m_mix);
+    ApplyMix();
+}
+
+void Streamer::ApplyMix() {
+    uint8_t m[4];
+    memcpy(m, m_mix, sizeof m);
+    if (IsFilm(m_id) && !m[2] && !m[3]) {
+        /* left to left and left to right: left to left and right to right */
+        m[2] = m[1];
+        m[1] = 0;
+    }
+    g_sound.MusicMix(m);
 }
 
 double Streamer::FilmTime() const {
@@ -317,6 +338,6 @@ int PC_StreamNextFrame(uint32_t **frame, uint32_t **header) {
     return pc::g_streamer.NextFrame(frame, header);
 }
 void PC_StreamFreeFrame(const void *frame) { pc::g_streamer.FreeFrame(frame); }
-/* the music levels and muting are the mixer's */
-void PC_StreamMix(const uint8_t levels[4]) { pc::g_sound.MusicMix(levels); }
+/* muting is the mixer's */
+void PC_StreamMix(const uint8_t levels[4]) { pc::g_streamer.Mix(levels); }
 void PC_StreamMute(int mute) { pc::g_sound.MusicMute(mute); }

@@ -45,6 +45,9 @@ public:
      * plays). */
     double FilmTime() const;
 
+    /* The game's music levels (pc_stream.h's PC_StreamMix), applied to the playing stream. */
+    void Mix(const uint8_t levels[4]);
+
     /* Once per frame (pc_frame.cpp): read what the stream would have read since the last. */
     void Frame();
 
@@ -74,6 +77,7 @@ private:
     VideoFrame *AllocFrame(uint32_t need);
     void VideoChunk(const uint8_t *u);
     void Close();
+    void ApplyMix();
     void FilmAudio();
 
     FileEntry m_files[kMaxFiles] = {};
@@ -85,6 +89,7 @@ private:
     SfdFilm *m_sfd = nullptr;  /* a film (owned) */
     bool m_reading = false, m_paused = false;
     uint32_t m_owed = 0;       /* sectors owed, in sixtieths */
+    uint8_t m_mix[4] = {};     /* the game's levels (CdMix order) */
 
     /* its video frames */
     VideoFrame m_fr[kMaxFrames] = {};
