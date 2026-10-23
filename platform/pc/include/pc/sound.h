@@ -69,6 +69,7 @@ public:
     /* Frames queued and not yet played; frames played so far (a clock for what has been heard). */
     unsigned MusicQueued();
     uint64_t MusicConsumed();
+    uint64_t MusicWritten();
     /* Levels: left to left, left to right, right to right, right to left; 0x80 = 100%. */
     void MusicMix(const uint8_t levels[4]);
     void MusicMute(int mute);

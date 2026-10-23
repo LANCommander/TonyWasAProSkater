@@ -3,9 +3,12 @@
  * An STR file is raw 2352-byte CD sectors: XA-ADPCM audio sectors (submode bit 2) go through the
  * XA decoder to the mixer's music input; the others are video chunks (2048 bytes of user data: a
  * 32-byte header, 2016 bytes of a frame's bitstream), assembled into whole frames. The file is
- * read at 150 sectors a second, the rate it was laid out for, so audio and video keep the time
- * they had on the PS1. With no frame free for a new one (the game is behind) the frame is dropped
- * and reading carries on, so the music never waits on the game.
+ * read at 150 sectors a second, the rate it was laid out for. The PS1 played an audio sector as it
+ * was read and showed a frame as soon as it was read; here the mixer holds some audio back (its
+ * prebuffer), so a frame waits until the music has played up to the sector that completed it, and
+ * audio and video keep the time they had on the PS1. With no frame free for a new one (the game is
+ * behind) the frame is dropped and reading carries on, so the music never waits on the game.
+ * Stopping drops the queued audio, which would otherwise play into whatever comes next.
  *
  * A Dreamcast film plays its ADX audio, kept a little ahead of the mixer instead of paced by
  * sectors. Its end tells pc_music.cpp, which loops the song (a film's frames aren't counted by the
@@ -41,6 +44,7 @@ constexpr int kStrMagic = 0x0160;
 constexpr int kStrHeader = 32;
 constexpr int kStrPayload = 2016;
 constexpr unsigned kFilmAhead = 12288; /* film audio frames kept queued for the mixer (its prebuffer is 8192) */
+constexpr int kClockStall = 60; /* frames the music clock may stand still before frames stop waiting on it */
 
 bool HasExt(const char *path, const char *ext) {
     size_t n = strlen(path), e = strlen(ext);
@@ -162,8 +166,36 @@ void Streamer::VideoChunk(const uint8_t *u) {
     if (++f->got >= f->chunks) {
         f->state = FrameState::Ready;
         f->seq = m_seq++;
+        f->sector = m_sector;
+        TimeFrame(*f);
         m_filling = -1;
     }
+}
+
+/* When a frame shows: when the music reaches the time of the sector that completed it, counted
+ * from the last audio sector read. Until some audio has been read it isn't known. */
+void Streamer::TimeFrame(VideoFrame &f) const {
+    int64_t due;
+    f.timed = m_audioSeen;
+    if (!f.timed)
+        return;
+    due = (int64_t)m_audioPos +
+          ((int64_t)f.sector - (int64_t)m_audioSector) * m_audioRate / kSectorsPerSecond;
+    f.due = due < 0 ? 0 : (uint64_t)due;
+}
+
+/* The music clock, watched for standing still with frames waiting (no audio in the stream, or the
+ * mixer waiting on its prebuffer at the end): the frames then go without it. */
+void Streamer::AudioClock() {
+    uint64_t now = g_sound.MusicConsumed();
+    bool waiting = false;
+    for (const VideoFrame &f : m_fr)
+        waiting |= f.state == FrameState::Ready;
+    if (now != m_lastConsumed || !waiting)
+        m_clockStall = 0;
+    else if (m_clockStall <= kClockStall)
+        m_clockStall++;
+    m_lastConsumed = now;
 }
 
 bool Streamer::NextFrame(uint32_t **frame, uint32_t **header) {
@@ -172,6 +204,8 @@ bool Streamer::NextFrame(uint32_t **frame, uint32_t **header) {
         if (f.state == FrameState::Ready && (!best || f.seq < best->seq))
             best = &f;
     if (!best)
+        return false;
+    if (m_clockStall <= kClockStall && (!best->timed || best->due > g_sound.MusicConsumed()))
         return false;
     best->state = FrameState::Taken;
     *frame = (uint32_t *)(best->buf + kStrHeader);
@@ -225,7 +259,10 @@ void Streamer::Play(int id) {
     m_reading = true;
     m_paused = false;
     m_owed = 0;
-    m_heardFrom = g_sound.MusicConsumed() + g_sound.MusicQueued();
+    m_sector = 0;
+    m_audioSeen = false;
+    m_clockStall = 0;
+    m_heardFrom = g_sound.MusicWritten();
     m_filmRate = 0;
     PC_Trace("stream %d plays from the start", id);
 }
@@ -237,6 +274,7 @@ void Streamer::Stop() {
     m_id = 0;
     m_paused = false;
     ClearFrames();
+    g_sound.MusicFlush();
 }
 
 void Streamer::Pause() {
@@ -299,6 +337,7 @@ void Streamer::FilmAudio() {
 }
 
 void Streamer::Frame() {
+    AudioClock();
     if (!m_reading || m_paused)
         return;
     if (m_sfd) {
@@ -313,15 +352,28 @@ void Streamer::Frame() {
             m_reading = false;
             return;
         }
-        if (m_raw[15] != 2) /* not a mode 2 sector */
+        if (m_raw[15] != 2) { /* not a mode 2 sector */
+            m_sector++;
             continue;
+        }
         if (m_raw[18] & 0x04) { /* submode: audio */
             int rate, n = g_xaDecoder.DecodeSector(m_raw, m_xaPcm, rate);
-            if (n)
+            if (n) {
+                bool first = !m_audioSeen;
+                m_audioPos = g_sound.MusicWritten();
+                m_audioSector = m_sector;
+                m_audioRate = rate;
+                m_audioSeen = true;
                 g_sound.MusicQueue(m_xaPcm, n, rate);
+                if (first) /* the frames read before it */
+                    for (VideoFrame &f : m_fr)
+                        if (f.state == FrameState::Ready && !f.timed)
+                            TimeFrame(f);
+            }
         } else {
             VideoChunk(m_raw + 24);
         }
+        m_sector++;
     }
 }
 

@@ -831,6 +831,14 @@ uint64_t Sound::MusicConsumed() {
     return n;
 }
 
+uint64_t Sound::MusicWritten() {
+    uint64_t n;
+    Lock();
+    n = m_music.Consumed() + m_music.Queued();
+    Unlock();
+    return n;
+}
+
 void Sound::MusicFlush() {
     Lock();
     m_music.Flush();

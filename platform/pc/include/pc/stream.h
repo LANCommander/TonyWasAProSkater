@@ -34,8 +34,9 @@ public:
     void Pause();
     void Resume();
 
-    /* The oldest whole video frame: true and its MDEC bitstream and its 32-byte STR sector header
-     * (the frame number is header word 2), until FreeFrame(frame). false if none is ready. */
+    /* The oldest whole video frame, once the music has played up to it: true and its MDEC
+     * bitstream and its 32-byte STR sector header (the frame number is header word 2), until
+     * FreeFrame(frame). false if none is ready. */
     bool NextFrame(uint32_t **frame, uint32_t **header);
     void FreeFrame(const void *frame);
 
@@ -53,7 +54,7 @@ public:
 
 private:
     static constexpr int kSector = 2352;
-    static constexpr int kMaxFrames = 8;
+    static constexpr int kMaxFrames = 16; /* room for the frames waiting on the music */
     static constexpr int kMaxFiles = 256;
     static constexpr int kFilmChunk = 1024;
 
@@ -70,6 +71,9 @@ private:
         uint32_t cap;
         uint32_t frame, seq;
         int chunks, got;
+        uint32_t sector; /* the sector that completed it */
+        bool timed;      /* due is known (some audio had been read) */
+        uint64_t due;    /* the music clock (Sound::MusicConsumed) at which it shows */
     };
 
     const FileEntry *FileOf(int id) const;
@@ -79,6 +83,8 @@ private:
     void Close();
     void ApplyMix();
     void FilmAudio();
+    void TimeFrame(VideoFrame &f) const;
+    void AudioClock();
 
     FileEntry m_files[kMaxFiles] = {};
     int m_nfiles = 0;
@@ -89,12 +95,22 @@ private:
     SfdFilm *m_sfd = nullptr;  /* a film (owned) */
     bool m_reading = false, m_paused = false;
     uint32_t m_owed = 0;       /* sectors owed, in sixtieths */
+    uint32_t m_sector = 0;     /* sectors read since the start */
     uint8_t m_mix[4] = {};     /* the game's levels (CdMix order) */
 
     /* its video frames */
     VideoFrame m_fr[kMaxFrames] = {};
     uint32_t m_seq = 0;
     int m_filling = -1;
+
+    /* an STR's audio: its last audio sector, and where on the music clock that sector's audio
+     * starts (an audio sector plays from when it is read, as on the PS1) */
+    bool m_audioSeen = false;
+    uint32_t m_audioSector = 0;
+    uint64_t m_audioPos = 0;
+    int m_audioRate = 0;
+    uint64_t m_lastConsumed = 0;
+    int m_clockStall = 0;      /* frames the music clock hasn't moved with frames waiting on it */
 
     /* a film's audio */
     uint64_t m_heardFrom = 0;  /* the mixer's frame count at which its first frame plays */
