@@ -422,6 +422,7 @@ enum {
 	GFX_FOG,
 	GFX_SHADOWS,
 	GFX_ANTIALIASING,
+	GFX_TEXTURE_FILTER,
 	GFX_VSYNC,
 	GFX_DATA, /* only with both versions' files (PC_DataBothVersions) */
 	GFX_APPLY,
@@ -432,6 +433,7 @@ enum {
 static const char *const s_modeLabels[PC_VIDEO_MODES] = { "WINDOWED", "BORDERLESS", "FULLSCREEN" };
 static const char *const s_fogLabels[PC_FOG_MODES] = { "NORMAL", "LIGHT", "OFF" };
 static const char *const s_shadowLabels[PC_SHADOWS_MODES] = { "PLAYSTATION", "DREAMCAST" };
+static const char *const s_filterLabels[PC_TEXFILTER_MODES] = { "OFF", "BILINEAR" };
 static const char *const s_dataLabels[PC_DATA_MODES] = { "PLAYSTATION", "DREAMCAST" };
 /* the distance steps, in percent (Settings.ini may hold others in between); the last, the entire
    level, only for the draw distance */
@@ -6531,7 +6533,7 @@ static int SameSettings(const PcVideoSettings *a, const PcVideoSettings *b) {
 	return SameWindow(a, b) && a->draw_distance == b->draw_distance &&
 	       a->object_distance == b->object_distance && a->fog == b->fog &&
 	       a->shadows == b->shadows && a->antialiasing == b->antialiasing &&
-	       a->vsync == b->vsync && a->data == b->data;
+	       a->texture_filter == b->texture_filter && a->vsync == b->vsync && a->data == b->data;
 }
 
 static int RowShown(int i) {
@@ -6545,7 +6547,7 @@ static int NeedsRestart(const PcVideoSettings *s) {
 
 extern "C" void PC_GraphicsOptions(int a) {
 	PcVideoSettings cur, edit, old;
-	int sel = 0, keep = 0, restart = 0, rows, i;
+	int sel = 0, keep = 0, restart = 0, rows, gap, i;
 	int base_scale = Mess_GetFontScale();
 	int small_scale = base_scale * 3 / 4;
 	(void)a;
@@ -6668,6 +6670,9 @@ extern "C" void PC_GraphicsOptions(int a) {
 				i = (i + d + 4) % 4;
 				edit.antialiasing = i ? 1 << i : 0;
 				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
+			} else if (d && sel == GFX_TEXTURE_FILTER) {
+				edit.texture_filter = (edit.texture_filter + d + PC_TEXFILTER_MODES) % PC_TEXFILTER_MODES;
+				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
 			} else if (d && sel == GFX_VSYNC) {
 				edit.vsync ^= 1;
 				SFX_PlayX(SND_MENUCHANGE2, 8192, 0);
@@ -6707,8 +6712,12 @@ extern "C" void PC_GraphicsOptions(int a) {
 		/* ---- draw */
 		Mess_SetFontScale(small_scale);
 
+		/* a blank row before APPLY, unless every row is shown (the messages below would reach
+		   the hint) */
+		gap = !PC_DataBothVersions();
+
 		for (i = rows = 0; i < GFX_ROWS; i++) {
-			int y = ROW_TOP + (rows + (i >= GFX_APPLY)) * ROW_HEIGHT + 7;
+			int y = ROW_TOP + (rows + (i >= GFX_APPLY) * gap) * ROW_HEIGHT + 7;
 			int on = i == sel && !keep && !restart;
 
 			if (!RowShown(i))
@@ -6779,6 +6788,11 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 					Text(SLOT_X1 - 60, y, 0, buf);
 					break;
+				case GFX_TEXTURE_FILTER:
+					SetColour(on, 0);
+					Text(NAME_X, y, 1, "TEXTURE FILTERING");
+					Text(SLOT_X1 - 60, y, 0, s_filterLabels[edit.texture_filter]);
+					break;
 				case GFX_VSYNC:
 					SetColour(on, 0);
 					Text(NAME_X, y, 1, "VSYNC");
@@ -6802,11 +6816,11 @@ extern "C" void PC_GraphicsOptions(int a) {
 
 		if (restart) {
 			Mess_SetRGB(182, 132, 36, 0);
-			Text(NAME_X, ROW_TOP + (rows + 1) * ROW_HEIGHT + 7, 1, "RESTART TO SWITCH");
+			Text(NAME_X, ROW_TOP + (rows + gap) * ROW_HEIGHT + 7, 1, "RESTART TO SWITCH");
 			sprintf(buf, "%s %s", "ACCEPT TO RESTART NOW", "  BACK FOR LATER");
 		} else if (keep) {
 			Mess_SetRGB(182, 132, 36, 0);
-			Text(NAME_X, ROW_TOP + (rows + 1) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
+			Text(NAME_X, ROW_TOP + (rows + gap) * ROW_HEIGHT + 7, 1, "KEEP THESE SETTINGS");
 			sprintf(buf, (char *)"ACCEPT TO KEEP   BACK TO UNDO   %d", (keep + 59) / 60);
 		} else if (sel == GFX_MODE || (sel == GFX_RESOLUTION && edit.mode != PC_VIDEO_BORDERLESS)) {
 			sprintf(buf, "%s %s", "LEFT OR RIGHT TO CHANGE", "");
@@ -6824,6 +6838,8 @@ extern "C" void PC_GraphicsOptions(int a) {
 			sprintf(buf, "%s %s", "DREAMCAST LAYS A SOFT SHADOW", "OVER THE LEVEL");
 		} else if (sel == GFX_ANTIALIASING) {
 			sprintf(buf, "%s %s", "SMOOTHS THE EDGES OF", "POLYGONS");
+		} else if (sel == GFX_TEXTURE_FILTER) {
+			sprintf(buf, "%s %s", "SMOOTHS THE TEXTURES OF", "THE 3D WORLD");
 		} else if (sel == GFX_VSYNC) {
 			sprintf(buf, "%s %s", "SHOWS EACH FRAME AT THE", "SCREENS REFRESH");
 		} else if (sel == GFX_DATA) {

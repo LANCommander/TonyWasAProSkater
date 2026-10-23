@@ -391,6 +391,7 @@ void GlGpu::DrawUniforms(const Target *t)
     glUniform4f(m_drawUTarget, (float)t->x, (float)t->y, (float)t->w, (float)t->h);
     glUniform1f(m_drawUShift, one ? 0.5f : 0.0f);
     glUniform2f(m_drawUUvfix, one ? 0.0f : 0.5f * t->sx - ex, one ? 0.0f : 0.5f * t->sy - ey);
+    glUniform1i(m_drawUBilinear, m_bilinear);
 }
 
 /* The targets the VRAM area x0,y0..x1,y1 (inclusive) is drawn on: the surfaces whose VRAM areas
@@ -473,6 +474,7 @@ int GlGpu::Init(int fixed_scale, int out_w, int out_h)
     m_drawUTarget = glGetUniformLocation(m_drawProg, "u_target");
     m_drawUShift = glGetUniformLocation(m_drawProg, "u_shift");
     m_drawUUvfix = glGetUniformLocation(m_drawProg, "u_uvfix");
+    m_drawUBilinear = glGetUniformLocation(m_drawProg, "u_bilinear");
     m_copyUTarget = glGetUniformLocation(m_copyProg, "u_target");
     m_copyUMap = glGetUniformLocation(m_copyProg, "u_map");
     m_copyUSrc = glGetUniformLocation(m_copyProg, "u_src");
@@ -968,6 +970,14 @@ void GlGpu::Triangle(const GlPrim *p, const GlVertex *a, const GlVertex *b,
     }
     if (p->textured && p->depth != 3 && !(precise && m_precise))
         UvRange(o, a, b, c, bx0, by0, bx1, by1);
+    if (p->textured && p->depth != 3 && (info & I_DEPTH) && m_bilinear) {
+        /* filtered, a projected face's samples stay inside its texels as native faces' do
+         * (the texels around a page's other images would bleed in at its edges) */
+        uint8_t r[4] = { (uint8_t)MIN3(a->u, b->u, c->u), (uint8_t)MIN3(a->v, b->v, c->v),
+                         (uint8_t)MAX3(a->u, b->u, c->u), (uint8_t)MAX3(a->v, b->v, c->v) };
+        for (int i = 0; i < 3; i++)
+            memcpy(o[i].uvr, r, 4);
+    }
 }
 
 void GlGpu::TriangleF(const GlPrim *p, const float xy[3][2], const uint8_t rgb[3][3])

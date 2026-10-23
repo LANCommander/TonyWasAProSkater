@@ -20,6 +20,13 @@
  * to u_hd: 256 texture units = one repeat, filtered, its alpha (1555/4444 images) blending on top
  * of the PS1's semi-transparency.
  *
+ * Bilinear filtering (u_bilinear, GlGpu::SetTextureFilter) of the 3D world's PS1 textures: native
+ * faces and emulated primitives with a view depth (0x6000); the 2D overlays stay sharp. The four
+ * texels around the PS1's sampling point are blended, transparent ones (0) left out: the pixel is
+ * transparent where they weigh half or more, else the colour is the opaque ones', so cut-out edges
+ * stay where they were without a dark fringe. A texel window wraps each texel; a face's uvr clamps
+ * them (the edges repeat their own texels). Semi-transparency (STP) goes with the weightier half.
+ *
  * The Dreamcast's skater shadows (pc::GlShadow, u_shN of them): native level faces (vertex alpha
  * PC_GL_A_SHADOWED) are darkened by each shadow's texture at their view-space point projected
  * along the light, where they face the light (their normal from the position's derivatives),
@@ -91,13 +98,36 @@ static const char *gl_draw_fs =
     "uniform vec2 u_uvfix;\n"
     "uniform int u_pass;\n"
     "uniform int u_dpass;\n"
-    "uniform int u_shN;\n"                        /* the skaters' shadows (GlShadow) */
+    "uniform int u_bilinear;\n"
+    "uniform int u_shN;\n"                       /* the skaters' shadows (GlShadow) */
     "uniform vec4 u_shS[2], u_shT[2], u_shH[2];\n"
     "uniform vec4 u_shP[2];\n"                    /* top, size, strength */
     "uniform sampler2D u_sh0, u_sh1;\n"
     "layout(location = 0, index = 0) out vec4 o_color;\n"
     "layout(location = 0, index = 1) out vec4 o_blend;\n"
     "uint vram(int x, int y) { return texelFetch(u_vram, ivec2(x & 1023, y & 511), 0).r; }\n"
+    /* texel u, v of the primitive's texture (its window applied), through its CLUT */
+    "uint texel(int u, int v) {\n"
+    "    uint info = v_tex.y;\n"
+    "    u = (u & 255 & int(v_twin.x)) | int(v_twin.z);\n"
+    "    v = (v & 255 & int(v_twin.y)) | int(v_twin.w);\n"
+    "    int tpx = int(info & 15u) * 64, tpy = int((info >> 4) & 1u) * 256;\n"
+    "    int depth = int((info >> 7) & 3u);\n"
+    "    int cx = int(v_tex.x & 63u) * 16, cy = int((v_tex.x >> 6) & 511u);\n"
+    "    if (depth == 0) {\n"
+    "        uint w = vram(tpx + (u >> 2), tpy + v);\n"
+    "        return vram(cx + int((w >> (uint(u & 3) * 4u)) & 15u), cy);\n"
+    "    } else if (depth == 1) {\n"
+    "        uint w = vram(tpx + (u >> 1), tpy + v);\n"
+    "        return vram(cx + int((w >> (uint(u & 1) * 8u)) & 255u), cy);\n"
+    "    }\n"
+    "    return vram(tpx + u, tpy + v);\n"
+    "}\n"
+    /* a texel's colour, and its STP bit as alpha */
+    "vec4 texelColor(uint t) {\n"
+    "    return vec4(vec3(float(t & 31u), float((t >> 5) & 31u), float((t >> 10) & 31u)) / 31.0,\n"
+    "                float(t >> 15));\n"
+    "}\n"
     /* how much shadow tex casts on view-space point p of a surface with normal n */
     "float shadowOf(sampler2D tex, vec4 s, vec4 t, vec4 h, vec4 prm, vec4 p, vec3 n) {\n"
     "    vec2 st = vec2(dot(s, p), dot(t, p));\n"
@@ -120,7 +150,8 @@ static const char *gl_draw_fs =
     "    vec2 uv = v_uvc - fix + 0.5;\n"
     /* native faces and emulated 2D triangles (uv_range in pc_gpu_gl.cpp) stay inside the texels
      * they span; the rest keep the full range unclamped (rects and sprites rely on wrapping) */
-    "    if ((info & 0x4000u) != 0u || v_uvr != uvec4(0u, 0u, 255u, 255u))\n"
+    "    bool inside = (info & 0x4000u) != 0u || v_uvr != uvec4(0u, 0u, 255u, 255u);\n"
+    "    if (inside)\n"
     "        uv = clamp(uv, vec2(v_uvr.xy), vec2(v_uvr.zw) + 0.999);\n"
     "    bool semi = (info & 0x800u) != 0u;\n"
     "    int abr = int((info >> 5) & 3u);\n"
@@ -136,25 +167,31 @@ static const char *gl_draw_fs =
     "        c = (info & 0x400u) != 0u ? t.rgb : min(t.rgb * v_color * (255.0 / 128.0), vec3(1.0));\n"
     "        hd_a = t.a;\n"
     "    } else if ((info & 0x200u) != 0u) {\n"
-    "        int u = (int(floor(uv.x)) & 255 & int(v_twin.x)) | int(v_twin.z);\n"
-    "        int v = (int(floor(uv.y)) & 255 & int(v_twin.y)) | int(v_twin.w);\n"
-    "        int tpx = int(info & 15u) * 64, tpy = int((info >> 4) & 1u) * 256;\n"
-    "        int depth = int((info >> 7) & 3u);\n"
-    "        int cx = int(v_tex.x & 63u) * 16, cy = int((v_tex.x >> 6) & 511u);\n"
-    "        uint t;\n"
-    "        if (depth == 0) {\n"
-    "            uint w = vram(tpx + (u >> 2), tpy + v);\n"
-    "            t = vram(cx + int((w >> (uint(u & 3) * 4u)) & 15u), cy);\n"
-    "        } else if (depth == 1) {\n"
-    "            uint w = vram(tpx + (u >> 1), tpy + v);\n"
-    "            t = vram(cx + int((w >> (uint(u & 1) * 8u)) & 255u), cy);\n"
+    "        vec4 tc;\n"
+    "        if (u_bilinear != 0 && (info & 0x6000u) != 0u) {\n"
+    "            vec2 p = uv - 0.5;\n"
+    "            ivec2 i0 = ivec2(floor(p)), i1 = i0 + 1;\n"
+    "            vec2 f = p - vec2(i0);\n"
+    "            if (inside) {\n"
+    "                i0 = clamp(i0, ivec2(v_uvr.xy), ivec2(v_uvr.zw));\n"
+    "                i1 = clamp(i1, ivec2(v_uvr.xy), ivec2(v_uvr.zw));\n"
+    "            }\n"
+    "            uint t00 = texel(i0.x, i0.y), t10 = texel(i1.x, i0.y);\n"
+    "            uint t01 = texel(i0.x, i1.y), t11 = texel(i1.x, i1.y);\n"
+    "            vec4 w = vec4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y), (1.0 - f.x) * f.y, f.x * f.y);\n"
+    "            w *= vec4(notEqual(uvec4(t00, t10, t01, t11), uvec4(0u)));\n"
+    "            float a = w.x + w.y + w.z + w.w;\n"
+    "            if (a < 0.5) discard;\n"
+    "            tc = (w.x * texelColor(t00) + w.y * texelColor(t10) + w.z * texelColor(t01) +\n"
+    "                  w.w * texelColor(t11)) / a;\n"
+    "            tc.a = tc.a >= 0.5 ? 1.0 : 0.0;\n"
     "        } else {\n"
-    "            t = vram(tpx + u, tpy + v);\n"
+    "            uint t = texel(int(floor(uv.x)), int(floor(uv.y)));\n"
+    "            if (t == 0u) discard;\n"
+    "            tc = texelColor(t);\n"
     "        }\n"
-    "        if (t == 0u) discard;\n"
-    "        vec3 tc = vec3(float(t & 31u), float((t >> 5) & 31u), float((t >> 10) & 31u)) / 31.0;\n"
-    "        c = (info & 0x400u) != 0u ? tc : min(tc * v_color * (255.0 / 128.0), vec3(1.0));\n"
-    "        bool stp = (t & 0x8000u) != 0u;\n"
+    "        c = (info & 0x400u) != 0u ? tc.rgb : min(tc.rgb * v_color * (255.0 / 128.0), vec3(1.0));\n"
+    "        bool stp = tc.a > 0.5;\n"
     "        blend = semi && stp;\n"
     "        if (stp) mask = 1.0;\n"
     "    }\n"

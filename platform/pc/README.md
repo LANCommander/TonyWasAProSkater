@@ -406,6 +406,17 @@ pixel doesn't read texels from beyond the face; its derivatives stay on the pixe
 Off is the same output as before, pixel for pixel. Edges inside cut-out textures (fences, the PS1
 shadows) and between intersecting faces (the shader writes one depth per pixel) stay hard.
 
+**Texture filtering** (`[Video] TextureFilter = Nearest | Bilinear`, Options > Graphics TEXTURE
+FILTERING; default Nearest). The textures are CLUT indices in an integer texture (`pc/texture_store.h`),
+so GL can't filter them: the draw shader does, for the 3D world only (native faces, and emulated
+primitives with a view depth: the `0x6000` info bits), while the HUD, menus and text stay sharp. It
+fetches the four texels around the PS1's sampling point (window and the face's `uvr` clamp applied to
+each), leaves out transparent ones (0): the pixel is transparent where they weigh half or more,
+otherwise its colour is the opaque texels' blend, so cut-outs keep their outline with no dark fringe.
+STP goes with the weightier half. Projected emulated triangles get their vertices' uv range as `uvr`
+while filtering, as native faces always have, so the rest of their texture page doesn't bleed in.
+Dreamcast HD textures are always filtered. Nearest is the same output as before, pixel for pixel.
+
 The build compiles every source under `game/src`, generates the glue in `build/pc/gen/` and
 links. `build/pc/build_report.txt` lists compile errors, header comments no definition matched
 and unresolved symbols.
@@ -514,6 +525,7 @@ window, `THPS_FAST`, `THPS_DETERMINISTIC`) never wait for a display.
 | `THPS_DRAWDIST=pct\|full`, `THPS_OBJDIST=pct`, `THPS_FOG=0\|1\|2` | draw distance (50-400, or the entire level), object distance (50-400) and fog (normal, light, off), whatever Settings.ini says |
 | `THPS_SHADOWS=0\|1` | the skaters' shadows: the PS1's or the Dreamcast's, whatever Settings.ini says |
 | `THPS_MSAA=0\|2\|4\|8` | antialiasing samples per pixel (0: off), whatever Settings.ini says |
+| `THPS_TEXFILTER=0\|1` | texture filtering: nearest or bilinear, whatever Settings.ini says |
 | `THPS_VSYNC=0\|1` | VSync off or on, whatever Settings.ini says |
 | `THPS_FAR_RANGE=n` | entire level: items reaching beyond n (default 30000) take the double-precision path; a small n compares it with the PS1 transforms on near items |
 | `THPS_HEADLESS=1` | no visible window (for automated runs: OpenGL draws into a hidden one) |

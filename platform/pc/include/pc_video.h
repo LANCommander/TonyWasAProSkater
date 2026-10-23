@@ -20,6 +20,9 @@ enum { PC_FOG_NORMAL, PC_FOG_LIGHT, PC_FOG_OFF, PC_FOG_MODES };
  * the level (native 3D renderer only, pc_render3d.h R3d_Shadows) */
 enum { PC_SHADOWS_PS1, PC_SHADOWS_DC, PC_SHADOWS_MODES };
 
+/* the 3D world's textures: the PS1's nearest texel, or bilinear filtering (pc/gl_shaders.h) */
+enum { PC_TEXFILTER_NEAREST, PC_TEXFILTER_BILINEAR, PC_TEXFILTER_MODES };
+
 /* the game files to play with when both versions' are extracted (pc/assets.h): the PS1's or the
  * Dreamcast's; read at startup, so a change takes effect when the game starts again */
 enum { PC_DATA_PS1, PC_DATA_DC, PC_DATA_MODES };
@@ -35,6 +38,7 @@ typedef struct {
     int fog;               /* PC_FOG_* */
     int shadows;           /* PC_SHADOWS_* */
     int antialiasing;      /* multisample antialiasing: samples per pixel, 0 (off), 2, 4 or 8 */
+    int texture_filter;    /* PC_TEXFILTER_* */
     int vsync;             /* 1: show each frame at the display's next refresh (no tearing) */
     int data;              /* PC_DATA_* */
 } PcVideoSettings;

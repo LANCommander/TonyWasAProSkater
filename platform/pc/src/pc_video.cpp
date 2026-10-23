@@ -37,6 +37,7 @@ namespace {
 const char *const s_modeNames[PC_VIDEO_MODES] = { "Windowed", "Borderless", "Fullscreen" };
 const char *const s_fogNames[PC_FOG_MODES] = { "Normal", "Light", "Off" };
 const char *const s_shadowNames[PC_SHADOWS_MODES] = { "PlayStation", "Dreamcast" };
+const char *const s_filterNames[PC_TEXFILTER_MODES] = { "Nearest", "Bilinear" };
 const char *const s_dataNames[PC_DATA_MODES] = { "PlayStation", "Dreamcast" };
 
 /* antialiasing samples per pixel: 0 (off), 2, 4 or 8 */
@@ -147,6 +148,7 @@ void Video::SettingsDefaults()
     m_set.fog = PC_FOG_NORMAL;
     m_set.shadows = PC_SHADOWS_PS1;
     m_set.antialiasing = 0;
+    m_set.texture_filter = PC_TEXFILTER_NEAREST;
     m_set.vsync = 1;
     m_set.data = PC_DATA_PS1;
 }
@@ -190,6 +192,10 @@ int Video::SettingsLine(const char *section, const char *key, char *value)
                 m_set.shadows = i;
     } else if (!SDL_strcasecmp(key, "Antialiasing")) {
         m_set.antialiasing = AaSamples(atoi(value));
+    } else if (!SDL_strcasecmp(key, "TextureFilter")) {
+        for (i = 0; i < PC_TEXFILTER_MODES; i++)
+            if (!SDL_strncasecmp(value, s_filterNames[i], strlen(s_filterNames[i])))
+                m_set.texture_filter = i;
     } else if (!SDL_strcasecmp(key, "VSync")) {
         m_set.vsync = !SDL_strncasecmp(value, "on", 2) || *value == '1' ||
                       !SDL_strncasecmp(value, "yes", 3);
@@ -219,11 +225,12 @@ void Video::WriteSettings(FILE *f)
           "; (50-400). Fog = Normal, Light (only the far half) or Off. Shadows = PlayStation\n"
           "; (flat blobs under the skater) or Dreamcast (a soft shadow laid over the level\n"
           "; around the skater, as the Dreamcast version draws it). Antialiasing = Off, 2x, 4x\n"
-          "; or 8x smooths the edges of polygons (multisampling). VSync = On shows each frame\n"
-          "; at the display's next refresh (no tearing); the game's speed is the same whatever\n"
-          "; the display's refresh rate. Data = PlayStation or Dreamcast: which version's game\n"
-          "; files to play with when both discs' are extracted (each in its own Data folder);\n"
-          "; read when the game starts.\n",
+          "; or 8x smooths the edges of polygons (multisampling). TextureFilter = Nearest (the\n"
+          "; PlayStation's sharp texels) or Bilinear (the 3D world's textures smoothed; the 2D\n"
+          "; overlays stay sharp). VSync = On shows each frame at the display's next refresh\n"
+          "; (no tearing); the game's speed is the same whatever the display's refresh rate.\n"
+          "; Data = PlayStation or Dreamcast: which version's game files to play with when both\n"
+          "; discs' are extracted (each in its own Data folder); read when the game starts.\n",
           f);
     fprintf(f, "\n[Video]\nMode = %s\nWindowSize = %dx%d\n", s_modeNames[m_set.mode], m_set.win_w,
             m_set.win_h);
@@ -242,6 +249,7 @@ void Video::WriteSettings(FILE *f)
         fprintf(f, "Antialiasing = %dx\n", m_set.antialiasing);
     else
         fputs("Antialiasing = Off\n", f);
+    fprintf(f, "TextureFilter = %s\n", s_filterNames[m_set.texture_filter]);
     fprintf(f, "VSync = %s\nData = %s\n", m_set.vsync ? "On" : "Off", s_dataNames[m_set.data]);
 }
 
@@ -430,6 +438,9 @@ void Video::Apply(const PcVideoSettings &s)
         m_lastFull = m_set.mode;
     g_glGpu.SetWidescreen(m_set.widescreen);
     g_glGpu.SetSamples(m_set.antialiasing);
+    if (m_set.texture_filter < 0 || m_set.texture_filter >= PC_TEXFILTER_MODES)
+        m_set.texture_filter = PC_TEXFILTER_NEAREST;
+    g_glGpu.SetTextureFilter(m_set.texture_filter == PC_TEXFILTER_BILINEAR);
     ApplySwapInterval();
     ApplyWindow();
 }
@@ -569,6 +580,10 @@ bool Video::InitGl(int scale)
             if (getenv("THPS_MSAA"))
                 m_set.antialiasing = AaSamples(atoi(getenv("THPS_MSAA")));
             g_glGpu.SetSamples(m_set.antialiasing);
+            /* THPS_TEXFILTER=0|1 overrides TextureFilter, for tests */
+            if (getenv("THPS_TEXFILTER"))
+                m_set.texture_filter = atoi(getenv("THPS_TEXFILTER")) == 1;
+            g_glGpu.SetTextureFilter(m_set.texture_filter == PC_TEXFILTER_BILINEAR);
             return true;
         }
         g_glGpu.Shutdown();

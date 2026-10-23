@@ -147,6 +147,8 @@ class GlGpu {
     /* Multisample antialiasing of the screens: samples per pixel (0 or 1: off; at most what the
      * driver offers). Remakes the display surfaces when it changes. */
     void SetSamples(int n);
+    /* Bilinear filtering of the 3D world's textures (0: the PS1's nearest texel). */
+    void SetTextureFilter(int bilinear) { m_bilinear = bilinear; }
     int WideClip(int clip[4]);
     void Triangle(const GlPrim *p, const GlVertex *a, const GlVertex *b,
                   const GlVertex *c);
@@ -237,7 +239,8 @@ class GlGpu {
     int m_active = 0;
     GLuint m_drawProg = 0, m_copyProg = 0, m_presentProg = 0;
     GLint m_drawUPass = 0, m_drawUDpass = 0, m_drawUProj = 0, m_drawUTarget = 0,
-          m_drawUShift = 0, m_drawUUvfix = 0, m_copyUTarget = 0, m_copyUMap = 0, m_copyUSrc = 0;
+          m_drawUShift = 0, m_drawUUvfix = 0, m_drawUBilinear = 0, m_copyUTarget = 0,
+          m_copyUMap = 0, m_copyUSrc = 0;
     GLuint m_vao = 0, m_vbo = 0, m_copyVao = 0, m_copyVbo = 0, m_presentVao = 0, m_presentVbo = 0;
     GLuint m_blit = 0;                     /* R16UI 1024x512: pixels on their way to a screen */
     GLuint m_texstore = 0;                 /* R16UI 1024x512: textures and CLUTs (pc/texture_store.h) */
@@ -250,6 +253,7 @@ class GlGpu {
     int m_pad = 0;                         /* widescreen margin of gameplay screens, in PS1 pixels */
     int m_samples = 0;                     /* SetSamples: the display surfaces' samples (0: off) */
     GLint m_maxSamples = 0;
+    int m_bilinear = 0;                    /* SetTextureFilter */
     GLint m_maxTex = 0;
     GLuint m_rbFbo = 0, m_rbTex = 0;       /* RGBA8 1024x512: readback */
     GLuint m_dispTex = 0;                  /* RGBA8 1024x512: pictures shown instead (movies) */
