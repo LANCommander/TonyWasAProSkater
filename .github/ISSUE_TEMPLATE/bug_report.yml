@@ -1,0 +1,125 @@
+name: Bug report
+description: Something in the game is broken, crashes or doesn't match the original.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please search the existing issues first, and keep one bug per issue.
+
+        **Don't attach game files** (disc images, the `Data` folder, `SLUS_008.60`): they're copyrighted and can't be posted here.
+
+  - type: input
+    id: version
+    attributes:
+      label: Game version
+      description: The first line of the log, e.g. `Tony Hawk's Pro Skater 1.2.0 (958ac981)`. Without a log, the release you downloaded or the commit you built.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - Linux
+        - Other (say which below)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: assets
+    attributes:
+      label: Game assets
+      description: Which version's data the game is playing with (Options > Graphics, or `Data=` in Settings.ini).
+      options:
+        - PlayStation
+        - Dreamcast
+        - Both (the bug happens with either)
+        - Don't know
+    validations:
+      required: true
+
+  - type: input
+    id: disc
+    attributes:
+      label: Disc image
+      description: Which disc the data was copied from, e.g. "Tony Hawk's Pro Skater (USA) .bin" or "Dreamcast .gdi (USA)".
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: mods
+    attributes:
+      label: Mods
+      options:
+        - label: I'm using mods (list them under "Additional context").
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: What went wrong, and what you expected instead. For things that look or sound wrong, how the original game does it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The mode, level and skater, and what you did. Say if it happens every time or only sometimes.
+      placeholder: |
+        1. Career mode, Warehouse, Tony Hawk
+        2. Grind the rail by the halfpipe
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log file
+      description: |
+        **Windows:** `thps.log` in `%USERPROFILE%\Saved Games\Neversoft\Tony Hawk's Pro Skater` (paste that path into Explorer's address bar). Attach it from the game session that had the bug; it's overwritten every time the game starts.
+        **Linux:** the log is printed on the terminal: start the game from a terminal (`./thps 2>&1 | tee thps.log`) and attach `thps.log`.
+        For a crash, the log holds the backtrace, so please always include it.
+      placeholder: Drag thps.log here, or paste its contents.
+    validations:
+      required: true
+
+  - type: textarea
+    id: settings
+    attributes:
+      label: Settings.ini
+      description: |
+        From the same folder (Windows) or `~/.local/share/Neversoft/Tony Hawk's Pro Skater` (Linux). Attach it or paste its contents.
+    validations:
+      required: false
+
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Hardware
+      description: Graphics card and driver version, and the controller if it's an input bug. Useful for graphics, performance and controller bugs.
+      placeholder: "e.g. NVIDIA RTX 3070, driver 566.36; Xbox Series controller over USB"
+    validations:
+      required: false
+
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots, video or save file
+      description: |
+        A screenshot or a short clip helps a lot for graphics and gameplay bugs. If the bug depends on your career progress, attach the save from the Saved Games folder (zip it).
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else, such as the mods you're using, display settings (resolution, Max FPS, VSync, antialiasing), whether it started after an update.
+    validations:
+      required: false
