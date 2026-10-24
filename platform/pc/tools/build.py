@@ -309,20 +309,18 @@ class Ctx:
         allnames.update(m for (_, m, _) in self.functions.values())
         allnames.update(n for tu in self.tus.values() for _, n in tu["funcs"])
         self.gnu_dem = demangle_gnu(sorted(allnames))
-        img = open(os.path.join(ROOT, "extern", "thps1_retail", "SLUS_008.60"), "rb").read()
-        self.image = img
-        off = 0x800D101C - 0x80010000 + 0x800
-        self.static_ctors = [int.from_bytes(img[off + 4 * i:off + 4 * i + 4], "little")
-                             for i in range(19)]
+        # what the build takes from the retail executable (tools/retail_refs.py writes it): the
+        # __main table's static constructors and the library addresses the retail code calls
+        refs = list(read_tsv(os.path.join(GAME, "retail_refs.tsv")))
+        self.static_ctors = [int(p[1], 16) for p in refs if p[0] == "static_ctor"]
+        self.lib_calls = {int(p[1], 16) for p in refs if p[0] == "lib_call"}
         self.psyq = {}
         self.native_at = {}
-        p = os.path.join(ROOT, "build", "psyq_names.tsv")
-        if os.path.exists(p):
-            for q in read_tsv(p):
-                self.psyq.setdefault(q[1], int(q[0], 16))
-                t = NATIVE_RENAME.get(q[1]) or NATIVE_AT.get(q[1])
-                if t:  # every copy of a function linked more than once
-                    self.native_at["_psx_%08x" % int(q[0], 16)] = "_" + t
+        for q in read_tsv(os.path.join(GAME, "psyq_names.tsv")):
+            self.psyq.setdefault(q[1], int(q[0], 16))
+            t = NATIVE_RENAME.get(q[1]) or NATIVE_AT.get(q[1])
+            if t:  # every copy of a function linked more than once
+                self.native_at["_psx_%08x" % int(q[0], 16)] = "_" + t
         # the game's data, compiled: the globals the TUs reach by name
         self.data = build_data(self)
         self.data_defined = self.data["defined"]

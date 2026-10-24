@@ -86,19 +86,6 @@ def version_rc(version, full, nums):
             "END\n") % (n, n, "".join('      VALUE "%s", "%s"\n' % kv for kv in strings))
 
 
-def jal_targets(img):
-    out = set()
-    for off in range(0, LIB_END - TEXT_START, 4):
-        w = int.from_bytes(img[off:off + 4], "little")
-        if (w >> 26) == 3:
-            out.add(0x80000000 | ((w & 0x3FFFFFF) << 2))
-        elif (w >> 26) == 1 and ((w >> 16) & 31) in (16, 17):  # bltzal / bgezal
-            imm = w & 0xFFFF
-            imm = imm - 0x10000 if imm & 0x8000 else imm
-            out.add((TEXT_START + off + 4 + (imm << 2)) & 0xFFFFFFFF)
-    return out
-
-
 LINUX_NOTICES_HEAD = """Third-party software in thps
 ============================
 
@@ -434,7 +421,6 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
     os.makedirs(gen, exist_ok=True)
     os.makedirs(rt, exist_ok=True)
     rt_flags, sdl_libs = runtime_flags(toolbin)
-    img = ctx.image[0x800:]
 
     # ---- 1. runtime -------------------------------------------------------------------------
     # the runtime is C++ (glad's generated loader stays C)
@@ -465,7 +451,7 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
 
     # ---- 2. which addresses have which implementation ----------------------------------------
     psyq = {}
-    for line in open(os.path.join(ROOT, "build", "psyq_names.tsv")):
+    for line in open(os.path.join(ROOT, "game", "psyq_names.tsv")):
         if line.startswith("#"):
             continue
         a, n = line.split("\t")[:2]
@@ -481,7 +467,7 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
             game[int(a, 16)] = "pcfn_%08x" % int(a, 16)
 
     # ---- 3. the Psy-Q library entries the game calls (stubs, names) -------------------------
-    lib_entries = {a for a in jal_targets(img) if GAME_END <= a < LIB_END}
+    lib_entries = set(ctx.lib_calls)  # the retail code's (game/retail_refs.tsv)
     for n, addrs in psyq.items():
         for a in addrs:
             if GAME_END <= a < LIB_END:

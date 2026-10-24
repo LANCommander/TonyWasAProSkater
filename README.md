@@ -48,8 +48,13 @@ On Windows or x86 Linux. You need:
 | Linux: GCC with 32-bit support, SDL2 (32-bit) | Debian/Ubuntu: `dpkg --add-architecture i386`, then `apt install gcc-multilib g++-multilib pkg-config libsdl2-dev:i386`; other distributions in [platform/pc/README.md](platform/pc/README.md#linux) |
 | Python 3 | the build scripts (standard library only) |
 | [Ghidra](https://ghidra-sre.org) | its GNU v2 demangler (`GPL/DemanglerGnu`), which the build runs: set `GHIDRA_INSTALL_DIR` (default `D:\Tools\ghidra`) |
-| `extern/thps1_retail/SLUS_008.60` | the executable from your disc (`dumpsxiso` from [mkpsxiso](https://github.com/Lameguy64/mkpsxiso) extracts it); the build takes the function layout from it. The game doesn't need it |
-| `build/psyq_names.tsv` | the addresses of the Sony library functions: `python tools/psyq_sigmatch.py` makes it once, from the Psy-Q signatures of [ghidra_psx_ldr](https://github.com/lab313ru/ghidra_psx_ldr) (set `SIGDIR` in the script to its `data/psyq` folder) |
+
+No retail files: what the build takes from the retail executable is addresses, committed in
+`game/retail_refs.tsv` (`platform/pc/tools/retail_refs.py` writes it from your
+`extern/thps1_retail/SLUS_008.60`) and `game/psyq_names.tsv` (the Sony library functions:
+`python tools/psyq_sigmatch.py`, from the Psy-Q signatures of
+[ghidra_psx_ldr](https://github.com/lab313ru/ghidra_psx_ldr); set `SIGDIR` in the script to its
+`data/psyq` folder).
 
 ```
 python platform/pc/tools/build.py            # development build: build/pc/thps.exe (Linux: build/pc-linux/thps)

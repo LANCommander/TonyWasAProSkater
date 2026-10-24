@@ -118,17 +118,18 @@ default), so `this` is the first stack argument, exactly as in the decompiled C 
 ## Building
 
 Needs MSYS2 with the `mingw32` (i686) toolchain and SDL2
-(`pacman -S mingw-w64-i686-gcc mingw-w64-i686-SDL2`), Python 3, and your own copies of:
+(`pacman -S mingw-w64-i686-gcc mingw-w64-i686-SDL2`), Python 3, and, to play, your own copy of
+a disc for the first startup, which the game data is extracted from: `extern/thps1_disc/thps1.bin`,
+a raw MODE2/2352 image of the USA disc (`chdman extractcd -i "Tony Hawk's Pro Skater (USA).chd"
+-o thps1.cue -ob thps1.bin`), or the Dreamcast disc (below). `thps.exe` looks for it next to
+itself (`thps1.bin`) or in `extern/` (development layout), or takes `THPS_DISC`.
 
-- `extern/thps1_retail/SLUS_008.60` (the USA executable), for the build only: the build takes
-  function layouts from it; and
-- a disc for the first startup, which the game data is extracted from: `extern/thps1_disc/thps1.bin`,
-  a raw MODE2/2352 image of the USA disc (`chdman extractcd -i "Tony Hawk's Pro Skater (USA).chd"
-  -o thps1.cue -ob thps1.bin`), or the Dreamcast disc (below). `thps.exe` looks for it next to
-  itself (`thps1.bin`) or in `extern/` (development layout), or takes `THPS_DISC`.
+The build needs no retail files. What it takes from the retail executable is addresses, committed:
+`game/retail_refs.tsv` (the static constructors and the library functions the retail code calls;
+`tools/retail_refs.py` writes it from `extern/thps1_retail/SLUS_008.60`) and `game/psyq_names.tsv`
+(the Psy-Q library functions' names; `tools/psyq_sigmatch.py` in the repository root).
 
 ```
-python tools/psyq_sigmatch.py          # once: names the Psy-Q library functions (build/psyq_names.tsv)
 python platform/pc/tools/build.py      # -> build/pc/thps.exe
 build/pc/thps.exe
 ```
@@ -149,6 +150,13 @@ debug information split into `thps.debug`; and `thps-windows.zip` with the exe,
 when tracked files differ from it), the first line of the log, and the archive's name
 (`thps-windows-1.2.0.zip`). Without it the version is `dev`. The Linux build takes the commit from
 `THPS_COMMIT` when set (its container has no git; `build-linux.bat` passes it).
+
+Releases are built by GitHub Actions (`.github/workflows/release.yml`): pushing a tag `v1.3.0`
+builds Windows and Linux, x86 and x64, and drafts the GitHub release with
+`thps-windows-x86-1.3.0.zip`, `thps-windows-x64-1.3.0.zip`, `thps-linux-x86-1.3.0.tar.gz` and
+`thps-linux-x64-1.3.0.tar.gz` (a `-suffix` version is marked a pre-release), for the notes to be
+written before it is published. Each build's `thps.debug` is kept as a workflow artifact. Running
+the workflow by hand builds the downloads as artifacts only.
 
 The build also runs Ghidra's GNU v2 demangler (`decomp/tools/demangle.py`; it finds it in the
 Ghidra install `GHIDRA_INSTALL_DIR` names, default `D:\Tools\ghidra`, or takes `GNU_DEMANGLER`).
@@ -597,5 +605,5 @@ matching decompilation, kept byte-exact and not built into the port.
 The port layer (`platform/pc/`) is MIT, like the rest of the project (see the repository's LICENSE).
 `include/pl_mpeg/pl_mpeg.h` is Dominic Szablewski's PL_MPEG (MIT, see its header). The
 decompiled game code and data, and all game assets, remain © Activision / Neversoft. No assets
-or original executables are committed; the build reads your own `SLUS_008.60` (for the function
-layout), and the game your own disc.
+or original executables are committed (the build takes only addresses from the retail executable,
+`game/retail_refs.tsv`); the game reads your own disc.

@@ -2,7 +2,7 @@
 
 Scans the retail executable's library region with the masked byte signatures that ship with
 ghidra_psx_ldr (one per library object, per SDK version) and writes every label of every object
-that matches exactly once: build/psyq_names.tsv (addr, name, lib, obj, sdk version).
+that matches exactly once: game/psyq_names.tsv (addr, name, lib, obj, sdk version).
 
 usage: python tools/psyq_sigmatch.py [--exe extern/thps1_retail/SLUS_008.60]
 """
@@ -53,7 +53,7 @@ def match_object(o, img, lo):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--exe", default="extern/thps1_retail/SLUS_008.60")
-    ap.add_argument("--out", default="build/psyq_names.tsv")
+    ap.add_argument("--out", default="game/psyq_names.tsv")
     a = ap.parse_args()
     base, img = load_exe(a.exe)
     lo = LIB_START - base
