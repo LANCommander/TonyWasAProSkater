@@ -70,8 +70,8 @@ void PC_InputUpdate(void);
  * 0..255. Nothing without a gamepad. */
 void PC_InputRumble(int player, int small, int large);
 
-/* Player 0 is the keyboard plus the first gamepad (always connected), player 1 the second
- * gamepad. */
+/* Player 0 is the keyboard plus the first gamepad to press a button (always connected), player 1
+ * another gamepad. */
 int PC_InputPlayerConnected(int player);
 int PC_InputGamepadConnected(int player);
 int PC_InputActionDown(int player, PcAction a);

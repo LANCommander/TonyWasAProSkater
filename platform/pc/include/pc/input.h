@@ -138,6 +138,7 @@ class Input {
     Player m_players[2];
 
     Pad m_pads[kPadSlots] = {};
+    int m_lead = -1;         /* the slot that pressed a button first: player 1; -1 none yet */
     int m_ignorePads = -1;   /* THPS_NOGAMEPAD=1: none (scripted test runs); -1 not read yet */
 
     uint8_t m_keyDown[kScancodes] = {};

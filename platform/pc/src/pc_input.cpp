@@ -349,8 +349,8 @@ void Input::WriteSettings(FILE *f) {
           "; Gamepad buttons: A B X Y LB RB LT RT Back Start LS RS, DPadUp DPadDown DPadLeft\n"
           "; DPadRight, and the sticks: LSUp LSDown LSLeft LSRight RSUp RSDown RSLeft RSRight. These are\n"
           "; the Xbox names; on other gamepads they are the buttons in the same place (A = Cross).\n"
-          "; The keyboard plays player 1. [... Gamepad] is the first gamepad (player 1),\n"
-          "; [... Gamepad 2] the second (player 2).\n"
+          "; The keyboard plays player 1. [... Gamepad] is player 1's gamepad (the first to press\n"
+          "; a button), [... Gamepad 2] player 2's.\n"
           ";\n"
           "; The Skate controls are read while skating, the Menu controls by the menus, so the same\n"
           "; key can do something different in each. Pause also resumes from the pause menu, and\n"
@@ -407,12 +407,21 @@ int Input::SettingsLine(const char *section, const char *key, char *value) {
 /* ---- devices ---------------------------------------------------------------------------------- */
 
 /* Whether SDL's device i is one XInput reads already: SDL marks its XInput devices' GUIDs with an
- * 'x', and its other drivers (HIDAPI) may have an Xbox pad too. */
+ * 'x', and its other drivers (RawInput, HIDAPI) see XInput's pads as HID devices whose path has
+ * Windows' "IG_" mark. An Xbox pad without it is not XInput's: a Bluetooth pad Windows has no
+ * XInput driver for, say, which SDL alone can read. Only a device with no path (Windows.Gaming.Input)
+ * goes by its type. */
 bool Input::ReadByXInput(int i) {
 #ifdef _WIN32
     SDL_GameControllerType t = SDL_GameControllerTypeForIndex(i);
-    return m_xinputGetState && (SDL_JoystickGetDeviceGUID(i).data[14] == 'x' ||
-                                t == SDL_CONTROLLER_TYPE_XBOX360 || t == SDL_CONTROLLER_TYPE_XBOXONE);
+    const char *path = SDL_JoystickPathForIndex(i);
+    if (!m_xinputGetState)
+        return false;
+    if (SDL_JoystickGetDeviceGUID(i).data[14] == 'x')
+        return true;
+    if (path && *path)
+        return SDL_strcasestr(path, "IG_") != nullptr;
+    return t == SDL_CONTROLLER_TYPE_XBOX360 || t == SDL_CONTROLLER_TYPE_XBOXONE;
 #else
     (void)i;
     return false;
@@ -444,7 +453,8 @@ uint32_t Input::SdlGetState(int slot, XINPUT_STATE *st) {
     int i;
     if (gc && !SDL_GameControllerGetAttached(gc)) {
         SDL_GameControllerClose(gc);
-        gc = m_gc[slot] = nullptr;
+        m_gc[slot] = nullptr;
+        return 1; /* one poll disconnected before another pad takes the slot (it isn't player 1) */
     }
     for (i = 0; !gc && i < SDL_NumJoysticks(); i++) {
         SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(i);
@@ -563,44 +573,68 @@ void Input::AddMappingsFrom(const char *dir) {
 /* A pad SDL has no mapping for is never opened: say so, so it isn't silently ignored. */
 void Input::DeviceAdded(int i) {
     char guid[33];
-    if (SDL_IsGameController(i))
-        return;
     SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), guid, sizeof guid);
+    if (SDL_IsGameController(i)) {
+        PC_Log("gamepads: \"%s\" (%04x:%04x, GUID %s) read by %s", SDL_JoystickNameForIndex(i),
+               SDL_JoystickGetDeviceVendor(i), SDL_JoystickGetDeviceProduct(i), guid,
+               ReadByXInput(i) ? "XInput" : "SDL");
+        return;
+    }
     PC_Log("gamepads: \"%s\" (%04x:%04x, GUID %s) is not a known controller; add a mapping for it "
            "to gamecontrollerdb.txt", SDL_JoystickNameForIndex(i), SDL_JoystickGetDeviceVendor(i),
            SDL_JoystickGetDeviceProduct(i), guid);
 }
 
-/* Polling an empty XInput slot is slow, so empty XInput slots are only tried every 120 polls. */
+/* Polling an empty XInput slot is slow, so empty XInput slots are only tried every 120 polls.
+ * Player 1 is the first gamepad to press a button (until it disconnects), so a pad that is always
+ * there (a virtual one, a wheel) can't take it; the other connected pads follow in slot order.
+ * Until a button is pressed, the players are the first two connected. */
 void Input::PollGamepads() {
-    int i, p = 0;
+    int i, p = 0, was[2] = {m_players[0].slot, m_players[1].slot};
     if (m_ignorePads < 0)
         m_ignorePads = getenv("THPS_NOGAMEPAD") && atoi(getenv("THPS_NOGAMEPAD")) != 0;
     for (i = 0; i < kPadSlots; i++) {
         Pad &pad = m_pads[i];
         XINPUT_STATE st;
-        uint32_t was = pad.down;
+        uint32_t held = pad.down;
         pad.pressed = 0;
         if (m_ignorePads || (!pad.connected && pad.retry-- > 0))
             continue;
         if (GetState(i, &st) == ERROR_SUCCESS) {
-            if (!pad.connected)
+            bool fresh = !pad.connected;
+            if (fresh)
                 PC_Log("gamepad %d connected", i);
             pad.connected = true;
             pad.down = XInputMask(&st.Gamepad);
-            pad.pressed = pad.down & ~was;
+            pad.pressed = pad.down & ~held;
+            /* not on connecting: a button held then (or an axis at rest off centre) isn't a press */
+            if (m_lead < 0 && !fresh && pad.pressed) {
+                m_lead = i;
+                PC_Log("gamepad %d is player 1", i);
+            }
         } else {
             if (pad.connected)
                 PC_Log("gamepad %d disconnected", i);
             pad.connected = false;
             pad.retry = i < kXiSlots ? 120 : 0;
             pad.down = 0;
+            if (m_lead == i)
+                m_lead = -1;
         }
     }
     m_players[0].slot = m_players[1].slot = -1;
+    if (m_lead >= 0)
+        m_players[p++].slot = m_lead;
     for (i = 0; i < kPadSlots && p < 2; i++)
-        if (m_pads[i].connected)
+        if (m_pads[i].connected && i != m_lead)
             m_players[p++].slot = i;
+    /* a pad that stops playing a player stops rumbling */
+    for (p = 0; p < 2; p++)
+        if (m_players[p].slot != was[p]) {
+            if (was[p] >= 0 && m_pads[was[p]].connected)
+                RumbleSlot(was[p], 0, 0);
+            m_players[p].rumble[0] = m_players[p].rumble[1] = -1;
+        }
 }
 
 /* ---- scripted input (automated runs) ---------------------------------------------------------- */
