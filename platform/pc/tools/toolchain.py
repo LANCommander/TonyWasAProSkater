@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 
 WINDOWS = sys.platform == "win32"
-ARCH = os.environ.get("THPS_ARCH", "x86")
+ARCH = os.environ.get("THPS_ARCH", "x64")
 if ARCH not in ("x86", "x64"):
     raise SystemExit("THPS_ARCH must be x86 or x64")
 X64 = ARCH == "x64"

@@ -1,7 +1,7 @@
 # Tony Hawk's Pro Skater for Windows and Linux
 
 A native Windows and Linux port of **Tony Hawk's Pro Skater** (PlayStation, USA, `SLUS_008.60`),
-built from a matching decompilation of the game's code. The game runs as a 32-bit program with an
+built from a matching decompilation of the game's code. The game runs as a 64-bit program with an
 OpenGL renderer, keyboard and gamepad controls, widescreen, high resolutions and saves as plain
 files. It can also use the game assets from the Dreamcast version.
 
@@ -20,7 +20,7 @@ Known gaps: the PS1's exact reverb (the port's own is an approximation). See [pl
 
 Requirements:
 
-- 64-bit Windows 10 or 11, or x86 Linux with the 32-bit SDL 2 and OpenGL libraries, and a
+- 64-bit Windows 10 or 11, or x64 Linux with the 64-bit SDL 3 and OpenGL libraries, and a
   graphics card with support for OpenGL 3.3.
 - A raw disc image (MODE2/2352 `.bin`) of your own **Tony Hawk's Pro Skater (USA)** PlayStation
   disc.
@@ -44,8 +44,8 @@ On Windows or x86 Linux. You need:
 
 | | |
 |---|---|
-| Windows: [MSYS2](https://www.msys2.org) | the 32-bit MinGW toolchain and SDL2: `pacman -S mingw-w64-i686-gcc mingw-w64-i686-SDL2` (expected in `C:\msys64\mingw32`, or set `THPS_MINGW` to its `bin`) |
-| Linux: GCC with 32-bit support, SDL2 (32-bit) | Debian/Ubuntu: `dpkg --add-architecture i386`, then `apt install gcc-multilib g++-multilib pkg-config libsdl2-dev:i386`; other distributions in [platform/pc/README.md](platform/pc/README.md#linux) |
+| Windows: [MSYS2](https://www.msys2.org) | the 64-bit MinGW toolchain and SDL3: `pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-sdl3` (expected in `C:\msys64\ucrt64`, or set `THPS_MINGW` to its `bin`) |
+| Linux: GCC  support, SDL3 | Debian/Ubuntu: `apt install gcc g++ pkg-config libsdl3-dev`; other distributions in [platform/pc/README.md](platform/pc/README.md#linux) |
 | Python 3 | the build scripts (standard library only) |
 | [Ghidra](https://ghidra-sre.org) | its GNU v2 demangler (`GPL/DemanglerGnu`), which the build runs: set `GHIDRA_INSTALL_DIR` (default `D:\Tools\ghidra`) |
 
@@ -85,7 +85,7 @@ statically:
 
 | library | license | used for |
 |---|---|---|
-| [SDL 2](https://libsdl.org) | zlib | window, input, audio, OpenGL context |
+| [SDL 3](https://libsdl.org) | zlib | window, input, audio, OpenGL context |
 | [PL_MPEG](https://github.com/phoboslab/pl_mpeg) (`platform/pc/include/pl_mpeg`) | MIT | the Dreamcast version's MPEG-1 movies |
 | [glad](https://github.com/Dav1dde/glad) (`platform/pc/src/glad_gl.c`) | CC0 / WTFPL, Khronos API data Apache-2.0 | OpenGL loader |
 | MinGW-w64 runtime, libgcc | ZPL-2.1 and others; GPL with the GCC Runtime Library Exception | C runtime |

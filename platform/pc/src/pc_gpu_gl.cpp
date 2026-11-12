@@ -1663,7 +1663,7 @@ void GlGpu::Present(void *sdl_window, int x, int y, int w, int h, int enabled,
     Flush();
 
     int ww, wh, pic[4];
-    SDL_GL_GetDrawableSize(win, &ww, &wh);
+    SDL_GetWindowSizeInPixels(win, &ww, &wh);
     SetOutputSize(ww, wh);
     PictureRect(1, 1, pic);   /* 4:3 (movies) */
     Prepare();

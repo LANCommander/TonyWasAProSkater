@@ -107,15 +107,15 @@ driver, which are not part of this download.
 def package(out, toolbin, version=None):
     """The release download, build/pc/release/thps-windows.zip (thps-windows-<version>.zip with
     build.py --version, the same for Linux's archive): thps.exe, the player's README,
-    the project's LICENSE and the third-party notices (the SDL2 and MinGW-w64 runtime ones from
+    the project's LICENSE and the third-party notices (the SDL3 and MinGW-w64 runtime ones from
     the toolchain that was linked). On Linux, build/pc-linux/release/thps-linux.tar.gz: thps,
-    dist/README-linux.txt as README.txt, the LICENSE, and the notices of what is built in (SDL2
+    dist/README-linux.txt as README.txt, the LICENSE, and the notices of what is built in (SDL3
     and the C library are the system's)."""
     dist = os.path.join(PC, "dist")
     lic = os.path.join(os.path.dirname(toolbin), "share", "licenses")
     notices = [open(os.path.join(dist, "THIRD-PARTY-NOTICES.txt"), encoding="utf-8").read()]
     if WINDOWS:
-        extra = [("SDL 2", os.path.join(lic, "SDL2", "LICENSE.txt")),
+        extra = [("SDL 3", os.path.join(lic, "SDL3", "LICENSE.txt")),
                  ("MinGW-w64 runtime", os.path.join(lic, "crt", "COPYING.MinGW-w64-runtime.txt"))]
     else:
         # the notices file's head lists the Windows build's contents
@@ -161,7 +161,7 @@ def package(out, toolbin, version=None):
 
 
 def sdl_flags():
-    """(compile flags, link flags) for SDL2: the MinGW toolchain's on Windows; elsewhere the 32-bit
+    """(compile flags, link flags) for SDL3: the MinGW toolchain's on Windows; elsewhere the 32-bit
     one pkg-config knows (THPS_SDL_CFLAGS / THPS_SDL_LIBS override)."""
     if WINDOWS:
         return None
@@ -175,14 +175,14 @@ def sdl_flags():
             env["PKG_CONFIG_LIBDIR"] = os.pathsep.join(dirs + ["/usr/share/pkgconfig"])
         try:
             if cflags is None:
-                cflags = subprocess.run(["pkg-config", "--cflags", "sdl2"], env=env, check=True,
+                cflags = subprocess.run(["pkg-config", "--cflags", "sdl3"], env=env, check=True,
                                         capture_output=True, text=True).stdout
             if libs is None:
-                libs = subprocess.run(["pkg-config", "--libs", "sdl2"], env=env, check=True,
+                libs = subprocess.run(["pkg-config", "--libs", "sdl3"], env=env, check=True,
                                       capture_output=True, text=True).stdout
         except (OSError, subprocess.CalledProcessError):
-            cflags = cflags if cflags is not None else "-I/usr/include/SDL2 -D_REENTRANT"
-            libs = libs if libs is not None else "-lSDL2"
+            cflags = cflags if cflags is not None else "-I/usr/include/SDL3 -D_REENTRANT"
+            libs = libs if libs is not None else "-lSDL3"
     return shlex.split(cflags), shlex.split(libs)
 
 
@@ -392,7 +392,7 @@ def runtime_flags(toolbin):
     """(compile flags, SDL link flags) for the runtime (platform/pc/src); C adds -std=gnu11, C++
     CXX_RT_FLAGS."""
     if WINDOWS:
-        sdl_cflags = ["-I" + os.path.join(os.path.dirname(toolbin), "include", "SDL2"),
+        sdl_cflags = ["-I" + os.path.join(os.path.dirname(toolbin), "include", "SDL3"),
                       "-I" + os.path.join(os.path.dirname(toolbin), "include")]
         sdl_libs = []
     else:
@@ -562,7 +562,7 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
 
 
     if WINDOWS:
-        # application icon: SDL2 gives the window the exe's first icon, so this also sets the
+        # application icon: SDL3 gives the window the exe's first icon, so this also sets the
         # taskbar and title-bar icon. And the version resource
         ico = os.path.join(ROOT, "icon.ico")
         write_if_changed(os.path.join(gen, "thps.rc"),
@@ -581,8 +581,8 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
                                    rt_objs + gen_objs + game_objs) + "\n")
     exe = os.path.join(out, EXE_NAME)
     if WINDOWS:
-        # everything but Windows itself is linked in (SDL2, libgcc, libstdc++, winpthreads)
-        libs = ["-lmingw32", "-lSDL2", "-lm", "-ldinput8", "-ldxguid", "-ldxerr8",
+        # everything but Windows itself is linked in (SDL3, libgcc, libstdc++, winpthreads)
+        libs = ["-lmingw32", "-lSDL3", "-liconv", "-lm", "-ldinput8", "-ldxguid", "-ldxerr8",
                 "-luser32", "-lgdi32", "-lwinmm", "-limm32", "-lole32", "-loleaut32", "-lshell32",
                 "-lsetupapi", "-lversion", "-luuid", "-lopengl32", "-static"]
         # release: a GUI program (no console window; the log goes to thps.log, pc_main.c)
@@ -595,7 +595,7 @@ def link(ctx, metas, out, toolbin, release=False, version=None):
             # bits faults
             ldflags += ["-Wl,--disable-dynamicbase", "-Wl,--image-base=0x140000000"]
     else:
-        # SDL2 and the C library are the system's; OpenGL comes through SDL. Not position
+        # SDL3 and the C library are the system's; OpenGL comes through SDL. Not position
         # independent: the image sits at its default 0x08048000
         libs = sdl_libs + ["-lm", "-lpthread"]
         # the runtime's C++ library is linked in (no libstdc++ version to match on the player's system)

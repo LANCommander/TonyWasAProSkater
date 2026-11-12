@@ -21,7 +21,7 @@
 #include <string.h>
 
 #define SDL_MAIN_HANDLED /* this file has Runtime::Main: SDL_SetMainReady in PlatformInit */
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 #include "pc/mod_content.h"
 #include "pc/platform.h"
@@ -933,7 +933,6 @@ void Diagnostics::StartWatchdog() {
  * startup), window/GPU, input, sound. */
 void Runtime::PlatformInit() {
     int scale = getenv("THPS_SCALE") ? atoi(getenv("THPS_SCALE")) : 3;
-    SDL_SetMainReady();
     g_assets.Init();
     g_video.Init(scale > 0 ? scale : 3);
     if (g_assets.Dreamcast()) {

@@ -9,7 +9,8 @@
 
 #include "pc_sound.h"
 
-struct SDL_mutex;
+#include <SDL3/SDL_audio.h>
+#include <SDL3/SDL_mutex.h>
 
 namespace pc {
 
@@ -91,6 +92,15 @@ private:
     static constexpr int kAllpasses = 4;
     static constexpr int kEchoMax = kRate / 2;
     static constexpr unsigned kMusicFifo = 131072u;
+
+    void SubmitAudio();
+
+    static void AudioStreamCallback(
+        void *userdata,
+        SDL_AudioStream *stream,
+        int additional_amount,
+        int total_amount
+    );
 
     /* A registered PCM sample (the Dreamcast's banks). */
     struct Pcm {
@@ -266,7 +276,8 @@ private:
     Music m_music;
     /* the device */
     uint32_t m_dev = 0;                 /* SDL_AudioDeviceID */
-    SDL_mutex *m_mx = nullptr;
+    SDL_Mutex *m_mx = nullptr;
+    SDL_AudioStream *m_stream = nullptr;
     int m_running = 0;
     FILE *m_dump = nullptr;
     int m_trace = 0;
