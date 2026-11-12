@@ -62,17 +62,20 @@ int ParseDrawDistance(const char *v)
 /* The display mode w*h, preferring 60 Hz (the game's rate), else the fastest. */
 bool FindMode(int display, int w, int h, SDL_DisplayMode *out)
 {
-    int n = SDL_GetNumDisplayModes(display);
+    int n = 0;
+    SDL_DisplayMode **modes = SDL_GetFullscreenDisplayModes((SDL_DisplayID)display, &n);
     bool found = false;
+    if (!modes)
+        return false;
     for (int i = 0; i < n; i++) {
-        SDL_DisplayMode m;
-        if (SDL_GetDisplayMode(display, i, &m) || m.w != w || m.h != h)
+        const SDL_DisplayMode *m = modes[i];
+        if (!m || m->w != w || m->h != h)
             continue;
-        if (!found || (m.refresh_rate == 60 && out->refresh_rate != 60) ||
-            (out->refresh_rate != 60 && m.refresh_rate > out->refresh_rate))
-            *out = m;
+        if (!found || m->refresh_rate > out->refresh_rate)
+            *out = *m;
         found = true;
     }
+    SDL_free((void *)modes);
     return found;
 }
 
@@ -383,8 +386,8 @@ unsigned Video::SuspendDistance(unsigned d)
 
 int Video::DisplayIndex()
 {
-    int d = m_window ? SDL_GetWindowDisplayIndex(m_window) : 0;
-    return d < 0 ? 0 : d;
+    SDL_DisplayID d = m_window ? SDL_GetDisplayForWindow(m_window) : 0;
+    return (int)d;
 }
 
 void Video::ApplyWindow()
@@ -399,13 +402,14 @@ void Video::ApplyWindow()
         if (full)
             SDL_SetWindowFullscreen(w, 0);
         SDL_RestoreWindow(w);
-        SDL_SetWindowBordered(w, SDL_TRUE);
-        SDL_SetWindowResizable(w, SDL_TRUE);
+        SDL_SetWindowBordered(w, true);
+        SDL_SetWindowResizable(w, true);
         SDL_SetWindowSize(w, m_set.win_w, m_set.win_h);
-        SDL_SetWindowPosition(w, SDL_WINDOWPOS_CENTERED_DISPLAY(d), SDL_WINDOWPOS_CENTERED_DISPLAY(d));
+        SDL_SetWindowPosition(w, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
         break;
     case PC_VIDEO_BORDERLESS:
-        SDL_SetWindowFullscreen(w, SDL_WINDOW_FULLSCREEN_DESKTOP);
+        SDL_SetWindowBordered(w, false);
+        SDL_SetWindowFullscreen(w, true);
         break;
     case PC_VIDEO_FULLSCREEN: {
         SDL_DisplayMode m;
@@ -413,18 +417,20 @@ void Video::ApplyWindow()
             if (m_set.full_w > 0)
                 PC_Log("video: no %dx%d display mode, using the desktop's", m_set.full_w,
                        m_set.full_h);
-            if (SDL_GetDesktopDisplayMode(d, &m))
+            const SDL_DisplayMode *desktop = SDL_GetDesktopDisplayMode((SDL_DisplayID)d);
+            if (!desktop)
                 break;
+            m = *desktop;
         }
         if (full)
             SDL_SetWindowFullscreen(w, 0);   /* a new mode only takes when entering fullscreen */
-        SDL_SetWindowDisplayMode(w, &m);
-        if (SDL_SetWindowFullscreen(w, SDL_WINDOW_FULLSCREEN))
+        SDL_SetWindowFullscreenMode(w, &m);
+        if (!SDL_SetWindowFullscreen(w, true))
             PC_Log("video: fullscreen %dx%d failed: %s", m.w, m.h, SDL_GetError());
         break;
     }
     }
-    SDL_ShowCursor(m_set.mode == PC_VIDEO_WINDOWED ? SDL_ENABLE : SDL_DISABLE);
+    SDL_ShowCursor();
 }
 
 void Video::Apply(const PcVideoSettings &s)
@@ -453,14 +459,16 @@ void Video::ApplySwapInterval()
     bool want = m_set.vsync && !m_headless && !(fast && atoi(fast)) && !(det && atoi(det));
     if (!m_glctx)
         return;
-    m_vsyncOn = want && SDL_GL_SetSwapInterval(1) == 0;
+    m_vsyncOn = want && SDL_GL_SetSwapInterval(1);
     if (!m_vsyncOn)
         SDL_GL_SetSwapInterval(0);
     if (want && !m_vsyncOn)
         PC_Log("video: no vsync (%s)", SDL_GetError());
-    SDL_DisplayMode m;
-    if (m_vsyncOn && SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(m_window), &m) == 0)
-        PC_Log("video: vsync on, display at %d Hz", m.refresh_rate);
+    if (m_vsyncOn) {
+        const SDL_DisplayMode *m = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(m_window));
+        if (m)
+            PC_Log("video: vsync on, display at %.0f Hz", m->refresh_rate);
+    }
 }
 
 void Video::AddRes(int w, int h)
@@ -480,25 +488,30 @@ void Video::AddRes(int w, int h)
 int Video::ResolutionCount(int mode)
 {
     int d = DisplayIndex();
-    SDL_DisplayMode m;
     SDL_Rect usable;
     m_nres = 0;
     m_resMode = mode;
     if (mode == PC_VIDEO_BORDERLESS) {
-        if (!SDL_GetDesktopDisplayMode(d, &m))
-            AddRes(m.w, m.h);
+        const SDL_DisplayMode *desktop = SDL_GetDesktopDisplayMode((SDL_DisplayID)d);
+        if (desktop)
+            AddRes(desktop->w, desktop->h);
         return m_nres;
     }
-    if (SDL_GetDisplayUsableBounds(d, &usable)) {
+    if (!SDL_GetDisplayUsableBounds((SDL_DisplayID)d, &usable))
         usable.w = usable.h = 1 << 30;
-    }
-    for (int i = 0, n = SDL_GetNumDisplayModes(d); i < n; i++) {
-        if (SDL_GetDisplayMode(d, i, &m) || m.w < 640 || m.h < 480)
-            continue;
-        /* a window also needs room for its title bar */
-        if (mode == PC_VIDEO_WINDOWED && (m.w > usable.w || m.h + 40 > usable.h))
-            continue;
-        AddRes(m.w, m.h);
+    int n = 0;
+    SDL_DisplayMode **modes = SDL_GetFullscreenDisplayModes((SDL_DisplayID)d, &n);
+    if (modes) {
+        for (int i = 0; i < n; i++) {
+            const SDL_DisplayMode *m = modes[i];
+            if (!m || m->w < 640 || m->h < 480)
+                continue;
+            /* a window also needs room for its title bar */
+            if (mode == PC_VIDEO_WINDOWED && (m->w > usable.w || m->h + 40 > usable.h))
+                continue;
+            AddRes(m->w, m->h);
+        }
+        SDL_free((void *)modes);
     }
     if (mode == PC_VIDEO_WINDOWED)
         AddRes(m_set.win_w, m_set.win_h);
@@ -526,13 +539,13 @@ void Video::Event(const void *sdlEvent)
     const SDL_Event *e = (const SDL_Event *)sdlEvent;
     if (!m_window || m_headless)
         return;
-    if (e->type == SDL_KEYDOWN && !e->key.repeat && e->key.keysym.sym == SDLK_RETURN &&
-        (e->key.keysym.mod & KMOD_ALT)) {
+    if (e->type == SDL_EVENT_KEY_DOWN && !e->key.repeat && e->key.key == SDLK_RETURN &&
+        (e->key.mod & SDL_KMOD_ALT)) {
         PcVideoSettings s = m_set;
         s.mode = s.mode == PC_VIDEO_WINDOWED ? m_lastFull : PC_VIDEO_WINDOWED;
         Apply(s);
         Save();
-    } else if (e->type == SDL_WINDOWEVENT && e->window.event == SDL_WINDOWEVENT_SIZE_CHANGED &&
+    } else if (e->type == SDL_EVENT_WINDOW_RESIZED &&
                m_set.mode == PC_VIDEO_WINDOWED &&
                !(SDL_GetWindowFlags(m_window) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MAXIMIZED))) {
         /* the window was resized by hand: keep that size */
@@ -558,9 +571,8 @@ bool Video::InitGl(int scale)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    m_window = SDL_CreateWindow("Tony Hawk's Pro Skater", SDL_WINDOWPOS_CENTERED,
-                                SDL_WINDOWPOS_CENTERED, w, h,
-                                SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+    m_window = SDL_CreateWindow("Tony Hawk's Pro Skater", w, h,
+                                SDL_WINDOW_BORDERLESS | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
                                     (m_headless ? SDL_WINDOW_HIDDEN : 0));
     if (m_window)
         m_glctx = SDL_GL_CreateContext(m_window);
@@ -572,7 +584,7 @@ bool Video::InitGl(int scale)
             m_set.vsync = atoi(getenv("THPS_VSYNC")) != 0;
         ApplySwapInterval();
         ApplyWindow();
-        SDL_GL_GetDrawableSize(m_window, &dw, &dh);
+        SDL_GetWindowSizeInPixels(m_window, &dw, &dh);
         if (getenv("THPS_WIDESCREEN"))
             m_set.widescreen = atoi(getenv("THPS_WIDESCREEN")) != 0;
         g_glGpu.SetWidescreen(m_set.widescreen);
@@ -587,7 +599,7 @@ bool Video::InitGl(int scale)
             return true;
         }
         g_glGpu.Shutdown();
-        SDL_GL_DeleteContext(m_glctx);
+        SDL_GL_DestroyContext((SDL_GLContextState*)m_glctx);
         m_glctx = nullptr;
     }
     if (m_window)
@@ -609,8 +621,8 @@ void Video::Init(int scale)
     g_settings.Load();
 
     /* sizes in pixels, not scaled by the desktop's DPI setting: 640x480 is 640x480 */
-    SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
-    if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0)
+    // SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
         PC_Fatal("Cannot open a window (SDL: %s).", SDL_GetError());
     m_videoInited = true;
     if (!InitGl(scale))
@@ -622,7 +634,7 @@ void Video::Shutdown()
 {
     if (m_glctx) {
         g_glGpu.Shutdown();
-        SDL_GL_DeleteContext(m_glctx);
+        SDL_GL_DestroyContext((SDL_GLContextState*)m_glctx);
         m_glctx = nullptr;
     }
     if (m_window)

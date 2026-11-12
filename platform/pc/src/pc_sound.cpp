@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 #include "pc/sound.h"
 #include "pc_runtime.h"
@@ -704,6 +704,64 @@ void Sound::Mix(uint8_t *stream, int len) {
         fwrite(stream, 1, (size_t)frames * 4, m_dump);
 }
 
+void Sound::SubmitAudio() {
+    if (!m_stream)
+        return;
+
+    int16_t buffer[kBufFrames * 2];
+
+    Mix((uint8_t *)buffer, sizeof(buffer));
+
+    if (!SDL_PutAudioStreamData(m_stream, buffer, sizeof(buffer)))
+    {
+        PC_Log("audio: submit failed: %s", SDL_GetError());
+        return;
+    }
+
+    static int logged = 0;
+    if (!logged++)
+    {
+        PC_Log("audio: successfully submitted audio");
+    }
+}
+
+void Sound::AudioStreamCallback(
+    void *userdata,
+    SDL_AudioStream *stream,
+    int additional_amount,
+    int total_amount)
+{
+    Sound *self = (Sound *)userdata;
+
+    uint8_t buffer[kBufFrames * 4];
+
+    while (additional_amount > 0)
+    {
+        int bytes = additional_amount;
+
+        if (bytes > (int)sizeof(buffer))
+            bytes = sizeof(buffer);
+
+        // Stereo S16: each frame is 4 bytes.
+        bytes &= ~3;
+
+        if (bytes == 0)
+            break;
+
+        self->Lock();
+        self->Mix(buffer, bytes);
+        self->Unlock();
+
+        if (!SDL_PutAudioStreamData(stream, buffer, bytes))
+        {
+            PC_Log("audio: stream submission failed: %s", SDL_GetError());
+            break;
+        }
+
+        additional_amount -= bytes;
+    }
+}
+
 void Sound::DeviceCallback(void *userdata, uint8_t *stream, int len) {
     Sound *self = (Sound *)userdata;
     self->Lock();
@@ -715,18 +773,24 @@ void Sound::DeviceCallback(void *userdata, uint8_t *stream, int len) {
  * counter, so the envelopes the game reads keep moving; the dump, if any, records it. */
 int Sound::Pacer(void *userdata) {
     Sound *self = (Sound *)userdata;
-    uint8_t buf[kBufFrames * 4];
+
     Uint64 freq = SDL_GetPerformanceFrequency();
     Uint64 next = SDL_GetPerformanceCounter();
+
     while (self->m_running) {
         self->Lock();
-        self->Mix(buf, sizeof buf);
+        self->SubmitAudio();
         self->Unlock();
+
         next += freq * kBufFrames / kRate;
+
         for (Uint64 now = SDL_GetPerformanceCounter(); now < next && self->m_running;
              now = SDL_GetPerformanceCounter())
+            {
             SDL_Delay(1);
     }
+}
+
     return 0;
 }
 
@@ -739,7 +803,6 @@ void Sound::StartPacer() {
 void Sound::Init() {
     const char *audio = getenv("THPS_AUDIO");
     const char *dump = getenv("THPS_AUDIO_DUMP");
-    SDL_AudioSpec want, have;
 
     m_trace = getenv("THPS_TRACE_SOUND") && atoi(getenv("THPS_TRACE_SOUND"));
     m_mx = SDL_CreateMutex();
@@ -751,26 +814,37 @@ void Sound::Init() {
         StartPacer();
         return;
     }
-    if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+    if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
         PC_Log("audio: SDL audio init failed: %s", SDL_GetError());
         StartPacer();
         return;
     }
+    SDL_AudioSpec want;
     SDL_zero(want);
     want.freq = kRate;
-    want.format = AUDIO_S16SYS;
+    want.format = SDL_AUDIO_S16;
     want.channels = 2;
-    want.samples = kBufFrames;
-    want.callback = DeviceCallback;
-    want.userdata = this;
-    m_dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
-    if (!m_dev) {
-        PC_Log("audio: cannot open an audio device: %s", SDL_GetError());
+    m_stream = SDL_OpenAudioDeviceStream(
+        SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+        &want,
+        AudioStreamCallback,
+        this);
+
+    if (!m_stream) {
+        PC_Log("audio: cannot open device stream: %s", SDL_GetError());
         StartPacer();
         return;
     }
-    SDL_PauseAudioDevice(m_dev, 0);
-    PC_Log("audio: %d Hz, %d channels, %d-frame buffers", have.freq, have.channels, have.samples);
+
+    m_dev = SDL_GetAudioStreamDevice(m_stream);
+
+    if (!SDL_ResumeAudioStreamDevice(m_stream))
+    {
+        PC_Log("audio: cannot resume device: %s", SDL_GetError());
+        return;
+    }
+
+    PC_Log("audio: device started at %d Hz", kRate);
 }
 
 /* ---- the music --------------------------------------------------------------------------------- */

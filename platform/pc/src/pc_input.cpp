@@ -40,7 +40,7 @@ typedef struct _XINPUT_STATE {
 #define XINPUT_GAMEPAD_Y 0x8000
 #define XINPUT_GAMEPAD_TRIGGER_THRESHOLD 30
 #endif
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,7 +62,7 @@ namespace pc {
 
 Input g_input;
 
-static_assert(Input::kScancodes == SDL_NUM_SCANCODES, "Input's key arrays hold SDL's scancodes");
+static_assert(Input::kScancodes == SDL_SCANCODE_COUNT, "Input's key arrays hold SDL's scancodes");
 #ifdef _WIN32
 static_assert(std::is_same<decltype(&XInputGetState), DWORD(WINAPI *)(DWORD, XINPUT_STATE *)>::value &&
                   std::is_same<DWORD(WINAPI *)(DWORD, XINPUT_STATE *), unsigned long(__stdcall *)(unsigned long, _XINPUT_STATE *)>::value &&
@@ -129,7 +129,7 @@ void KeyLabel(int sc, char *out, size_t size) {
         {'!', "EXCLAIM"}, {'"', "QUOTES"}, {'%', "PERCENT"}, {'?', "QUESTION"}, {':', "COLON"},
         {'_', "UNDERSCORE"},
     };
-    const char *name = sc > 0 && sc < SDL_NUM_SCANCODES ? SDL_GetScancodeName((SDL_Scancode)sc) : "";
+    const char *name = sc > 0 && sc < SDL_SCANCODE_COUNT ? SDL_GetScancodeName((SDL_Scancode)sc) : "";
     size_t n = 0;
     out[0] = 0;
     if (!*name) {
@@ -273,7 +273,7 @@ const char *Input::PadName(int pad) { return pad >= 0 && pad < kPadCount ? s_pad
 const char *Input::KeyName(int sc) {
     if (sc == SDL_SCANCODE_COMMA)
         return "Comma"; /* ',' separates the slots in Settings.ini */
-    return sc > 0 && sc < SDL_NUM_SCANCODES ? SDL_GetScancodeName((SDL_Scancode)sc) : "";
+    return sc > 0 && sc < SDL_SCANCODE_COUNT ? SDL_GetScancodeName((SDL_Scancode)sc) : "";
 }
 
 const char *Input::InputLabel(int gamepad, int input) {
@@ -413,15 +413,23 @@ int Input::SettingsLine(const char *section, const char *key, char *value) {
  * goes by its type. */
 bool Input::ReadByXInput(int i) {
 #ifdef _WIN32
-    SDL_GameControllerType t = SDL_GameControllerTypeForIndex(i);
-    const char *path = SDL_JoystickPathForIndex(i);
     if (!m_xinputGetState)
         return false;
-    if (SDL_JoystickGetDeviceGUID(i).data[14] == 'x')
-        return true;
-    if (path && *path)
-        return SDL_strcasestr(path, "IG_") != nullptr;
-    return t == SDL_CONTROLLER_TYPE_XBOX360 || t == SDL_CONTROLLER_TYPE_XBOXONE;
+
+    SDL_Joystick *joy = SDL_OpenJoystick(i);
+    if (!joy)
+        return false;
+
+    SDL_GUID guid = SDL_GetJoystickGUID(joy);
+    const char *path = SDL_GetJoystickPathForID(i);
+
+    bool isXInput = guid.data[14] == 'x' ||
+                    (path && *path &&
+                     SDL_strcasestr(path, "IG_") != nullptr);
+
+    SDL_CloseJoystick(joy);
+
+    return isXInput;
 #else
     (void)i;
     return false;
@@ -430,55 +438,71 @@ bool Input::ReadByXInput(int i) {
 
 uint32_t Input::SdlGetState(int slot, XINPUT_STATE *st) {
     static const struct {
-        SDL_GameControllerButton b;
+        SDL_GamepadButton b;
         WORD bit;
     } btn[] = {
-        {SDL_CONTROLLER_BUTTON_A, XINPUT_GAMEPAD_A},
-        {SDL_CONTROLLER_BUTTON_B, XINPUT_GAMEPAD_B},
-        {SDL_CONTROLLER_BUTTON_X, XINPUT_GAMEPAD_X},
-        {SDL_CONTROLLER_BUTTON_Y, XINPUT_GAMEPAD_Y},
-        {SDL_CONTROLLER_BUTTON_LEFTSHOULDER, XINPUT_GAMEPAD_LEFT_SHOULDER},
-        {SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER},
-        {SDL_CONTROLLER_BUTTON_BACK, XINPUT_GAMEPAD_BACK},
-        {SDL_CONTROLLER_BUTTON_START, XINPUT_GAMEPAD_START},
-        {SDL_CONTROLLER_BUTTON_LEFTSTICK, XINPUT_GAMEPAD_LEFT_THUMB},
-        {SDL_CONTROLLER_BUTTON_RIGHTSTICK, XINPUT_GAMEPAD_RIGHT_THUMB},
-        {SDL_CONTROLLER_BUTTON_DPAD_UP, XINPUT_GAMEPAD_DPAD_UP},
-        {SDL_CONTROLLER_BUTTON_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_DOWN},
-        {SDL_CONTROLLER_BUTTON_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_LEFT},
-        {SDL_CONTROLLER_BUTTON_DPAD_RIGHT, XINPUT_GAMEPAD_DPAD_RIGHT},
+        {SDL_GAMEPAD_BUTTON_SOUTH, XINPUT_GAMEPAD_A},
+        {SDL_GAMEPAD_BUTTON_EAST, XINPUT_GAMEPAD_B},
+        {SDL_GAMEPAD_BUTTON_WEST, XINPUT_GAMEPAD_X},
+        {SDL_GAMEPAD_BUTTON_NORTH, XINPUT_GAMEPAD_Y},
+        {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, XINPUT_GAMEPAD_LEFT_SHOULDER},
+        {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER},
+        {SDL_GAMEPAD_BUTTON_BACK, XINPUT_GAMEPAD_BACK},
+        {SDL_GAMEPAD_BUTTON_START, XINPUT_GAMEPAD_START},
+        {SDL_GAMEPAD_BUTTON_LEFT_STICK, XINPUT_GAMEPAD_LEFT_THUMB},
+        {SDL_GAMEPAD_BUTTON_RIGHT_STICK, XINPUT_GAMEPAD_RIGHT_THUMB},
+        {SDL_GAMEPAD_BUTTON_DPAD_UP, XINPUT_GAMEPAD_DPAD_UP},
+        {SDL_GAMEPAD_BUTTON_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_DOWN},
+        {SDL_GAMEPAD_BUTTON_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_LEFT},
+        {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, XINPUT_GAMEPAD_DPAD_RIGHT},
     };
-    SDL_GameController *gc = m_gc[slot];
+    SDL_Gamepad *gc = m_gc[slot];
     XINPUT_GAMEPAD *g = &st->Gamepad;
     int i;
-    if (gc && !SDL_GameControllerGetAttached(gc)) {
-        SDL_GameControllerClose(gc);
+    if (gc && !SDL_GamepadConnected(gc)) {
+        SDL_CloseGamepad(gc);
         m_gc[slot] = nullptr;
         return 1; /* one poll disconnected before another pad takes the slot (it isn't player 1) */
     }
-    for (i = 0; !gc && i < SDL_NumJoysticks(); i++) {
-        SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(i);
+    int numJoysticks = 0;
+    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
+
+    for (int i = 0; !gc && i < numJoysticks; i++) {
+        SDL_JoystickID id = joysticks[i];
         int k, taken = 0;
-        if (!SDL_IsGameController(i) || ReadByXInput(i))
+
+        if (!SDL_IsGamepad(id) || ReadByXInput(id))
             continue;
-        for (k = 0; k < kSdlSlots; k++)
-            taken |= m_gc[k] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(m_gc[k])) == id;
-        if (!taken && (gc = m_gc[slot] = SDL_GameControllerOpen(i)) != nullptr)
-            PC_Log("gamepad %d: %s", kXiSlots + slot, SDL_GameControllerName(gc));
+
+        for (k = 0; k < kSdlSlots; k++) {
+            if (m_gc[k] &&
+                SDL_GetJoystickID(SDL_GetGamepadJoystick(m_gc[k])) == id) {
+                taken = 1;
+                break;
+            }
+        }
+
+        if (!taken && (gc = m_gc[slot] = SDL_OpenGamepad(id)) != nullptr) {
+            PC_Log("gamepad %d: %s", kXiSlots + slot,
+                SDL_GetGamepadName(gc));
+        }
     }
+
+    SDL_free(joysticks);
+
     if (!gc)
         return 1;
     memset(st, 0, sizeof *st);
     for (const auto &b : btn)
-        if (SDL_GameControllerGetButton(gc, b.b))
+        if (SDL_GetGamepadButton(gc, b.b))
             g->wButtons |= b.bit;
-    g->bLeftTrigger = (uint8_t)(SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERLEFT) >> 7);
-    g->bRightTrigger = (uint8_t)(SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) >> 7);
+    g->bLeftTrigger = (uint8_t)(SDL_GetGamepadAxis(gc, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) >> 7);
+    g->bRightTrigger = (uint8_t)(SDL_GetGamepadAxis(gc, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) >> 7);
     /* XInput's Y axes point up */
-    g->sThumbLX = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_LEFTX);
-    g->sThumbLY = (int16_t)~SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_LEFTY);
-    g->sThumbRX = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_RIGHTX);
-    g->sThumbRY = (int16_t)~SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_RIGHTY);
+    g->sThumbLX = SDL_GetGamepadAxis(gc, SDL_GAMEPAD_AXIS_LEFTX);
+    g->sThumbLY = (int16_t)~SDL_GetGamepadAxis(gc, SDL_GAMEPAD_AXIS_LEFTY);
+    g->sThumbRX = SDL_GetGamepadAxis(gc, SDL_GAMEPAD_AXIS_RIGHTX);
+    g->sThumbRY = (int16_t)~SDL_GetGamepadAxis(gc, SDL_GAMEPAD_AXIS_RIGHTY);
     return ERROR_SUCCESS;
 }
 
@@ -503,26 +527,11 @@ void Input::RumbleSlot(int slot, uint16_t low, uint16_t high) {
     }
 #endif
     if (m_gc[slot - kXiSlots])
-        SDL_GameControllerRumble(m_gc[slot - kXiSlots], low, high, 1000); /* renewed while it lasts */
+        SDL_RumbleGamepad(m_gc[slot - kXiSlots], low, high, 1000); /* renewed while it lasts */
 }
 
 void Input::LoadGamepads() {
-#ifdef _WIN32
-    static const char *const dlls[] = {"xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll"};
-    int i;
-    for (i = 0; i < 3 && !m_xinputGetState; i++) {
-        HMODULE m = LoadLibraryA(dlls[i]);
-        if (m) {
-            m_xinputGetState = (XInputGetStateFn)(void (*)(void))GetProcAddress(m, "XInputGetState");
-            m_xinputSetState = (XInputSetStateFn)(void (*)(void))GetProcAddress(m, "XInputSetState");
-            if (m_xinputGetState)
-                PC_Log("gamepads: %s", dlls[i]);
-        }
-    }
-    if (!m_xinputGetState)
-        PC_Log("gamepads: XInput not available");
-#endif
-    m_sdl = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == 0;
+    m_sdl = SDL_InitSubSystem(SDL_INIT_GAMEPAD) == true;
     if (m_sdl)
         PC_Log("gamepads: SDL game controllers");
     else
@@ -546,15 +555,14 @@ void Input::AddMappings() {
         "a:b2,b:b1,x:b3,y:b0,back:b8,start:b9,leftshoulder:b6,rightshoulder:b7,lefttrigger:b4,"
         "righttrigger:b5,dpup:-a1,dpdown:+a1,dpleft:-a0,dpright:+a0",
     };
-    char *base = SDL_GetBasePath();
+    const char *base = SDL_GetBasePath();
     for (const char *m : maps)
-        if (SDL_GameControllerAddMapping(m) < 0)
+        if (SDL_AddGamepadMapping(m) < 0)
             PC_Log("gamepads: bad mapping (%s)", SDL_GetError());
-    /* more pads: a gamecontrollerdb.txt (github.com/mdqinc/SDL_GameControllerDB) by the exe, then
+    /* more pads: a gamecontrollerdb.txt (github.com/mdqinc/SDL_GamepadDB) by the exe, then
      * one by Settings.ini, whose lines replace the exe one's for the same pad */
     if (base) {
         AddMappingsFrom(base);
-        SDL_free(base);
     }
     AddMappingsFrom(g_runtime.UserDir());
 }
@@ -565,7 +573,7 @@ void Input::AddMappingsFrom(const char *dir) {
     size_t len = strlen(dir);
     snprintf(path, sizeof path, "%s%sgamecontrollerdb.txt", dir,
              len && (dir[len - 1] == '/' || dir[len - 1] == '\\') ? "" : PC_SEP);
-    n = SDL_GameControllerAddMappingsFromFile(path);
+    n = SDL_AddGamepadMappingsFromFile(path);
     if (n >= 0)
         PC_Log("gamepads: %d mappings from %s", n, path);
 }
@@ -573,16 +581,19 @@ void Input::AddMappingsFrom(const char *dir) {
 /* A pad SDL has no mapping for is never opened: say so, so it isn't silently ignored. */
 void Input::DeviceAdded(int i) {
     char guid[33];
-    SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), guid, sizeof guid);
-    if (SDL_IsGameController(i)) {
-        PC_Log("gamepads: \"%s\" (%04x:%04x, GUID %s) read by %s", SDL_JoystickNameForIndex(i),
-               SDL_JoystickGetDeviceVendor(i), SDL_JoystickGetDeviceProduct(i), guid,
+    SDL_Joystick* joystick = SDL_OpenJoystick(i);
+    if (joystick) {
+        SDL_GUIDToString(SDL_GetJoystickGUID(joystick), guid, sizeof guid);
+    }
+    if (SDL_IsGamepad(i)) {
+        PC_Log("gamepads: \"%s\" (%04x:%04x, GUID %s) read by %s", SDL_GetJoystickNameForID(i),
+               SDL_GetJoystickVendor(joystick), SDL_GetJoystickProduct(joystick), guid,
                ReadByXInput(i) ? "XInput" : "SDL");
         return;
     }
     PC_Log("gamepads: \"%s\" (%04x:%04x, GUID %s) is not a known controller; add a mapping for it "
-           "to gamecontrollerdb.txt", SDL_JoystickNameForIndex(i), SDL_JoystickGetDeviceVendor(i),
-           SDL_JoystickGetDeviceProduct(i), guid);
+           "to gamecontrollerdb.txt", SDL_GetJoystickNameForID(i), SDL_GetJoystickVendor(joystick),
+           SDL_GetJoystickProduct(joystick), guid);
 }
 
 /* Polling an empty XInput slot is slow, so empty XInput slots are only tried every 120 polls.
@@ -732,32 +743,33 @@ void Input::PumpEvents() {
     SDL_Event e;
     Init();
     while (SDL_PollEvent(&e)) {
-        if (e.type == SDL_QUIT)
+        if (e.type == SDL_EVENT_QUIT)
             m_quit = true;
-        if (e.type == SDL_JOYDEVICEADDED)
+        if (e.type == SDL_EVENT_JOYSTICK_ADDED)
             DeviceAdded(e.jdevice.which);
         /* typed keys go by the events, so they keep their order and repeat when held */
-        if (e.type == SDL_KEYDOWN && m_textMode && !(e.key.keysym.mod & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)))
-            TypeKey(e.key.keysym.scancode);
+        if (e.type == SDL_EVENT_KEY_DOWN && m_textMode && !(e.key.mod & (SDL_KMOD_CTRL | SDL_KMOD_ALT | SDL_KMOD_GUI)))
+            TypeKey(e.key.scancode);
         g_video.Event(&e);
     }
 }
 
 /* Once per game frame, before the actions are read: sample the keyboard and gamepads. */
 void Input::Update() {
-    uint8_t down[SDL_NUM_SCANCODES], scripted[SDL_NUM_SCANCODES] = {};
-    const Uint8 *k;
+    bool down[SDL_SCANCODE_COUNT] = {};
+    uint8_t scripted[SDL_SCANCODE_COUNT] = {};
+    const bool *k;
     uint32_t acts = 0;
     int sc, a;
     Init();
     SDL_PumpEvents();
     k = SDL_GetKeyboardState(nullptr);
-    for (sc = 0; sc < SDL_NUM_SCANCODES; sc++)
+    for (sc = 0; sc < SDL_SCANCODE_COUNT; sc++)
         down[sc] = k ? k[sc] : 0;
-    if (SDL_GetModState() & KMOD_ALT)
+    if (SDL_GetModState() & SDL_KMOD_ALT)
         down[SDL_SCANCODE_RETURN] = 0; /* Alt+Enter switches fullscreen (Video::Event) */
     ScriptedKeys(scripted);
-    for (sc = 0; sc < SDL_NUM_SCANCODES; sc++) {
+    for (sc = 0; sc < SDL_SCANCODE_COUNT; sc++) {
         down[sc] |= scripted[sc];
         m_keyPressed[sc] = down[sc] && !m_keyDown[sc];
         m_keyDown[sc] = down[sc];
@@ -769,7 +781,7 @@ void Input::Update() {
     if (!m_textMode)
         m_nTyped = 0;
     else
-        for (sc = 0; sc < SDL_NUM_SCANCODES; sc++)
+        for (sc = 0; sc < SDL_SCANCODE_COUNT; sc++)
             if (scripted[sc] && m_keyPressed[sc])
                 TypeKey(sc); /* THPS_KEYS types too */
     m_scripted = ScriptedButtons();
@@ -833,7 +845,7 @@ int Input::Capture(int player, int gamepad) {
     if (!gamepad) {
         if (player != 0)
             return PC_BIND_NONE;
-        for (i = 1; i < SDL_NUM_SCANCODES; i++)
+        for (i = 1; i < SDL_SCANCODE_COUNT; i++)
             if (m_keyPressed[i])
                 return i;
     } else if (player >= 0 && player < 2 && m_players[player].slot >= 0) {
@@ -858,9 +870,9 @@ bool Input::ClearPressed(int player) {
 /* What a key types in text mode: its letter in the keyboard's layout (upper case), ' ', '\b' for
  * Backspace; 0 for the rest, which keep their bindings. */
 int Input::TextKey(int sc) {
-    SDL_Keycode k = SDL_GetKeyFromScancode((SDL_Scancode)sc);
-    if (k >= SDLK_a && k <= SDLK_z)
-        return 'A' + (k - SDLK_a);
+    SDL_Keycode k = SDL_GetKeyFromScancode((SDL_Scancode)sc, SDL_KMOD_NONE, false);
+    if (k >= SDLK_A && k <= SDLK_Z)
+        return 'A' + (k - SDLK_A);
     if (k == SDLK_SPACE)
         return ' ';
     if (k == SDLK_BACKSPACE)

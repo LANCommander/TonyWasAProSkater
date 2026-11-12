@@ -5,10 +5,10 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <SDL3/SDL.h>
 
 #include "pc_input.h"
 
-typedef struct _SDL_GameController SDL_GameController;
 struct _XINPUT_STATE;   /* XINPUT_STATE (Linux: pc_input.cpp's stand-in) */
 #ifdef _WIN32
 struct _XINPUT_VIBRATION;
@@ -164,7 +164,7 @@ class Input {
 
     /* SDL slot i is the i-th game controller opened. */
     bool m_sdl = false;
-    SDL_GameController *m_gc[kSdlSlots] = {};
+    SDL_Gamepad *m_gc[kSdlSlots] = {};
 
     /* InputLabel's results, the last four */
     char m_labels[4][32] = {};
